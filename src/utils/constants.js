@@ -10,7 +10,7 @@ export const APP_CONFIG = {
   // For future backend integration
   API_BASE_URL: __DEV__ 
     ? (Platform.OS === 'android' ? 'http://192.168.236.28:5001/api' : 'http://localhost:5001/api')
-    : 'https://your-production-api.com/api',
+    : 'https://your-render-backend-url.onrender.com/api',
   
   // Payment Configuration
   PAYSTACK_PUBLIC_KEY: __DEV__

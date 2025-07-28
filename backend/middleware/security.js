@@ -69,15 +69,15 @@ const corsOptions = {
       'http://127.0.0.1:3002'
     ];
     
-    // In production, add your production domains
+    // In production, add your production domains from environment variables
     if (process.env.NODE_ENV === 'production') {
-      allowedOrigins.push(
-        'https://choma.com',
-        'https://www.choma.com',
-        'https://admin.choma.com',
-        'https://chef.choma.com',
-        'https://api.choma.com'
-      );
+      const productionOrigins = [
+        process.env.ADMIN_URL,
+        process.env.CHEF_URL,
+        process.env.API_URL
+      ].filter(Boolean); // Remove any undefined values
+      
+      allowedOrigins.push(...productionOrigins);
     }
     
     if (allowedOrigins.includes(origin)) {
