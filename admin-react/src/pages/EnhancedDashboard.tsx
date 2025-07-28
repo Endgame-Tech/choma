@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
+import { useState, useEffect } from 'react'
 import { analytics, generateDateRange, type EnhancedDashboardStats, type RevenueAnalytics, type CustomerAnalytics, type ChefAnalytics, type OperationalAnalytics } from '../services/analyticsApi'
 import AnalyticsCard from '../components/analytics/AnalyticsCard'
 import RevenueChart from '../components/analytics/RevenueChart'
@@ -159,21 +160,44 @@ export default function EnhancedDashboard() {
           fullName: 'Chef Adebayo',
           email: 'adebayo@example.com',
           phone: '+234123456789',
-          status: 'Active',
+          status: "Active", // Correctly typed as one of the allowed literals
           rating: 4.9,
           totalOrdersCompleted: 234,
           currentCapacity: 4,
           maxCapacity: 5,
-          availability: 'Available',
+          availability: 'Available' as "Available" | "Busy" | "Offline",
           location: { city: 'Lagos', area: 'Victoria Island' },
           joinDate: '2023-01-15',
           completionRate: 98,
           avgDeliveryTime: 38,
           ordersThisMonth: 23,
           earningsThisMonth: 185000,
-          customerSatisfaction: 4.9
+          customerSatisfaction: 4.9,
+          specialties: ['Nigerian Cuisine', 'Continental'],
+          experience: 8
         }
-      ],
+      ] as {
+        _id: string;
+        chefId: string;
+        fullName: string;
+        email: string;
+        phone: string;
+        status: "Active" | "Pending" | "Inactive" | "Suspended";
+        rating: number;
+        totalOrdersCompleted: number;
+        currentCapacity: number;
+        maxCapacity: number;
+        availability: "Available" | "Busy" | "Offline";
+        location: { city: string; area: string };
+        joinDate: string;
+        completionRate: number;
+        avgDeliveryTime: number;
+        ordersThisMonth: number;
+        earningsThisMonth: number;
+        customerSatisfaction: number;
+        specialties: string[];
+        experience: number;
+      }[],
       chefPerformanceMetrics: {
         averageCompletionRate: 94,
         averageDeliveryTime: 42,
@@ -403,7 +427,11 @@ export default function EnhancedDashboard() {
             {chefData.topPerformingChefs.slice(0, 6).map((chef) => (
               <ChefPerformanceCard
                 key={chef._id}
-                chef={chef}
+                chef={{
+                  ...chef,
+                  status: chef.status as "Active" | "Pending" | "Inactive" | "Suspended",
+                  availability: chef.availability as "Available" | "Busy" | "Offline"
+                }}
                 onClick={() => {
                   // Navigate to chef details
                   console.log('Navigate to chef:', chef._id)

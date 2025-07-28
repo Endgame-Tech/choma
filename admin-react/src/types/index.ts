@@ -63,11 +63,15 @@ export interface Subscription {
 
 // Chef
 export interface Chef {
+  languagesSpoken?: string[]
   _id: string
   chefId?: string
   fullName: string
   email: string
   phone: string
+  alternatePhone?: string
+  dateOfBirth?: string
+  gender?: 'Male' | 'Female' | 'Other'
   status: 'Active' | 'Inactive' | 'Suspended' | 'Pending'
   specialties: string[]
   experience: number
@@ -80,6 +84,10 @@ export interface Chef {
     city: string
     area?: string
     address?: string
+    streetAddress?: string
+    state?: string
+    postalCode?: string
+    serviceRadius?: number
   }
   profileImage?: string
   joinDate: string
@@ -99,6 +107,7 @@ export interface Chef {
     accountNumber: string
     bankName: string
     routingNumber?: string
+    bvn?: string
   }
   earnings?: {
     totalEarned: number
@@ -106,6 +115,42 @@ export interface Chef {
     lastPayoutDate?: string
     averageOrderValue: number
   }
+  identityVerification?: {
+    idType: 'National ID' | 'Driver License' | 'International Passport' | 'Voter Card'
+    idNumber: string
+    idExpiryDate?: string
+  }
+  culinaryEducation?: string
+  previousWorkExperience?: string
+  certifications?: string[]
+  bio?: string
+  kitchenDetails?: {
+    canCookAtCustomerLocation?: boolean
+    hasOwnKitchen?: boolean
+    transportationMethod?: string
+    kitchenEquipment?: string[]
+  }
+  emergencyContact?: {
+    name: string
+    relationship: string
+    phone: string
+  }
+  references?: { name: string; contact: string; relationship: string; phone?: string; email?: string }[]
+  legalAgreements?: {
+    agreementDate?: string;
+    agreementType?: string;
+    [key: string]: unknown;
+  }
+}
+
+// Order Item
+export interface OrderItem {
+  itemId: string
+  name: string
+  quantity: number
+  price: number
+  description?: string
+  imageUrl?: string
 }
 
 // Order
@@ -114,7 +159,7 @@ export interface Order {
   orderNumber: string
   customer: Customer
   subscription?: Subscription
-  orderItems?: any
+  orderItems?: OrderItem[]
   orderStatus: 'Pending' | 'Confirmed' | 'Preparing' | 'InProgress' | 'Out for Delivery' | 'Completed' | 'Delivered' | 'Cancelled'
   totalAmount: number
   paymentMethod: 'Card' | 'Transfer' | 'Cash on Delivery'

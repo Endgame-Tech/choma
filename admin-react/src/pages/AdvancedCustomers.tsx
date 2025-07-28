@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
+import { useState, useEffect } from 'react'
 import { usersApi } from '../services/api'
 import CustomerDetailsModal from '../components/customers/CustomerDetailsModal'
 import { MagnifyingGlassIcon, FunnelIcon, ArrowDownTrayIcon, UserPlusIcon } from '@heroicons/react/24/outline'
@@ -21,7 +22,7 @@ export default function AdvancedCustomers() {
   // State management
   const [customers, setCustomers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // const [error, setError] = useState<string | null>(null)
   const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [pagination, setPagination] = useState({
@@ -64,10 +65,10 @@ export default function AdvancedCustomers() {
   const fetchCustomers = async () => {
     try {
       setLoading(true)
-      setError(null)
+      // setError(null)
 
-      const response = await usersApi.getUsers(filters)
-      setCustomers(response.users)
+      const response = await usersApi.getUsers(filters as unknown as Record<string, string | number | boolean | undefined>)
+      setCustomers(response.users as User[])
       
       // Mock pagination for now
       setPagination({
@@ -79,10 +80,10 @@ export default function AdvancedCustomers() {
       })
 
       // Calculate analytics
-      calculateAnalytics(response.users)
+      calculateAnalytics(response.users as User[])
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch customers')
+      // setError(err instanceof Error ? err.message : 'Failed to fetch customers')
       
       // Mock data for demonstration
       setMockData()
@@ -181,18 +182,18 @@ export default function AdvancedCustomers() {
 
   // Handle filter changes
   const handleFilterChange = (key: keyof CustomerFilters, value: string | number) => {
-    setFilters(prev => ({
+    setFilters((prev: CustomerFilters) => ({
       ...prev,
       [key]: value,
-      page: key !== 'page' ? 1 : value // Reset page when other filters change
+      page: key !== 'page' ? 1 : Number(value) // Reset page when other filters change
     }))
   }
 
   // Handle customer selection
   const handleCustomerSelect = (customerId: string) => {
-    setSelectedCustomers(prev => 
+    setSelectedCustomers((prev: string[]) => 
       prev.includes(customerId) 
-        ? prev.filter(id => id !== customerId)
+        ? prev.filter((id: string) => id !== customerId)
         : [...prev, customerId]
     )
   }
@@ -213,17 +214,17 @@ export default function AdvancedCustomers() {
       await usersApi.updateUserStatus(customerId, status)
       
       // Update local state
-      setCustomers(prev => 
-        prev.map(customer => 
+      setCustomers((prev: User[]) => 
+        prev.map((customer: User) => 
           customer._id === customerId 
-            ? { ...customer, status: status as any }
+            ? { ...customer, status: status as User['status'] }
             : customer
         )
       )
       
       // Update selected customer if open
       if (selectedCustomer?._id === customerId) {
-        setSelectedCustomer(prev => prev ? { ...prev, status: status as any } : null)
+        setSelectedCustomer((prev: User | null) => prev ? { ...prev, status: status as User['status'] } : null)
       }
       
     } catch (error) {
@@ -235,7 +236,7 @@ export default function AdvancedCustomers() {
   // Export customers
   const handleExport = async () => {
     try {
-      const blob = await usersApi.exportUsers(filters)
+      const blob = await usersApi.exportUsers(filters as unknown as Record<string, string | number | boolean | undefined>)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.style.display = 'none'

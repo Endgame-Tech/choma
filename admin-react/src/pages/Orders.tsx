@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useMemo, useEffect } from 'react'
 import { useOrders } from '../hooks/useOrders'
 import { useAvailableChefs } from '../hooks/useChefs'
@@ -13,7 +14,12 @@ export default function Orders() {
   const [chefAssignmentModal, setChefAssignmentModal] = useState<{
     isOpen: boolean
     orderId: string
-    orderDetails: any
+    orderDetails: {
+      orderNumber: string
+      customer: string
+      totalAmount: number
+      deliveryDate: string
+    } | null
   }>({ isOpen: false, orderId: '', orderDetails: null })
 
   // Debounce search term to prevent excessive API calls
@@ -49,7 +55,18 @@ export default function Orders() {
   const { chefs: availableChefs, loading: chefsLoading, error: chefsError } = useAvailableChefs()
 
   // Handle opening chef assignment modal
-  const openChefAssignmentModal = (order: any) => {
+  // Define a type for the order parameter
+  type OrderType = {
+    _id: string
+    orderNumber: string
+    customer?: {
+      fullName?: string
+    }
+    totalAmount: number
+    deliveryDate: string
+  }
+
+  const openChefAssignmentModal = (order: OrderType) => {
     setChefAssignmentModal({
       isOpen: true,
       orderId: order._id,
@@ -484,14 +501,14 @@ export default function Orders() {
                           </div>
                           <button 
                             className="text-xs text-blue-600 hover:text-blue-800 underline"
-                            onClick={() => openChefAssignmentModal(order)}
+                            onClick={() => openChefAssignmentModal({ ...order, deliveryDate: order.deliveryDate ?? '' })}
                           >
                             Reassign
                           </button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => openChefAssignmentModal(order)}
+                          onClick={() => openChefAssignmentModal({ ...order, deliveryDate: order.deliveryDate ?? '' })}
                           className="inline-flex items-center px-3 py-1 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           disabled={Boolean(chefsLoading || chefsError)}
                         >

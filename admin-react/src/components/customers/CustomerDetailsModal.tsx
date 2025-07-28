@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
-import { XMarkIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, CalendarIcon, CreditCardIcon } from '@heroicons/react/24/outline'
+
+import React from 'react'
+import { useState } from 'react'
+import { XMarkIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, CalendarIcon } from '@heroicons/react/24/outline'
 import type { User } from '../../types'
 
 interface CustomerOrder {
@@ -130,7 +132,7 @@ export default function CustomerDetailsModal({
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => setActiveTab(tab.key as 'overview' | 'orders' | 'activity' | 'support')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.key
                     ? 'border-blue-500 text-blue-600'
@@ -295,7 +297,7 @@ export default function CustomerDetailsModal({
                 <div className="text-center py-12">
                   <div className="text-gray-400 text-6xl mb-4">📦</div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
-                  <p className="text-gray-500">This customer hasn't placed any orders.</p>
+                  <p className="text-gray-500">This customer hasn`t placed any orders.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">

@@ -1,5 +1,4 @@
 import React from 'react'
-
 interface CustomerSegment {
   name: string
   users: number

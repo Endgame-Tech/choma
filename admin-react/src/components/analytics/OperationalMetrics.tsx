@@ -1,5 +1,4 @@
 import React from 'react'
-
 interface OperationalData {
   averageOrderValue: number
   averageDeliveryTime: number
@@ -31,11 +30,7 @@ export default function OperationalMetrics({ data, className = '' }: Operational
     return 'text-red-600'
   }
 
-  const getMetricBgColor = (value: number, thresholds: { good: number; fair: number }) => {
-    if (value >= thresholds.good) return 'bg-green-100'
-    if (value >= thresholds.fair) return 'bg-yellow-100'
-    return 'bg-red-100'
-  }
+  
 
   const maxPeakOrders = Math.max(...data.peakHours.map(h => h.orders))
 

@@ -37,7 +37,7 @@ interface ValidationError {
   row: number
   field: string
   message: string
-  value?: any
+  value?: string | number | undefined
 }
 
 interface UploadResult {
@@ -46,11 +46,11 @@ interface UploadResult {
   successCount: number
   failedCount: number
   errors: ValidationError[]
-  successfulMeals?: any[]
+  successfulMeals?: ExcelMealData[]
 }
 
 const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert', 'Beverage']
-const COMMON_ALLERGENS = ['nuts', 'dairy', 'gluten', 'soy', 'eggs', 'fish', 'shellfish', 'sesame']
+
 
 export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealUploadProps) {
   const [dragActive, setDragActive] = useState(false)
@@ -292,7 +292,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
             header: 1,
             defval: '',
             raw: false
-          }) as any[][]
+          }) as string[][]
 
           if (jsonData.length < 2) {
             throw new Error('Excel file must contain at least a header row and one data row')
@@ -337,19 +337,19 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
           }
 
           const meals: ExcelMealData[] = dataRows.map(row => {
-            const meal: any = {}
+            const meal: ExcelMealData = {} as ExcelMealData
             headers.forEach((header, index) => {
               const fieldName = headerMapping[header as string]
               if (fieldName && row[index] !== undefined && row[index] !== '') {
                 // Convert numeric fields
                 if (['basePrice', 'platformFee', 'chefFee', 'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'weight', 'preparationTime'].includes(fieldName)) {
-                  meal[fieldName] = Number(row[index])
+                  (meal as Record<keyof ExcelMealData, unknown>)[fieldName] = Number(row[index])
                 } else {
-                  meal[fieldName] = row[index]
+                  (meal as Record<keyof ExcelMealData, unknown>)[fieldName] = row[index]
                 }
               }
             })
-            return meal as ExcelMealData
+            return meal
           })
 
           resolve(meals)
@@ -398,7 +398,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
         totalRows: excelData.length,
         successCount: response.data.summary?.created || response.data.created?.length || 0,
         failedCount: response.data.summary?.failed || response.data.errors?.length || 0,
-        errors: response.data.errors?.map((err: any, index: number) => ({
+        errors: response.data.errors?.map((err: { error?: string; message?: string; meal?: { name?: string } }, index: number) => ({
           row: index + 2, // Excel row number (accounting for header)
           field: 'General',
           message: err.error || err.message || 'Unknown error',
@@ -588,7 +588,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
                         <div className="text-red-700">{error.message}</div>
                         {error.value !== undefined && (
                           <div className="text-gray-600 text-xs">
-                            Value: "{error.value}"
+                            Value: &quot;{error.value}&quot;
                           </div>
                         )}
                       </div>

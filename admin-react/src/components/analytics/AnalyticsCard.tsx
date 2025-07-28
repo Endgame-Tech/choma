@@ -1,4 +1,4 @@
-
+import React from 'react'
 interface AnalyticsCardProps {
   title: string
   value: string | number

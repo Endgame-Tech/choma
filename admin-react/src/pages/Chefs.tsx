@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useMemo, useEffect } from 'react'
 import { useChefs } from '../hooks/useChefs'
 import { chefsApi } from '../services/api'
@@ -20,7 +21,12 @@ export default function Chefs() {
 
   // Build filters (memoized to prevent infinite re-renders)
   const filters = useMemo(() => {
-    const baseFilters: any = {
+    type ChefFilters = {
+      search?: string;
+      status?: string;
+    };
+
+    const baseFilters: ChefFilters = {
       search: debouncedSearchTerm || undefined,
     }
     
@@ -376,7 +382,7 @@ export default function Chefs() {
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Gender:</span>
-                        <p className="text-gray-900">{(selectedChef as any).gender || 'N/A'}</p>
+                        <p className="text-gray-900">{selectedChef.gender || 'N/A'}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -389,23 +395,23 @@ export default function Chefs() {
                         <p className="text-gray-900">{selectedChef.phone}</p>
                       </div>
                     </div>
-                    {(selectedChef as any).alternatePhone && (
+                    {selectedChef.alternatePhone && (
                       <div>
                         <span className="font-medium text-gray-700">Alternate Phone:</span>
-                        <p className="text-gray-900">{(selectedChef as any).alternatePhone}</p>
+                        <p className="text-gray-900">{selectedChef.alternatePhone}</p>
                       </div>
                     )}
-                    {(selectedChef as any).dateOfBirth && (
+                    {selectedChef.dateOfBirth && (
                       <div>
                         <span className="font-medium text-gray-700">Date of Birth:</span>
-                        <p className="text-gray-900">{new Date((selectedChef as any).dateOfBirth).toLocaleDateString()}</p>
+                        <p className="text-gray-900">{new Date(selectedChef.dateOfBirth).toLocaleDateString()}</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Identity Verification Section */}
-                {(selectedChef as any).identityVerification && (
+                {selectedChef.identityVerification && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <span className="mr-2">🆔</span> Identity Verification
@@ -413,16 +419,16 @@ export default function Chefs() {
                     <div className="space-y-3 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">ID Type:</span>
-                        <p className="text-gray-900">{(selectedChef as any).identityVerification.idType}</p>
+                        <p className="text-gray-900">{selectedChef.identityVerification.idType}</p>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">ID Number:</span>
-                        <p className="text-gray-900">{(selectedChef as any).identityVerification.idNumber}</p>
+                        <p className="text-gray-900">{selectedChef.identityVerification.idNumber}</p>
                       </div>
-                      {(selectedChef as any).identityVerification.idExpiryDate && (
+                      {selectedChef.identityVerification.idExpiryDate && (
                         <div>
                           <span className="font-medium text-gray-700">Expiry Date:</span>
-                          <p className="text-gray-900">{new Date((selectedChef as any).identityVerification.idExpiryDate).toLocaleDateString()}</p>
+                          <p className="text-gray-900">{new Date(selectedChef.identityVerification.idExpiryDate).toLocaleDateString()}</p>
                         </div>
                       )}
                     </div>
@@ -459,11 +465,11 @@ export default function Chefs() {
                       </div>
                     )}
 
-                    {(selectedChef as any).languagesSpoken && (selectedChef as any).languagesSpoken.length > 0 && (
+                    {selectedChef.languagesSpoken && selectedChef.languagesSpoken.length > 0 && (
                       <div>
                         <span className="font-medium text-gray-700">Languages:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {(selectedChef as any).languagesSpoken.map((language: string, index: number) => (
+                          {selectedChef.languagesSpoken.map((language: string, index: number) => (
                             <span key={index} className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
                               {language}
                             </span>
@@ -472,25 +478,25 @@ export default function Chefs() {
                       </div>
                     )}
 
-                    {(selectedChef as any).culinaryEducation && (
+                    {selectedChef.culinaryEducation && (
                       <div>
                         <span className="font-medium text-gray-700">Education:</span>
-                        <p className="text-gray-900 text-xs">{(selectedChef as any).culinaryEducation}</p>
+                        <p className="text-gray-900 text-xs">{selectedChef.culinaryEducation}</p>
                       </div>
                     )}
 
-                    {(selectedChef as any).previousWorkExperience && (
+                    {selectedChef.previousWorkExperience && (
                       <div>
                         <span className="font-medium text-gray-700">Work Experience:</span>
-                        <p className="text-gray-900 text-xs">{(selectedChef as any).previousWorkExperience}</p>
+                        <p className="text-gray-900 text-xs">{selectedChef.previousWorkExperience}</p>
                       </div>
                     )}
 
-                    {(selectedChef as any).certifications && (selectedChef as any).certifications.length > 0 && (
+                    {selectedChef.certifications && selectedChef.certifications.length > 0 && (
                       <div>
                         <span className="font-medium text-gray-700">Certifications:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {(selectedChef as any).certifications.map((cert: string, index: number) => (
+                          {selectedChef.certifications.map((cert: string, index: number) => (
                             <span key={index} className="inline-block px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
                               {cert}
                             </span>
@@ -499,10 +505,10 @@ export default function Chefs() {
                       </div>
                     )}
 
-                    {(selectedChef as any).bio && (
+                    {selectedChef.bio && (
                       <div>
                         <span className="font-medium text-gray-700">Bio:</span>
-                        <p className="text-gray-900 text-xs">{(selectedChef as any).bio}</p>
+                        <p className="text-gray-900 text-xs">{selectedChef.bio}</p>
                       </div>
                     )}
                   </div>
@@ -515,10 +521,10 @@ export default function Chefs() {
                       <span className="mr-2">📍</span> Location & Service Area
                     </h4>
                     <div className="space-y-3 text-sm">
-                      {(selectedChef.location as any).streetAddress && (
+                      {selectedChef.location.streetAddress && (
                         <div>
                           <span className="font-medium text-gray-700">Address:</span>
-                          <p className="text-gray-900">{(selectedChef.location as any).streetAddress}</p>
+                          <p className="text-gray-900">{selectedChef.location.streetAddress}</p>
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-4">
@@ -528,19 +534,19 @@ export default function Chefs() {
                         </div>
                         <div>
                           <span className="font-medium text-gray-700">State:</span>
-                          <p className="text-gray-900">{(selectedChef.location as any).state || selectedChef.location.area}</p>
+                          <p className="text-gray-900">{selectedChef.location.state || selectedChef.location.area}</p>
                         </div>
                       </div>
-                      {(selectedChef.location as any).postalCode && (
+                      {selectedChef.location.postalCode && (
                         <div>
                           <span className="font-medium text-gray-700">Postal Code:</span>
-                          <p className="text-gray-900">{(selectedChef.location as any).postalCode}</p>
+                          <p className="text-gray-900">{selectedChef.location.postalCode}</p>
                         </div>
                       )}
-                      {(selectedChef.location as any).serviceRadius && (
+                      {selectedChef.location.serviceRadius && (
                         <div>
                           <span className="font-medium text-gray-700">Service Radius:</span>
-                          <p className="text-gray-900">{(selectedChef.location as any).serviceRadius} km</p>
+                          <p className="text-gray-900">{selectedChef.location.serviceRadius} km</p>
                         </div>
                       )}
                     </div>
@@ -548,7 +554,7 @@ export default function Chefs() {
                 )}
 
                 {/* Kitchen & Equipment Section */}
-                {(selectedChef as any).kitchenDetails && (
+                {selectedChef.kitchenDetails && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <span className="mr-2">🍳</span> Kitchen & Equipment
@@ -557,22 +563,22 @@ export default function Chefs() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <span className="font-medium text-gray-700">Has Own Kitchen:</span>
-                          <p className="text-gray-900">{(selectedChef as any).kitchenDetails.hasOwnKitchen ? 'Yes' : 'No'}</p>
+                          <p className="text-gray-900">{selectedChef.kitchenDetails?.hasOwnKitchen ? 'Yes' : 'No'}</p>
                         </div>
                         <div>
                           <span className="font-medium text-gray-700">Cook at Customer Location:</span>
-                          <p className="text-gray-900">{(selectedChef as any).kitchenDetails.canCookAtCustomerLocation ? 'Yes' : 'No'}</p>
+                          <p className="text-gray-900">{selectedChef.kitchenDetails?.canCookAtCustomerLocation ? 'Yes' : 'No'}</p>
                         </div>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Transportation:</span>
-                        <p className="text-gray-900">{(selectedChef as any).kitchenDetails.transportationMethod}</p>
+                        <p className="text-gray-900">{selectedChef.kitchenDetails.transportationMethod}</p>
                       </div>
-                      {(selectedChef as any).kitchenDetails.kitchenEquipment && (selectedChef as any).kitchenDetails.kitchenEquipment.length > 0 && (
+                      {selectedChef.kitchenDetails.kitchenEquipment && selectedChef.kitchenDetails.kitchenEquipment.length > 0 && (
                         <div>
                           <span className="font-medium text-gray-700">Equipment:</span>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {(selectedChef as any).kitchenDetails.kitchenEquipment.map((equipment: string, index: number) => (
+                            {selectedChef.kitchenDetails.kitchenEquipment.map((equipment: string, index: number) => (
                               <span key={index} className="inline-block px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
                                 {equipment}
                               </span>
@@ -608,15 +614,15 @@ export default function Chefs() {
                       </div>
                     )}
 
-                    {selectedChef.preferences?.workDays && selectedChef.preferences.workDays.length > 0 && (
+                    {selectedChef.preferences?.workingDays && selectedChef.preferences.workingDays.length > 0 && (
                       <div>
                         <span className="font-medium text-gray-700">Working Days:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {selectedChef.preferences.workDays.map((day, index) => (
+                            {selectedChef.preferences.workingDays.map((day: string, index: number) => (
                             <span key={index} className="inline-block px-2 py-1 text-xs bg-teal-100 text-teal-800 rounded">
                               {day}
                             </span>
-                          ))}
+                            ))}
                         </div>
                       </div>
                     )}
@@ -629,7 +635,7 @@ export default function Chefs() {
                 </div>
 
                 {/* Emergency Contact Section */}
-                {(selectedChef as any).emergencyContact && (
+                {selectedChef.emergencyContact && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <span className="mr-2">🚨</span> Emergency Contact
@@ -637,16 +643,16 @@ export default function Chefs() {
                     <div className="space-y-3 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Name:</span>
-                        <p className="text-gray-900">{(selectedChef as any).emergencyContact.name}</p>
+                        <p className="text-gray-900">{selectedChef.emergencyContact.name}</p>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <span className="font-medium text-gray-700">Relationship:</span>
-                          <p className="text-gray-900">{(selectedChef as any).emergencyContact.relationship}</p>
+                          <p className="text-gray-900">{selectedChef.emergencyContact.relationship}</p>
                         </div>
                         <div>
                           <span className="font-medium text-gray-700">Phone:</span>
-                          <p className="text-gray-900">{(selectedChef as any).emergencyContact.phone}</p>
+                          <p className="text-gray-900">{selectedChef.emergencyContact.phone}</p>
                         </div>
                       </div>
                     </div>
@@ -674,10 +680,10 @@ export default function Chefs() {
                           <p className="text-gray-900">{selectedChef.bankDetails.bankName}</p>
                         </div>
                       </div>
-                      {(selectedChef.bankDetails as any).bvn && (
+                      {selectedChef.bankDetails && selectedChef.bankDetails.bvn && (
                         <div>
                           <span className="font-medium text-gray-700">BVN:</span>
-                          <p className="text-gray-900">{(selectedChef.bankDetails as any).bvn}</p>
+                          <p className="text-gray-900">{selectedChef.bankDetails.bvn}</p>
                         </div>
                       )}
                     </div>
@@ -685,13 +691,13 @@ export default function Chefs() {
                 )}
 
                 {/* References Section */}
-                {(selectedChef as any).references && (selectedChef as any).references.length > 0 && (
+                {selectedChef.references && selectedChef.references.length > 0 && (
                   <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <span className="mr-2">📋</span> References
                     </h4>
                     <div className="space-y-4">
-                      {(selectedChef as any).references.map((ref: any, index: number) => (
+                      {selectedChef.references && selectedChef.references.map((ref, index) => (
                         <div key={index} className="border-l-4 border-indigo-400 pl-4">
                           <div className="text-sm">
                             <div className="font-medium text-gray-900">{ref.name}</div>
@@ -733,21 +739,21 @@ export default function Chefs() {
                         <p className="text-gray-900">{new Date(selectedChef.lastLogin).toLocaleDateString()}</p>
                       </div>
                     )}
-                    {(selectedChef as any).legalAgreements?.agreementDate && (
+                    {selectedChef.legalAgreements?.agreementDate && (
                       <div>
                         <span className="font-medium text-gray-700">Terms Agreed:</span>
-                        <p className="text-gray-900">{new Date((selectedChef as any).legalAgreements.agreementDate).toLocaleDateString()}</p>
+                        <p className="text-gray-900">{new Date(selectedChef.legalAgreements.agreementDate).toLocaleDateString()}</p>
                       </div>
                     )}
                     {selectedChef.earnings && (
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <span className="font-medium text-gray-700">Total Earnings:</span>
-                          <p className="text-gray-900">₦{selectedChef.earnings.total?.toLocaleString() || 0}</p>
+                          <p className="text-gray-900">₦{selectedChef.earnings.totalEarned?.toLocaleString() || 0}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">This Month:</span>
-                          <p className="text-gray-900">₦{selectedChef.earnings.thisMonth?.toLocaleString() || 0}</p>
+                          <span className="font-medium text-gray-700">Current Balance:</span>
+                          <p className="text-gray-900">₦{selectedChef.earnings.currentBalance?.toLocaleString() || 0}</p>
                         </div>
                       </div>
                     )}
@@ -755,27 +761,27 @@ export default function Chefs() {
                 </div>
 
                 {/* Legal Agreements Section */}
-                {(selectedChef as any).legalAgreements && (
+                {selectedChef.legalAgreements && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <span className="mr-2">📜</span> Legal Agreements
                     </h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center">
-                        <span className={(selectedChef as any).legalAgreements.agreedToTerms ? 'text-green-600' : 'text-red-600'}>
-                          {(selectedChef as any).legalAgreements.agreedToTerms ? '✅' : '❌'}
+                        <span className={selectedChef.legalAgreements.agreedToTerms ? 'text-green-600' : 'text-red-600'}>
+                          {selectedChef.legalAgreements.agreedToTerms ? '✅' : '❌'}
                         </span>
                         <span className="ml-2">Terms of Service</span>
                       </div>
                       <div className="flex items-center">
-                        <span className={(selectedChef as any).legalAgreements.agreedToPrivacyPolicy ? 'text-green-600' : 'text-red-600'}>
-                          {(selectedChef as any).legalAgreements.agreedToPrivacyPolicy ? '✅' : '❌'}
+                        <span className={selectedChef.legalAgreements.agreedToPrivacyPolicy ? 'text-green-600' : 'text-red-600'}>
+                          {selectedChef.legalAgreements.agreedToPrivacyPolicy ? '✅' : '❌'}
                         </span>
                         <span className="ml-2">Privacy Policy</span>
                       </div>
                       <div className="flex items-center">
-                        <span className={(selectedChef as any).legalAgreements.agreedToBackgroundCheck ? 'text-green-600' : 'text-red-600'}>
-                          {(selectedChef as any).legalAgreements.agreedToBackgroundCheck ? '✅' : '❌'}
+                        <span className={selectedChef.legalAgreements.agreedToBackgroundCheck ? 'text-green-600' : 'text-red-600'}>
+                          {selectedChef.legalAgreements.agreedToBackgroundCheck ? '✅' : '❌'}
                         </span>
                         <span className="ml-2">Background Check Consent</span>
                       </div>

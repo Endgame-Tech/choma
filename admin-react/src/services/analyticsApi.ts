@@ -90,6 +90,8 @@ export interface ChefAnalytics {
     ordersThisMonth: number
     earningsThisMonth: number
     customerSatisfaction: number
+    specialties: string[]
+    experience: number
   }>
   chefPerformanceMetrics: {
     averageCompletionRate: number

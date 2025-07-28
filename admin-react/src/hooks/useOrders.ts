@@ -11,7 +11,7 @@ interface UseOrdersReturn {
   refreshOrders: () => Promise<void>
   updateOrderStatus: (orderId: string, status: string, reason?: string) => Promise<void>
   updateOrder: (orderId: string, data: Partial<Order>) => Promise<void>
-  bulkUpdateOrders: (orderIds: string[], data: any) => Promise<void>
+  bulkUpdateOrders: (orderIds: string[], data: Partial<Order>) => Promise<void>
 }
 
 export function useOrders(filters: OrderFilters = {}): UseOrdersReturn {
@@ -79,7 +79,7 @@ export function useOrders(filters: OrderFilters = {}): UseOrdersReturn {
     }
   }, [])
 
-  const bulkUpdateOrders = useCallback(async (orderIds: string[], data: any) => {
+  const bulkUpdateOrders = useCallback(async (orderIds: string[], data: Partial<Order>) => {
     try {
       await ordersApi.bulkUpdateOrders(orderIds, data)
       

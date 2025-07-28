@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { mealsApi, type Meal, type MealFilters } from '../services/mealApi'
 import CreateMealModal from '../components/CreateMealModal'

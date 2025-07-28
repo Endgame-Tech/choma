@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\choma\\backend\\logs\\.1b89a4b8d3030eadad1123b8825f68df7691e603-audit.json",
+    "files": [
+        {
+            "date": 1753713079019,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\choma\\backend\\logs\\access-2025-07-28.log",
+            "hash": "fbb92da0fc933fddfe517ca106187e7ebbfb073e35fa1bf712f5bb5912bec7e1"
+        }
+    ],
+    "hashType": "sha256"
+}

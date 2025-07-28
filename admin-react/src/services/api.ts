@@ -61,7 +61,7 @@ export const ordersApi = {
       }
     })
     
-    const response = await api.get<ApiResponse<{ orders: Order[]; stats: any }> & { pagination: Pagination }>(
+    const response = await api.get<ApiResponse<OrdersResponse> & { pagination: Pagination }>(
       `/orders?${params.toString()}`
     )
     
@@ -96,7 +96,7 @@ export const ordersApi = {
   },
 
   // Bulk update orders
-  async bulkUpdateOrders(orderIds: string[], updateData: any): Promise<{ modifiedCount: number; matchedCount: number }> {
+  async bulkUpdateOrders(orderIds: string[], updateData: Partial<Order>): Promise<{ modifiedCount: number; matchedCount: number }> {
     const response = await api.put<ApiResponse<{ modifiedCount: number; matchedCount: number }>>(
       '/orders/bulk', 
       { orderIds, ...updateData }
@@ -130,7 +130,7 @@ export const ordersApi = {
 // Chefs API
 export const chefsApi = {
   // Get all chefs
-  async getChefs(filters: any = {}): Promise<Chef[]> {
+  async getChefs(filters: Record<string, string | number | boolean | undefined> = {}): Promise<Chef[]> {
     const params = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '' && value !== null) {
@@ -201,8 +201,8 @@ export const chefsApi = {
 // Delegation API
 export const delegationApi = {
   // Assign order to chef
-  async assignOrder(data: ChefAssignmentData): Promise<any> {
-    const response = await api.post<ApiResponse<any>>(
+  async assignOrder(data: ChefAssignmentData): Promise<void> {
+    const response = await api.post<ApiResponse<void>>(
       `/delegation/assign/${data.orderId}/${data.chefId}`, 
       { notes: data.notes }
     )
@@ -210,9 +210,13 @@ export const delegationApi = {
   },
 
   // Bulk assign orders to chef
-  async bulkAssignOrders(data: BulkAssignmentData): Promise<any> {
-    const response = await api.post<ApiResponse<any>>('/delegation/bulk-assign', data)
-    return handleResponse(response)
+  async bulkAssignOrders(data: BulkAssignmentData): Promise<{ success: boolean; assignedCount: number; message?: string }> {
+    const response = await api.post<ApiResponse<{ assignedCount: number; message?: string }>>('/delegation/bulk-assign', data)
+    return {
+      success: response.data.success,
+      assignedCount: response.data.data?.assignedCount ?? 0,
+      message: response.data.data?.message ?? response.data.message
+    }
   },
 
   // Get available chefs for order
@@ -235,7 +239,9 @@ export const dashboardApi = {
 // Users (Customers) API
 export const usersApi = {
   // Get all users with filters
-  async getUsers(filters: any = {}): Promise<{ users: any[], pagination: any }> {
+  async getUsers(
+    filters: Record<string, string | number | boolean | undefined> = {}
+  ): Promise<{ users: unknown[]; pagination: Record<string, unknown> }> {
     const params = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '' && value !== null) {
@@ -254,13 +260,13 @@ export const usersApi = {
   },
 
   // Update user status
-  async updateUserStatus(userId: string, status: string): Promise<any> {
-    const response = await api.put(`/users/${userId}/status`, { status })
-    return handleResponse(response)
+  async updateUserStatus(userId: string, status: string): Promise<{ success: boolean; message: string }> {
+    const response = await api.put<ApiResponse<null>>(`/users/${userId}/status`, { status })
+    return { success: response.data.success, message: response.data.message ?? '' }
   },
 
   // Export users
-  async exportUsers(filters: any = {}): Promise<Blob> {
+  async exportUsers(filters: Record<string, string | number | boolean | undefined> = {}): Promise<Blob> {
     const params = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '' && value !== null) {

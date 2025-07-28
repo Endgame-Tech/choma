@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useMemo, useEffect } from 'react'
 import { usersApi } from '../services/api'
 import type { User } from '../types'
@@ -9,7 +10,14 @@ export default function Users() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [users, setUsers] = useState<User[]>([])
-  const [pagination, setPagination] = useState<any>(null)
+  type Pagination = {
+    currentPage: number
+    totalPages: number
+    totalUsers: number
+    hasPrev: boolean
+    hasNext: boolean
+  }
+  const [pagination, setPagination] = useState<Pagination | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,8 +31,15 @@ export default function Users() {
   }, [searchTerm])
 
   // Build filters (memoized to prevent infinite re-renders)
+  type UserFilters = {
+    page: number
+    limit: number
+    search?: string
+    status?: string
+  }
+
   const filters = useMemo(() => {
-    const baseFilters: any = {
+    const baseFilters: UserFilters = {
       page: 1,
       limit: 50,
       search: debouncedSearchTerm || undefined,
@@ -46,8 +61,17 @@ export default function Users() {
       setError(null)
       
       const result = await usersApi.getUsers(filters)
-      setUsers(result.users || [])
-      setPagination(result.pagination || null)
+      setUsers((result.users as User[]) || [])
+      setPagination(result.pagination && typeof result.pagination.currentPage === 'number'
+        ? {
+            currentPage: Number(result.pagination.currentPage),
+            totalPages: Number(result.pagination.totalPages),
+            totalUsers: Number(result.pagination.totalUsers),
+            hasPrev: Boolean(result.pagination.hasPrev),
+            hasNext: Boolean(result.pagination.hasNext),
+          }
+        : null
+      )
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch users'
       setError(errorMessage)

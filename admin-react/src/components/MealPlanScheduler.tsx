@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { mealsApi, mealPlansApi, type Meal, type MealPlan, type MealPlanAssignment } from '../services/mealApi'
 import { XMarkIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
@@ -43,7 +44,7 @@ export default function MealPlanScheduler({ isOpen, onClose, mealPlan, onUpdate 
       ])
 
       console.log('Fetched assignments:', assignmentsResponse.data.assignments) // Debug log
-      assignmentsResponse.data.assignments.forEach((assignment, index) => {
+      assignmentsResponse.data.assignments.forEach((assignment: MealPlanAssignment, index: number) => {
         console.log(`Assignment ${index}:`, {
           customTitle: assignment.customTitle,
           imageUrl: assignment.imageUrl,
@@ -145,7 +146,7 @@ export default function MealPlanScheduler({ isOpen, onClose, mealPlan, onUpdate 
     if (existingAssignment) {
       // Ensure mealIds are strings, not populated objects
       const mealIds = Array.isArray(existingAssignment.mealIds) 
-        ? existingAssignment.mealIds.map(id => typeof id === 'string' ? id : id._id || id)
+        ? existingAssignment.mealIds.map((id: string | { _id: string }) => typeof id === 'string' ? id : (id as { _id: string })._id)
         : []
       
       setCurrentAssignment({
@@ -291,7 +292,10 @@ export default function MealPlanScheduler({ isOpen, onClose, mealPlan, onUpdate 
                                       onError={(e) => {
                                         // If image fails to load, show orange background
                                         e.currentTarget.style.display = 'none';
-                                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                                        const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                        if (nextElement) {
+                                          nextElement.style.display = 'flex';
+                                        }
                                       }}
                                     />
                                   ) : null}

@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { type Meal } from '../services/mealApi'
 import { XMarkIcon } from '@heroicons/react/24/outline'

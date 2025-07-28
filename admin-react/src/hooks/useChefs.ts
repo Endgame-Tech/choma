@@ -9,7 +9,11 @@ interface UseChefsReturn {
   refreshChefs: () => Promise<void>
 }
 
-export function useChefs(filters: any = {}): UseChefsReturn {
+interface ChefFilters {
+  [key: string]: string | number | boolean | undefined
+}
+
+export function useChefs(filters: ChefFilters = {}): UseChefsReturn {
   const [chefs, setChefs] = useState<Chef[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

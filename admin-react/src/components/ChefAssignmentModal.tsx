@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { useAvailableChefs } from '../hooks/useChefs'
 
@@ -16,7 +17,7 @@ interface ChefAssignmentModalProps {
     customer: string
     totalAmount: number
     deliveryDate?: string
-  }
+  } | null;
 }
 
 export default function ChefAssignmentModal({ 
@@ -111,15 +112,19 @@ export default function ChefAssignmentModal({
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Assign Chef to Order</h2>
               <div className="mt-1 text-sm text-gray-600">
-                <span className="font-medium">Order #{orderDetails.orderNumber}</span>
-                <span className="mx-2">•</span>
-                <span>{orderDetails.customer}</span>
-                <span className="mx-2">•</span>
-                <span className="font-medium">{formatCurrency(orderDetails.totalAmount)}</span>
-                {orderDetails.deliveryDate && (
+                {orderDetails && (
                   <>
+                    <span className="font-medium">Order #{orderDetails.orderNumber}</span>
                     <span className="mx-2">•</span>
-                    <span>Delivery: {new Date(orderDetails.deliveryDate).toLocaleDateString()}</span>
+                    <span>{orderDetails.customer}</span>
+                    <span className="mx-2">•</span>
+                    <span className="font-medium">{formatCurrency(orderDetails.totalAmount)}</span>
+                    {orderDetails.deliveryDate && (
+                      <>
+                        <span className="mx-2">•</span>
+                        <span>Delivery: {new Date(orderDetails.deliveryDate).toLocaleDateString()}</span>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -205,7 +210,7 @@ export default function ChefAssignmentModal({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Chef will earn: {formatCurrency((orderDetails.totalAmount * assignmentDetails.chefFeePercentage) / 100)}
+                Chef will earn: {orderDetails ? formatCurrency((orderDetails.totalAmount * assignmentDetails.chefFeePercentage) / 100) : '-'}
               </p>
             </div>
             
