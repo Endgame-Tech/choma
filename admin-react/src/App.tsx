@@ -10,7 +10,7 @@ import AdvancedCustomers from './pages/AdvancedCustomers'
 import Meals from './pages/Meals'
 import MealPlans from './pages/MealPlans'
 
-function App() {
+const App: React.FC = () => {
   return (
     <Router>
       <Layout>
