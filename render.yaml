@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: choma-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
