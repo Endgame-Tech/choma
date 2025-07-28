@@ -21,7 +21,7 @@ const targetAudiences = [
   'Heart Healthy'
 ]
 
-export default function EditMealPlanModal({ isOpen, onClose, onSubmit, mealPlan }: EditMealPlanModalProps) {
+const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, onSubmit, mealPlan }) => {
   const [formData, setFormData] = useState({
     planName: '',
     description: '',
@@ -358,3 +358,5 @@ export default function EditMealPlanModal({ isOpen, onClose, onSubmit, mealPlan 
     </div>
   )
 }
+
+export default EditMealPlanModal

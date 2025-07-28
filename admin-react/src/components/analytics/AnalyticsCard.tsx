@@ -24,7 +24,7 @@ const colorClasses = {
   teal: 'bg-teal-100 text-teal-600'
 }
 
-export default function AnalyticsCard({ 
+const AnalyticsCard: React.FC<AnalyticsCardProps> = ({ 
   title, 
   value, 
   change, 
@@ -32,7 +32,7 @@ export default function AnalyticsCard({
   color, 
   subtitle,
   onClick 
-}: AnalyticsCardProps) {
+}) => {
   return (
     <div 
       className={`bg-white p-6 rounded-lg shadow-sm border transition-all duration-200 ${
@@ -70,3 +70,5 @@ export default function AnalyticsCard({
     </div>
   )
 }
+
+export default AnalyticsCard

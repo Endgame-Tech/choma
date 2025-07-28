@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { dashboardApi } from '../services/api'
 import type { DashboardStats } from '../types'
 
-export default function Dashboard() {
+
+const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -179,3 +180,4 @@ export default function Dashboard() {
     </div>
   )
 }
+export default Dashboard

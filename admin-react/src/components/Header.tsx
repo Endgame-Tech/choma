@@ -1,7 +1,7 @@
 import React from 'react'
 import { BellIcon } from '@heroicons/react/24/outline'
 
-export default function Header() {
+const Header: React.FC = () => {
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="px-6 py-4">
@@ -34,3 +34,5 @@ export default function Header() {
     </header>
   )
 }
+
+export default Header

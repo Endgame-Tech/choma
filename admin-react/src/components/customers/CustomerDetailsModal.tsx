@@ -22,13 +22,13 @@ interface CustomerDetailsModalProps {
   onUpdateStatus?: (customerId: string, status: string) => void
 }
 
-export default function CustomerDetailsModal({ 
+const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ 
   isOpen, 
   onClose, 
   customer, 
   orders = [],
   onUpdateStatus 
-}: CustomerDetailsModalProps) {
+}) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'activity' | 'support'>('overview')
   const [updatingStatus, setUpdatingStatus] = useState(false)
 
@@ -434,3 +434,5 @@ export default function CustomerDetailsModal({
     </div>
   )
 }
+
+export default CustomerDetailsModal

@@ -14,7 +14,7 @@ interface ChefPerformanceCardProps {
   onClick?: () => void
 }
 
-export default function ChefPerformanceCard({ chef, onClick }: ChefPerformanceCardProps) {
+const ChefPerformanceCard: React.FC<ChefPerformanceCardProps> = ({ chef, onClick }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -172,3 +172,5 @@ export default function ChefPerformanceCard({ chef, onClick }: ChefPerformanceCa
     </div>
   )
 }
+
+export default ChefPerformanceCard

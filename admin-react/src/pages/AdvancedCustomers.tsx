@@ -18,7 +18,8 @@ interface CustomerFilters {
   limit: number
 }
 
-export default function AdvancedCustomers() {
+const AdvancedCustomers: React.FC = () => {
+
   // State management
   const [customers, setCustomers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -611,3 +612,5 @@ export default function AdvancedCustomers() {
     </div>
   )
 }
+
+export default AdvancedCustomers

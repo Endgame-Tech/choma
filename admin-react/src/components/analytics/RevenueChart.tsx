@@ -12,7 +12,7 @@ interface RevenueChartProps {
   className?: string
 }
 
-export default function RevenueChart({ data, period, className = '' }: RevenueChartProps) {
+const RevenueChart: React.FC<RevenueChartProps> = ({ data, period, className = '' }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -116,3 +116,5 @@ export default function RevenueChart({ data, period, className = '' }: RevenueCh
     </div>
   )
 }
+
+export default RevenueChart

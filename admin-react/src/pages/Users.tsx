@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { usersApi } from '../services/api'
 import type { User } from '../types'
 
-export default function Users() {
+const Users: React.FC = () => {
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
@@ -515,3 +515,5 @@ export default function Users() {
     </div>
   )
 }
+
+export default Users

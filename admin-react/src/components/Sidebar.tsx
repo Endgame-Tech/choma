@@ -21,7 +21,7 @@ const navigation = [
   { name: 'Meal Plans', href: '/meal-plans', icon: BookOpenIcon },
 ]
 
-export default function Sidebar() {
+const Sidebar: React.FC = () => {
   return (
     <div className="flex flex-col w-64 bg-white shadow-lg">
       <div className="flex items-center h-16 px-6 border-b">
@@ -49,3 +49,5 @@ export default function Sidebar() {
     </div>
   )
 }
+
+export default Sidebar

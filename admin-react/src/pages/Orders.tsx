@@ -6,7 +6,7 @@ import { delegationApi } from '../services/api'
 import ChefAssignmentModal from '../components/ChefAssignmentModal'
 import type { OrderFilters } from '../types'
 
-export default function Orders() {
+const Orders: React.FC = () => {
   const [filter, setFilter] = useState('all')
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -554,3 +554,4 @@ export default function Orders() {
     </div>
   )
 }
+export default Orders

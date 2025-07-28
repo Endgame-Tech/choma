@@ -20,13 +20,13 @@ interface ChefAssignmentModalProps {
   } | null;
 }
 
-export default function ChefAssignmentModal({ 
+const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({ 
   isOpen, 
   onClose, 
   onAssign, 
   orderId,
   orderDetails 
-}: ChefAssignmentModalProps) {
+}) => {
   const [selectedChef, setSelectedChef] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [assignmentDetails, setAssignmentDetails] = useState({
@@ -380,3 +380,5 @@ export default function ChefAssignmentModal({
     </div>
   )
 }
+
+export default ChefAssignmentModal

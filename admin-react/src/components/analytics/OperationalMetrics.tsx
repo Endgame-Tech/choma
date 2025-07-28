@@ -15,7 +15,7 @@ interface OperationalMetricsProps {
   className?: string
 }
 
-export default function OperationalMetrics({ data, className = '' }: OperationalMetricsProps) {
+const OperationalMetrics: React.FC<OperationalMetricsProps> = ({ data, className = '' }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -230,3 +230,5 @@ export default function OperationalMetrics({ data, className = '' }: Operational
     </div>
   )
 }
+
+export default OperationalMetrics

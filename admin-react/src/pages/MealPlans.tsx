@@ -13,7 +13,7 @@ import {
   EyeSlashIcon
 } from '@heroicons/react/24/outline'
 
-export default function MealPlans() {
+const MealPlans: React.FC = () => {
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -450,3 +450,5 @@ export default function MealPlans() {
     </div>
   )
 }
+
+export default MealPlans;

@@ -1,5 +1,4 @@
-import React from 'react'
-import { ReactNode } from 'react'
+import React, { ReactNode } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
 
@@ -7,7 +6,7 @@ interface LayoutProps {
   children: ReactNode
 }
 
-export default function Layout({ children }: LayoutProps) {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar />
@@ -20,3 +19,5 @@ export default function Layout({ children }: LayoutProps) {
     </div>
   )
 }
+
+export default Layout

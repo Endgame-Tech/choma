@@ -9,7 +9,7 @@ import OperationalMetrics from '../components/analytics/OperationalMetrics'
 
 type DashboardPeriod = 'today' | 'week' | 'month' | 'quarter' | 'year'
 
-export default function EnhancedDashboard() {
+const EnhancedDashboard: React.FC = () => {
   // State management
   const [dashboardStats, setDashboardStats] = useState<EnhancedDashboardStats | null>(null)
   const [revenueData, setRevenueData] = useState<RevenueAnalytics | null>(null)
@@ -483,3 +483,5 @@ export default function EnhancedDashboard() {
     </div>
   )
 }
+
+export default EnhancedDashboard;

@@ -1,5 +1,4 @@
-import React from 'react'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { mealsApi, mealPlansApi, type Meal, type MealPlan, type MealPlanAssignment } from '../services/mealApi'
 import { XMarkIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
@@ -13,7 +12,7 @@ interface MealPlanSchedulerProps {
 const MEAL_TIMES = ['breakfast', 'lunch', 'dinner'] as const
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-export default function MealPlanScheduler({ isOpen, onClose, mealPlan, onUpdate }: MealPlanSchedulerProps) {
+const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, mealPlan, onUpdate }) => {
   const [assignments, setAssignments] = useState<MealPlanAssignment[]>([])
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
@@ -622,3 +621,5 @@ export default function MealPlanScheduler({ isOpen, onClose, mealPlan, onUpdate 
     </div>
   )
 }
+
+export default MealPlanScheduler

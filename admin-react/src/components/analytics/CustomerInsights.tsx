@@ -14,7 +14,7 @@ interface CustomerInsightsProps {
   className?: string
 }
 
-export default function CustomerInsights({ segments, totalCustomers, className = '' }: CustomerInsightsProps) {
+const CustomerInsights: React.FC<CustomerInsightsProps> = ({ segments, totalCustomers, className = '' }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -141,3 +141,5 @@ export default function CustomerInsights({ segments, totalCustomers, className =
     </div>
   )
 }
+
+export default CustomerInsights

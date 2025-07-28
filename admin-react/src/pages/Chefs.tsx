@@ -4,7 +4,7 @@ import { useChefs } from '../hooks/useChefs'
 import { chefsApi } from '../services/api'
 import type { Chef } from '../types'
 
-export default function Chefs() {
+const Chefs: React.FC = () => {
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
@@ -849,3 +849,5 @@ export default function Chefs() {
     </div>
   )
 }
+
+export default Chefs;

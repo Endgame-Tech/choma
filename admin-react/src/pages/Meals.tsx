@@ -1,12 +1,11 @@
-import React from 'react'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { mealsApi, type Meal, type MealFilters } from '../services/mealApi'
 import CreateMealModal from '../components/CreateMealModal'
 import EditMealModal from '../components/EditMealModal'
 import BulkMealUpload from '../components/BulkMealUpload'
 import { PlusIcon, PencilIcon, TrashIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
 
-export default function Meals() {
+const Meals: React.FC = () => {
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -485,3 +484,5 @@ export default function Meals() {
     </div>
   )
 }
+
+export default Meals
