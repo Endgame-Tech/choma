@@ -7,9 +7,12 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/api': {
-        target: 'http://localhost:5001',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:5001',
         changeOrigin: true,
       }
     }
+  },
+  define: {
+    'process.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL)
   }
 })

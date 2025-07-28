@@ -84,6 +84,28 @@ export interface Chef {
   profileImage?: string
   joinDate: string
   lastLogin?: string
+  workingHours?: {
+    start: string
+    end: string
+    timezone?: string
+  }
+  preferences?: {
+    cuisineTypes: string[]
+    workingDays: string[]
+    maxOrdersPerDay?: number
+  }
+  bankDetails?: {
+    accountName: string
+    accountNumber: string
+    bankName: string
+    routingNumber?: string
+  }
+  earnings?: {
+    totalEarned: number
+    currentBalance: number
+    lastPayoutDate?: string
+    averageOrderValue: number
+  }
 }
 
 // Order
@@ -186,4 +208,24 @@ export interface BulkAssignmentData {
   orderIds: string[]
   chefId: string
   notes?: string
+}
+
+// Chef Performance Data
+export interface ChefPerformanceData {
+  _id: string
+  chefId: string
+  fullName: string
+  email: string
+  phone: string
+  status: string
+  rating: number
+  totalOrdersCompleted: number
+  currentCapacity: number
+  maxCapacity: number
+  availability: string
+  specialties: string[]
+  experience: number
+  completionRate: number
+  avgDeliveryTime: number
+  customerSatisfaction: number
 }

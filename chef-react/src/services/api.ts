@@ -10,7 +10,9 @@ import type {
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: '/api/chef',
+  baseURL: import.meta.env.PROD 
+    ? `${import.meta.env.VITE_API_BASE_URL}/api/chef`
+    : '/api/chef',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

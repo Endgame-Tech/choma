@@ -13,7 +13,9 @@ import type {
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: '/api/admin',
+  baseURL: import.meta.env.PROD 
+    ? `${import.meta.env.VITE_API_BASE_URL}/api/admin`
+    : '/api/admin',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
