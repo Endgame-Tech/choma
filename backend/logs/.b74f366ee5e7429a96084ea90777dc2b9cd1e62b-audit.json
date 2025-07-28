@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/mnt/c/Users/endga/OneDrive/Desktop/Web Dev Projects/Projects/chomaClean/backend/logs/.b74f366ee5e7429a96084ea90777dc2b9cd1e62b-audit.json",
+    "files": [
+        {
+            "date": 1753091529424,
+            "name": "/mnt/c/Users/endga/OneDrive/Desktop/Web Dev Projects/Projects/chomaClean/backend/logs/access-2025-07-21.log",
+            "hash": "4f73612ff0855ece283c7a80a65d6d17ef70246b5f3d0ee256107266711183f7"
+        }
+    ],
+    "hashType": "sha256"
+}

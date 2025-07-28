@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(touch:*)",
+      "Bash(npm install:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(grep:*)"
+    ],
+    "deny": []
+  }
+}

@@ -1,0 +1,286 @@
+import axios, { AxiosResponse } from 'axios'
+import type {
+  ApiResponse,
+  Order,
+  OrdersResponse,
+  OrderFilters,
+  Pagination,
+  DashboardStats,
+  Chef,
+  ChefAssignmentData,
+  BulkAssignmentData
+} from '../types'
+
+// Create axios instance with base configuration
+const api = axios.create({
+  baseURL: '/api/admin',
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// Request interceptor for logging
+api.interceptors.request.use((config) => {
+  console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`)
+  return config
+})
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => {
+    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`)
+    return response
+  },
+  (error) => {
+    console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.message)
+    return Promise.reject(error)
+  }
+)
+
+// Generic API response handler
+const handleResponse = <T>(response: AxiosResponse<ApiResponse<T>>): T => {
+  if (response.data.success) {
+    return response.data.data
+  } else {
+    throw new Error(response.data.message || 'API request failed')
+  }
+}
+
+// Orders API
+export const ordersApi = {
+  // Get all orders with filters
+  async getOrders(filters: OrderFilters = {}): Promise<{ data: OrdersResponse; pagination: Pagination }> {
+    const params = new URLSearchParams()
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '' && value !== null) {
+        params.append(key, value.toString())
+      }
+    })
+    
+    const response = await api.get<ApiResponse<{ orders: Order[]; stats: any }> & { pagination: Pagination }>(
+      `/orders?${params.toString()}`
+    )
+    
+    return {
+      data: {
+        orders: response.data.data.orders,
+        stats: response.data.data.stats
+      },
+      pagination: response.data.pagination
+    }
+  },
+
+  // Get single order
+  async getOrder(orderId: string): Promise<Order> {
+    const response = await api.get<ApiResponse<Order>>(`/orders/${orderId}`)
+    return handleResponse(response)
+  },
+
+  // Update order
+  async updateOrder(orderId: string, updateData: Partial<Order>): Promise<Order> {
+    const response = await api.put<ApiResponse<Order>>(`/orders/${orderId}`, updateData)
+    return handleResponse(response)
+  },
+
+  // Update order status
+  async updateOrderStatus(orderId: string, status: string, reason?: string): Promise<Order> {
+    const response = await api.put<ApiResponse<Order>>(`/orders/${orderId}/status`, { 
+      status, 
+      reason 
+    })
+    return handleResponse(response)
+  },
+
+  // Bulk update orders
+  async bulkUpdateOrders(orderIds: string[], updateData: any): Promise<{ modifiedCount: number; matchedCount: number }> {
+    const response = await api.put<ApiResponse<{ modifiedCount: number; matchedCount: number }>>(
+      '/orders/bulk', 
+      { orderIds, ...updateData }
+    )
+    return handleResponse(response)
+  },
+
+  // Cancel order
+  async cancelOrder(orderId: string, reason?: string): Promise<Order> {
+    const response = await api.put<ApiResponse<Order>>(`/orders/${orderId}/cancel`, { reason })
+    return handleResponse(response)
+  },
+
+  // Export orders
+  async exportOrders(filters: OrderFilters = {}): Promise<Blob> {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '' && value !== null) {
+        params.append(key, value.toString())
+      }
+    })
+    
+    const response = await api.get(`/orders/export?${params.toString()}`, {
+      responseType: 'blob'
+    })
+    
+    return response.data
+  }
+}
+
+// Chefs API
+export const chefsApi = {
+  // Get all chefs
+  async getChefs(filters: any = {}): Promise<Chef[]> {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '' && value !== null) {
+        params.append(key, value.toString())
+      }
+    })
+    
+    const response = await api.get(`/chefs?${params.toString()}`)
+    if (response.data.success && response.data.data && Array.isArray(response.data.data.chefs)) {
+      return response.data.data.chefs
+    }
+    return []
+  },
+
+  // Get available chefs (active chefs with capacity)
+  async getAvailableChefs(): Promise<Chef[]> {
+    try {
+      const response = await api.get('/chefs?status=Active')
+      
+      // Handle the nested response structure
+      let allChefs: Chef[] = []
+      if (response.data.success && response.data.data && Array.isArray(response.data.data.chefs)) {
+        allChefs = response.data.data.chefs
+      } else {
+        console.error('Unexpected chef response structure:', response.data)
+        return []
+      }
+      
+      // Filter for chefs with available capacity (if capacity fields exist)
+      return allChefs.filter(chef => {
+        // If capacity fields don't exist, include the chef anyway
+        if (typeof chef.currentCapacity !== 'number' || typeof chef.maxCapacity !== 'number') {
+          return true
+        }
+        return chef.currentCapacity < chef.maxCapacity
+      })
+    } catch (error) {
+      console.error('Error in getAvailableChefs:', error)
+      return []
+    }
+  },
+
+  // Get chef details
+  async getChef(chefId: string): Promise<Chef> {
+    const response = await api.get<ApiResponse<Chef>>(`/chefs/${chefId}`)
+    return handleResponse(response)
+  },
+
+  // Update chef status
+  async updateChefStatus(chefId: string, status: string): Promise<Chef> {
+    const response = await api.put<ApiResponse<Chef>>(`/chefs/${chefId}/status`, { status })
+    return handleResponse(response)
+  },
+
+  // Approve chef
+  async approveChef(chefId: string): Promise<Chef> {
+    const response = await api.put<ApiResponse<Chef>>(`/chefs/${chefId}/approve`)
+    return handleResponse(response)
+  },
+
+  // Reject chef
+  async rejectChef(chefId: string, reason?: string): Promise<Chef> {
+    const response = await api.put<ApiResponse<Chef>>(`/chefs/${chefId}/reject`, { reason })
+    return handleResponse(response)
+  }
+}
+
+// Delegation API
+export const delegationApi = {
+  // Assign order to chef
+  async assignOrder(data: ChefAssignmentData): Promise<any> {
+    const response = await api.post<ApiResponse<any>>(
+      `/delegation/assign/${data.orderId}/${data.chefId}`, 
+      { notes: data.notes }
+    )
+    return handleResponse(response)
+  },
+
+  // Bulk assign orders to chef
+  async bulkAssignOrders(data: BulkAssignmentData): Promise<any> {
+    const response = await api.post<ApiResponse<any>>('/delegation/bulk-assign', data)
+    return handleResponse(response)
+  },
+
+  // Get available chefs for order
+  async getAvailableChefsForOrder(orderId: string): Promise<Chef[]> {
+    const response = await api.get<ApiResponse<Chef[]>>(`/delegation/available-chefs/${orderId}`)
+    return handleResponse(response)
+  }
+}
+
+// Dashboard API
+export const dashboardApi = {
+  // Get dashboard stats
+  async getStats(): Promise<DashboardStats> {
+    const response = await api.get<ApiResponse<DashboardStats>>('/dashboard/stats')
+    return handleResponse(response)
+  }
+}
+
+// Health check
+// Users (Customers) API
+export const usersApi = {
+  // Get all users with filters
+  async getUsers(filters: any = {}): Promise<{ users: any[], pagination: any }> {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '' && value !== null) {
+        params.append(key, value.toString())
+      }
+    })
+    
+    const response = await api.get(`/users?${params.toString()}`)
+    if (response.data.success) {
+      return {
+        users: response.data.data.users || [],
+        pagination: response.data.pagination || {}
+      }
+    }
+    return { users: [], pagination: {} }
+  },
+
+  // Update user status
+  async updateUserStatus(userId: string, status: string): Promise<any> {
+    const response = await api.put(`/users/${userId}/status`, { status })
+    return handleResponse(response)
+  },
+
+  // Export users
+  async exportUsers(filters: any = {}): Promise<Blob> {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '' && value !== null) {
+        params.append(key, value.toString())
+      }
+    })
+    
+    const response = await api.get(`/export/users?${params.toString()}`, {
+      responseType: 'blob'
+    })
+    
+    return response.data
+  }
+}
+
+export const healthApi = {
+  async check(): Promise<boolean> {
+    try {
+      const response = await api.get('/health')
+      return response.status === 200
+    } catch (error) {
+      return false
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\chomaClean\\backend\\logs\\.16c37de3924d4e0f67ca2d85a1b3d473a5e73f15-audit.json",
+    "files": [
+        {
+            "date": 1752753014533,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\chomaClean\\backend\\logs\\access-2025-07-17.log",
+            "hash": "833c4e4ebd367a82ab5b030884c07230fc29768fe4e152cfc0f059f2c20da820"
+        },
+        {
+            "date": 1752793208000,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\chomaClean\\backend\\logs\\access-2025-07-18.log",
+            "hash": "4023854413ce02e2f19f54647ffa21a2ac81a1c7d189c8f7b72a69d48c82f4b7"
+        },
+        {
+            "date": 1752892839922,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\chomaClean\\backend\\logs\\access-2025-07-19.log",
+            "hash": "494e6068ecac5541ef466c020aec453193e6838af11c7733b9b5629b5fd9ce48"
+        },
+        {
+            "date": 1753025824116,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\chomaClean\\backend\\logs\\access-2025-07-20.log",
+            "hash": "ef72b52407a32c310a12c75ec001bf4010eaf9f049c102503e111910e9671979"
+        },
+        {
+            "date": 1753082146389,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\chomaClean\\backend\\logs\\access-2025-07-21.log",
+            "hash": "aae3cb36c00f28077264cdd2a840aaeab9807fd2a4f96bcf263b471c0f26dfbc"
+        },
+        {
+            "date": 1753139158949,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\chomaClean\\backend\\logs\\access-2025-07-22.log",
+            "hash": "11a400cd530e60d29d9ebcefa425f1b02c34756504174a7b58979f01199e939c"
+        },
+        {
+            "date": 1753248032103,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\chomaClean\\backend\\logs\\access-2025-07-23.log",
+            "hash": "c09cd7c651e8056b596a80519b4d1be6fe08843464267b924416b58364f2f5bb"
+        }
+    ],
+    "hashType": "sha256"
+}

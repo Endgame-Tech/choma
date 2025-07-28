@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "Choma",
+    "slug": "choma",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.choma",
+      "associatedDomains": [
+        "applinks:choma.com"
+      ],
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app uses location to calculate delivery estimates and track your orders.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses location to provide real-time delivery tracking and accurate delivery estimates.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.choma",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "choma.com"
+            },
+            {
+              "scheme": "choma"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "choma",
+    "extra": {
+      "eas": {
+        "projectId": "1081ad82-e406-4654-b45c-58ae77d5eb2c"
+      }
+    }
+  }
+}

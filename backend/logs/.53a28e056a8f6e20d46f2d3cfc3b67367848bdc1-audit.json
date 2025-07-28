@@ -1,0 +1,25 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\Choma\\backend\\logs\\.53a28e056a8f6e20d46f2d3cfc3b67367848bdc1-audit.json",
+    "files": [
+        {
+            "date": 1753274923316,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\Choma\\backend\\logs\\combined-2025-07-23.log",
+            "hash": "e342281b93d28024e490e3ec6d6678470cf9ddffef5be4db3b3fcc2c9a2df5eb"
+        },
+        {
+            "date": 1753366938791,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\Choma\\backend\\logs\\combined-2025-07-24.log",
+            "hash": "2d0664f482731d34f221932a0b353ebed14ea649fcf7e33d82fee1fcc6e10041"
+        },
+        {
+            "date": 1753445909656,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\Choma\\backend\\logs\\combined-2025-07-25.log",
+            "hash": "f07f226c207b8f2a5d2e422a7a10bc86c46f25c5c7e6755702a93553a9b47786"
+        }
+    ],
+    "hashType": "sha256"
+}
