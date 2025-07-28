@@ -66,7 +66,8 @@ const corsOptions = {
       'http://localhost:3002',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
-      'http://127.0.0.1:3002'
+      'http://127.0.0.1:3002',
+      'https://chomaadmin-m2jimqipx-endgamehqs-projects.vercel.app'
     ];
     
     // In production, add your production domains from environment variables
@@ -78,11 +79,16 @@ const corsOptions = {
       ].filter(Boolean); // Remove any undefined values
       
       allowedOrigins.push(...productionOrigins);
+      
+      // Log for debugging
+      console.log('CORS - Origin:', origin);
+      console.log('CORS - Allowed origins:', allowedOrigins);
     }
     
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log('CORS - Origin not allowed:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
