@@ -37,9 +37,13 @@ const { retryDatabaseConnection } = require('./utils/errorRecovery');
 
 const app = express();
 
-// Trust proxy - IMPORTANT for production deployments (Render, Heroku, etc.)
-// This enables proper IP detection behind reverse proxies
-app.set('trust proxy', true);
+// Trust proxy configuration for production deployments
+// More secure than 'true' - only trust first proxy (Render's load balancer)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy only (more secure)
+} else {
+  app.set('trust proxy', false); // No proxy in development
+}
 
 // Setup error handlers for unhandled errors
 handleUnhandledRejection();
