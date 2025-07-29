@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import type { RegisterData } from '../types'
 
 const specialtyOptions = [
@@ -50,7 +50,7 @@ const certificationOptions = [
   'Health Department Permit', 'Other'
 ]
 
-export default function Register() {
+const Register: React.FC = () => {
   const [formData, setFormData] = useState<RegisterData>({
     // Personal Information
     fullName: '',
@@ -151,10 +151,11 @@ export default function Register() {
   const totalSteps = 7
 
   const { register } = useAuth()
-  const navigate = useNavigate()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked } = e.target
+    const { name, value, type } = e.target;
+    const isCheckbox = type === 'checkbox';
+    const checked = isCheckbox && 'checked' in e.target ? (e.target as HTMLInputElement).checked : undefined;
     
     if (name.includes('.')) {
       const [parent, child, grandchild] = name.split('.')
@@ -162,10 +163,10 @@ export default function Register() {
         setFormData(prev => ({
           ...prev,
           [parent]: {
-            ...prev[parent as keyof RegisterData],
+            ...prev[parent as keyof RegisterData] as object,
             [child]: {
               ...(prev[parent as keyof RegisterData] as any)[child],
-              [grandchild]: type === 'checkbox' ? checked : 
+              [grandchild]: isCheckbox ? checked : 
                            name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius') 
                            ? parseInt(value) || 0 : value
             }
@@ -175,8 +176,8 @@ export default function Register() {
         setFormData(prev => ({
           ...prev,
           [parent]: {
-            ...prev[parent as keyof RegisterData],
-            [child]: type === 'checkbox' ? checked : 
+            ...((prev[parent as keyof RegisterData] as object) || {}),
+            [child]: isCheckbox ? checked : 
                      name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius') 
                      ? parseInt(value) || 0 : value
           }
@@ -185,7 +186,7 @@ export default function Register() {
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: type === 'checkbox' ? checked :
+        [name]: isCheckbox ? checked :
                 name === 'experience' || name === 'maxOrdersPerDay' || name === 'serviceRadius' 
                 ? parseInt(value) || 0 : value
       }))
@@ -205,7 +206,7 @@ export default function Register() {
     setFormData(prev => ({
       ...prev,
       [parent]: {
-        ...prev[parent as keyof RegisterData],
+        ...((prev[parent as keyof RegisterData] as object) || {}),
         [arrayName]: ((prev[parent as keyof RegisterData] as any)[arrayName] as string[]).includes(item)
           ? ((prev[parent as keyof RegisterData] as any)[arrayName] as string[]).filter((i: string) => i !== item)
           : [...((prev[parent as keyof RegisterData] as any)[arrayName] as string[]), item]
@@ -1243,3 +1244,5 @@ export default function Register() {
     </div>
   )
 }
+
+export default Register;

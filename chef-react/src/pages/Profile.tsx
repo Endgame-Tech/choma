@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { profileApi } from '../services/api'
-import type { Chef } from '../types'
 
-export default function Profile() {
+const Profile: React.FC = () => {
   const { chef, updateChef } = useAuth()
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -438,3 +437,5 @@ export default function Profile() {
     </div>
   )
 }
+
+export default Profile

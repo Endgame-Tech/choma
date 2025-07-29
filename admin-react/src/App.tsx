@@ -2,7 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
-import EnhancedDashboard from './pages/EnhancedDashboard'
+import AnalyticsDashboard from './pages/AnalyticsDashboard'
 import Orders from './pages/Orders'
 import Chefs from './pages/Chefs'
 import Users from './pages/Users'
@@ -16,7 +16,7 @@ const App: React.FC = () => {
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/analytics" element={<EnhancedDashboard />} />
+          <Route path="/analytics" element={<AnalyticsDashboard />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/chefs" element={<Chefs />} />
           <Route path="/users" element={<Users />} />

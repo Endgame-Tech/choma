@@ -1,6 +1,0 @@
-
-  1. Meal Times: Are we standardizing to Morning/Afternoon/Night or allowing custom meal times?
-  2. Week Structure: How many weeks can a meal plan have? Is this configurable per plan?
-  3. Chef Interest: Is this a percentage of the meal price that goes to the chef?
-  4. Nutritional Tracking: Should we track total calories/nutrition per meal plan?
-  5. Availability: Can meals be marked as seasonal/unavailable?

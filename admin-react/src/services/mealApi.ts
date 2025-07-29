@@ -2,7 +2,9 @@ import axios from 'axios'
 
 // Create axios instance for meal API
 const api = axios.create({
-  baseURL: '/api/admin',
+  baseURL: import.meta.env.PROD 
+    ? `${import.meta.env.VITE_API_BASE_URL}/api/admin`
+    : '/api/admin',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

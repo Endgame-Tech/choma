@@ -10,14 +10,13 @@ interface OrderDetailsModalProps {
   onUpdateStatus?: (orderId: string, status: string) => void
 }
 
-export default function OrderDetailsModal({
+const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   order,
   isOpen,
   onClose,
   onAccept,
-  onReject,
-  onUpdateStatus
-}: OrderDetailsModalProps) {
+  onReject
+}) => {
   const [rejectReason, setRejectReason] = React.useState('')
   const [showRejectForm, setShowRejectForm] = React.useState(false)
 
@@ -77,7 +76,6 @@ export default function OrderDetailsModal({
   }
 
   const canAcceptOrReject = order?.orderStatus === 'Pending'
-  const canUpdateStatus = ['Accepted', 'Preparing', 'Ready'].includes(order?.orderStatus || '')
 
   if (!isOpen || !order) return null
 
@@ -314,3 +312,5 @@ export default function OrderDetailsModal({
     </div>
   )
 }
+
+export default OrderDetailsModal

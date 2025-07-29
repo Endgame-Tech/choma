@@ -7,7 +7,7 @@ interface LayoutProps {
   children: React.ReactNode
 }
 
-export default function Layout({ children }: LayoutProps) {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { chef } = useAuth()
 
   if (!chef) {
@@ -26,3 +26,5 @@ export default function Layout({ children }: LayoutProps) {
     </div>
   )
 }
+
+export default Layout

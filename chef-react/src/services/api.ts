@@ -1,4 +1,7 @@
-import axios, { AxiosResponse } from 'axios'
+
+// Vite provides ImportMetaEnv globally, so you do not need to redeclare ImportMeta or ImportMetaEnv here.
+
+import axios from 'axios'
 import type {
   ApiResponse,
   Chef,
@@ -10,8 +13,8 @@ import type {
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.PROD 
-    ? `${import.meta.env.VITE_API_BASE_URL}/api/chef`
+  baseURL: (import.meta as ImportMeta & { env: { PROD: boolean; VITE_API_BASE_URL: string } }).env.PROD
+    ? `${(import.meta as ImportMeta & { env: { VITE_API_BASE_URL: string } }).env.VITE_API_BASE_URL}/api/chef`
     : '/api/chef',
   timeout: 30000,
   headers: {
@@ -23,6 +26,9 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('chefToken')
   if (token) {
+    if (!config.headers) {
+      config.headers = {}
+    }
     config.headers.Authorization = `Bearer ${token}`
   }
   console.log(`🌐 Chef API Request: ${config.method?.toUpperCase()} ${config.url}`)
@@ -50,7 +56,7 @@ api.interceptors.response.use(
 )
 
 // Generic API response handler
-const handleResponse = <T>(response: AxiosResponse<ApiResponse<T>>): T => {
+const handleResponse = <T>(response: { data: ApiResponse<T> }): T => {
   if (response.data.success) {
     return response.data.data
   } else {
@@ -63,7 +69,7 @@ export const authApi = {
   // Chef login
   async login(credentials: LoginCredentials): Promise<{ chef: Chef; token: string }> {
     const response = await api.post<ApiResponse<{ chef: Chef; token: string }>>('/login', credentials)
-    const result = handleResponse(response)
+    const result = handleResponse<{ chef: Chef; token: string }>(response)
     
     // Store token and chef data
     localStorage.setItem('chefToken', result.token)
@@ -75,7 +81,7 @@ export const authApi = {
   // Chef registration
   async register(data: RegisterData): Promise<{ chef: Chef; message: string }> {
     const response = await api.post<ApiResponse<{ chef: Chef; message: string }>>('/register', data)
-    return handleResponse(response)
+    return handleResponse<{ chef: Chef; message: string }>(response as { data: ApiResponse<{ chef: Chef; message: string }> })
   },
 
   // Logout
@@ -86,14 +92,14 @@ export const authApi = {
 
   // Get current chef profile
   async getProfile(): Promise<Chef> {
-    const response = await api.get<ApiResponse<Chef>>('/profile')
-    return handleResponse(response)
+      const response = await api.get<ApiResponse<Chef>>('/profile')
+      return handleResponse<Chef>(response)
   },
 
   // Update chef profile
   async updateProfile(profileData: Partial<Chef>): Promise<Chef> {
     const response = await api.put<ApiResponse<Chef>>('/profile', profileData)
-    return handleResponse(response)
+    return handleResponse<Chef>(response as { data: ApiResponse<Chef> })
   }
 }
 
@@ -102,7 +108,7 @@ export const dashboardApi = {
   // Get dashboard stats
   async getStats(): Promise<ChefDashboardStats> {
     const response = await api.get<ApiResponse<ChefDashboardStats>>('/dashboard/stats')
-    return handleResponse(response)
+    return handleResponse<ChefDashboardStats>(response)
   }
 }
 
@@ -118,11 +124,16 @@ export const ordersApi = {
     })
     
     const response = await api.get(`/orders?${params.toString()}`)
-    if (response.data.success) {
+    const data = response.data as {
+      success: boolean
+      data: { orders?: Order[]; stats?: any }
+      pagination?: any
+    }
+    if (data.success) {
       return {
-        orders: response.data.data.orders || [],
-        stats: response.data.data.stats || {},
-        pagination: response.data.pagination || {}
+        orders: data.data.orders || [],
+        stats: data.data.stats || {},
+        pagination: data.pagination || {}
       }
     }
     return { orders: [], stats: {}, pagination: {} }
@@ -131,13 +142,13 @@ export const ordersApi = {
   // Get specific order details
   async getOrder(orderId: string): Promise<Order> {
     const response = await api.get<ApiResponse<Order>>(`/orders/${orderId}`)
-    return handleResponse(response)
+    return handleResponse<Order>(response)
   },
 
   // Accept order assignment
   async acceptOrder(orderId: string): Promise<Order> {
-    const response = await api.post<ApiResponse<Order>>(`/orders/${orderId}/accept`)
-    return handleResponse(response)
+      const response = await api.post<ApiResponse<Order>>(`/orders/${orderId}/accept`)
+      return handleResponse<Order>(response)
   },
 
   // Update order status
@@ -146,7 +157,7 @@ export const ordersApi = {
       status, 
       chefNotes: notes 
     })
-    return handleResponse(response)
+    return handleResponse<Order>(response)
   },
 
   // Update chef status (cooking workflow)
@@ -154,7 +165,7 @@ export const ordersApi = {
     const response = await api.put<ApiResponse<Order>>(`/orders/${orderId}/chef-status`, { 
       chefStatus 
     })
-    return handleResponse(response)
+    return handleResponse<Order>(response)
   },
 
   // Complete order
@@ -198,8 +209,8 @@ export const earningsApi = {
       }
     })
     
-    const response = await api.get(`/earnings/payments?${params.toString()}`)
-    return handleResponse(response)
+    const response = await api.get<ApiResponse<any>>(`/earnings/payments?${params.toString()}`)
+    return handleResponse<any>(response)
   },
 
   // Request withdrawal
@@ -223,8 +234,8 @@ export const earningsApi = {
       }
     })
     
-    const response = await api.get(`/earnings/history?${params.toString()}`)
-    return handleResponse(response)
+    const response = await api.get<ApiResponse<any>>(`/earnings/history?${params.toString()}`)
+    return handleResponse<any>(response)
   },
 
   // Request payout (backward compatibility)

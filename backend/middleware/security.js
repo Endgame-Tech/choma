@@ -6,6 +6,16 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 const cors = require('cors');
 
+const debugOriginsEnv = () => {
+  const allowedOriginsDebug = [process.env.ADMIN_URL,
+        process.env.CHEF_URL,
+        process.env.API_URL];
+
+console.log('Allowed Origins:', allowedOriginsDebug);
+};
+
+
+
 // Rate limiting configuration
 const createRateLimiter = (windowMs, max, message) => rateLimit({
   windowMs,
@@ -66,8 +76,7 @@ const corsOptions = {
       'http://localhost:3002',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
-      'http://127.0.0.1:3002',
-      'https://chomaadmin-m2jimqipx-endgamehqs-projects.vercel.app'
+      'http://127.0.0.1:3002'
     ];
     
     // In production, add your production domains from environment variables
@@ -265,5 +274,6 @@ module.exports = {
   enforceHTTPS,
   validateApiKey,
   requestLogger,
-  errorHandler
+  errorHandler,
+  debugOriginsEnv
 };

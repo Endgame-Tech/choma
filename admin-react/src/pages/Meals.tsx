@@ -43,7 +43,7 @@ const Meals: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await mealsApi.getAllMeals(filters)
+      const response = await mealsApi.getAllMeals(filters) as { data: { meals: Meal[], pagination: typeof pagination } }
       setMeals(response.data.meals)
       setPagination(response.data.pagination)
     } catch (err) {

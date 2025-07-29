@@ -10,7 +10,7 @@ const navigation = [
   { name: 'Notifications', href: '/notifications', icon: '🔔' },
 ]
 
-export default function Sidebar() {
+const Sidebar: React.FC = () => {
   const location = useLocation()
   const { chef, logout } = useAuth()
 
@@ -79,3 +79,5 @@ export default function Sidebar() {
     </div>
   )
 }
+
+export default Sidebar

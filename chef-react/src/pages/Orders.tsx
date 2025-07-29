@@ -22,7 +22,7 @@ const chefStatusOptions = [
   { value: 'Completed', label: 'Completed' }
 ]
 
-export default function Orders() {
+const Orders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -73,7 +73,7 @@ export default function Orders() {
     }
   }
 
-  const handleRejectOrder = async (orderId: string, reason?: string) => {
+  const handleRejectOrder = async (orderId: string) => {
     try {
       setActionLoading(orderId)
       // You might want to create a separate API endpoint for rejection with reason
@@ -459,3 +459,5 @@ export default function Orders() {
     </div>
   )
 }
+
+export default Orders

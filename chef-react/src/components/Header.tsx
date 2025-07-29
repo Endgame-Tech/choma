@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
-export default function Header() {
+const Header: React.FC = () => {
   const { chef, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -130,3 +130,5 @@ export default function Header() {
     </header>
   )
 }
+
+export default Header

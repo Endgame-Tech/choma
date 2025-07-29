@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios'
+import axios from 'axios'
 import type {
   ApiResponse,
   Order,
@@ -41,7 +41,7 @@ api.interceptors.response.use(
 )
 
 // Generic API response handler
-const handleResponse = <T>(response: AxiosResponse<ApiResponse<T>>): T => {
+const handleResponse = <T>(response: { data: ApiResponse<T> }): T => {
   if (response.data.success) {
     return response.data.data
   } else {
@@ -54,24 +54,23 @@ export const ordersApi = {
   // Get all orders with filters
   async getOrders(filters: OrderFilters = {}): Promise<{ data: OrdersResponse; pagination: Pagination }> {
     const params = new URLSearchParams()
-    
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '' && value !== null) {
         params.append(key, value.toString())
       }
     })
-    
-    const response = await api.get<ApiResponse<OrdersResponse> & { pagination: Pagination }>(
-      `/orders?${params.toString()}`
-    )
-    
-    return {
-      data: {
-        orders: response.data.data.orders,
-        stats: response.data.data.stats
-      },
-      pagination: response.data.pagination
+    const response = await api.get(`/orders?${params.toString()}`)
+    const data = response.data as ApiResponse<OrdersResponse> & { pagination?: Pagination }
+    if (data.success && data.data) {
+      return {
+        data: {
+          orders: data.data.orders,
+          stats: data.data.stats
+        },
+        pagination: data.pagination as Pagination
+      }
     }
+    return { data: { orders: [], stats: { orderStatus: {}, paymentStatus: {} } }, pagination: {} as Pagination }
   },
 
   // Get single order
@@ -122,8 +121,8 @@ export const ordersApi = {
     const response = await api.get(`/orders/export?${params.toString()}`, {
       responseType: 'blob'
     })
-    
-    return response.data
+    // Ensure type safety for response.data
+    return response.data as Blob
   }
 }
 
@@ -137,10 +136,10 @@ export const chefsApi = {
         params.append(key, value.toString())
       }
     })
-    
     const response = await api.get(`/chefs?${params.toString()}`)
-    if (response.data.success && response.data.data && Array.isArray(response.data.data.chefs)) {
-      return response.data.data.chefs
+    const data = response.data as ApiResponse<{ chefs: Chef[] }>
+    if (data.success && data.data && Array.isArray(data.data.chefs)) {
+      return data.data.chefs
     }
     return []
   },
@@ -148,7 +147,7 @@ export const chefsApi = {
   // Get available chefs (active chefs with capacity)
   async getAvailableChefs(): Promise<Chef[]> {
     try {
-      const response = await api.get('/chefs?status=Active')
+      const response = await api.get<ApiResponse<{ chefs: Chef[] }>>('/chefs?status=Active')
       
       // Handle the nested response structure
       let allChefs: Chef[] = []
@@ -248,12 +247,12 @@ export const usersApi = {
         params.append(key, value.toString())
       }
     })
-    
     const response = await api.get(`/users?${params.toString()}`)
-    if (response.data.success) {
+    const data = response.data as ApiResponse<{ users: unknown[] }> & { pagination?: Record<string, unknown> }
+    if (data.success && data.data) {
       return {
-        users: response.data.data.users || [],
-        pagination: response.data.pagination || {}
+        users: data.data.users || [],
+        pagination: data.pagination || {}
       }
     }
     return { users: [], pagination: {} }
@@ -277,8 +276,8 @@ export const usersApi = {
     const response = await api.get(`/export/users?${params.toString()}`, {
       responseType: 'blob'
     })
-    
-    return response.data
+    // Ensure type safety for response.data
+    return response.data as Blob
   }
 }
 

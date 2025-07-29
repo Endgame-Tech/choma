@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Link, useNavigate } from 'react-router-dom'
 
-export default function Login() {
+const Login: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -128,4 +128,6 @@ export default function Login() {
       </div>
     </div>
   )
-}
+} 
+
+export default Login

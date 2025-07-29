@@ -38,8 +38,8 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
       setLoading(true)
       
       const [assignmentsResponse, mealsResponse] = await Promise.all([
-        mealPlansApi.getMealPlanAssignments(mealPlan._id),
-        mealsApi.getAllMeals({ limit: 1000, isAvailable: true })
+        mealPlansApi.getMealPlanAssignments(mealPlan._id) as Promise<{ data: { assignments: MealPlanAssignment[] } }>,
+        mealsApi.getAllMeals({ limit: 1000, isAvailable: true }) as Promise<{ data: { meals: Meal[] } }>
       ])
 
       console.log('Fetched assignments:', assignmentsResponse.data.assignments) // Debug log

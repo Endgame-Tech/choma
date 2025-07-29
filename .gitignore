@@ -3,11 +3,13 @@
 # dependencies
 node_modules/
 
+
 # Expo
 .expo/
 dist/
 web-build/
 expo-env.d.ts
+hint-report/
 
 # Expo Prebuild Native folders
 /android
@@ -16,11 +18,6 @@ expo-env.d.ts
 # Native
 .kotlin/
 *.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
 
 # Metro
 .metro-health-check*
@@ -36,8 +33,40 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
 
 /claude
+
+# Sensitive files and secrets
+.env*
+*.env
+*.key
+*.pem
+*.crt
+*.cert
+*.pfx
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+*.keystore
+*.bak
+*.backup
+*.log
+
+# Ignore private keys, credentials, and secrets
+secrets/
+private/
+certs/
+keys/
+
+# Ignore OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+claude/

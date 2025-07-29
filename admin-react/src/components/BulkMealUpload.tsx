@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react'
+import React, { useRef, useState } from 'react'
+
 import * as XLSX from 'xlsx'
 import { mealsApi } from '../services/mealApi'
 import { CloudArrowUpIcon, DocumentArrowDownIcon, XMarkIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
@@ -390,8 +391,13 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
 
       // Convert to API format and upload
       const mealsToUpload = convertExcelDataToMealFormat(excelData)
-      
-      const response = await mealsApi.bulkCreateMeals(mealsToUpload)
+      const response = await mealsApi.bulkCreateMeals(mealsToUpload) as {
+        data: {
+          summary?: { created?: number; failed?: number };
+          created?: ExcelMealData[];
+          errors?: { error?: string; message?: string; meal?: { name?: string } }[];
+        }
+      }
       
       setUploadResult({
         success: true,
@@ -413,6 +419,21 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
       
     } catch (error) {
       console.error('Upload failed:', error)
+      let errorMessage = 'Upload failed';
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'data' in error.response &&
+        error.response.data &&
+        typeof error.response.data === 'object' &&
+        'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+      ) {
+        errorMessage = error.response.data.message;
+      }
       setUploadResult({
         success: false,
         totalRows: previewData.length,
@@ -421,7 +442,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
         errors: [{
           row: 0,
           field: 'General',
-          message: error instanceof Error ? error.message : 'Upload failed'
+          message: errorMessage
         }]
       })
     } finally {

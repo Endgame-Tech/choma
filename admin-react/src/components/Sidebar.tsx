@@ -12,7 +12,7 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
-  { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
+  { name: 'Advanced Analytics', href: '/analytics', icon: ChartBarIcon },
   { name: 'Orders', href: '/orders', icon: ClipboardDocumentListIcon },
   { name: 'Chefs', href: '/chefs', icon: UserGroupIcon },
   { name: 'Users', href: '/users', icon: UsersIcon },

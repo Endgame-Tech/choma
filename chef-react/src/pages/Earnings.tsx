@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { earningsApi } from '../services/api'
 import type { EarningsData, PaymentRecord } from '../types'
 
-export default function Earnings() {
+const Earnings: React.FC = () => {
   const { chef } = useAuth()
   const [earningsData, setEarningsData] = useState<EarningsData | null>(null)
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([])
@@ -385,3 +385,5 @@ export default function Earnings() {
     </div>
   )
 }
+
+export default Earnings

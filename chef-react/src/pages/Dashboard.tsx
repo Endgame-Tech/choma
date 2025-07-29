@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { dashboardApi, ordersApi } from '../services/api'
 import type { ChefDashboardStats, Order } from '../types'
 
-export default function Dashboard() {
+const Dashboard: React.FC = () => {
   const { chef } = useAuth()
   const [stats, setStats] = useState<ChefDashboardStats | null>(null)
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
@@ -302,3 +302,5 @@ export default function Dashboard() {
     </div>
   )
 }
+
+export default Dashboard

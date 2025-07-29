@@ -6,7 +6,7 @@ interface ChefStatusModalProps {
   currentStatus: string
   onUpdateStatus: (newStatus: string) => Promise<void>
   orderNumber: string
-  loading?: boolean
+  loading: boolean
 }
 
 const statusOptions = [
@@ -17,16 +17,15 @@ const statusOptions = [
   { value: 'Completed', label: 'Completed', icon: '✨', color: 'bg-emerald-500' }
 ]
 
-export default function ChefStatusModal({
+const ChefStatusModal: React.FC<ChefStatusModalProps> = ({
   isOpen,
   onClose,
   currentStatus,
   onUpdateStatus,
   orderNumber,
-  loading = false
-}: ChefStatusModalProps) {
-  const [selectedStatus, setSelectedStatus] = useState(currentStatus)
+}) => {
   const [updating, setUpdating] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState(currentStatus)
 
   const handleUpdate = async () => {
     if (selectedStatus === currentStatus) {
@@ -150,3 +149,5 @@ export default function ChefStatusModal({
     </div>
   )
 }
+
+export default ChefStatusModal
