@@ -17,8 +17,7 @@ const {
   sanitizeInput,
   enforceHTTPS,
   requestLogger: securityRequestLogger,
-  errorHandler: securityErrorHandler,
-  debugOriginsEnv
+  errorHandler: securityErrorHandler
 } = require('./middleware/security');
 
 // Import enhanced error handling
@@ -42,7 +41,6 @@ const app = express();
 handleUnhandledRejection();
 handleUncaughtException();
 
-debugOriginsEnv();
 // Connect Database with retry mechanism
 retryDatabaseConnection(connectDB)
   .then(() => logger.info('Database connected successfully'))

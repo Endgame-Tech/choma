@@ -1,7 +1,7 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
-node_modules
+node_modules/
 
 # Expo
 .expo/
@@ -9,8 +9,6 @@ dist/
 web-build/
 expo-env.d.ts
 hint-report/
-
-.env
 
 # Expo Prebuild Native folders
 /android
@@ -42,6 +40,8 @@ yarn-error.*
 /claude
 
 # Sensitive files and secrets
+.env*
+*.env
 *.key
 *.pem
 *.crt

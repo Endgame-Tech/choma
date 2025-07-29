@@ -6,16 +6,6 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 const cors = require('cors');
 
-const debugOriginsEnv = () => {
-  const allowedOriginsDebug = [process.env.ADMIN_URL,
-        process.env.CHEF_URL,
-        process.env.API_URL];
-
-console.log('Allowed Origins:', allowedOriginsDebug);
-};
-
-
-
 // Rate limiting configuration
 const createRateLimiter = (windowMs, max, message) => rateLimit({
   windowMs,
@@ -274,6 +264,5 @@ module.exports = {
   enforceHTTPS,
   validateApiKey,
   requestLogger,
-  errorHandler,
-  debugOriginsEnv
+  errorHandler
 };
