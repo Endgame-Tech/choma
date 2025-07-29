@@ -81,7 +81,6 @@ const corsOptions = {
       
       // Log for debugging
       console.log('CORS - Origin:', origin);
-      console.log('CORS - Allowed origins:', allowedOrigins);
     }
     
     if (allowedOrigins.includes(origin)) {

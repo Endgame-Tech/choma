@@ -37,6 +37,10 @@ const { retryDatabaseConnection } = require('./utils/errorRecovery');
 
 const app = express();
 
+// Trust proxy - IMPORTANT for production deployments (Render, Heroku, etc.)
+// This enables proper IP detection behind reverse proxies
+app.set('trust proxy', true);
+
 // Setup error handlers for unhandled errors
 handleUnhandledRejection();
 handleUncaughtException();

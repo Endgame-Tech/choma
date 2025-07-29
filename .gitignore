@@ -11,7 +11,6 @@ expo-env.d.ts
 hint-report/
 
 .env
-
 # Expo Prebuild Native folders
 /android
 /ios
