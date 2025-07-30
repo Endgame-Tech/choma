@@ -119,7 +119,7 @@ const Home: React.FC = () => {
           }
         })
       }
-    }, 5000) // Change every 7 seconds
+    }, 5000) // Change every 5 seconds
     
     return () => clearInterval(interval)
   }, [foodImages.length])
@@ -222,7 +222,7 @@ const Home: React.FC = () => {
             </div>
 
             {/* Phone Mockup */}
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-12">
               <div className="relative">
                 <img 
                   src={phonemockup} 
