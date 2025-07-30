@@ -74,7 +74,10 @@ const corsOptions = {
       const productionOrigins = [
         process.env.ADMIN_URL,
         process.env.CHEF_URL,
-        process.env.API_URL
+        process.env.API_URL,
+        // Additional production URLs
+        'https://chomaadmin-delta.vercel.app',
+        'https://chomachef.vercel.app'
       ].filter(Boolean); // Remove any undefined values
       
       allowedOrigins.push(...productionOrigins);

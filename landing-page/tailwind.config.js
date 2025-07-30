@@ -32,11 +32,19 @@ export default {
           800: '#854d0e',
           900: '#713f12',
           950: '#422006',
+        },
+        // Choma brand colors
+        choma: {
+          white: '#FFFCFB',
+          black: '#1D0C06',
+          dark: '212121',
+          orange: '#F7AE1A',
+          brown: '#652815',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        heading: ['Poppins', 'system-ui', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        heading: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

@@ -1,14 +1,9 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
-import Hero from './components/Hero'
-import Features from './components/Features'
-import HowItWorks from './components/HowItWorks'
-import RestaurantPartners from './components/RestaurantPartners'
-import DeliveryPartners from './components/DeliveryPartners'
-import Testimonials from './components/Testimonials'
-import DownloadApp from './components/DownloadApp'
-import Footer from './components/Footer'
+// import Footer from './components/Footer'
+import Home from './pages/Home'
+import Products from './pages/Products'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import FAQ from './pages/FAQ'
@@ -16,23 +11,19 @@ import Blog from './pages/Blog'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 
-function App() {
+const App: React.FC = () => {
   return (
     <Router>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-choma-white relative">
+        <div className="relative z-10">
         <Navbar />
         <Routes>
           <Route path="/" element={
             <>
-              <Hero />
-              <Features />
-              <HowItWorks />
-              <RestaurantPartners />
-              <DeliveryPartners />
-              <Testimonials />
-              <DownloadApp />
+              <Home />
             </>
           } />
+          <Route path="/products" element={<Products />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/faq" element={<FAQ />} />
@@ -40,7 +31,8 @@ function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
         </Routes>
-        <Footer />
+        {/* <Footer /> */}
+        </div>
       </div>
     </Router>
   )

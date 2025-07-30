@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Bars3Icon, XMarkIcon, PhoneIcon } from '@heroicons/react/24/outline'
+import logo from '../assets/images/logo.svg'
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -16,104 +16,96 @@ const Navbar: React.FC = () => {
   }, [])
 
   const navigation = [
-    { name: 'Home', href: '/' },
+    { name: 'Products', href: '/products' },
     { name: 'About', href: '/about' },
-    { name: 'FAQ', href: '/faq' },
     { name: 'Blog', href: '/blog' },
     { name: 'Contact', href: '/contact' },
+    { name: 'FAQs', href: '/faq' },
   ]
 
   const isActive = (path: string) => location.pathname === path
 
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+      isScrolled ? 'py-4' : 'py-6'
     }`}>
       <div className="container-width">
-        <div className="flex justify-between items-center h-16 lg:h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">C</span>
-            </div>
-            <span className="text-2xl font-heading font-bold text-gray-900">choma</span>
+        {/* Desktop Navigation */}
+        <div className="hidden lg:flex items-center justify-center space-x-4">
+          {/* Logo Section - Separate Brown Background */}
+          <Link to="/" className="flex bg-choma-brown rounded-full items-center px-6 py-4 shadow-lg">
+            <img src={logo} alt="Choma" className="h-10 w-auto" />
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
+          {/* Navigation Items - Orange Background */}
+          <div className="flex items-center space-x-16 px-12 py-8 bg-choma-orange rounded-full tracking-tighter shadow-lg">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`text-sm font-medium transition-colors duration-200 ${
+                className={`text-base font-medium transition-colors duration-200 ${
                   isActive(item.href)
-                    ? 'text-primary-600'
-                    : 'text-gray-700 hover:text-primary-600'
+                    ? 'text-choma-brown font-semibold'
+                    : 'text-choma-brown/80 hover:text-choma-brown'
                 }`}
               >
                 {item.name}
               </Link>
             ))}
           </div>
-
-          {/* Desktop CTA */}
-          <div className="hidden lg:flex items-center space-x-4">
-            <a
-              href="tel:+234-800-CHOMA-NG"
-              className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 transition-colors"
-            >
-              <PhoneIcon className="w-4 h-4" />
-              <span className="text-sm font-medium">+234-800-CHOMA-NG</span>
-            </a>
-            <button className="btn-primary">
-              Order Now
-            </button>
-          </div>
-
-          {/* Mobile menu button */}
-          <button
-            className="lg:hidden p-2 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-100 transition-colors"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? (
-              <XMarkIcon className="w-6 h-6" />
-            ) : (
-              <Bars3Icon className="w-6 h-6" />
-            )}
+          
+          {/* Order Now Button - Separate Brown Background */}
+          <button className="flex tracking-tighter items-center space-x-2 bg-choma-brown text-white px-6 py-4 rounded-full font-medium hover:bg-choma-brown/90 transition-colors shadow-lg">
+            <i className="fi fi-rr-shop text-2xl pt-1"></i>
+            <span>Order Now</span>
           </button>
         </div>
 
         {/* Mobile Navigation */}
+        <div className="lg:hidden flex items-center justify-between">
+          {/* Mobile Logo */}
+          <Link to="/" className="flex items-center">
+            <img src={logo} alt="Choma" className="h-10 w-auto" />
+          </Link>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="p-2 rounded-md bg-choma-orange text-choma-brown hover:bg-choma-orange/90 transition-colors"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? (
+              <i className="fi fi-rr-cross text-lg"></i>
+            ) : (
+              <i className="fi fi-rr-menu-burger text-lg"></i>
+            )}
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 bg-white rounded-lg shadow-lg mt-2 border">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'text-primary-600 bg-primary-50'
-                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setIsOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
-              <div className="border-t pt-4 mt-4">
-                <a
-                  href="tel:+234-800-CHOMA-NG"
-                  className="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:text-primary-600"
-                >
-                  <PhoneIcon className="w-4 h-4" />
-                  <span>+234-800-CHOMA-NG</span>
-                </a>
-                <div className="px-3 py-2">
-                  <button className="btn-primary w-full">
-                    Order Now
-                  </button>
-                </div>
+          <div className="lg:hidden mt-4">
+            <div className="bg-choma-orange rounded-2xl shadow-lg p-4">
+              <div className="space-y-2">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`block px-4 py-3 rounded-xl text-base font-medium transition-colors ${
+                      isActive(item.href)
+                        ? 'text-choma-brown bg-white/20 font-semibold'
+                        : 'text-choma-brown/80 hover:text-choma-brown hover:bg-white/10'
+                    }`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t border-choma-brown/20">
+                <button className="w-full flex items-center justify-center space-x-2 bg-choma-brown text-white px-6 py-3 rounded-xl font-medium hover:bg-choma-brown/90 transition-colors">
+                  <i className="fi fi-rr-shopping-bag text-sm"></i>
+                  <span>Order Now</span>
+                </button>
               </div>
             </div>
           </div>
