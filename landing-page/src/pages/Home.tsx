@@ -234,39 +234,106 @@ const Home: React.FC = () => {
           </div>
         </section>
 
-        {/* Blob2 */}
-        <div className="absolute overflow-hidden h-[150rem] w-full flex bottom-[-70rem] justify-center pointer-events-none">
-          <div className='absolute w-[2900px] pl-[100px] flex justify-center z-[-11]'>
-          <img src={chomablob2} className="object-contain" />
-          </div>
-        </div>
-      
-        <div className="py-20 relative">
-          <p className='text-[#FBE0CE] text-center text-7xl mt-4 font-bold tracking-tighter relative z-20 mb-28'>
-            You don Chop?<br /> <span className='text-choma-orange'>Choma got you!</span>
-          </p>
+        <section>
 
-          {/* Feature Cards */}
-          <div className="container-width relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                {/* Blob2 */}
+                <div className="absolute overflow-hidden h-[150rem] w-full flex bottom-[0rem] justify-center pointer-events-none">
+                  <div className='absolute w-[2500px] pl-[100px] flex justify-center z-[-11]'>
+                  <img src={chomablob2} className="object-contain" />
+                  </div>
+                </div>
               
-              {featureCards.map((card, index) => (
-                <FeatureCard
-                  key={index}
-                  title={card.title}
-                  description={card.description}
-                  image={card.image}
-                  imageAlt={card.imageAlt}
-                  badges={card.badges}
-                />
-              ))}
+                <div className="py-20 relative">
+                  <p className='text-[#FBE0CE] text-center text-7xl mt-4 font-bold tracking-tighter relative z-20 mb-28'>
+                    You don Chop?<br /> <span className='text-choma-orange'>Choma got you!</span>
+                  </p>
 
+                  {/* Feature Cards */}
+                  <div className="container-width relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                      
+                      {featureCards.map((card, index) => (
+                        <FeatureCard
+                          key={index}
+                          title={card.title}
+                          description={card.description}
+                          image={card.image}
+                          imageAlt={card.imageAlt}
+                          badges={card.badges}
+                        />
+                      ))}
+                    </div>
 
+                  </div>
+                </div>
+        </section>
+
+        {/* Meal Plan Section */}
+        <section className="py-20 relative">
+          <div className="container-width relative z-10">
+            <h2 className='text-white text-center text-7xl font-bold tracking-tighter mb-16'>
+              A mealplan made for you
+            </h2>
+
+            {/* Meal Plan Card */}
+            <div className="flex justify-center">
+              <div className="bg-choma-orange rounded-[2.5rem] p-12 max-w-5xl w-full relative overflow-hidden border-4 border-choma-brown">
+                
+                {/* Icons Row - Left aligned */}
+                <div className="flex gap-3 mb-12">
+                  <div className="w-16 h-16 bg-choma-brown rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-choma-orange text-xl">👍</span>
+                  </div>
+                  <div className="w-16 h-16 bg-choma-brown/30 rounded-full flex items-center justify-center border border-choma-brown">
+                    <span className="text-choma-brown text-xl">🏠</span>
+                  </div>
+                  <div className="w-16 h-16 bg-choma-brown/30 rounded-full flex items-center justify-center border border-choma-brown">
+                    <span className="text-choma-brown text-xl">🏠</span>
+                  </div>
+                  <div className="w-16 h-16 bg-choma-brown/30 rounded-full flex items-center justify-center border border-choma-brown">
+                    <span className="text-choma-brown text-xl">🏠</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                  
+                  {/* Left Content */}
+                  <div className="pr-8">
+                    <h3 className="text-choma-brown text-6xl font-bold mb-8 tracking-tight">
+                      FitFam Fuel
+                    </h3>
+                    <p className="text-choma-brown text-2xl leading-relaxed font-medium">
+                      Gym-goers, athletes, and<br />
+                      health-conscious<br />
+                      professionals
+                    </p>
+                  </div>
+
+                  {/* Right Image */}
+                  <div className="relative">
+                    <div className="rounded-2xl overflow-hidden shadow-2xl">
+                      <img 
+                        src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                        alt="Healthy FitFam Fuel Meal" 
+                        className="w-full h-[400px] object-cover"
+                      />
+                    </div>
+                    
+                    {/* Floating Like Button - positioned like in image */}
+                    <div className="absolute -top-6 -right-6 w-20 h-20 bg-choma-brown rounded-full flex items-center justify-center shadow-xl border-4 border-choma-orange">
+                      <span className="text-choma-orange text-3xl">👍</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Background decorative circles matching the design */}
+                <div className="absolute -top-8 -right-8 w-32 h-32 bg-choma-brown/20 rounded-full"></div>
+                <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-choma-brown/15 rounded-full"></div>
+              </div>
             </div>
           </div>
-        </div>
-
-
+        </section>
+        
     </> 
   )
 }

@@ -68,3 +68,6 @@ Thumbs.db
 .vscode/
 
 claude/
+
+#Ignore vscode AI rules
+.github\copilot-instructions.md

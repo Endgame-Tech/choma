@@ -118,6 +118,9 @@ const AnalyticsDashboard: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<DashboardPeriod>('month')
   const [refreshing, setRefreshing] = useState(false)
 
+  // Debug state
+  console.log('Analytics Dashboard State:', { loading, error, kpiData: !!kpiData, chartData: !!chartData, insights: !!insights })
+
   // Fetch analytics data
   const fetchAnalyticsData = async (period: DashboardPeriod) => {
     try {
@@ -138,129 +141,232 @@ const AnalyticsDashboard: React.FC = () => {
           analyticsApi.getBusinessIntelligence(timeRange)
         ])
 
+        console.log('Advanced Analytics API Response:', { kpis, charts, businessInsights })
+
+        // Check if we got valid data
+        if (!kpis || !kpis.overview || !charts || !businessInsights) {
+          throw new Error('Invalid or empty data from advanced analytics API')
+        }
+
         setKpiData(kpis)
         setChartData(charts)
         setInsights(businessInsights)
       } catch (analyticsError) {
         console.log('Advanced analytics not available, falling back to basic dashboard data')
         
-        // Fallback to basic dashboard API
-        const dashboardStats = await dashboardApi.getStats()
-        
-        // Transform dashboard data to analytics format
-        const basicKpiData: KPIData = {
-          overview: {
-            totalRevenue: dashboardStats.overview.totalRevenue || 0,
-            totalOrders: dashboardStats.overview.totalOrders || 0,
-            activeCustomers: dashboardStats.overview.activeUsers || 0,
-            totalChefs: 0, // Not available in basic dashboard
-            avgOrderValue: dashboardStats.overview.totalRevenue / Math.max(dashboardStats.overview.totalOrders, 1) || 0,
-            revenueToday: 0, // Not available in basic dashboard
-            ordersToday: 0, // Not available in basic dashboard
-            newCustomersToday: 0, // Not available in basic dashboard
-            chefsOnline: 0 // Not available in basic dashboard
-          },
-          growth: {
-            revenueGrowth: 0,
-            orderGrowth: 0,
-            customerGrowth: 0,
-            chefGrowth: 0
-          },
-          realTime: {
-            ordersInProgress: 0,
-            pendingOrders: 0,
-            activeDeliveries: 0,
-            completedOrdersToday: 0
-          }
-        }
+        try {
+          // Fallback to basic dashboard API
+          const dashboardStats = await dashboardApi.getStats()
+          
+          console.log('Basic Dashboard API Response:', dashboardStats)
 
-        // Create basic chart data from dashboard stats
-        const basicChartData: ChartData = {
-          revenueChart: {
-            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-            data: [
-              dashboardStats.overview.totalRevenue * 0.2,
-              dashboardStats.overview.totalRevenue * 0.25,
-              dashboardStats.overview.totalRevenue * 0.3,
-              dashboardStats.overview.totalRevenue * 0.25
+          // Check if we got valid dashboard data
+          if (!dashboardStats || !dashboardStats.overview) {
+            throw new Error('Invalid or empty data from basic dashboard API')
+          }
+          
+          // Transform dashboard data to analytics format
+          const basicKpiData: KPIData = {
+            overview: {
+              totalRevenue: dashboardStats.overview.totalRevenue || 0,
+              totalOrders: dashboardStats.overview.totalOrders || 0,
+              activeCustomers: dashboardStats.overview.activeUsers || 0,
+              totalChefs: 0, // Not available in basic dashboard
+              avgOrderValue: dashboardStats.overview.totalRevenue / Math.max(dashboardStats.overview.totalOrders, 1) || 0,
+              revenueToday: 0, // Not available in basic dashboard
+              ordersToday: 0, // Not available in basic dashboard
+              newCustomersToday: 0, // Not available in basic dashboard
+              chefsOnline: 0 // Not available in basic dashboard
+            },
+            growth: {
+              revenueGrowth: 0,
+              orderGrowth: 0,
+              customerGrowth: 0,
+              chefGrowth: 0
+            },
+            realTime: {
+              ordersInProgress: 0,
+              pendingOrders: 0,
+              activeDeliveries: 0,
+              completedOrdersToday: 0
+            }
+          }
+
+          // Create basic chart data from dashboard stats
+          const basicChartData: ChartData = {
+            revenueChart: {
+              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+              data: [
+                dashboardStats.overview.totalRevenue * 0.2,
+                dashboardStats.overview.totalRevenue * 0.25,
+                dashboardStats.overview.totalRevenue * 0.3,
+                dashboardStats.overview.totalRevenue * 0.25
+              ],
+              previousPeriod: [
+                dashboardStats.overview.totalRevenue * 0.18,
+                dashboardStats.overview.totalRevenue * 0.22,
+                dashboardStats.overview.totalRevenue * 0.28,
+                dashboardStats.overview.totalRevenue * 0.22
+              ]
+            },
+            ordersByStatus: {
+              labels: dashboardStats.orderStatusBreakdown.map(status => status._id),
+              data: dashboardStats.orderStatusBreakdown.map(status => status.count),
+              colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+            },
+            customerSegments: {
+              labels: ['New Customers', 'Regular Customers', 'Premium Customers'],
+              data: [
+                Math.floor(dashboardStats.overview.activeUsers * 0.3),
+                Math.floor(dashboardStats.overview.activeUsers * 0.5),
+                Math.floor(dashboardStats.overview.activeUsers * 0.2)
+              ],
+              colors: ['#8B5CF6', '#3B82F6', '#10B981']
+            },
+            chefPerformance: {
+              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+              completionRate: [92, 95, 88, 94],
+              satisfaction: [4.2, 4.5, 4.1, 4.6]
+            },
+            dailyTrends: {
+              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              orders: [45, 52, 48, 61, 55, 67, 43],
+              revenue: [144000, 166400, 153600, 195200, 176000, 214400, 137600]
+            },
+            popularMeals: {
+              labels: ['Jollof Rice', 'Fried Rice', 'Egusi Soup', 'Amala & Ewedu'],
+              orders: [156, 142, 128, 98],
+              revenue: [624000, 568000, 512000, 392000]
+            }
+          }
+
+          const basicInsights: BusinessInsights = {
+            insights: [
+              {
+                type: 'positive',
+                title: 'Revenue Performance',
+                message: `Total revenue of ${new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(dashboardStats.overview.totalRevenue)} shows healthy business growth`,
+                value: new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(dashboardStats.overview.totalRevenue)
+              },
+              {
+                type: 'neutral',
+                title: 'Order Volume',
+                message: `${dashboardStats.overview.totalOrders} total orders processed across all meal plans`,
+                value: dashboardStats.overview.totalOrders.toString()
+              }
             ],
-            previousPeriod: [
-              dashboardStats.overview.totalRevenue * 0.18,
-              dashboardStats.overview.totalRevenue * 0.22,
-              dashboardStats.overview.totalRevenue * 0.28,
-              dashboardStats.overview.totalRevenue * 0.22
+            predictions: [
+              {
+                metric: 'Next Month Revenue',
+                prediction: dashboardStats.overview.totalRevenue * 1.15,
+                confidence: 75,
+                timeframe: '30 days'
+              },
+              {
+                metric: 'Order Growth',
+                prediction: dashboardStats.overview.totalOrders * 1.12,
+                confidence: 68,
+                timeframe: '30 days'
+              }
             ]
-          },
-          ordersByStatus: {
-            labels: dashboardStats.orderStatusBreakdown.map(status => status._id),
-            data: dashboardStats.orderStatusBreakdown.map(status => status.count),
-            colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
-          },
-          customerSegments: {
-            labels: ['New Customers', 'Regular Customers', 'Premium Customers'],
-            data: [
-              Math.floor(dashboardStats.overview.activeUsers * 0.3),
-              Math.floor(dashboardStats.overview.activeUsers * 0.5),
-              Math.floor(dashboardStats.overview.activeUsers * 0.2)
-            ],
-            colors: ['#8B5CF6', '#3B82F6', '#10B981']
-          },
-          chefPerformance: {
-            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-            completionRate: [92, 95, 88, 94],
-            satisfaction: [4.2, 4.5, 4.1, 4.6]
-          },
-          dailyTrends: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            orders: [45, 52, 48, 61, 55, 67, 43],
-            revenue: [144000, 166400, 153600, 195200, 176000, 214400, 137600]
-          },
-          popularMeals: {
-            labels: ['Jollof Rice', 'Fried Rice', 'Egusi Soup', 'Amala & Ewedu'],
-            orders: [156, 142, 128, 98],
-            revenue: [624000, 568000, 512000, 392000]
           }
-        }
 
-        const basicInsights: BusinessInsights = {
-          insights: [
-            {
-              type: 'positive',
-              title: 'Revenue Performance',
-              message: `Total revenue of ${new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(dashboardStats.overview.totalRevenue)} shows healthy business growth`,
-              value: new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(dashboardStats.overview.totalRevenue)
+          setKpiData(basicKpiData)
+          setChartData(basicChartData)
+          setInsights(basicInsights)
+        } catch (dashboardError) {
+          console.log('Basic dashboard API also failed, showing empty analytics with zero values')
+          
+          // Create empty analytics data with zero values
+          const emptyKpiData: KPIData = {
+            overview: {
+              totalRevenue: 0,
+              totalOrders: 0,
+              activeCustomers: 0,
+              totalChefs: 0,
+              avgOrderValue: 0,
+              revenueToday: 0,
+              ordersToday: 0,
+              newCustomersToday: 0,
+              chefsOnline: 0
             },
-            {
-              type: 'neutral',
-              title: 'Order Volume',
-              message: `${dashboardStats.overview.totalOrders} total orders processed across all meal plans`,
-              value: dashboardStats.overview.totalOrders.toString()
-            }
-          ],
-          predictions: [
-            {
-              metric: 'Next Month Revenue',
-              prediction: dashboardStats.overview.totalRevenue * 1.15,
-              confidence: 75,
-              timeframe: '30 days'
+            growth: {
+              revenueGrowth: 0,
+              orderGrowth: 0,
+              customerGrowth: 0,
+              chefGrowth: 0
             },
-            {
-              metric: 'Order Growth',
-              prediction: dashboardStats.overview.totalOrders * 1.12,
-              confidence: 68,
-              timeframe: '30 days'
+            realTime: {
+              ordersInProgress: 0,
+              pendingOrders: 0,
+              activeDeliveries: 0,
+              completedOrdersToday: 0
             }
-          ]
-        }
+          }
 
-        setKpiData(basicKpiData)
-        setChartData(basicChartData)
-        setInsights(basicInsights)
+          const emptyChartData: ChartData = {
+            revenueChart: {
+              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+              data: [0, 0, 0, 0],
+              previousPeriod: [0, 0, 0, 0]
+            },
+            ordersByStatus: {
+              labels: ['Pending', 'Confirmed', 'Preparing', 'Delivered', 'Cancelled'],
+              data: [0, 0, 0, 0, 0],
+              colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+            },
+            customerSegments: {
+              labels: ['New Customers', 'Regular Customers', 'Premium Customers'],
+              data: [0, 0, 0],
+              colors: ['#8B5CF6', '#3B82F6', '#10B981']
+            },
+            chefPerformance: {
+              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+              completionRate: [0, 0, 0, 0],
+              satisfaction: [0, 0, 0, 0]
+            },
+            dailyTrends: {
+              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              orders: [0, 0, 0, 0, 0, 0, 0],
+              revenue: [0, 0, 0, 0, 0, 0, 0]
+            },
+            popularMeals: {
+              labels: ['No data available'],
+              orders: [0],
+              revenue: [0]
+            }
+          }
+
+          const emptyInsights: BusinessInsights = {
+            insights: [
+              {
+                type: 'neutral',
+                title: 'No Data Available',
+                message: 'Analytics data is currently unavailable. This may be due to no orders yet or system maintenance.',
+                value: '₦0'
+              }
+            ],
+            predictions: [
+              {
+                metric: 'Future Revenue',
+                prediction: 0,
+                confidence: 0,
+                timeframe: 'N/A'
+              }
+            ]
+          }
+
+          setKpiData(emptyKpiData)
+          setChartData(emptyChartData)
+          setInsights(emptyInsights)
+          setError('Analytics data is currently unavailable')
+        }
       }
 
     } catch (err) {
-      console.error('All analytics fetch failed:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load analytics data')
+      console.error('Unexpected error in analytics fetch:', err)
+      // This should rarely happen, but if it does, still show empty data
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -307,29 +413,42 @@ const AnalyticsDashboard: React.FC = () => {
     )
   }
 
-  // Error state
-  if (error && !kpiData) {
-    return (
-      <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-        <h3 className="text-red-800 font-medium">Error loading analytics</h3>
-        <p className="text-red-600">{error}</p>
-        <button 
-          onClick={() => fetchAnalyticsData(selectedPeriod)}
-          className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-        >
-          Try again
-        </button>
-      </div>
-    )
-  }
+  // Show error notification if there's an error, but still display the dashboard
+  const showErrorNotification = error !== null
 
   return (
     <div className="space-y-6 p-6">
+      {/* Error Notification */}
+      {showErrorNotification && (
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">Analytics Data Notice</h3>
+                <p className="text-sm text-yellow-700 mt-1">{error}</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => fetchAnalyticsData(selectedPeriod)}
+              disabled={refreshing}
+              className="text-sm text-yellow-600 hover:text-yellow-800 underline disabled:opacity-50"
+            >
+              {refreshing ? 'Refreshing...' : 'Retry'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Advanced Analytics Dashboard</h1>
-          <p className="text-gray-600">Real-time business intelligence and performance insights</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Advanced Analytics Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-300">Real-time business intelligence and performance insights</p>
         </div>
         
         <div className="flex items-center space-x-3">
@@ -337,7 +456,7 @@ const AnalyticsDashboard: React.FC = () => {
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value as DashboardPeriod)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="today">Today</option>
             <option value="week">Last 7 Days</option>
@@ -417,8 +536,8 @@ const AnalyticsDashboard: React.FC = () => {
 
       {/* Real-time Metrics */}
       {kpiData && kpiData.realTime && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Real-time Operations</h3>
+        <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Real-time Operations</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <p className="text-3xl font-bold text-blue-600">{kpiData.realTime.ordersInProgress || 0}</p>
@@ -445,8 +564,8 @@ const AnalyticsDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Revenue Trend Chart */}
           {chartData.revenueChart && (
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend</h3>
+            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Revenue Trend</h3>
               <Line
                 data={{
                   labels: chartData.revenueChart.labels || [],
@@ -492,8 +611,8 @@ const AnalyticsDashboard: React.FC = () => {
 
           {/* Orders by Status */}
           {chartData.ordersByStatus && (
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Orders by Status</h3>
+            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Orders by Status</h3>
               <Doughnut
                 data={{
                   labels: chartData.ordersByStatus.labels || [],
@@ -518,8 +637,8 @@ const AnalyticsDashboard: React.FC = () => {
 
           {/* Daily Trends */}
           {chartData.dailyTrends && (
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Performance</h3>
+            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Daily Performance</h3>
               <Bar
                 data={{
                   labels: chartData.dailyTrends.labels || [],
@@ -570,8 +689,8 @@ const AnalyticsDashboard: React.FC = () => {
 
           {/* Customer Segments */}
           {chartData.customerSegments && (
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Segments</h3>
+            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Customer Segments</h3>
               <Bar
                 data={{
                   labels: chartData.customerSegments.labels || [],
@@ -603,8 +722,8 @@ const AnalyticsDashboard: React.FC = () => {
 
       {/* Chef Performance */}
       {chartData && chartData.chefPerformance && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Chef Performance Analytics</h3>
+        <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Chef Performance Analytics</h3>
           <Line
             data={{
               labels: chartData.chefPerformance.labels || [],
@@ -657,24 +776,24 @@ const AnalyticsDashboard: React.FC = () => {
 
       {/* Popular Meals */}
       {chartData && chartData.popularMeals && chartData.popularMeals.labels && chartData.popularMeals.labels.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Popular Meals Performance</h3>
+        <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Popular Meals Performance</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meal</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Meal</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Orders</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Revenue</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Performance</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white/90 dark:bg-gray-800/90 divide-y divide-gray-200 dark:divide-gray-700">
                 {chartData.popularMeals.labels.map((meal, index) => (
                   <tr key={meal}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{meal}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{chartData.popularMeals.orders?.[index] || 0}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(chartData.popularMeals.revenue?.[index] || 0)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{meal}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{chartData.popularMeals.orders?.[index] || 0}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{formatCurrency(chartData.popularMeals.revenue?.[index] || 0)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
@@ -700,8 +819,8 @@ const AnalyticsDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* AI Insights */}
           {insights.insights && insights.insights.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">🧠 AI-Powered Insights</h3>
+            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">🧠 AI-Powered Insights</h3>
               <div className="space-y-4">
                 {insights.insights.map((insight, index) => (
                 <div 
@@ -746,28 +865,28 @@ const AnalyticsDashboard: React.FC = () => {
 
           {/* Predictions */}
           {insights.predictions && insights.predictions.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">🔮 Predictive Analytics</h3>
+            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">🔮 Predictive Analytics</h3>
               <div className="space-y-4">
                 {insights.predictions.map((prediction, index) => (
-                <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">{prediction.metric}</h4>
-                    <span className="text-sm text-gray-500">{prediction.timeframe}</span>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{prediction.metric}</h4>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{prediction.timeframe}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-blue-600">
                       {prediction.metric.includes('Revenue') ? formatCurrency(prediction.prediction) : prediction.prediction.toFixed(0)}
                     </span>
                     <div className="flex items-center">
-                      <span className="text-sm text-gray-500 mr-2">Confidence:</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Confidence:</span>
                       <div className="w-16 bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-green-500 h-2 rounded-full" 
                           style={{ width: `${prediction.confidence}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-500 ml-2">{prediction.confidence}%</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{prediction.confidence}%</span>
                     </div>
                   </div>
                 </div>
