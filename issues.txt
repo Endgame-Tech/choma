@@ -1,16 +1,21 @@
-[{
-	"resource": "/c:/Users/endga/OneDrive/Desktop/Web Dev Projects/Projects/choma/admin-react/src/contexts/AuthContext.tsx",
-	"owner": "typescript",
-	"code": "6133",
-	"severity": 4,
-	"message": "'hashPassword' is declared but its value is never read.",
-	"source": "ts",
-	"startLineNumber": 26,
-	"startColumn": 7,
-	"endLineNumber": 26,
-	"endColumn": 19,
-	"tags": [
-		1
-	],
-	"origin": "extHost3"
-}]
+CtrlF
+Running build in Washington, D.C., USA (East) – iad1
+Build machine configuration: 2 cores, 8 GB
+Cloning github.com/Endgame-Tech/choma (Branch: main, Commit: 63a33d6)
+Cloning completed: 3.507s
+Restored build cache from previous deployment (dqPtfVsMoyy4RrNmXf9NyaYcHuoN)
+Running "vercel build"
+Vercel CLI 44.6.4
+Installing dependencies...
+up to date in 1s
+146 packages are looking for funding
+  run `npm fund` for details
+Running "npm run build"
+> choma-admin-react@1.0.0 build
+> tsc && vite build
+▲ [WARNING] Cannot find base config file "expo/tsconfig.base" [tsconfig.json]
+    ../tsconfig.json:3:13:
+      3 │   "extends": "expo/tsconfig.base"
+        ╵              ~~~~~~~~~~~~~~~~~~~~
+vite v5.4.19 building for production...
+transforming...

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAvailableChefs } from '../hooks/useChefs'
-import './styles/ChefAssignmentModal.css'
+import './ChefAssignmentModal.module.css'
 
 interface ChefAssignmentModalProps {
   isOpen: boolean

@@ -1,4 +1,10 @@
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
+
+// Generic API response type
+interface ApiResponse<T> {
+  data: T;
+}
+
 
 // Types for the analytics API
 interface ExportFilters {
@@ -91,7 +97,7 @@ export const analyticsApi = {
   // Get KPI Data (Key Performance Indicators)
   async getKPIData(timeRange: string = '30d'): Promise<KPIData> {
     try {
-      const response: AxiosResponse<{ data: KPIData }> = await api.get(`/kpis?timeRange=${timeRange}`);
+      const response: ApiResponse<{ data: KPIData }> = await api.get(`/kpis?timeRange=${timeRange}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching KPI data:', error);
@@ -102,7 +108,7 @@ export const analyticsApi = {
   // Get Charts Data for visualizations
   async getChartsData(timeRange: string = '30d'): Promise<ChartData> {
     try {
-      const response: AxiosResponse<{ data: ChartData }> = await api.get(`/charts?timeRange=${timeRange}`);
+      const response: ApiResponse<{ data: ChartData }> = await api.get(`/charts?timeRange=${timeRange}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching charts data:', error);
@@ -113,7 +119,7 @@ export const analyticsApi = {
   // Get Business Intelligence insights
   async getBusinessIntelligence(timeRange: string = '30d'): Promise<BusinessInsights> {
     try {
-      const response: AxiosResponse<{ data: BusinessInsights }> = await api.get(`/business-intelligence?timeRange=${timeRange}`);
+      const response: ApiResponse<{ data: BusinessInsights }> = await api.get(`/business-intelligence?timeRange=${timeRange}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching business intelligence:', error);
@@ -124,7 +130,7 @@ export const analyticsApi = {
   // Get User Engagement Metrics
   async getUserEngagement(timeRange: string = '30d'): Promise<UserEngagementData> {
     try {
-      const response: AxiosResponse<{ data: UserEngagementData }> = await api.get(`/user-engagement?timeRange=${timeRange}`);
+      const response: ApiResponse<{ data: UserEngagementData }> = await api.get(`/user-engagement?timeRange=${timeRange}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching user engagement:', error);
@@ -135,7 +141,7 @@ export const analyticsApi = {
   // Get specific chart data
   async getChartData(chartId: string, timeRange: string = '30d'): Promise<SingleChartData> {
     try {
-      const response: AxiosResponse<{ data: SingleChartData }> = await api.get(`/chart/${chartId}?timeRange=${timeRange}`);
+      const response: ApiResponse<{ data: SingleChartData }> = await api.get(`/chart/${chartId}?timeRange=${timeRange}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching chart data:', error);
@@ -146,7 +152,7 @@ export const analyticsApi = {
   // Export analytics report
   async exportReport(filters: ExportFilters = {}): Promise<Blob> {
     try {
-      const response: AxiosResponse<Blob> = await api.post('/export', filters, {
+      const response: ApiResponse<Blob> = await api.post('/export', filters, {
         responseType: 'blob',
       });
       return response.data;
@@ -184,7 +190,7 @@ export const analyticsApi = {
   // Get revenue analytics
   async getRevenueAnalytics(dateRange: DateRange): Promise<RevenueAnalyticsData> {
     try {
-      const response: AxiosResponse<{ data: RevenueAnalyticsData }> = await api.get(`/revenue?timeRange=${dateRange.period}`);
+      const response: ApiResponse<{ data: RevenueAnalyticsData }> = await api.get(`/revenue?timeRange=${dateRange.period}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching revenue analytics:', error);
@@ -195,7 +201,7 @@ export const analyticsApi = {
   // Get customer analytics
   async getCustomerAnalytics(dateRange: DateRange): Promise<CustomerAnalyticsData> {
     try {
-      const response: AxiosResponse<{ data: CustomerAnalyticsData }> = await api.get(`/customers?timeRange=${dateRange.period}`);
+      const response: ApiResponse<{ data: CustomerAnalyticsData }> = await api.get(`/customers?timeRange=${dateRange.period}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching customer analytics:', error);
@@ -206,7 +212,7 @@ export const analyticsApi = {
   // Get chef analytics
   async getChefAnalytics(dateRange: DateRange): Promise<ChefAnalyticsData> {
     try {
-      const response: AxiosResponse<{ data: ChefAnalyticsData }> = await api.get(`/chefs?timeRange=${dateRange.period}`);
+      const response: ApiResponse<{ data: ChefAnalyticsData }> = await api.get(`/chefs?timeRange=${dateRange.period}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching chef analytics:', error);
@@ -217,7 +223,7 @@ export const analyticsApi = {
   // Get operational analytics
   async getOperationalAnalytics(dateRange: DateRange): Promise<OperationalAnalyticsData> {
     try {
-      const response: AxiosResponse<{ data: OperationalAnalyticsData }> = await api.get(`/operations?timeRange=${dateRange.period}`);
+      const response: ApiResponse<{ data: OperationalAnalyticsData }> = await api.get(`/operations?timeRange=${dateRange.period}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching operational analytics:', error);
