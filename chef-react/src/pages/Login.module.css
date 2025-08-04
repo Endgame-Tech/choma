@@ -1,0 +1,6 @@
+.bgImage {
+  background-image: var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
