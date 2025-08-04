@@ -24,7 +24,7 @@ const Login: React.FC = () => {
       } else {
         setError('Invalid credentials. Access denied.')
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Login failed. Please check your credentials.')
     } finally {
       setLoading(false)

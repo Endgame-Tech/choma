@@ -33,3 +33,25 @@
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+.bg-chef-image {
+  background-image: url('../assets/chefsingin.jpg');
+}
+
+.capacity-bar {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.capacity-bar.bg-blue-500 {
+  background-color: #3b82f6;
+}
+
+.capacity-bar.bg-orange-500 {
+  background-color: #f97316;
+}
+
+.capacity-bar[data-capacity-percentage] {
+  width: var(--capacity-width, 0%);
+}

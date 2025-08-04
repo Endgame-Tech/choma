@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, User, MapPin, Briefcase, Shield, Eye, EyeOff } from 'lucide-react'
 import logo from '../assets/logo.svg'
-import chefBgImage from '../assets/chefsingin.jpg'
+// import chefBgImage from '../assets/chefsingin.jpg'
 import TermsModal from '../components/TermsModal'
 import PrivacyModal from '../components/PrivacyModal'
 import type { RegisterData } from '../types'
@@ -362,10 +362,11 @@ const CompleteRegistration: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
                   Full Name *
                 </label>
                 <input
+                  id="fullName"
                   type="text"
                   name="fullName"
                   value={formData.fullName}
@@ -377,10 +378,11 @@ const CompleteRegistration: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
                 </label>
                 <input
+                  id="email"
                   type="email"
                   name="email"
                   value={formData.email}
@@ -395,10 +397,11 @@ const CompleteRegistration: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                     Primary Phone Number *
                   </label>
                   <input
+                    id="phone"
                     type="tel"
                     name="phone"
                     value={formData.phone}
@@ -410,10 +413,11 @@ const CompleteRegistration: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="alternatePhone" className="block text-sm font-medium text-gray-700 mb-2">
                     Alternate Phone Number
                   </label>
                   <input
+                    id="alternatePhone"
                     type="tel"
                     name="alternatePhone"
                     value={formData.alternatePhone}
@@ -426,10 +430,11 @@ const CompleteRegistration: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
                     Date of Birth *
                   </label>
                   <input
+                    id="dateOfBirth"
                     type="date"
                     name="dateOfBirth"
                     value={formData.dateOfBirth}
@@ -442,10 +447,11 @@ const CompleteRegistration: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
                     Gender *
                   </label>
                   <select
+                    id="gender"
                     name="gender"
                     value={formData.gender}
                     onChange={handleInputChange}
@@ -461,11 +467,12 @@ const CompleteRegistration: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                   Password *
                 </label>
                 <div className="relative">
                   <input
+                    id="password"
                     type={showPassword ? 'text' : 'password'}
                     name="password"
                     value={formData.password}
@@ -486,11 +493,12 @@ const CompleteRegistration: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
                   Confirm Password *
                 </label>
                 <div className="relative">
                   <input
+                    id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
                     name="confirmPassword"
                     value={formData.confirmPassword}
@@ -524,10 +532,11 @@ const CompleteRegistration: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="idType" className="block text-sm font-medium text-gray-700 mb-2">
                 ID Type *
               </label>
               <select
+                id="idType"
                 name="identityVerification.idType"
                 value={formData.identityVerification.idType}
                 onChange={handleInputChange}
@@ -544,10 +553,11 @@ const CompleteRegistration: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="idNumber" className="block text-sm font-medium text-gray-700 mb-2">
                   ID Number *
                 </label>
                 <input
+                  id="idNumber"
                   type="text"
                   name="identityVerification.idNumber"
                   value={formData.identityVerification.idNumber}
@@ -559,10 +569,11 @@ const CompleteRegistration: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="idExpiryDate" className="block text-sm font-medium text-gray-700 mb-2">
                   ID Expiry Date
                 </label>
                 <input
+                  id="idExpiryDate"
                   type="date"
                   name="identityVerification.idExpiryDate"
                   value={formData.identityVerification.idExpiryDate}
@@ -620,10 +631,11 @@ const CompleteRegistration: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-2">
                 Years of Experience *
               </label>
               <input
+                id="experience"
                 type="number"
                 name="experience"
                 min="0"
@@ -675,10 +687,11 @@ const CompleteRegistration: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="culinaryEducation" className="block text-sm font-medium text-gray-700 mb-2">
                 Culinary Education
               </label>
               <textarea
+                id="culinaryEducation"
                 name="culinaryEducation"
                 value={formData.culinaryEducation}
                 onChange={handleInputChange}
@@ -689,10 +702,11 @@ const CompleteRegistration: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="previousWorkExperience" className="block text-sm font-medium text-gray-700 mb-2">
                 Previous Work Experience
               </label>
               <textarea
+                id="previousWorkExperience"
                 name="previousWorkExperience"
                 value={formData.previousWorkExperience}
                 onChange={handleInputChange}
@@ -703,10 +717,11 @@ const CompleteRegistration: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
                 Brief Bio
               </label>
               <textarea
+                id="bio"
                 name="bio"
                 value={formData.bio}
                 onChange={handleInputChange}
@@ -715,7 +730,7 @@ const CompleteRegistration: React.FC = () => {
                 placeholder="Tell customers about yourself, your cooking style, and what makes your food special"
                 maxLength={500}
               />
-              <p className="text-xs text-gray-500 mt-1">{formData.bio.length}/500 characters</p>
+              <p className="text-xs text-gray-500 mt-1">{formData.bio?.length || 0}/500 characters</p>
             </div>
           </div>
         )
@@ -729,10 +744,11 @@ const CompleteRegistration: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="streetAddress" className="block text-sm font-medium text-gray-700 mb-2">
                 Street Address *
               </label>
               <input
+                id="streetAddress"
                 type="text"
                 name="location.streetAddress"
                 value={formData.location.streetAddress}
@@ -745,10 +761,11 @@ const CompleteRegistration: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
                   City *
                 </label>
                 <input
+                  id="city"
                   type="text"
                   name="location.city"
                   value={formData.location.city}
@@ -760,10 +777,11 @@ const CompleteRegistration: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
                   State *
                 </label>
                 <select
+                  id="state"
                   name="location.state"
                   value={formData.location.state}
                   onChange={handleInputChange}
@@ -780,10 +798,11 @@ const CompleteRegistration: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
                   Postal Code
                 </label>
                 <input
+                  id="postalCode"
                   type="text"
                   name="location.postalCode"
                   value={formData.location.postalCode}
@@ -794,10 +813,11 @@ const CompleteRegistration: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="serviceRadius" className="block text-sm font-medium text-gray-700 mb-2">
                   Service Radius (km) *
                 </label>
                 <input
+                  id="serviceRadius"
                   type="number"
                   name="location.serviceRadius"
                   min="1"
@@ -805,6 +825,7 @@ const CompleteRegistration: React.FC = () => {
                   value={formData.location.serviceRadius}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Enter service radius"
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">How far are you willing to travel/deliver? (1-50 km)</p>
@@ -828,6 +849,7 @@ const CompleteRegistration: React.FC = () => {
               <div className="space-y-3">
                 <label className="flex items-center">
                   <input
+                    id="hasOwnKitchen"
                     type="checkbox"
                     name="kitchenDetails.hasOwnKitchen"
                     checked={formData.kitchenDetails.hasOwnKitchen}
@@ -838,6 +860,7 @@ const CompleteRegistration: React.FC = () => {
                 </label>
                 <label className="flex items-center">
                   <input
+                    id="canCookAtCustomerLocation"
                     type="checkbox"
                     name="kitchenDetails.canCookAtCustomerLocation"
                     checked={formData.kitchenDetails.canCookAtCustomerLocation}
@@ -869,10 +892,11 @@ const CompleteRegistration: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="transportationMethod" className="block text-sm font-medium text-gray-700 mb-2">
                 Transportation Method *
               </label>
               <select
+                id="transportationMethod"
                 name="kitchenDetails.transportationMethod"
                 value={formData.kitchenDetails.transportationMethod}
                 onChange={handleInputChange}
@@ -907,10 +931,11 @@ const CompleteRegistration: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-2">
                   Start Time *
                 </label>
                 <input
+                  id="startTime"
                   type="time"
                   name="availability.hoursPerDay.start"
                   value={formData.availability.hoursPerDay.start}
@@ -921,10 +946,11 @@ const CompleteRegistration: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-2">
                   End Time *
                 </label>
                 <input
+                  id="endTime"
                   type="time"
                   name="availability.hoursPerDay.end"
                   value={formData.availability.hoursPerDay.end}
@@ -935,10 +961,11 @@ const CompleteRegistration: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="maxOrdersPerDay" className="block text-sm font-medium text-gray-700 mb-2">
                   Max Orders Per Day *
                 </label>
                 <input
+                  id="maxOrdersPerDay"
                   type="number"
                   name="availability.maxOrdersPerDay"
                   min="1"
@@ -946,6 +973,7 @@ const CompleteRegistration: React.FC = () => {
                   value={formData.availability.maxOrdersPerDay}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Enter max orders"
                   required
                 />
               </div>
@@ -965,10 +993,11 @@ const CompleteRegistration: React.FC = () => {
               <h3 className="text-lg font-medium text-orange-800 mb-3">Emergency Contact *</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="emergencyContactName" className="block text-sm font-medium text-gray-700 mb-2">
                     Full Name *
                   </label>
                   <input
+                    id="emergencyContactName"
                     type="text"
                     name="emergencyContact.name"
                     value={formData.emergencyContact.name}
@@ -980,10 +1009,11 @@ const CompleteRegistration: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="emergencyContactRelationship" className="block text-sm font-medium text-gray-700 mb-2">
                     Relationship *
                   </label>
                   <input
+                    id="emergencyContactRelationship"
                     type="text"
                     name="emergencyContact.relationship"
                     value={formData.emergencyContact.relationship}
@@ -995,10 +1025,11 @@ const CompleteRegistration: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="emergencyContactPhone" className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number *
                   </label>
                   <input
+                    id="emergencyContactPhone"
                     type="tel"
                     name="emergencyContact.phone"
                     value={formData.emergencyContact.phone}
@@ -1040,10 +1071,11 @@ const CompleteRegistration: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor={`referenceName-${index}`} className="block text-sm font-medium text-gray-700 mb-2">
                         Full Name
                       </label>
                       <input
+                        id={`referenceName-${index}`}
                         type="text"
                         value={reference.name}
                         onChange={(e) => updateReference(index, 'name', e.target.value)}
@@ -1053,10 +1085,11 @@ const CompleteRegistration: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor={`referenceRelationship-${index}`} className="block text-sm font-medium text-gray-700 mb-2">
                         Relationship
                       </label>
                       <input
+                        id={`referenceRelationship-${index}`}
                         type="text"
                         value={reference.relationship}
                         onChange={(e) => updateReference(index, 'relationship', e.target.value)}
@@ -1066,10 +1099,11 @@ const CompleteRegistration: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor={`referencePhone-${index}`} className="block text-sm font-medium text-gray-700 mb-2">
                         Phone Number
                       </label>
                       <input
+                        id={`referencePhone-${index}`}
                         type="tel"
                         value={reference.phone}
                         onChange={(e) => updateReference(index, 'phone', e.target.value)}
@@ -1079,10 +1113,11 @@ const CompleteRegistration: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor={`referenceEmail-${index}`} className="block text-sm font-medium text-gray-700 mb-2">
                         Email (Optional)
                       </label>
                       <input
+                        id={`referenceEmail-${index}`}
                         type="email"
                         value={reference.email}
                         onChange={(e) => updateReference(index, 'email', e.target.value)}
@@ -1092,7 +1127,8 @@ const CompleteRegistration: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+              }
             </div>
 
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
@@ -1101,10 +1137,11 @@ const CompleteRegistration: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="accountName" className="block text-sm font-medium text-gray-700 mb-2">
                     Account Name *
                   </label>
                   <input
+                    id="accountName"
                     type="text"
                     name="bankDetails.accountName"
                     value={formData.bankDetails.accountName}
@@ -1116,10 +1153,11 @@ const CompleteRegistration: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700 mb-2">
                     Account Number *
                   </label>
                   <input
+                    id="accountNumber"
                     type="text"
                     name="bankDetails.accountNumber"
                     value={formData.bankDetails.accountNumber}
@@ -1131,10 +1169,11 @@ const CompleteRegistration: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="bankName" className="block text-sm font-medium text-gray-700 mb-2">
                     Bank Name *
                   </label>
                   <select
+                    id="bankName"
                     name="bankDetails.bankName"
                     value={formData.bankDetails.bankName}
                     onChange={handleInputChange}
@@ -1161,10 +1200,11 @@ const CompleteRegistration: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="bvn" className="block text-sm font-medium text-gray-700 mb-2">
                     BVN
                   </label>
                   <input
+                    id="bvn"
                     type="text"
                     name="bankDetails.bvn"
                     value={formData.bankDetails.bvn}
@@ -1198,6 +1238,7 @@ const CompleteRegistration: React.FC = () => {
               <div className="border border-gray-200 rounded-lg p-4">
                 <label className="flex items-start">
                   <input
+                    id="agreedToTerms"
                     type="checkbox"
                     name="agreedToTerms"
                     checked={formData.agreedToTerms}
@@ -1212,7 +1253,7 @@ const CompleteRegistration: React.FC = () => {
                     <p className="text-sm text-gray-600">
                       I understand and agree to Choma's Terms of Service, including payment terms, service standards, and code of conduct for chefs.
                     </p>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setShowTermsModal(true)}
                       className="text-orange-600 hover:underline text-sm"
@@ -1226,6 +1267,7 @@ const CompleteRegistration: React.FC = () => {
               <div className="border border-gray-200 rounded-lg p-4">
                 <label className="flex items-start">
                   <input
+                    id="agreedToPrivacyPolicy"
                     type="checkbox"
                     name="agreedToPrivacyPolicy"
                     checked={formData.agreedToPrivacyPolicy}
@@ -1240,7 +1282,7 @@ const CompleteRegistration: React.FC = () => {
                     <p className="text-sm text-gray-600">
                       I understand how Choma collects, uses, and protects my personal information as outlined in the Privacy Policy.
                     </p>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setShowPrivacyModal(true)}
                       className="text-orange-600 hover:underline text-sm"
@@ -1254,6 +1296,7 @@ const CompleteRegistration: React.FC = () => {
               <div className="border border-gray-200 rounded-lg p-4">
                 <label className="flex items-start">
                   <input
+                    id="agreedToBackgroundCheck"
                     type="checkbox"
                     name="agreedToBackgroundCheck"
                     checked={formData.agreedToBackgroundCheck}
@@ -1298,14 +1341,10 @@ const CompleteRegistration: React.FC = () => {
     <div className="min-h-screen flex">
       <div className="flex-[0_0_35%] flex flex-col justify-center px-6 sm:px-8 lg:px-10 bg-white overflow-y-auto">
         <div className="w-full max-w-2xl mx-auto">
-
           <div className="flex justify-start items-center mb-6">
             <div className="pr-6">
-              <img src={logo} alt="Choma Logo" className="w-20" /> 
+              <img src={logo} alt="Choma Logo" className="w-20" />
             </div>
-              {/* <h3 className="text-5xl font-bold text-choma-black">
-                getChoma Chef
-              </h3> */}
           </div>
 
           <button
@@ -1315,7 +1354,6 @@ const CompleteRegistration: React.FC = () => {
             <ArrowLeft size={20} className="mr-2" />
             Back to Verification
           </button>
-
 
           <div className="mb-6">
             <div className="flex justify-start">
@@ -1409,8 +1447,7 @@ const CompleteRegistration: React.FC = () => {
 
       <div className="hidden lg:flex flex-[0_0_65%] relative">
         <div
-          className="w-full bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${chefBgImage})` }}
+          className="w-full bg-cover bg-center relative bg-chef-image"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60 flex items-end">
             <div className="p-12 text-white">
@@ -1427,15 +1464,15 @@ const CompleteRegistration: React.FC = () => {
       </div>
 
       {/* Terms Modal */}
-      <TermsModal 
-        isOpen={showTermsModal} 
-        onClose={() => setShowTermsModal(false)} 
+      <TermsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
       />
 
       {/* Privacy Modal */}
-      <PrivacyModal 
-        isOpen={showPrivacyModal} 
-        onClose={() => setShowPrivacyModal(false)} 
+      <PrivacyModal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
       />
     </div>
   )

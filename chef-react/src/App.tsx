@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
-import Register from './pages/Register'
 import EmailVerification from './pages/EmailVerification'
 import CodeVerification from './pages/CodeVerification'
 import CompleteRegistration from './pages/CompleteRegistration'
@@ -78,7 +77,7 @@ function AppRoutes() {
       } />
       <Route path="/register" element={
         <PublicRoute>
-          <EmailVerification onVerificationComplete={() => {}} />
+          <EmailVerification />
         </PublicRoute>
       } />
       <Route path="/register/verify-code" element={

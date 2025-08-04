@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Shield, Clock, ArrowLeft, RefreshCw } from 'lucide-react'
+import { Clock, ArrowLeft, RefreshCw } from 'lucide-react'
 import logo from '../assets/logo.svg'
 import chefBgImage from '../assets/chefsingin.jpg'
 

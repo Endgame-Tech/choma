@@ -1,70 +1,77 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Mail, Clock, ArrowLeft } from 'lucide-react'
-import logo from '../assets/logo.svg'
-import chefBgImage from '../assets/chefsingin.jpg'
-import TermsModal from '../components/TermsModal'
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Mail, Clock, ArrowLeft } from 'lucide-react';
+import logo from '../assets/logo.svg';
+import chefBgImage from '../assets/chefsingin.jpg';
+import TermsModal from '../components/TermsModal';
+import styles from './EmailVerification.module.css';
 
 const EmailVerification: React.FC = () => {
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [showTermsModal, setShowTermsModal] = useState(false)
-  const navigate = useNavigate()
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const navigate = useNavigate();
+  const bgRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (bgRef.current) {
+      bgRef.current.style.setProperty('--bg-image', `url(${chefBgImage})`);
+    }
+  }, []);
 
   const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleSendVerification = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!email.trim()) {
-      setError('Please enter your email address')
-      return
+      setError('Please enter your email address');
+      return;
     }
 
     if (!validateEmail(email)) {
-      setError('Please enter a valid email address')
-      return
+      setError('Please enter a valid email address');
+      return;
     }
 
-    setIsLoading(true)
-    setError('')
-    setSuccess('')
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/send-verification`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: email.toLowerCase(),
-          purpose: 'chef_registration'
-        })
-      })
+          purpose: 'chef_registration',
+        }),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.success) {
-        setSuccess('Verification code sent! Check your email.')
-        // Navigate to code verification step
-        navigate('/register/verify-code', { 
-          state: { email: email.toLowerCase() }
-        })
+        setSuccess('Verification code sent! Check your email.');
+        navigate('/register/verify-code', {
+          state: { email: email.toLowerCase() },
+        });
       } else {
-        setError(data.message || 'Failed to send verification code')
+        setError(data.message || 'Failed to send verification code');
       }
     } catch (error) {
-      console.error('Send verification error:', error)
-      setError('Failed to send verification code. Please try again.')
+      console.error('Send verification error:', error);
+      setError('Failed to send verification code. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -82,16 +89,19 @@ const EmailVerification: React.FC = () => {
 
           {/* Logo */}
           <div className="mb-8">
-            <div className="">
+            <div>
               <img src={logo} alt="Choma Logo" className="w-20" />
             </div>
           </div>
 
           {/* Header */}
-          <div className=" mb-8">
+          <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account.</h1>
             <p className="text-gray-600">
-              Already have an account? <button onClick={() => navigate('/login')} className="text-orange-600 hover:text-orange-700 font-medium">Sign in</button>
+              Already have an account?{' '}
+              <button onClick={() => navigate('/login')} className="text-orange-600 hover:text-orange-700 font-medium">
+                Sign in
+              </button>
             </p>
           </div>
 
@@ -147,7 +157,7 @@ const EmailVerification: React.FC = () => {
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
                 I agree to the{' '}
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowTermsModal(true)}
                   className="text-orange-600 hover:text-orange-700 font-medium underline"
@@ -195,9 +205,10 @@ const EmailVerification: React.FC = () => {
 
       {/* Right side - Image */}
       <div className="hidden lg:flex flex-[0_0_65%] relative">
-        <div 
-          className="w-full bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${chefBgImage})` }}
+        <div
+          className={`w-full bg-cover bg-center relative ${styles.bgImage}`}
+          data-bg-image={chefBgImage}
+          ref={bgRef}
         >
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60 flex items-end">
@@ -206,7 +217,7 @@ const EmailVerification: React.FC = () => {
                 Start bringing your culinary ideas to reality.
               </h2>
               <p className="text-lg opacity-90 leading-relaxed">
-                Create a free account and get full access to all features. 
+                Create a free account and get full access to all features.
                 Trusted by thousands of professional chefs.
               </p>
             </div>
@@ -215,12 +226,12 @@ const EmailVerification: React.FC = () => {
       </div>
 
       {/* Terms Modal */}
-      <TermsModal 
-        isOpen={showTermsModal} 
-        onClose={() => setShowTermsModal(false)} 
+      <TermsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
       />
     </div>
-  )
-}
+  );
+};
 
-export default EmailVerification
+export default EmailVerification;

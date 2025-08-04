@@ -1,34 +1,42 @@
-import React, { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
-import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff } from 'lucide-react'
-import logo from '../assets/logo.svg'
-import chefBgImage from '../assets/chefsingin.jpg'
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
+import logo from '../assets/logo.svg';
+import chefBgImage from '../assets/chefsingin.jpg';
+import styles from './Login.module.css';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const { login } = useAuth()
-  const navigate = useNavigate()
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const bgRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (bgRef.current) {
+      bgRef.current.style.setProperty('--bg-image', `url(${chefBgImage})`);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
     try {
-      await login({ email, password })
-      navigate('/dashboard')
+      await login({ email, password });
+      navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Login failed')
+      setError(err.response?.data?.message || err.message || 'Login failed');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -37,7 +45,7 @@ const Login: React.FC = () => {
         <div className="w-full max-w-md mx-auto">
           {/* Logo */}
           <div className="mb-8">
-            <div className="">
+            <div>
               <img src={logo} alt="Choma Logo" className="w-20" />
             </div>
           </div>
@@ -46,7 +54,10 @@ const Login: React.FC = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
             <p className="text-gray-600">
-              Already have an account? <Link to="/register" className="text-orange-600 hover:text-orange-700 font-medium">Sign up</Link>
+              Already have an account?{' '}
+              <Link to="/register" className="text-orange-600 hover:text-orange-700 font-medium">
+                Sign up
+              </Link>
             </p>
           </div>
 
@@ -118,7 +129,10 @@ const Login: React.FC = () => {
                 </label>
               </div>
               <div className="text-sm">
-                <Link to="/forgot-password" className="text-orange-600 hover:text-orange-700 font-medium">
+                <Link
+                  to="/forgot-password"
+                  className="text-orange-600 hover:text-orange-700 font-medium"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -141,7 +155,7 @@ const Login: React.FC = () => {
           </form>
 
           {/* Sign up link */}
-          <div className="mt-8 ">
+          <div className="mt-8">
             <p className="text-gray-600">
               New to Choma?{' '}
               <Link to="/register" className="text-orange-600 hover:text-orange-700 font-semibold">
@@ -154,9 +168,10 @@ const Login: React.FC = () => {
 
       {/* Right side - Image */}
       <div className="hidden lg:flex flex-[0_0_65%] relative">
-        <div 
-          className="w-full bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${chefBgImage})` }}
+        <div
+          className={`w-full relative ${styles.bgImage}`}
+          data-bg-image={chefBgImage}
+          ref={bgRef}
         >
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60 flex items-end">
@@ -173,7 +188,7 @@ const Login: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

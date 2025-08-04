@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import styles from './MetricProgressBar.module.css';
 
 interface MetricProgressBarProps {
     value: number;
@@ -17,6 +18,13 @@ export const MetricProgressBar: React.FC<MetricProgressBarProps> = ({
     isInverse = false,
 }) => {
     const percentage = Math.min((value / maxValue) * 100, 100);
+    const barRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (barRef.current) {
+            barRef.current.style.setProperty('--progress-width', `${percentage}%`);
+        }
+    }, [percentage]);
 
     const getColorClass = () => {
         if (isInverse) {
@@ -31,10 +39,10 @@ export const MetricProgressBar: React.FC<MetricProgressBarProps> = ({
     };
 
     return (
-        <div className="metric-bar">
+        <div className={`metric-bar ${styles.metricBar}`}>
             <div
-                className={`metric-bar-value ${getColorClass()}`}
-                style={{ width: `${percentage}%` }}
+                className={`metric-bar-value ${styles.metricBarValue} ${getColorClass()}`}
+                data-percentage={percentage}
             />
         </div>
     );

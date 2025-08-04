@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import styles from './ColorIndicator.module.css';
 
 interface ColorIndicatorProps {
@@ -6,10 +6,18 @@ interface ColorIndicatorProps {
 }
 
 export const ColorIndicator: React.FC<ColorIndicatorProps> = ({ color }) => {
+    const indicatorRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (indicatorRef.current) {
+            indicatorRef.current.style.setProperty('--indicator-color', color);
+        }
+    }, [color]);
+
     return (
         <div
             className={`segment-color-indicator ${styles.colorIndicator}`}
-            style={{'--indicator-color': color} as React.CSSProperties}
+            data-color={color}
         />
     );
 };

@@ -21,7 +21,8 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-// Hash function for password verification
+// Hash function for password verification (currently unused but kept for future implementation)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const hashPassword = async (password: string): Promise<string> => {
   const encoder = new TextEncoder()
   const data = encoder.encode(password)
@@ -75,11 +76,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return false
       }
       
-      // Hash the provided password and compare
-      const hashedPassword = await hashPassword(password)
-      
       // For demo purposes, we'll use a simple comparison
       // In production, you'd want to use a proper password hashing library like bcrypt
+      // const hashedPassword = await hashPassword(password)
       const isValidPassword = password === 'S0BwB$cuIqx_82Z'
       
       if (isValidPassword) {

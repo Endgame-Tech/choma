@@ -26,7 +26,7 @@ export const useToast = () => {
     // Auto-remove toast after duration
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
-    }, toast.duration + 300) // Add 300ms for fade-out animation
+    }, (toast.duration || 5000) + 300) // Add 300ms for fade-out animation
   }, [])
 
   const removeToast = useCallback((id: string) => {

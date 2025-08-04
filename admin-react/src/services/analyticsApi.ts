@@ -1,5 +1,43 @@
 import axios from 'axios'
 
+// Types for the analytics API
+interface ExportFilters {
+  startDate?: string
+  endDate?: string
+  format?: 'csv' | 'xlsx' | 'pdf'
+  [key: string]: unknown
+}
+
+interface UserSegmentData {
+  segment: string
+  count: number
+  percentage: number
+}
+
+interface RevenueStreamData {
+  source: string
+  amount: number
+  percentage: number
+}
+
+interface PerformanceMetric {
+  metric: string
+  value: number
+  change: number
+}
+
+interface CustomerInsight {
+  type: string
+  value: string | number
+  description: string
+}
+
+interface DateRange {
+  period: string
+  startDate?: string
+  endDate?: string
+}
+
 // Create axios instance for analytics API
 const api = axios.create({
   baseURL: import.meta.env.PROD 
@@ -17,7 +55,7 @@ export const analyticsApi = {
   async getKPIData(timeRange: string = '30d') {
     try {
       const response = await api.get(`/kpis?timeRange=${timeRange}`)
-      return response.data.data
+      return (response.data as any).data
     } catch (error) {
       console.error('Error fetching KPI data:', error)
       throw error
@@ -28,7 +66,7 @@ export const analyticsApi = {
   async getChartsData(timeRange: string = '30d') {
     try {
       const response = await api.get(`/charts?timeRange=${timeRange}`)
-      return response.data.data
+      return (response.data as any).data
     } catch (error) {
       console.error('Error fetching charts data:', error)
       throw error
@@ -39,7 +77,7 @@ export const analyticsApi = {
   async getBusinessIntelligence(timeRange: string = '30d') {
     try {
       const response = await api.get(`/business-intelligence?timeRange=${timeRange}`)
-      return response.data.data
+      return (response.data as any).data
     } catch (error) {
       console.error('Error fetching business intelligence:', error)
       throw error
@@ -50,7 +88,7 @@ export const analyticsApi = {
   async getUserEngagement(timeRange: string = '30d') {
     try {
       const response = await api.get(`/user-engagement?timeRange=${timeRange}`)
-      return response.data.data
+      return (response.data as any).data
     } catch (error) {
       console.error('Error fetching user engagement:', error)
       throw error
@@ -61,7 +99,7 @@ export const analyticsApi = {
   async getChartData(chartId: string, timeRange: string = '30d') {
     try {
       const response = await api.get(`/chart/${chartId}?timeRange=${timeRange}`)
-      return response.data.data
+      return (response.data as any).data
     } catch (error) {
       console.error('Error fetching chart data:', error)
       throw error
@@ -69,7 +107,7 @@ export const analyticsApi = {
   },
 
   // Export analytics report
-  async exportReport(filters: any = {}) {
+  async exportReport(filters: ExportFilters = {}) {
     try {
       const response = await api.post('/export', filters, {
         responseType: 'blob'
@@ -102,10 +140,10 @@ export const analyticsApi = {
   },
 
   // Get revenue analytics
-  async getRevenueAnalytics(dateRange: any) {
+  async getRevenueAnalytics(dateRange: DateRange) {
     try {
       const response = await api.get(`/revenue?timeRange=${dateRange.period}`)
-      return response.data.data
+      return (response.data as any).data
     } catch (error) {
       console.error('Error fetching revenue analytics:', error)
       throw error
@@ -113,10 +151,10 @@ export const analyticsApi = {
   },
 
   // Get customer analytics
-  async getCustomerAnalytics(dateRange: any) {
+  async getCustomerAnalytics(dateRange: DateRange) {
     try {
       const response = await api.get(`/customers?timeRange=${dateRange.period}`)
-      return response.data.data
+      return (response.data as any).data
     } catch (error) {
       console.error('Error fetching customer analytics:', error)
       throw error
@@ -124,10 +162,10 @@ export const analyticsApi = {
   },
 
   // Get chef analytics
-  async getChefAnalytics(dateRange: any) {
+  async getChefAnalytics(dateRange: DateRange) {
     try {
       const response = await api.get(`/chefs?timeRange=${dateRange.period}`)
-      return response.data.data
+      return (response.data as any).data
     } catch (error) {
       console.error('Error fetching chef analytics:', error)
       throw error
@@ -135,10 +173,10 @@ export const analyticsApi = {
   },
 
   // Get operational analytics
-  async getOperationalAnalytics(dateRange: any) {
+  async getOperationalAnalytics(dateRange: DateRange) {
     try {
       const response = await api.get(`/operations?timeRange=${dateRange.period}`)
-      return response.data.data
+      return (response.data as any).data
     } catch (error) {
       console.error('Error fetching operational analytics:', error)
       throw error

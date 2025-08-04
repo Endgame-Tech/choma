@@ -29,5 +29,10 @@ export default [
     rules: {
       ...tseslint.configs.recommended.rules,
     },
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
   },
 ];

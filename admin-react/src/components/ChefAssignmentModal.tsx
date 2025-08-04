@@ -1,6 +1,6 @@
-import React from 'react'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAvailableChefs } from '../hooks/useChefs'
+import './styles/ChefAssignmentModal.css'
 
 interface ChefAssignmentModalProps {
   isOpen: boolean
@@ -17,7 +17,7 @@ interface ChefAssignmentModalProps {
     customer: string
     totalAmount: number
     deliveryDate?: string
-  } | null;
+  } | null
 }
 
 const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
@@ -270,8 +270,8 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                   <div
                     key={chef._id}
                     className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${selectedChef === chef._id
-                        ? 'border-blue-500 bg-blue-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300'
                       }`}
                     onClick={() => setSelectedChef(chef._id)}
                   >
@@ -323,9 +323,8 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className={`capacity-bar ${isNearCapacity ? 'bg-orange-500' : 'bg-blue-500'
-                            }`}
-                          style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
+                          className={`capacity-bar ${isNearCapacity ? 'bg-orange-500' : 'bg-blue-500'}`}
+                          data-capacity-percentage={Math.min(capacityPercentage, 100)}
                         ></div>
                       </div>
                       {isNearCapacity && (
