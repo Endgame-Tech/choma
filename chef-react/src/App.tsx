@@ -5,6 +5,10 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import EmailVerification from './pages/EmailVerification'
+import CodeVerification from './pages/CodeVerification'
+import CompleteRegistration from './pages/CompleteRegistration'
+import RegistrationSuccess from './pages/RegistrationSuccess'
 import Dashboard from './pages/Dashboard'
 import Orders from './pages/Orders'
 import Profile from './pages/Profile'
@@ -74,7 +78,22 @@ function AppRoutes() {
       } />
       <Route path="/register" element={
         <PublicRoute>
-          <Register />
+          <EmailVerification onVerificationComplete={() => {}} />
+        </PublicRoute>
+      } />
+      <Route path="/register/verify-code" element={
+        <PublicRoute>
+          <CodeVerification />
+        </PublicRoute>
+      } />
+      <Route path="/register/complete" element={
+        <PublicRoute>
+          <CompleteRegistration />
+        </PublicRoute>
+      } />
+      <Route path="/register/success" element={
+        <PublicRoute>
+          <RegistrationSuccess />
         </PublicRoute>
       } />
 

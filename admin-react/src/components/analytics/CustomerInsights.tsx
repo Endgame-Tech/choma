@@ -1,4 +1,6 @@
-import React from 'react'
+import React from 'react';
+import { ColorIndicator } from '../common/ColorIndicator';
+import { SegmentIndicator } from '../common/SegmentIndicator';
 interface CustomerSegment {
   name: string
   users: number
@@ -46,10 +48,7 @@ const CustomerInsights: React.FC<CustomerInsightsProps> = ({ segments, totalCust
               <div key={index} className="relative">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
-                    <div 
-                      className="w-4 h-4 rounded-full mr-3"
-                      style={{ backgroundColor: segment.color }}
-                    />
+                    <ColorIndicator color={segment.color} />
                     <span className="font-medium text-gray-900">{segment.name}</span>
                   </div>
                   <div className="text-right">
@@ -61,19 +60,12 @@ const CustomerInsights: React.FC<CustomerInsightsProps> = ({ segments, totalCust
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Progress Bar */}
-                <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
-                  <div 
-                    className="h-2 rounded-full transition-all duration-500"
-                    style={{ 
-                      width: `${segment.percentage}%`,
-                      backgroundColor: segment.color
-                    }}
-                  />
-                </div>
-                
-                {/* Revenue Contribution */}
+                <SegmentIndicator
+                  percentage={segment.percentage}
+                  color={segment.color}
+                />                {/* Revenue Contribution */}
                 <div className="flex items-center justify-between text-xs text-gray-600">
                   <span>Revenue: {formatCurrency(segment.totalRevenue)}</span>
                   <span>{((segment.totalRevenue / totalRevenue) * 100).toFixed(1)}% of total</span>

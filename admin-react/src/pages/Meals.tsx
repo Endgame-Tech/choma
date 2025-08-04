@@ -119,8 +119,8 @@ const Meals: React.FC = () => {
   }
 
   const handleSelectMeal = (mealId: string) => {
-    setSelectedMeals(prev => 
-      prev.includes(mealId) 
+    setSelectedMeals(prev =>
+      prev.includes(mealId)
         ? prev.filter(id => id !== mealId)
         : [...prev, mealId]
     )
@@ -211,6 +211,8 @@ const Meals: React.FC = () => {
               value={filters.category}
               onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value, page: 1 }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Filter by Category"
+              title="Filter by Category"
             >
               <option value="">All Categories</option>
               <option value="Breakfast">Breakfast</option>
@@ -227,12 +229,14 @@ const Meals: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
             <select
               value={filters.isAvailable?.toString() ?? ''}
-              onChange={(e) => setFilters(prev => ({ 
-                ...prev, 
+              onChange={(e) => setFilters(prev => ({
+                ...prev,
                 isAvailable: e.target.value === '' ? undefined : e.target.value === 'true',
-                page: 1 
+                page: 1
               }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Filter by Availability"
+              title="Filter by Availability"
             >
               <option value="">All Meals</option>
               <option value="true">Available</option>
@@ -247,6 +251,8 @@ const Meals: React.FC = () => {
               value={filters.limit}
               onChange={(e) => setFilters(prev => ({ ...prev, limit: parseInt(e.target.value), page: 1 }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Number of meals per page"
+              title="Number of meals per page"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -277,7 +283,7 @@ const Meals: React.FC = () => {
               >
                 Disable Selected
               </button>
-              <button 
+              <button
                 onClick={() => setSelectedMeals([])}
                 className="text-sm text-gray-600 hover:text-gray-800"
               >
@@ -295,11 +301,13 @@ const Meals: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <input 
-                    type="checkbox" 
-                    className="rounded" 
+                  <input
+                    type="checkbox"
+                    className="rounded"
                     checked={selectedMeals.length === meals.length && meals.length > 0}
                     onChange={handleSelectAll}
+                    aria-label="Select all meals"
+                    title="Select all meals"
                   />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -340,11 +348,13 @@ const Meals: React.FC = () => {
                 meals.map((meal) => (
                   <tr key={meal._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="rounded"
                         checked={selectedMeals.includes(meal._id)}
                         onChange={() => handleSelectMeal(meal._id)}
+                        aria-label={`Select meal: ${meal.name}`}
+                        title={`Select meal: ${meal.name}`}
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -366,8 +376,8 @@ const Meals: React.FC = () => {
                       <div className="text-sm text-gray-900">
                         <div className="font-medium">{formatCurrency(meal.pricing.totalPrice)}</div>
                         <div className="text-xs text-gray-500">
-                          Base: {formatCurrency(meal.pricing.basePrice)} + 
-                          Platform: {formatCurrency(meal.pricing.platformFee)} + 
+                          Base: {formatCurrency(meal.pricing.basePrice)} +
+                          Platform: {formatCurrency(meal.pricing.platformFee)} +
                           Chef: {formatCurrency(meal.pricing.chefFee)}
                         </div>
                       </div>
@@ -386,31 +396,34 @@ const Meals: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => handleToggleAvailability(meal._id)}
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          meal.isAvailable
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${meal.isAvailable
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
                             : 'bg-red-100 text-red-800 hover:bg-red-200'
-                        }`}
+                          }`}
                       >
                         {meal.isAvailable ? 'Available' : 'Unavailable'}
                       </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        <button 
+                        <button
                           onClick={() => {
                             setSelectedMeal(meal)
                             setEditModalOpen(true)
                           }}
                           className="text-blue-600 hover:text-blue-900"
+                          aria-label={`Edit meal: ${meal.name}`}
+                          title={`Edit meal: ${meal.name}`}
                         >
-                          <PencilIcon className="w-4 h-4" />
+                          <PencilIcon className="w-4 h-4" aria-hidden="true" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteMeal(meal._id)}
                           className="text-red-600 hover:text-red-900"
+                          aria-label={`Delete meal: ${meal.name}`}
+                          title={`Delete meal: ${meal.name}`}
                         >
-                          <TrashIcon className="w-4 h-4" />
+                          <TrashIcon className="w-4 h-4" aria-hidden="true" />
                         </button>
                       </div>
                     </td>

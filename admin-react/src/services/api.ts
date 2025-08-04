@@ -186,7 +186,9 @@ export const chefsApi = {
 
   // Approve chef
   async approveChef(chefId: string): Promise<Chef> {
-    const response = await api.put<ApiResponse<Chef>>(`/chefs/${chefId}/approve`)
+    const response = await api.put<ApiResponse<Chef>>(`/chefs/${chefId}/approve`, {
+      sendEmail: true // Flag to backend to send email notification
+    })
     return handleResponse(response)
   },
 

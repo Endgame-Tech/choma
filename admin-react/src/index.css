@@ -16,3 +16,33 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+@layer components {
+  .capacity-bar {
+    @apply h-2 rounded-full transition-all;
+  }
+  
+  .capacity-bar-width {
+    @apply w-full;
+  }
+
+  .metric-bar {
+    @apply w-full bg-gray-200 rounded-full h-2;
+  }
+
+  .metric-bar-value {
+    @apply h-2 rounded-full transition-all duration-500;
+  }
+
+  .segment-bar-base {
+    @apply w-full bg-gray-100 rounded-full h-2 mb-2;
+  }
+
+  .segment-bar-value {
+    @apply h-2 rounded-full transition-all duration-500;
+  }
+
+  .segment-color-indicator {
+    @apply w-4 h-4 rounded-full mr-3;
+  }
+}

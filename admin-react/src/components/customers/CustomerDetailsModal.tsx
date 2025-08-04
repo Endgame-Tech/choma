@@ -115,6 +115,7 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-2xl"
+              title="Close"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
@@ -164,7 +165,12 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
                       Call Customer
                     </button>
                   )}
+                  <label htmlFor="customer-status-select" className="sr-only">
+                    Update customer status
+                  </label>
                   <select
+                    id="customer-status-select"
+                    aria-label="Update customer status"
                     value={customer.status}
                     onChange={(e) => handleStatusUpdate(e.target.value)}
                     disabled={updatingStatus}

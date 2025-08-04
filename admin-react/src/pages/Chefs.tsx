@@ -2,6 +2,9 @@ import React from 'react'
 import { useState, useMemo, useEffect } from 'react'
 import { useChefs } from '../hooks/useChefs'
 import { chefsApi } from '../services/api'
+import { emailService } from '../services/emailService'
+import { useToast } from '../hooks/useToast'
+import Toast from '../components/Toast'
 import type { Chef } from '../types'
 
 const Chefs: React.FC = () => {
@@ -9,6 +12,7 @@ const Chefs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [selectedChef, setSelectedChef] = useState<Chef | null>(null)
+  const { toasts, removeToast, success, error, warning } = useToast()
 
   // Debounce search term to prevent excessive API calls
   useEffect(() => {
@@ -39,32 +43,77 @@ const Chefs: React.FC = () => {
     return baseFilters
   }, [debouncedSearchTerm, filter])
 
-  const { chefs, loading, error, refreshChefs } = useChefs(filters)
+  const { chefs, loading, error: chefsError, refreshChefs } = useChefs(filters)
 
   const handleStatusUpdate = async (chefId: string, newStatus: string) => {
     try {
       await chefsApi.updateChefStatus(chefId, newStatus)
       await refreshChefs()
-    } catch (error) {
-      console.error('Failed to update chef status:', error)
+    } catch (err) {
+      console.error('Failed to update chef status:', err)
     }
   }
 
   const handleApproveChef = async (chefId: string) => {
     try {
+      // Find the chef to get their details for the email
+      const chef = chefs.find(c => c._id === chefId)
+      if (!chef) {
+        console.error('Chef not found')
+        return
+      }
+
+      // Approve the chef first
       await chefsApi.approveChef(chefId)
+      
+      // Send approval email notification
+      const emailSent = await emailService.sendChefAcceptanceEmail({
+        chefName: chef.fullName,
+        chefEmail: chef.email
+      })
+
+      if (emailSent) {
+        success(`Chef ${chef.fullName} approved and welcome email sent!`)
+      } else {
+        warning(`Chef ${chef.fullName} approved but email notification failed`)
+      }
+
       await refreshChefs()
-    } catch (error) {
-      console.error('Failed to approve chef:', error)
+    } catch (err) {
+      console.error('Failed to approve chef:', err)
+      error('Failed to approve chef. Please try again.')
     }
   }
 
   const handleRejectChef = async (chefId: string, reason?: string) => {
     try {
+      // Find the chef to get their details for the email
+      const chef = chefs.find(c => c._id === chefId)
+      if (!chef) {
+        console.error('Chef not found')
+        return
+      }
+
+      // Reject the chef first
       await chefsApi.rejectChef(chefId, reason)
+
+      // Send rejection email notification
+      const emailSent = await emailService.sendChefRejectionEmail({
+        chefName: chef.fullName,
+        chefEmail: chef.email,
+        reason: reason || 'No specific reason provided.'
+      })
+
+      if (emailSent) {
+        success(`Chef ${chef.fullName} rejected and notification email sent!`)
+      } else {
+        warning(`Chef ${chef.fullName} rejected but email notification failed`)
+      }
+
       await refreshChefs()
-    } catch (error) {
-      console.error('Failed to reject chef:', error)
+    } catch (err) {
+      console.error('Failed to reject chef:', err)
+      error('Failed to reject chef. Please try again.')
     }
   }
 
@@ -106,14 +155,14 @@ const Chefs: React.FC = () => {
     )
   }
 
-  if (error) {
+  if (chefsError) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-center">
           <div className="text-red-400 mr-3">⚠️</div>
           <div>
             <h3 className="text-red-800 font-medium">Error loading chefs</h3>
-            <p className="text-red-600 text-sm">{error}</p>
+            <p className="text-red-600 text-sm">{chefsError}</p>
             <button 
               onClick={refreshChefs}
               className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
@@ -846,6 +895,17 @@ const Chefs: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Toast Notifications */}
+      {toasts.map(toast => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          duration={toast.duration}
+          onClose={() => removeToast(toast.id)}
+        />
+      ))}
     </div>
   )
 }

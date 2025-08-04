@@ -21,7 +21,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
   badges
 }) => {
   return (
-    <div className="rounded-3xl overflow-hidden border-2 border-choma-orange h-full flex flex-col">
+    <div className="rounded-3xl md:max-w-96 overflow-hidden border-2 border-choma-orange h-full flex flex-col">
       {/* Image Section */}
       <div className="bg-choma-brown h-64 flex items-center justify-center relative">
         <img 

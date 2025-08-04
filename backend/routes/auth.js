@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const userSubscriptionController = require('../controllers/userSubscriptionController');
+const emailVerificationController = require('../controllers/emailVerificationController');
 const auth = require('../middleware/auth');
 const { userValidations, notificationValidations } = require('../middleware/validation');
 
@@ -125,5 +126,22 @@ router.delete('/push-token', auth, async (req, res) => {
     });
   }
 });
+
+// ============= EMAIL VERIFICATION ROUTES =============
+
+// POST /api/auth/send-verification - Send verification code to email
+router.post('/send-verification', emailVerificationController.sendVerificationCode);
+
+// POST /api/auth/verify-email - Verify email with code
+router.post('/verify-email', emailVerificationController.verifyEmail);
+
+// POST /api/auth/resend-verification - Resend verification code
+router.post('/resend-verification', emailVerificationController.resendVerificationCode);
+
+// GET /api/auth/verification-status/:email - Check verification status
+router.get('/verification-status/:email', emailVerificationController.checkVerificationStatus);
+
+// POST /api/auth/cleanup-verifications - Cleanup expired verifications (admin/cron)
+router.post('/cleanup-verifications', emailVerificationController.cleanupExpiredVerifications);
 
 module.exports = router;

@@ -20,12 +20,12 @@ interface ChefAssignmentModalProps {
   } | null;
 }
 
-const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onAssign, 
+const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
+  isOpen,
+  onClose,
+  onAssign,
   orderId,
-  orderDetails 
+  orderDetails
 }) => {
   const [selectedChef, setSelectedChef] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -36,7 +36,7 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
     chefFeePercentage: 70
   })
   const { chefs: availableChefs, loading: chefsLoading, error: chefsError } = useAvailableChefs()
-  
+
   // Log order ID for debugging (prevents unused variable warning)
   useEffect(() => {
     if (isOpen && orderId) {
@@ -59,13 +59,13 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
   }, [isOpen])
 
   // Filter chefs based on search term
-  const filteredChefs = Array.isArray(availableChefs) 
-    ? availableChefs.filter(chef => 
-        chef.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        chef.specialties?.some(specialty => 
-          specialty.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+  const filteredChefs = Array.isArray(availableChefs)
+    ? availableChefs.filter(chef =>
+      chef.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      chef.specialties?.some(specialty =>
+        specialty.toLowerCase().includes(searchTerm.toLowerCase())
       )
+    )
     : []
 
   const handleAssign = () => {
@@ -172,9 +172,11 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                   estimatedHours: parseInt(e.target.value) || 1
                 }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Estimated Hours to Complete"
+                title="Estimated Hours to Complete"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Priority Level
@@ -186,6 +188,8 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                   priority: e.target.value
                 }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Priority Level"
+                title="Priority Level"
               >
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -193,7 +197,7 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                 <option value="Urgent">Urgent</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Chef Fee (% of total)
@@ -208,12 +212,14 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                   chefFeePercentage: parseInt(e.target.value) || 70
                 }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Chef Fee Percentage"
+                title="Chef Fee Percentage"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Chef will earn: {orderDetails ? formatCurrency((orderDetails.totalAmount * assignmentDetails.chefFeePercentage) / 100) : '-'}
               </p>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Special Instructions
@@ -259,15 +265,14 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
               {filteredChefs.map((chef) => {
                 const capacityPercentage = getCapacityPercentage(chef.currentCapacity || 0, chef.maxCapacity || 0)
                 const isNearCapacity = capacityPercentage > 80
-                
+
                 return (
                   <div
                     key={chef._id}
-                    className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                      selectedChef === chef._id 
-                        ? 'border-blue-500 bg-blue-50 shadow-md' 
+                    className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${selectedChef === chef._id
+                        ? 'border-blue-500 bg-blue-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                     onClick={() => setSelectedChef(chef._id)}
                   >
                     <div className="flex items-start justify-between mb-3">
@@ -293,6 +298,8 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                           checked={selectedChef === chef._id}
                           onChange={() => setSelectedChef(chef._id)}
                           className="text-blue-600"
+                          aria-label={`Select ${chef.fullName}`}
+                          title={`Select ${chef.fullName}`}
                         />
                       </div>
                     </div>
@@ -302,9 +309,8 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getAvailabilityColor(chef.availability || 'Unknown')}`}>
                         {chef.availability || 'Unknown'}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        chef.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span className={`text-xs px-2 py-1 rounded-full ${chef.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
                         {chef.status}
                       </span>
                     </div>
@@ -316,10 +322,9 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                         <span>{chef.currentCapacity || 0}/{chef.maxCapacity || 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all ${
-                            isNearCapacity ? 'bg-orange-500' : 'bg-blue-500'
-                          }`}
+                        <div
+                          className={`capacity-bar ${isNearCapacity ? 'bg-orange-500' : 'bg-blue-500'
+                            }`}
                           style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
                         ></div>
                       </div>

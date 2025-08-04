@@ -1963,6 +1963,7 @@ exports.updateChefStatus = async (req, res) => {
 exports.approveChef = async (req, res) => {
   try {
     const { id } = req.params;
+    const { sendEmail = true } = req.body;
 
     const chef = await Chef.findByIdAndUpdate(
       id,
@@ -1981,10 +1982,26 @@ exports.approveChef = async (req, res) => {
       });
     }
 
+    // Send welcome email if requested
+    let emailSent = false;
+    if (sendEmail) {
+      try {
+        const emailService = require('../services/emailService');
+        emailSent = await emailService.sendChefAcceptanceEmail({
+          chefName: chef.fullName,
+          chefEmail: chef.email
+        });
+      } catch (emailError) {
+        console.error('Failed to send chef approval email:', emailError);
+        // Don't fail the approval if email fails
+      }
+    }
+
     res.json({
       success: true,
       message: 'Chef approved successfully',
-      data: chef
+      data: chef,
+      emailSent: sendEmail ? emailSent : null
     });
 
   } catch (error) {
@@ -2000,7 +2017,7 @@ exports.approveChef = async (req, res) => {
 exports.rejectChef = async (req, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
+    const { reason, sendEmail = true } = req.body;
 
     const chef = await Chef.findByIdAndUpdate(
       id,
@@ -2020,10 +2037,27 @@ exports.rejectChef = async (req, res) => {
       });
     }
 
+    // Send rejection email if requested
+    let emailSent = false;
+    if (sendEmail) {
+      try {
+        const emailService = require('../services/emailService');
+        emailSent = await emailService.sendChefRejectionEmail({
+          chefName: chef.fullName,
+          chefEmail: chef.email,
+          reason: reason
+        });
+      } catch (emailError) {
+        console.error('Failed to send chef rejection email:', emailError);
+        // Don't fail the rejection if email fails
+      }
+    }
+
     res.json({
       success: true,
       message: 'Chef rejected successfully',
-      data: chef
+      data: chef,
+      emailSent: sendEmail ? emailSent : null
     });
 
   } catch (error) {

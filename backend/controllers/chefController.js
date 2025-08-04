@@ -1,4 +1,5 @@
 const Chef = require('../models/Chef');
+const EmailVerification = require('../models/EmailVerification');
 const Order = require('../models/Order');
 const OrderDelegation = require('../models/OrderDelegation');
 const mongoose = require('mongoose');
@@ -77,6 +78,31 @@ exports.registerChef = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Missing required personal information'
+            });
+        }
+
+        // Check if email has been verified
+        const emailVerification = await EmailVerification.findOne({
+            email: email.toLowerCase(),
+            purpose: 'chef_registration',
+            verified: true
+        }).sort({ createdAt: -1 });
+
+        if (!emailVerification) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email not verified. Please verify your email first.',
+                requiresVerification: true
+            });
+        }
+
+        // Check if verification is recent (within 24 hours)
+        const verificationAge = Date.now() - emailVerification.verifiedAt.getTime();
+        if (verificationAge > 24 * 60 * 60 * 1000) { // 24 hours
+            return res.status(400).json({
+                success: false,
+                message: 'Email verification has expired. Please verify your email again.',
+                requiresVerification: true
             });
         }
 
@@ -225,6 +251,11 @@ exports.registerChef = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
+
+        // Clean up used verification record
+        await EmailVerification.deleteOne({
+            _id: emailVerification._id
+        });
 
         res.status(201).json({
             success: true,

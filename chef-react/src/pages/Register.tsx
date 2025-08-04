@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
 import type { RegisterData } from '../types'
+import logo from '../assets/logo.svg'
 
 const specialtyOptions = [
   'Nigerian Cuisine',
@@ -51,6 +52,8 @@ const certificationOptions = [
 ]
 
 const Register: React.FC = () => {
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState<RegisterData>({
     // Personal Information
     fullName: '',
@@ -61,14 +64,14 @@ const Register: React.FC = () => {
     gender: 'Male',
     password: '',
     confirmPassword: '',
-    
+
     // Identity Verification
     identityVerification: {
       idType: 'National ID',
       idNumber: '',
       idExpiryDate: ''
     },
-    
+
     // Professional Details
     specialties: [],
     experience: 0,
@@ -76,7 +79,7 @@ const Register: React.FC = () => {
     previousWorkExperience: '',
     certifications: [],
     languagesSpoken: ['English'],
-    
+
     // Location & Service Area
     location: {
       streetAddress: '',
@@ -86,7 +89,7 @@ const Register: React.FC = () => {
       country: 'Nigeria',
       serviceRadius: 5
     },
-    
+
     // Kitchen & Equipment
     kitchenDetails: {
       hasOwnKitchen: true,
@@ -94,7 +97,7 @@ const Register: React.FC = () => {
       canCookAtCustomerLocation: false,
       transportationMethod: 'Own Vehicle'
     },
-    
+
     // Availability
     availability: {
       daysAvailable: [],
@@ -104,14 +107,14 @@ const Register: React.FC = () => {
       },
       maxOrdersPerDay: 5
     },
-    
+
     // Emergency Contact
     emergencyContact: {
       name: '',
       relationship: '',
       phone: ''
     },
-    
+
     // References
     references: [{
       name: '',
@@ -119,7 +122,7 @@ const Register: React.FC = () => {
       phone: '',
       email: ''
     }],
-    
+
     // Bank Details
     bankDetails: {
       accountName: '',
@@ -128,16 +131,16 @@ const Register: React.FC = () => {
       bankCode: '',
       bvn: ''
     },
-    
+
     // Profile & Portfolio
     profilePhoto: '',
     portfolioImages: [],
     bio: '',
-    
+
     // Health & Safety
     healthCertificates: [],
     foodSafetyCertification: '',
-    
+
     // Legal Agreements
     agreedToTerms: false,
     agreedToPrivacyPolicy: false,
@@ -156,7 +159,7 @@ const Register: React.FC = () => {
     const { name, value, type } = e.target;
     const isCheckbox = type === 'checkbox';
     const checked = isCheckbox && 'checked' in e.target ? (e.target as HTMLInputElement).checked : undefined;
-    
+
     if (name.includes('.')) {
       const [parent, child, grandchild] = name.split('.')
       if (grandchild) {
@@ -166,9 +169,9 @@ const Register: React.FC = () => {
             ...prev[parent as keyof RegisterData] as object,
             [child]: {
               ...(prev[parent as keyof RegisterData] as any)[child],
-              [grandchild]: isCheckbox ? checked : 
-                           name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius') 
-                           ? parseInt(value) || 0 : value
+              [grandchild]: isCheckbox ? checked :
+                name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius')
+                  ? parseInt(value) || 0 : value
             }
           }
         }))
@@ -177,9 +180,9 @@ const Register: React.FC = () => {
           ...prev,
           [parent]: {
             ...((prev[parent as keyof RegisterData] as object) || {}),
-            [child]: isCheckbox ? checked : 
-                     name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius') 
-                     ? parseInt(value) || 0 : value
+            [child]: isCheckbox ? checked :
+              name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius')
+                ? parseInt(value) || 0 : value
           }
         }))
       }
@@ -187,8 +190,8 @@ const Register: React.FC = () => {
       setFormData(prev => ({
         ...prev,
         [name]: isCheckbox ? checked :
-                name === 'experience' || name === 'maxOrdersPerDay' || name === 'serviceRadius' 
-                ? parseInt(value) || 0 : value
+          name === 'experience' || name === 'maxOrdersPerDay' || name === 'serviceRadius'
+            ? parseInt(value) || 0 : value
       }))
     }
   }
@@ -231,7 +234,7 @@ const Register: React.FC = () => {
   const updateReference = (index: number, field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      references: prev.references.map((ref, i) => 
+      references: prev.references.map((ref, i) =>
         i === index ? { ...ref, [field]: value } : ref
       )
     }))
@@ -240,8 +243,8 @@ const Register: React.FC = () => {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1: // Personal Information
-        return !!(formData.fullName && formData.email && formData.phone && formData.dateOfBirth && 
-                 formData.password && formData.confirmPassword)
+        return !!(formData.fullName && formData.email && formData.phone && formData.dateOfBirth &&
+          formData.password && formData.confirmPassword)
       case 2: // Identity Verification
         return !!(formData.identityVerification.idType && formData.identityVerification.idNumber)
       case 3: // Professional Details
@@ -251,8 +254,8 @@ const Register: React.FC = () => {
       case 5: // Kitchen & Availability
         return !!(formData.kitchenDetails.kitchenEquipment.length > 0 && formData.availability.daysAvailable.length > 0)
       case 6: // References & Bank Details
-        return !!(formData.emergencyContact.name && formData.emergencyContact.phone && 
-                 formData.bankDetails.accountName && formData.bankDetails.accountNumber && formData.bankDetails.bankName)
+        return !!(formData.emergencyContact.name && formData.emergencyContact.phone &&
+          formData.bankDetails.accountName && formData.bankDetails.accountNumber && formData.bankDetails.bankName)
       case 7: // Terms & Conditions
         return !!(formData.agreedToTerms && formData.agreedToPrivacyPolicy && formData.agreedToBackgroundCheck)
       default:
@@ -276,7 +279,7 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
       return
@@ -317,7 +320,7 @@ const Register: React.FC = () => {
             </p>
             <Link
               to="/login"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-choma-black hover:bg-choma-brown"
             >
               Back to Login
             </Link>
@@ -331,7 +334,9 @@ const Register: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <div className="text-6xl mb-4">👨‍🍳</div>
+          <div className="flex justify-center">
+            <img src={logo} alt="getChoma Logo" className="w-20" />
+          </div>
           <h1 className="text-3xl font-extrabold text-gray-900">
             Become a choma Chef
           </h1>
@@ -345,17 +350,15 @@ const Register: React.FC = () => {
           <div className="flex items-center justify-between">
             {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
               <div key={step} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                  currentStep >= step 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-600'
-                }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${currentStep >= step
+                  ? 'bg-choma-black text-white'
+                  : 'bg-gray-200 text-gray-600'
+                  }`}>
                   {step}
                 </div>
                 {step < totalSteps && (
-                  <div className={`w-12 h-1 mx-1 ${
-                    currentStep > step ? 'bg-blue-600' : 'bg-gray-200'
-                  }`} />
+                  <div className={`w-12 h-1 mx-1 ${currentStep > step ? 'bg-choma-black' : 'bg-gray-200'
+                    }`} />
                 )}
               </div>
             ))}
@@ -384,18 +387,19 @@ const Register: React.FC = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900">Personal Information</h3>
                 <p className="text-sm text-gray-600">Please provide your basic personal details</p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Full Name *</label>
                     <input
+                      title="Enter your Your Full Name"
                       type="text"
                       name="fullName"
                       required
                       value={formData.fullName}
                       onChange={handleInputChange}
                       placeholder="Enter your full name"
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                     />
                   </div>
 
@@ -406,7 +410,9 @@ const Register: React.FC = () => {
                       required
                       value={formData.gender}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                      title="Select your gender"
+                      aria-label="Gender"
                     >
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
@@ -424,7 +430,9 @@ const Register: React.FC = () => {
                     value={formData.dateOfBirth}
                     onChange={handleInputChange}
                     max={new Date(Date.now() - 18 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                    title="Your date of birth"
+                    aria-label="Date of Birth"
                   />
                   <p className="text-xs text-gray-500 mt-1">You must be at least 18 years old</p>
                 </div>
@@ -438,7 +446,9 @@ const Register: React.FC = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="your.email@example.com"
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                    title="Your email address"
+                    aria-label="Email Address"
                   />
                 </div>
 
@@ -452,7 +462,7 @@ const Register: React.FC = () => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       placeholder="+2348123456789"
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                     />
                   </div>
 
@@ -464,7 +474,7 @@ const Register: React.FC = () => {
                       value={formData.alternatePhone}
                       onChange={handleInputChange}
                       placeholder="+2348987654321"
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                     />
                   </div>
                 </div>
@@ -472,29 +482,65 @@ const Register: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Password *</label>
-                    <input
-                      type="password"
-                      name="password"
-                      required
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      placeholder="Create a strong password"
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    />
+                    <div className="mt-1 relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        required
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        placeholder="Create a strong password"
+                        className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                          </svg>
+                        ) : (
+                          <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">At least 8 characters with numbers and symbols</p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Confirm Password *</label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      required
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      placeholder="Confirm your password"
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    />
+                    <div className="mt-1 relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        required
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        placeholder="Confirm your password"
+                        className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? (
+                          <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                          </svg>
+                        ) : (
+                          <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -505,7 +551,7 @@ const Register: React.FC = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900">Identity Verification</h3>
                 <p className="text-sm text-gray-600">We need to verify your identity for security purposes</p>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">ID Type *</label>
                   <select
@@ -513,7 +559,9 @@ const Register: React.FC = () => {
                     required
                     value={formData.identityVerification.idType}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                    title="Select your ID type"
+                    aria-label="ID Type"
                   >
                     <option value="National ID">National ID</option>
                     <option value="Driver License">Driver License</option>
@@ -531,7 +579,9 @@ const Register: React.FC = () => {
                     value={formData.identityVerification.idNumber}
                     onChange={handleInputChange}
                     placeholder="Enter your ID number"
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                    title="Your identification number"
+                    aria-label="ID Number"
                   />
                 </div>
 
@@ -543,21 +593,23 @@ const Register: React.FC = () => {
                     value={formData.identityVerification.idExpiryDate}
                     onChange={handleInputChange}
                     min={new Date().toISOString().split('T')[0]}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                    title="Expiration date of your ID"
+                    aria-label="ID Expiry Date"
                   />
                   <p className="text-xs text-gray-500 mt-1">Leave blank if ID doesn't expire</p>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-choma-brown/20 rounded-lg p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <svg className="h-5 w-5 text-choma-brown" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <div className="ml-3">
-                      <h3 className="text-sm font-medium text-blue-800">Identity Verification</h3>
-                      <div className="mt-2 text-sm text-blue-700">
+                      <h3 className="text-sm font-medium text-choma-black">Identity Verification</h3>
+                      <div className="mt-2 text-sm text-choma-brown">
                         <p>Your identity information will be verified by our admin team. This helps ensure the safety and security of our platform.</p>
                       </div>
                     </div>
@@ -571,7 +623,7 @@ const Register: React.FC = () => {
               <div className="space-y-6">
                 <h3 className="text-lg font-medium text-gray-900">Professional Details</h3>
                 <p className="text-sm text-gray-600">Tell us about your culinary experience and skills</p>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Cooking Specialties * (Select at least one)</label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -581,7 +633,7 @@ const Register: React.FC = () => {
                           type="checkbox"
                           checked={formData.specialties.includes(specialty)}
                           onChange={() => handleArrayToggle('specialties', specialty)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-choma-black focus:ring-choma-brown border-gray-300 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-700">{specialty}</span>
                       </label>
@@ -600,7 +652,10 @@ const Register: React.FC = () => {
                       required
                       value={formData.experience}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                      title="Enter your years of experience"
+                      placeholder="Years of experience"
+                      aria-label="Years of Experience"
                     />
                   </div>
 
@@ -613,7 +668,7 @@ const Register: React.FC = () => {
                             type="checkbox"
                             checked={formData.languagesSpoken.includes(language)}
                             onChange={() => handleArrayToggle('languagesSpoken', language)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            className="h-4 w-4 text-choma-black focus:ring-choma-brown border-gray-300 rounded"
                           />
                           <span className="ml-2 text-sm text-gray-700">{language}</span>
                         </label>
@@ -630,7 +685,7 @@ const Register: React.FC = () => {
                     value={formData.culinaryEducation}
                     onChange={handleInputChange}
                     placeholder="e.g., Culinary Arts Diploma from XYZ Institute, Chef Training Program..."
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                   />
                 </div>
 
@@ -642,7 +697,7 @@ const Register: React.FC = () => {
                     value={formData.previousWorkExperience}
                     onChange={handleInputChange}
                     placeholder="e.g., Head Chef at ABC Restaurant (2020-2023), Private Chef for families..."
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                   />
                 </div>
 
@@ -655,7 +710,7 @@ const Register: React.FC = () => {
                           type="checkbox"
                           checked={formData.certifications.includes(cert)}
                           onChange={() => handleArrayToggle('certifications', cert)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-choma-black focus:ring-choma-brown border-gray-300 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-700">{cert}</span>
                       </label>
@@ -672,7 +727,7 @@ const Register: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Tell customers about yourself, your cooking style, and what makes your food special..."
                     maxLength={500}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                   />
                   <p className="text-xs text-gray-500 mt-1">{formData.bio?.length || 0}/500 characters</p>
                 </div>
@@ -684,7 +739,7 @@ const Register: React.FC = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900">Location & Service Area</h3>
                 <p className="text-sm text-gray-600">Let us know where you're located and how far you can serve</p>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Street Address *</label>
                   <input
@@ -694,7 +749,7 @@ const Register: React.FC = () => {
                     value={formData.location.streetAddress}
                     onChange={handleInputChange}
                     placeholder="e.g., No. 123 Adebayo Street"
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                   />
                 </div>
 
@@ -708,18 +763,21 @@ const Register: React.FC = () => {
                       value={formData.location.city}
                       onChange={handleInputChange}
                       placeholder="e.g., Lagos"
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">State *</label>
+                    <label htmlFor="location-state" className="block text-sm font-medium text-gray-700">State *</label>
                     <select
+                      id="location-state"
                       name="location.state"
                       required
                       value={formData.location.state}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                      title="Select your state"
+                      aria-label="State"
                     >
                       <option value="">Select State</option>
                       {nigerianStates.map((state) => (
@@ -738,7 +796,7 @@ const Register: React.FC = () => {
                       value={formData.location.postalCode}
                       onChange={handleInputChange}
                       placeholder="e.g., 100001"
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                     />
                   </div>
 
@@ -752,7 +810,10 @@ const Register: React.FC = () => {
                       required
                       value={formData.location.serviceRadius}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                      title="Enter your service radius in kilometers"
+                      placeholder="Enter distance in km"
+                      aria-label="Service Radius in Kilometers"
                     />
                     <p className="text-xs text-gray-500 mt-1">How far are you willing to travel/deliver? (1-50 km)</p>
                   </div>
@@ -765,7 +826,7 @@ const Register: React.FC = () => {
               <div className="space-y-6">
                 <h3 className="text-lg font-medium text-gray-900">Kitchen & Availability</h3>
                 <p className="text-sm text-gray-600">Tell us about your kitchen setup and when you're available</p>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">Kitchen Setup</label>
                   <div className="space-y-3">
@@ -775,21 +836,11 @@ const Register: React.FC = () => {
                         name="kitchenDetails.hasOwnKitchen"
                         checked={formData.kitchenDetails.hasOwnKitchen}
                         onChange={handleInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-choma-black focus:ring-choma-brown border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">I have my own fully equipped kitchen</span>
                     </label>
-                    
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="kitchenDetails.canCookAtCustomerLocation"
-                        checked={formData.kitchenDetails.canCookAtCustomerLocation}
-                        onChange={handleInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">I can cook at customer's location</span>
-                    </label>
+
                   </div>
                 </div>
 
@@ -802,7 +853,7 @@ const Register: React.FC = () => {
                           type="checkbox"
                           checked={formData.kitchenDetails.kitchenEquipment.includes(equipment)}
                           onChange={() => handleNestedArrayToggle('kitchenDetails', 'kitchenEquipment', equipment)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-choma-black focus:ring-choma-brown border-gray-300 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-700">{equipment}</span>
                       </label>
@@ -817,7 +868,9 @@ const Register: React.FC = () => {
                     required
                     value={formData.kitchenDetails.transportationMethod}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                    title="Select your transportation method"
+                    aria-label="Transportation Method"
                   >
                     <option value="Own Vehicle">Own Vehicle</option>
                     <option value="Motorcycle">Motorcycle</option>
@@ -835,7 +888,7 @@ const Register: React.FC = () => {
                           type="checkbox"
                           checked={formData.availability.daysAvailable.includes(day)}
                           onChange={() => handleNestedArrayToggle('availability', 'daysAvailable', day)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-choma-black focus:ring-choma-brown border-gray-300 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-700">{day}</span>
                       </label>
@@ -852,7 +905,10 @@ const Register: React.FC = () => {
                       required
                       value={formData.availability.hoursPerDay.start}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                      placeholder="Select start time"
+                      title="Select your availability start time"
+                      aria-label="Start Time"
                     />
                   </div>
 
@@ -864,7 +920,9 @@ const Register: React.FC = () => {
                       required
                       value={formData.availability.hoursPerDay.end}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                      title="Select your availability end time"
+                      aria-label="End Time"
                     />
                   </div>
 
@@ -878,7 +936,9 @@ const Register: React.FC = () => {
                       required
                       value={formData.availability.maxOrdersPerDay}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                      title="Enter maximum number of orders you can handle per day"
+                      aria-label="Maximum Orders Per Day"
                     />
                   </div>
                 </div>
@@ -890,7 +950,7 @@ const Register: React.FC = () => {
               <div className="space-y-6">
                 <h3 className="text-lg font-medium text-gray-900">References & Bank Details</h3>
                 <p className="text-sm text-gray-600">Provide emergency contact, references, and banking information</p>
-                
+
                 {/* Emergency Contact */}
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <h4 className="text-lg font-medium text-red-900 mb-3">Emergency Contact *</h4>
@@ -904,10 +964,12 @@ const Register: React.FC = () => {
                         value={formData.emergencyContact.name}
                         onChange={handleInputChange}
                         placeholder="Contact person's name"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                        title="Enter emergency contact's full name"
+                        aria-label="Emergency Contact Full Name"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Relationship *</label>
                       <input
@@ -917,10 +979,12 @@ const Register: React.FC = () => {
                         value={formData.emergencyContact.relationship}
                         onChange={handleInputChange}
                         placeholder="e.g., Spouse, Parent, Sibling"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                        title="Enter your relationship with the emergency contact"
+                        aria-label="Emergency Contact Relationship"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Phone Number *</label>
                       <input
@@ -930,7 +994,9 @@ const Register: React.FC = () => {
                         value={formData.emergencyContact.phone}
                         onChange={handleInputChange}
                         placeholder="+2348123456789"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                        title="Enter emergency contact's phone number"
+                        aria-label="Emergency Contact Phone Number"
                       />
                     </div>
                   </div>
@@ -943,12 +1009,12 @@ const Register: React.FC = () => {
                     <button
                       type="button"
                       onClick={addReference}
-                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                      className="px-3 py-1 text-sm bg-choma-black text-white rounded hover:bg-choma-brown"
                     >
                       Add Reference
                     </button>
                   </div>
-                  
+
                   {formData.references.map((reference, index) => (
                     <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
                       <div className="flex justify-between items-start mb-3">
@@ -963,7 +1029,7 @@ const Register: React.FC = () => {
                           </button>
                         )}
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Full Name</label>
@@ -972,10 +1038,12 @@ const Register: React.FC = () => {
                             value={reference.name}
                             onChange={(e) => updateReference(index, 'name', e.target.value)}
                             placeholder="Reference's full name"
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                            title="Enter the full name of your professional reference"
+                            aria-label={`Reference ${index + 1} Full Name`}
                           />
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Relationship</label>
                           <input
@@ -983,10 +1051,12 @@ const Register: React.FC = () => {
                             value={reference.relationship}
                             onChange={(e) => updateReference(index, 'relationship', e.target.value)}
                             placeholder="e.g., Former Boss, Client"
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            title="Enter your relationship with this reference"
+                            aria-label={`Reference ${index + 1} Relationship`}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                           />
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Phone Number</label>
                           <input
@@ -994,10 +1064,12 @@ const Register: React.FC = () => {
                             value={reference.phone}
                             onChange={(e) => updateReference(index, 'phone', e.target.value)}
                             placeholder="+2348123456789"
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                            title="Enter reference's phone number"
+                            aria-label={`Reference ${index + 1} Phone Number`}
                           />
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Email (Optional)</label>
                           <input
@@ -1005,7 +1077,9 @@ const Register: React.FC = () => {
                             value={reference.email}
                             onChange={(e) => updateReference(index, 'email', e.target.value)}
                             placeholder="reference@example.com"
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                            title="Enter reference's email address (optional)"
+                            aria-label={`Reference ${index + 1} Email`}
                           />
                         </div>
                       </div>
@@ -1017,7 +1091,7 @@ const Register: React.FC = () => {
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <h4 className="text-lg font-medium text-green-900 mb-3">Bank Details *</h4>
                   <p className="text-sm text-green-700 mb-4">This information is required for payment processing</p>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Account Name *</label>
@@ -1028,7 +1102,9 @@ const Register: React.FC = () => {
                         value={formData.bankDetails.accountName}
                         onChange={handleInputChange}
                         placeholder="Account holder's name"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        title="Bank Account Name"
+                        aria-label="Bank Account Name"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
                       />
                     </div>
 
@@ -1041,7 +1117,9 @@ const Register: React.FC = () => {
                         value={formData.bankDetails.accountNumber}
                         onChange={handleInputChange}
                         placeholder="10-digit account number"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                        title="Enter your 10-digit bank account number"
+                        aria-label="Bank Account Number"
                       />
                     </div>
 
@@ -1052,7 +1130,9 @@ const Register: React.FC = () => {
                         required
                         value={formData.bankDetails.bankName}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                        title="Select Bank Name"
+                        aria-label="Bank Name"
                       >
                         <option value="">Select Bank</option>
                         <option value="Access Bank">Access Bank</option>
@@ -1089,7 +1169,9 @@ const Register: React.FC = () => {
                         }}
                         placeholder="12345678901 (optional)"
                         maxLength={11}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
+                        title="Enter your 11-digit Bank Verification Number (optional)"
+                        aria-label="Bank Verification Number (BVN)"
                       />
                       <p className="text-xs text-gray-500 mt-1">
                         BVN must be exactly 11 digits (optional field)
@@ -1110,7 +1192,7 @@ const Register: React.FC = () => {
               <div className="space-y-6">
                 <h3 className="text-lg font-medium text-gray-900">Terms & Conditions</h3>
                 <p className="text-sm text-gray-600">Please review and accept our terms to complete your registration</p>
-                
+
                 <div className="space-y-4">
                   <div className="border border-gray-200 rounded-lg p-4">
                     <label className="flex items-start">
@@ -1119,16 +1201,18 @@ const Register: React.FC = () => {
                         name="agreedToTerms"
                         checked={formData.agreedToTerms}
                         onChange={handleInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                        className="h-4 w-4 text-choma-black focus:ring-choma-brown border-gray-300 rounded mt-1"
                         required
+                        title="Accept Terms of Service"
+                        aria-label="Accept Terms of Service"
                       />
                       <div className="ml-3">
                         <span className="text-sm font-medium text-gray-900">I agree to the Terms of Service *</span>
                         <p className="text-sm text-gray-600">
-                          I understand and agree to Choma's Terms of Service, including payment terms, 
+                          I understand and agree to Choma's Terms of Service, including payment terms,
                           service standards, and code of conduct for chefs on the platform.
                         </p>
-                        <a href="#" className="text-blue-600 hover:text-blue-800 text-sm underline">
+                        <a href="#" className="text-choma-black hover:text-blue-800 text-sm underline">
                           Read Terms of Service
                         </a>
                       </div>
@@ -1142,16 +1226,18 @@ const Register: React.FC = () => {
                         name="agreedToPrivacyPolicy"
                         checked={formData.agreedToPrivacyPolicy}
                         onChange={handleInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                        className="h-4 w-4 text-choma-black focus:ring-choma-brown border-gray-300 rounded mt-1"
                         required
+                        title="Accept Privacy Policy"
+                        aria-label="Accept Privacy Policy"
                       />
                       <div className="ml-3">
                         <span className="text-sm font-medium text-gray-900">I agree to the Privacy Policy *</span>
                         <p className="text-sm text-gray-600">
-                          I understand how Choma collects, uses, and protects my personal information 
+                          I understand how Choma collects, uses, and protects my personal information
                           as outlined in the Privacy Policy.
                         </p>
-                        <a href="#" className="text-blue-600 hover:text-blue-800 text-sm underline">
+                        <a href="#" className="text-choma-black hover:text-blue-800 text-sm underline">
                           Read Privacy Policy
                         </a>
                       </div>
@@ -1165,13 +1251,15 @@ const Register: React.FC = () => {
                         name="agreedToBackgroundCheck"
                         checked={formData.agreedToBackgroundCheck}
                         onChange={handleInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                        className="h-4 w-4 text-choma-black focus:ring-choma-brown border-gray-300 rounded mt-1"
                         required
+                        title="Consent to Background Check"
+                        aria-label="Consent to Background Check"
                       />
                       <div className="ml-3">
                         <span className="text-sm font-medium text-gray-900">I consent to background verification *</span>
                         <p className="text-sm text-gray-600">
-                          I authorize Choma to verify my identity, references, and conduct background 
+                          I authorize Choma to verify my identity, references, and conduct background
                           checks as necessary for platform safety and security.
                         </p>
                       </div>
@@ -1190,8 +1278,8 @@ const Register: React.FC = () => {
                       <h3 className="text-sm font-medium text-yellow-800">Application Review Process</h3>
                       <div className="mt-2 text-sm text-yellow-700">
                         <p>
-                          After submitting your application, our admin team will review your information, 
-                          verify your documents, and contact your references. This process typically takes 
+                          After submitting your application, our admin team will review your information,
+                          verify your documents, and contact your references. This process typically takes
                           2-5 business days. You'll receive an email notification once approved.
                         </p>
                       </div>
@@ -1208,6 +1296,8 @@ const Register: React.FC = () => {
                   type="button"
                   onClick={prevStep}
                   className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  title="Go to previous step"
+                  aria-label="Previous Step"
                 >
                   Previous
                 </button>
@@ -1215,6 +1305,8 @@ const Register: React.FC = () => {
                 <Link
                   to="/login"
                   className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  title="Return to login page"
+                  aria-label="Back to Login Page"
                 >
                   Back to Login
                 </Link>
@@ -1224,7 +1316,9 @@ const Register: React.FC = () => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-choma-black hover:bg-choma-brown"
+                  title="Go to next step"
+                  aria-label="Next Step"
                 >
                   Next
                 </button>
@@ -1232,7 +1326,9 @@ const Register: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-choma-black hover:bg-choma-brown disabled:opacity-50"
+                  title="Submit your registration application"
+                  aria-label="Submit Application"
                 >
                   {loading ? 'Submitting...' : 'Submit Application'}
                 </button>

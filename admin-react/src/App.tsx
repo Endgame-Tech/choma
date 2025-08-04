@@ -1,7 +1,9 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
+import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import AnalyticsDashboard from './pages/AnalyticsDashboard'
 import Orders from './pages/Orders'
@@ -11,22 +13,123 @@ import AdvancedCustomers from './pages/AdvancedCustomers'
 import Meals from './pages/Meals'
 import MealPlans from './pages/MealPlans'
 
+// Protected Route Component
+interface ProtectedRouteProps {
+  children: React.ReactNode
+}
+
+function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { isAuthenticated, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-choma-white dark:bg-choma-dark flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-choma-orange mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Authenticating...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  return <Layout>{children}</Layout>
+}
+
+// Public Route Component (redirects to dashboard if already authenticated)
+interface PublicRouteProps {
+  children: React.ReactNode
+}
+
+function PublicRoute({ children }: PublicRouteProps) {
+  const { isAuthenticated, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-choma-white dark:bg-choma-dark flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-choma-orange mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />
+  }
+
+  return <>{children}</>
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+      } />
+
+      {/* Protected Routes */}
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/analytics" element={
+        <ProtectedRoute>
+          <AnalyticsDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/orders" element={
+        <ProtectedRoute>
+          <Orders />
+        </ProtectedRoute>
+      } />
+      <Route path="/chefs" element={
+        <ProtectedRoute>
+          <Chefs />
+        </ProtectedRoute>
+      } />
+      <Route path="/users" element={
+        <ProtectedRoute>
+          <Users />
+        </ProtectedRoute>
+      } />
+      <Route path="/customers" element={
+        <ProtectedRoute>
+          <AdvancedCustomers />
+        </ProtectedRoute>
+      } />
+      <Route path="/meals" element={
+        <ProtectedRoute>
+          <Meals />
+        </ProtectedRoute>
+      } />
+      <Route path="/meal-plans" element={
+        <ProtectedRoute>
+          <MealPlans />
+        </ProtectedRoute>
+      } />
+
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
 const App: React.FC = () => {
   return (
     <ThemeProvider>
       <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/analytics" element={<AnalyticsDashboard />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/chefs" element={<Chefs />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/customers" element={<AdvancedCustomers />} />
-            <Route path="/meals" element={<Meals />} />
-            <Route path="/meal-plans" element={<MealPlans />} />
-          </Routes>
-        </Layout>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </Router>
     </ThemeProvider>
   )

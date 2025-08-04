@@ -36,7 +36,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   const fetchData = async () => {
     try {
       setLoading(true)
-      
+
       const [assignmentsResponse, mealsResponse] = await Promise.all([
         mealPlansApi.getMealPlanAssignments(mealPlan._id) as Promise<{ data: { assignments: MealPlanAssignment[] } }>,
         mealsApi.getAllMeals({ limit: 1000, isAvailable: true }) as Promise<{ data: { meals: Meal[] } }>
@@ -77,10 +77,10 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
           dayOfWeek: selectedDay,
           mealTime: selectedMealTime as 'breakfast' | 'lunch' | 'dinner'
         })
-        
+
         await fetchData()
         onUpdate()
-        
+
         // Reset form
         setCurrentAssignment({
           selectedMeals: [],
@@ -109,7 +109,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   }
 
   const getAssignmentForSlot = (week: number, dayOfWeek: number, mealTime: string) => {
-    return assignments.find(a => 
+    return assignments.find(a =>
       a.weekNumber === week && a.dayOfWeek === dayOfWeek && a.mealTime === mealTime
     )
   }
@@ -139,15 +139,15 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
     setSelectedWeek(week)
     setSelectedDay(dayOfWeek)
     setSelectedMealTime(mealTime as typeof MEAL_TIMES[number])
-    
+
     // Load existing assignment if any
     const existingAssignment = getAssignmentForSlot(week, dayOfWeek, mealTime)
     if (existingAssignment) {
       // Ensure mealIds are strings, not populated objects
-      const mealIds = Array.isArray(existingAssignment.mealIds) 
+      const mealIds = Array.isArray(existingAssignment.mealIds)
         ? existingAssignment.mealIds.map((id: string | { _id: string }) => typeof id === 'string' ? id : (id as { _id: string })._id)
         : []
-      
+
       setCurrentAssignment({
         selectedMeals: mealIds,
         customTitle: existingAssignment.customTitle || '',
@@ -170,7 +170,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
         const newSelectedMeals = prev.selectedMeals.includes(mealId)
           ? prev.selectedMeals.filter(id => id !== mealId)
           : [...prev.selectedMeals, mealId]
-        
+
         return {
           ...prev,
           selectedMeals: newSelectedMeals
@@ -194,6 +194,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
+              title="Close"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
@@ -212,6 +213,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     value={selectedWeek}
                     onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
                     className="px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    aria-label="Select week"
                   >
                     {Array.from({ length: mealPlan.durationWeeks }, (_, i) => (
                       <option key={i + 1} value={i + 1}>Week {i + 1}</option>
@@ -270,13 +272,12 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                         return (
                           <div
                             key={`${day}-${mealTime}`}
-                            className={`min-h-[140px] border p-2 cursor-pointer transition-colors ${
-                              isSelected 
-                                ? 'bg-blue-100 border-blue-400' 
+                            className={`min-h-[140px] border p-2 cursor-pointer transition-colors ${isSelected
+                                ? 'bg-blue-100 border-blue-400'
                                 : assignment
                                   ? 'bg-green-50 border-green-200 hover:bg-green-100'
                                   : 'bg-white border-gray-200 hover:bg-gray-50'
-                            }`}
+                              }`}
                             onClick={() => handleSlotClick(selectedWeek, dayIndex + 1, mealTime)}
                           >
                             {assignment ? (
@@ -284,8 +285,8 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                                 {/* Custom Image or Orange Background */}
                                 <div className="flex-1 relative">
                                   {assignment.imageUrl && assignment.imageUrl.trim() ? (
-                                    <img 
-                                      src={assignment.imageUrl} 
+                                    <img
+                                      src={assignment.imageUrl}
                                       alt={assignment.customTitle}
                                       className="w-full h-full object-cover"
                                       onError={(e) => {
@@ -298,12 +299,11 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                                       }}
                                     />
                                   ) : null}
-                                  
+
                                   {/* Orange background fallback */}
-                                  <div 
-                                    className={`w-full h-full bg-orange-400 flex items-center justify-center ${
-                                      assignment.imageUrl && assignment.imageUrl.trim() ? 'hidden' : 'flex'
-                                    }`}
+                                  <div
+                                    className={`w-full h-full bg-orange-400 flex items-center justify-center ${assignment.imageUrl && assignment.imageUrl.trim() ? 'hidden' : 'flex'
+                                      }`}
                                   >
                                     <div className="text-center text-white">
                                       <div className="text-xs font-medium mb-1 px-2 line-clamp-2">
@@ -314,7 +314,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                                       </div>
                                     </div>
                                   </div>
-                                  
+
                                   {/* Overlay info for image */}
                                   {assignment.imageUrl && assignment.imageUrl.trim() && (
                                     <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-2">
@@ -322,14 +322,14 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                                         {assignment.customTitle}
                                       </div>
                                       <div className="text-xs opacity-90">
-                                        {meals.length > 0 
+                                        {meals.length > 0
                                           ? `${meals.length} item${meals.length > 1 ? 's' : ''} • ${formatCurrency(meals.reduce((sum, m) => sum + m.pricing.totalPrice, 0))}`
                                           : 'Custom meal'
                                         }
                                       </div>
                                     </div>
                                   )}
-                                  
+
                                   {/* Delete button */}
                                   <button
                                     onClick={(e) => {
@@ -337,6 +337,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                                       handleRemoveAssignment(assignment._id || assignment.assignmentId)
                                     }}
                                     className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                                    title="Delete assignment"
                                   >
                                     <TrashIcon className="w-3 h-3" />
                                   </button>
@@ -406,18 +407,18 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
           <div className="w-96 border-l border-gray-200 bg-gray-50 flex-shrink-0">
             <div className="p-4 h-full flex flex-col max-h-[80vh]">
               <h3 className="font-semibold text-gray-900 mb-4">
-                {selectedDay && selectedMealTime 
+                {selectedDay && selectedMealTime
                   ? `${currentAssignment.selectedMeals.length > 0 ? 'Edit' : 'Configure'} ${selectedMealTime} for ${DAYS_OF_WEEK[selectedDay - 1]} (Week ${selectedWeek})`
                   : 'Select a time slot to configure'
                 }
               </h3>
-              
+
               {selectedDay && selectedMealTime ? (
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                   {/* Meal Configuration Section */}
                   <div className="mb-6 p-4 bg-white rounded-lg border flex-shrink-0">
                     <h4 className="font-medium text-gray-900 mb-3">Meal Details</h4>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -431,7 +432,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                           className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Image URL
@@ -444,7 +445,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                           className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Description
@@ -458,7 +459,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                         />
                       </div>
                     </div>
-                    
+
                     {/* Current Selection Summary */}
                     {currentAssignment.selectedMeals.length > 0 && (() => {
                       console.log('Sidebar - Current selected meals (IDs):', currentAssignment.selectedMeals);
@@ -467,34 +468,34 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                           <div className="text-sm font-medium text-blue-900 mb-2">
                             Selected Items ({currentAssignment.selectedMeals.length}):
                           </div>
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {currentAssignment.selectedMeals.map(mealId => {
-                            const meal = getMealById(mealId)
-                            return meal ? (
-                              <span key={mealId} className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs">
-                                {meal.name}
-                              </span>
-                            ) : (
-                              <span key={mealId} className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs">
-                                Missing: {mealId}
-                              </span>
-                            )
-                          })}
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {currentAssignment.selectedMeals.map(mealId => {
+                              const meal = getMealById(mealId)
+                              return meal ? (
+                                <span key={mealId} className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs">
+                                  {meal.name}
+                                </span>
+                              ) : (
+                                <span key={mealId} className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs">
+                                  Missing: {mealId}
+                                </span>
+                              )
+                            })}
+                          </div>
+                          <div className="text-sm text-blue-700">
+                            Total: {formatCurrency(currentAssignment.selectedMeals.reduce((sum, id) => {
+                              const meal = getMealById(id)
+                              return sum + (meal?.pricing?.totalPrice || 0)
+                            }, 0))} |
+                            {Math.round(currentAssignment.selectedMeals.reduce((sum, id) => {
+                              const meal = getMealById(id)
+                              return sum + (meal?.nutrition?.calories || 0)
+                            }, 0))} cal
+                          </div>
                         </div>
-                        <div className="text-sm text-blue-700">
-                          Total: {formatCurrency(currentAssignment.selectedMeals.reduce((sum, id) => {
-                            const meal = getMealById(id)
-                            return sum + (meal?.pricing?.totalPrice || 0)
-                          }, 0))} | 
-                          {Math.round(currentAssignment.selectedMeals.reduce((sum, id) => {
-                            const meal = getMealById(id)
-                            return sum + (meal?.nutrition?.calories || 0)
-                          }, 0))} cal
-                        </div>
-                      </div>
                       );
                     })()}
-                    
+
                     {/* Action Buttons */}
                     <div className="mt-4 flex gap-2">
                       <button
@@ -502,7 +503,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                         disabled={currentAssignment.selectedMeals.length === 0 || !currentAssignment.customTitle.trim()}
                         className="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                       >
-{currentAssignment.selectedMeals.length > 0 && 
+                        {currentAssignment.selectedMeals.length > 0 &&
                           assignments.find(a => a.weekNumber === selectedWeek && a.dayOfWeek === selectedDay && a.mealTime === selectedMealTime)
                           ? 'Update Assignment' : 'Save Assignment'}
                       </button>
@@ -527,7 +528,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                   {/* Food Selection Section */}
                   <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                     <h4 className="font-medium text-gray-900 mb-3">Add Food Items</h4>
-                    
+
                     {/* Search */}
                     <div className="relative mb-3">
                       <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
@@ -545,11 +546,10 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                       {filteredMeals.map((meal) => (
                         <div
                           key={meal._id}
-                          className={`p-3 border rounded cursor-pointer transition-colors ${
-                            currentAssignment.selectedMeals.includes(meal._id)
+                          className={`p-3 border rounded cursor-pointer transition-colors ${currentAssignment.selectedMeals.includes(meal._id)
                               ? 'bg-blue-100 border-blue-400'
                               : 'bg-white hover:bg-gray-50 border-gray-200'
-                          }`}
+                            }`}
                           onClick={() => handleMealSelect(meal._id)}
                         >
                           <div className="flex items-start space-x-3">
@@ -604,8 +604,8 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              Plan Status: {mealPlan.isPublished ? 'Published' : 'Draft'} | 
-              Total Assignments: {assignments.length} | 
+              Plan Status: {mealPlan.isPublished ? 'Published' : 'Draft'} |
+              Total Assignments: {assignments.length} |
               Current Price: {formatCurrency(mealPlan.totalPrice)}
             </div>
             <button

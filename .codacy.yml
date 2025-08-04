@@ -1,0 +1,15 @@
+# Codacy configuration v3
+exclude_paths:
+  - "**/*.json"
+  - "**/mcp.json"
+
+file_extensions:
+  - extension: ".go"
+    linters: [revive]
+  - extension: ".json"
+    linters: []
+
+engines:
+  revive:
+    enabled: true
+    excluded_files: ["**/*.json"]

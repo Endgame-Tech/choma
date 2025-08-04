@@ -488,6 +488,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
+              title="Close"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
@@ -554,6 +555,8 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
                   accept=".xlsx,.xls"
                   onChange={handleFileSelect}
                   className="hidden"
+                  title="Select Excel file to upload"
+                  placeholder="Choose an Excel file (.xlsx or .xls)"
                 />
               </div>
             </>
