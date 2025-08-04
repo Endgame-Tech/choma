@@ -21,15 +21,7 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-// Hash function for password verification (currently unused but kept for future implementation)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const hashPassword = async (password: string): Promise<string> => {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
+
 
 // Admin credentials (hashed)
 const ADMIN_CREDENTIALS = {
