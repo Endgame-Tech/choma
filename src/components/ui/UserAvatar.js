@@ -1,5 +1,5 @@
 // src/components/ui/UserAvatar.js - Reusable User Avatar Component
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../styles/theme';
@@ -12,6 +12,12 @@ const UserAvatar = ({
   style = {} 
 }) => {
   const { colors } = useTheme();
+  const [imageLoadError, setImageLoadError] = useState(false);
+  
+  // Reset image load error when imageUri or user.profileImage changes
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [imageUri, user?.profileImage]);
   
   const avatarSize = {
     width: size,
@@ -26,15 +32,16 @@ const UserAvatar = ({
   // Priority: imageUri prop > user.profileImage > user.avatar > fallback to initials
   const profileImageSource = imageUri || user?.profileImage || user?.avatar;
   
-  if (profileImageSource) {
+  
+  if (profileImageSource && !imageLoadError) {
     return (
       <View style={[styles.container, avatarSize, style]}>
         <Image 
           source={{ uri: profileImageSource }} 
           style={[styles.image, avatarSize]}
           onError={() => {
-            // Handle image loading error by falling back to initials
             console.log('Failed to load profile image, falling back to initials');
+            setImageLoadError(true);
           }}
         />
       </View>

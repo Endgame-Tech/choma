@@ -15,6 +15,15 @@ router.post('/login', userValidations.login, authController.login);
 // POST /api/auth/logout (protected route)
 router.post('/logout', auth, authController.logout);
 
+// POST /api/auth/forgot-password
+router.post('/forgot-password', authController.forgotPassword);
+
+// POST /api/auth/reset-password
+router.post('/reset-password', authController.resetPassword);
+
+// POST /api/auth/activity/log (protected route) - Log user activity
+router.post('/activity/log', auth, authController.logUserActivity);
+
 // GET /api/auth/profile (protected route)
 router.get('/profile', auth, authController.getProfile);
 

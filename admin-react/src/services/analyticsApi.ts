@@ -86,7 +86,7 @@ const api = axios.create({
   baseURL: import.meta.env.PROD
     ? `${import.meta.env.VITE_API_BASE_URL}/api/admin/analytics`
     : '/api/admin/analytics',
-  timeout: 30000,
+  timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
   },

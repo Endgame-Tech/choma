@@ -17,21 +17,17 @@ export interface Meal {
   mealId: string
   name: string
   image: string
-  basePrice?: number
-  platformFee?: number
-  chefFee?: number
-  calories?: number
-  protein?: number
-  carbs?: number
-  fat?: number
-  fiber?: number
-  sugar?: number
-  weight?: number
   pricing: {
-    basePrice: number
+    ingredients: number
+    cookingCosts: number
+    packaging: number
+    delivery: number
     platformFee: number
-    chefFee: number
+    totalCosts: number
+    profit: number
     totalPrice: number
+    chefEarnings: number
+    chomaEarnings: number
   }
   nutrition: {
     calories: number
@@ -44,6 +40,7 @@ export interface Meal {
   }
   ingredients: string
   preparationTime: number
+  complexityLevel: 'low' | 'medium' | 'high'
   allergens: string[]
   isAvailable: boolean
   adminNotes: string
@@ -62,6 +59,7 @@ export interface MealPlan {
   coverImage: string
   durationWeeks: number
   targetAudience: string
+  mealTypes: string[]
   planFeatures: string[]
   adminNotes: string
   totalPrice: number
@@ -152,6 +150,14 @@ export const mealsApi = {
   // Delete meal
   async deleteMeal(id: string) {
     const response = await api.delete(`/meals/${id}`)
+    return response.data
+  },
+
+  // Force delete meal (removes from meal plans first, then deletes)
+  async forceDeleteMeal(id: string) {
+    const response = await api.delete(`/meals/${id}`, {
+      data: { force: true }
+    })
     return response.data
   },
 

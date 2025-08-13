@@ -243,7 +243,8 @@ const chefSchema = new mongoose.Schema({
             required: true
         },
         bankCode: {
-            type: String
+            type: String,
+            required: true
         },
         bvn: {
             type: String,
@@ -254,6 +255,22 @@ const chefSchema = new mongoose.Schema({
                 },
                 message: 'BVN must be exactly 11 digits if provided'
             }
+        },
+        // Paystack Verification Fields
+        isVerified: {
+            type: Boolean,
+            default: false
+        },
+        verifiedAt: {
+            type: Date
+        },
+        verificationProvider: {
+            type: String,
+            enum: ['paystack', 'manual'],
+            default: 'paystack'
+        },
+        recipientCode: {
+            type: String // Paystack recipient code for transfers
         }
     },
     

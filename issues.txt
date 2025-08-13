@@ -1,21 +1,12 @@
-CtrlF
-Running build in Washington, D.C., USA (East) – iad1
-Build machine configuration: 2 cores, 8 GB
-Cloning github.com/Endgame-Tech/choma (Branch: main, Commit: 63a33d6)
-Cloning completed: 3.507s
-Restored build cache from previous deployment (dqPtfVsMoyy4RrNmXf9NyaYcHuoN)
-Running "vercel build"
-Vercel CLI 44.6.4
-Installing dependencies...
-up to date in 1s
-146 packages are looking for funding
-  run `npm fund` for details
-Running "npm run build"
-> choma-admin-react@1.0.0 build
-> tsc && vite build
-▲ [WARNING] Cannot find base config file "expo/tsconfig.base" [tsconfig.json]
-    ../tsconfig.json:3:13:
-      3 │   "extends": "expo/tsconfig.base"
-        ╵              ~~~~~~~~~~~~~~~~~~~~
-vite v5.4.19 building for production...
-transforming...
+ LOG  ✅ User stats loaded and validated: {"activeSubscriptions": 0, "favoriteCategory": "Fitness", "nextDelivery": null, "nutritionScore": 65, "ordersThisMonth": 0, "streakDays": 0, "totalOrdersCompleted": 0, "totalSaved": 0}
+ LOG  Shared successfully
+Android Bundling failed 72ms index.js (1 module)
+ ERROR  SyntaxError: C:\Users\endga\OneDrive\Desktop\Web Dev Projects\Projects\choma\src\screens\dashboard\ProfileScreen.js: Unterminated string constant. (497:17)
+
+  495 |
+  496 |     if (activity.type === 'delivery') {
+> 497 |       message += '
+      |                  ^
+  498 |
+  499 | Order delivered successfully! Rate your experience?';
+  500 |     } else if (activity.type === 'achievement') {

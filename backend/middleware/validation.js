@@ -87,7 +87,14 @@ const userValidations = {
     body('address').optional().trim().isLength({ max: 200 }),
     body('city').optional().trim().isLength({ max: 50 }),
     body('dietaryPreferences').optional().isArray(),
-    body('allergies').optional().isArray(),
+    body('allergies').optional().custom((value) => {
+      // Accept both string and array for allergies
+      if (typeof value === 'string' || Array.isArray(value)) {
+        return true;
+      }
+      throw new Error('Allergies must be a string or array');
+    }),
+    body('profileImage').optional().isString().withMessage('Profile image must be a string URL'),
     handleValidationErrors
   ],
   

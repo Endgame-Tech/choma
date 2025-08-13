@@ -12,7 +12,14 @@ const MealPlanSchema = new mongoose.Schema({
   description: String,
   targetAudience: { 
     type: String, 
-    enum: ['Fitness', 'Professional', 'Family', 'Wellness'] 
+    enum: ['Fitness', 'Professional', 'Family', 'Wellness', 'Weight Loss', 'Muscle Gain', 'Diabetic Friendly', 'Heart Healthy'] 
+  },
+  
+  // Meal types covered by this plan
+  mealTypes: {
+    type: [String],
+    enum: ['breakfast', 'lunch', 'dinner'],
+    default: ['breakfast', 'lunch', 'dinner']
   },
   
   // New pricing system - calculated from assigned meals

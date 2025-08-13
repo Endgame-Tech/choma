@@ -140,6 +140,9 @@ app.use('/api/chef', require('./routes/chef'));
 // Image upload routes (with general rate limiting)
 app.use('/api/images', require('./routes/images'));
 
+// Upload routes (with general rate limiting)
+app.use('/api/upload', require('./routes/upload'));
+
 // Notifications routes
 app.use('/api/notifications', require('./routes/notifications'));
 

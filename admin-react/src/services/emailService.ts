@@ -171,7 +171,7 @@ export const emailService = {
           <div class="container">
             <div class="header">
               <div class="logo">CHOMA</div>
-              <div class="welcome-badge">🎉 Application Approved!</div>
+              <div class="welcome-badge">Application Approved!</div>
             </div>
 
             <div class="content">
@@ -182,7 +182,7 @@ export const emailService = {
               <p>At Choma, we're passionate about delivering authentic Nigerian cuisine and international flavors to food lovers across the region. Your skills and expertise will help us continue this mission while providing you with exciting opportunities to grow your culinary career.</p>
 
               <div class="next-steps">
-                <h3>🚀 Next Steps:</h3>
+                <h3>Next Steps:</h3>
                 <ul>
                   <li><strong>Download the Chef App:</strong> Get started by downloading our chef app from the App Store or Google Play</li>
                   <li><strong>Complete Your Profile:</strong> Add your specialties, available hours, and kitchen preferences</li>

@@ -6,12 +6,18 @@ const MealSchema = new mongoose.Schema({
   name: { type: String, required: true },
   image: { type: String, default: '' },
   
-  // New pricing structure
+  // Updated pricing structure with auto-calculated cooking costs
   pricing: {
-    basePrice: { type: Number, required: true },
+    ingredients: { type: Number, required: true },
+    cookingCosts: { type: Number, required: true },
+    packaging: { type: Number, required: true },
+    delivery: { type: Number, required: true },
     platformFee: { type: Number, required: true },
-    chefFee: { type: Number, required: true },
-    totalPrice: { type: Number, required: true }
+    totalCosts: { type: Number, required: true },
+    profit: { type: Number, required: true },
+    totalPrice: { type: Number, required: true },
+    chefEarnings: { type: Number, required: true },
+    chomaEarnings: { type: Number, required: true }
   },
   
   // Nutritional information
@@ -28,6 +34,11 @@ const MealSchema = new mongoose.Schema({
   // Additional meal information
   ingredients: String,
   preparationTime: Number,
+  complexityLevel: { 
+    type: String, 
+    enum: ['low', 'medium', 'high'],
+    required: true
+  },
   allergens: [String],
   
   // Availability control
@@ -59,9 +70,13 @@ MealSchema.pre('save', async function(next) {
     this.mealId = `MEAL-${String(count + 1).padStart(4, '0')}`;
   }
   
-  // Calculate total price if components are provided
-  if (this.pricing && this.pricing.basePrice && this.pricing.platformFee && this.pricing.chefFee) {
-    this.pricing.totalPrice = this.pricing.basePrice + this.pricing.platformFee + this.pricing.chefFee;
+  // Calculate derived pricing fields if components are provided
+  if (this.pricing && this.pricing.ingredients && this.pricing.cookingCosts && this.pricing.packaging && this.pricing.delivery) {
+    this.pricing.totalCosts = this.pricing.ingredients + this.pricing.cookingCosts + this.pricing.packaging + this.pricing.delivery;
+    this.pricing.profit = this.pricing.totalCosts * 0.4; // 40% profit margin
+    this.pricing.totalPrice = this.pricing.totalCosts + this.pricing.profit;
+    this.pricing.chefEarnings = this.pricing.profit / 2; // 50% of profit to chef
+    this.pricing.chomaEarnings = this.pricing.profit / 2; // 50% of profit to choma
   }
   
   // Update the updatedAt timestamp
@@ -71,12 +86,22 @@ MealSchema.pre('save', async function(next) {
 });
 
 // Method to update pricing
-MealSchema.methods.updatePricing = function(basePrice, platformFee, chefFee) {
+MealSchema.methods.updatePricing = function(ingredients, cookingCosts, packaging, delivery, platformFee) {
+  const totalCosts = ingredients + cookingCosts + packaging + delivery;
+  const profit = totalCosts * 0.4;
+  const totalPrice = totalCosts + profit;
+  
   this.pricing = {
-    basePrice,
+    ingredients,
+    cookingCosts,
+    packaging,
+    delivery,
     platformFee,
-    chefFee,
-    totalPrice: basePrice + platformFee + chefFee
+    totalCosts,
+    profit,
+    totalPrice,
+    chefEarnings: profit / 2,
+    chomaEarnings: profit / 2
   };
   return this.save();
 };

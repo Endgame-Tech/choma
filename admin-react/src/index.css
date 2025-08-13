@@ -1,8 +1,11 @@
+@import "@flaticon/flaticon-uicons/css/all/all.css";
+
 /* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 /* stylelint-enable at-rule-no-unknown */
+
 
 @layer base {
   * {

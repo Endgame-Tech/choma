@@ -221,9 +221,13 @@ export const AuthProvider = ({ children }) => {
       
       if (response.success) {
         // Update the user state with the new data
+        // Handle both response.data.customer and response.customer structures
+        const customerData = response.data?.customer || response.customer;
+        console.log('📝 Updating user state with:', customerData);
+        
         setUser({
           ...user,
-          ...response.data.customer
+          ...customerData
         });
         
         setIsOffline(response.offline || false);
@@ -235,9 +239,24 @@ export const AuthProvider = ({ children }) => {
         };
       } else {
         console.log('❌ Profile update failed:', response.error);
+        
+        // Handle different types of errors
+        let message = response.error || 'Failed to update profile';
+        
+        if (response.status === 401) {
+          message = 'Authentication expired. Please log in again.';
+          // Optionally trigger logout
+          // await logout();
+        } else if (response.status === 422 || response.error?.includes('Validation')) {
+          message = 'Invalid profile data. Please check your information.';
+        } else if (response.offline) {
+          message = 'Unable to connect to server. Your changes are saved locally.';
+          setIsOffline(true);
+        }
+        
         return { 
           success: false, 
-          message: response.error || 'Failed to update profile' 
+          message: message
         };
       }
     } catch (error) {

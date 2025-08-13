@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const OrderDelegation = require('../models/OrderDelegation');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
+const paystackService = require('../services/paystackService');
 
 // Ensure JWT_SECRET is set
 if (!process.env.JWT_SECRET) {
@@ -214,13 +215,17 @@ exports.registerChef = async (req, res) => {
             // References
             references: references || [],
             
-            // Bank Details
+            // Bank Details (with verification info)
             bankDetails: {
                 accountName: bankDetails.accountName,
                 accountNumber: bankDetails.accountNumber,
                 bankName: bankDetails.bankName,
                 bankCode: bankDetails.bankCode,
-                bvn: bankDetails.bvn && bankDetails.bvn.length === 11 ? bankDetails.bvn : undefined
+                bvn: bankDetails.bvn && bankDetails.bvn.length === 11 ? bankDetails.bvn : undefined,
+                isVerified: bankDetails.isVerified || false,
+                verifiedAt: bankDetails.isVerified ? new Date() : undefined,
+                verificationProvider: 'paystack',
+                recipientCode: bankDetails.recipientCode || undefined
             },
             
             // Profile & Portfolio

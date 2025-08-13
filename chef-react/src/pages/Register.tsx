@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
 import type { RegisterData } from '../types'
 import logo from '../assets/logo.svg'
+import BankVerification from '../components/BankVerification'
 
 const specialtyOptions = [
   'Nigerian Cuisine',
@@ -129,7 +130,9 @@ const Register: React.FC = () => {
       accountNumber: '',
       bankName: '',
       bankCode: '',
-      bvn: ''
+      bvn: '',
+      isVerified: false,
+      recipientCode: ''
     },
 
     // Profile & Portfolio
@@ -255,7 +258,7 @@ const Register: React.FC = () => {
         return !!(formData.kitchenDetails.kitchenEquipment.length > 0 && formData.availability.daysAvailable.length > 0)
       case 6: // References & Bank Details
         return !!(formData.emergencyContact.name && formData.emergencyContact.phone &&
-          formData.bankDetails.accountName && formData.bankDetails.accountNumber && formData.bankDetails.bankName)
+          formData.bankDetails.accountName && formData.bankDetails.accountNumber && formData.bankDetails.bankName && formData.bankDetails.isVerified)
       case 7: // Terms & Conditions
         return !!(formData.agreedToTerms && formData.agreedToPrivacyPolicy && formData.agreedToBackgroundCheck)
       default:
@@ -1087,103 +1090,16 @@ const Register: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Bank Details */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="text-lg font-medium text-green-900 mb-3">Bank Details *</h4>
-                  <p className="text-sm text-green-700 mb-4">This information is required for payment processing</p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Account Name *</label>
-                      <input
-                        type="text"
-                        name="bankDetails.accountName"
-                        required
-                        value={formData.bankDetails.accountName}
-                        onChange={handleInputChange}
-                        placeholder="Account holder's name"
-                        title="Bank Account Name"
-                        aria-label="Bank Account Name"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Account Number *</label>
-                      <input
-                        type="text"
-                        name="bankDetails.accountNumber"
-                        required
-                        value={formData.bankDetails.accountNumber}
-                        onChange={handleInputChange}
-                        placeholder="10-digit account number"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
-                        title="Enter your 10-digit bank account number"
-                        aria-label="Bank Account Number"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Bank Name *</label>
-                      <select
-                        name="bankDetails.bankName"
-                        required
-                        value={formData.bankDetails.bankName}
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
-                        title="Select Bank Name"
-                        aria-label="Bank Name"
-                      >
-                        <option value="">Select Bank</option>
-                        <option value="Access Bank">Access Bank</option>
-                        <option value="Guaranty Trust Bank">Guaranty Trust Bank (GTBank)</option>
-                        <option value="United Bank for Africa">United Bank for Africa (UBA)</option>
-                        <option value="Zenith Bank">Zenith Bank</option>
-                        <option value="First Bank of Nigeria">First Bank of Nigeria</option>
-                        <option value="Fidelity Bank">Fidelity Bank</option>
-                        <option value="Union Bank">Union Bank</option>
-                        <option value="Sterling Bank">Sterling Bank</option>
-                        <option value="Stanbic IBTC Bank">Stanbic IBTC Bank</option>
-                        <option value="Ecobank">Ecobank</option>
-                        <option value="First City Monument Bank">First City Monument Bank (FCMB)</option>
-                        <option value="Keystone Bank">Keystone Bank</option>
-                        <option value="Polaris Bank">Polaris Bank</option>
-                        <option value="Wema Bank">Wema Bank</option>
-                        <option value="Unity Bank">Unity Bank</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">BVN (Bank Verification Number)</label>
-                      <input
-                        type="text"
-                        name="bankDetails.bvn"
-                        value={formData.bankDetails.bvn}
-                        onChange={(e) => {
-                          // Only allow numbers and limit to 11 digits
-                          const value = e.target.value.replace(/\D/g, '').slice(0, 11);
-                          handleInputChange({
-                            ...e,
-                            target: { ...e.target, value }
-                          });
-                        }}
-                        placeholder="12345678901 (optional)"
-                        maxLength={11}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-choma-brown focus:border-choma-brown"
-                        title="Enter your 11-digit Bank Verification Number (optional)"
-                        aria-label="Bank Verification Number (BVN)"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        BVN must be exactly 11 digits (optional field)
-                      </p>
-                      {formData.bankDetails.bvn && formData.bankDetails.bvn.length !== 11 && (
-                        <p className="text-xs text-red-500 mt-1">
-                          BVN must be exactly 11 digits
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {/* Bank Details with Verification */}
+                <BankVerification 
+                  formData={formData}
+                  onUpdate={(bankDetails) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      bankDetails
+                    }))
+                  }}
+                />
               </div>
             )}
 

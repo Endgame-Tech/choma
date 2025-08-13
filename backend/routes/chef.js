@@ -3,12 +3,77 @@ const router = express.Router();
 const chefController = require('../controllers/chefController');
 const chefAuth = require('../middleware/chefAuth');
 
+// Import Paystack service for bank verification
+const paystackService = require('../services/paystackService');
+
 // ============= AUTHENTICATION ROUTES =============
 // POST /api/chef/register - Chef registration
 router.post('/register', chefController.registerChef);
 
 // POST /api/chef/login - Chef login
 router.post('/login', chefController.loginChef);
+
+// ============= BANK VERIFICATION ROUTES =============
+// GET /api/chef/banks - Get list of Nigerian banks
+router.get('/banks', (req, res) => {
+  try {
+    const banks = paystackService.getBanksList();
+    res.json({
+      success: true,
+      data: banks
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch banks list'
+    });
+  }
+});
+
+// POST /api/chef/verify-bank-account - Verify bank account details
+router.post('/verify-bank-account', async (req, res) => {
+  try {
+    const { accountNumber, bankCode } = req.body;
+
+    // Validate input
+    if (!accountNumber || !bankCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account number and bank code are required'
+      });
+    }
+
+    // Validate bank code
+    if (!paystackService.isValidBankCode(bankCode)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid bank code'
+      });
+    }
+
+    // Verify account with Paystack
+    const verification = await paystackService.verifyBankAccount(accountNumber, bankCode);
+
+    if (verification.success) {
+      res.json({
+        success: true,
+        message: 'Account verified successfully',
+        data: verification.data
+      });
+    } else {
+      res.status(422).json({
+        success: false,
+        message: verification.message || 'Account verification failed'
+      });
+    }
+  } catch (error) {
+    console.error('Bank verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Bank verification service temporarily unavailable'
+    });
+  }
+});
 
 // ============= PROTECTED ROUTES (require authentication) =============
 // GET /api/chef/dashboard - Get chef dashboard data

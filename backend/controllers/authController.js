@@ -2,8 +2,10 @@ const Customer = require('../models/Customer');
 const Order = require('../models/Order');
 const Subscription = require('../models/Subscription');
 const NotificationService = require('../services/notificationService');
+const EmailService = require('../services/emailService');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 // Ensure JWT_SECRET is set
 if (!process.env.JWT_SECRET) {
@@ -225,6 +227,7 @@ exports.getProfile = async (req, res) => {
         city: customer.city,
         dietaryPreferences: customer.dietaryPreferences,
         allergies: customer.allergies,
+        profileImage: customer.profileImage,
         totalOrders: customer.totalOrders,
         totalSpent: customer.totalSpent,
         registrationDate: customer.registrationDate
@@ -243,7 +246,7 @@ exports.getProfile = async (req, res) => {
 // Update user profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { fullName, phone, address, city, dietaryPreferences, allergies } = req.body;
+    const { fullName, phone, address, city, dietaryPreferences, allergies, profileImage } = req.body;
     
     // Validate required fields
     if (!fullName) {
@@ -278,6 +281,11 @@ exports.updateProfile = async (req, res) => {
     customer.dietaryPreferences = dietaryPreferences;
     customer.allergies = allergies;
     
+    // Update profile image if provided
+    if (profileImage !== undefined) {
+      customer.profileImage = profileImage;
+    }
+    
     await customer.save();
     
     res.json({
@@ -293,6 +301,7 @@ exports.updateProfile = async (req, res) => {
         city: customer.city,
         dietaryPreferences: customer.dietaryPreferences,
         allergies: customer.allergies,
+        profileImage: customer.profileImage,
         totalOrders: customer.totalOrders,
         totalSpent: customer.totalSpent,
         registrationDate: customer.registrationDate
@@ -897,6 +906,199 @@ exports.getNotificationPreferences = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch notification preferences',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Forgot password - Request reset
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    // Validation
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required.'
+      });
+    }
+
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address.'
+      });
+    }
+
+    // Find customer
+    const customer = await Customer.findOne({ email });
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email address.'
+      });
+    }
+
+    // Check if account is deleted
+    if (customer.status === 'Deleted') {
+      return res.status(404).json({
+        success: false,
+        message: 'Account has been deleted.'
+      });
+    }
+
+    // Generate reset code (6-digit)
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store reset code
+    customer.resetPasswordCode = resetCode;
+    customer.resetPasswordExpires = resetCodeExpires;
+    await customer.save();
+
+    // Send reset email
+    const emailSent = await EmailService.sendVerificationEmail({
+      email: customer.email,
+      verificationCode: resetCode,
+      purpose: 'password_reset'
+    });
+
+    if (!emailSent) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send reset email. Please try again.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Password reset code sent to your email address.'
+    });
+
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process password reset request.',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Reset password - Verify code and reset
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, resetCode, newPassword } = req.body;
+    
+    // Validation
+    if (!email || !resetCode || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, reset code, and new password are required.'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.'
+      });
+    }
+
+    // Find customer with valid reset code
+    const customer = await Customer.findOne({ 
+      email,
+      resetPasswordCode: resetCode,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!customer) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset code.'
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password and clear reset code
+    customer.password = hashedPassword;
+    customer.resetPasswordCode = undefined;
+    customer.resetPasswordExpires = undefined;
+    await customer.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully. You can now login with your new password.'
+    });
+
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password.',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Log user activity
+exports.logUserActivity = async (req, res) => {
+  try {
+    const customerId = req.user.id;
+    const { action, description, timestamp, metadata } = req.body;
+
+    // Validation
+    if (!action) {
+      return res.status(400).json({
+        success: false,
+        message: 'Action is required'
+      });
+    }
+
+    // Find customer
+    const customer = await Customer.findById(customerId);
+    if (!customer || customer.status === 'Deleted') {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Create activity log entry (you might want to create a separate Activity model)
+    const activityLog = {
+      customerId: customerId,
+      action: action,
+      description: description || action,
+      timestamp: timestamp || new Date().toISOString(),
+      metadata: metadata || {},
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('User-Agent')
+    };
+
+    // For now, just log to console (you can extend this to save to database)
+    console.log('📝 User Activity Logged:', JSON.stringify(activityLog, null, 2));
+
+    // TODO: Save to database if you create an Activity model
+    // const activity = new Activity(activityLog);
+    // await activity.save();
+
+    res.json({
+      success: true,
+      message: 'Activity logged successfully',
+      data: {
+        action: action,
+        timestamp: activityLog.timestamp
+      }
+    });
+
+  } catch (err) {
+    console.error('Log activity error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to log activity',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }

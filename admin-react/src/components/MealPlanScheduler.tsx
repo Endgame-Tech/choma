@@ -9,7 +9,7 @@ interface MealPlanSchedulerProps {
   onUpdate: () => void
 }
 
-const MEAL_TIMES = ['breakfast', 'lunch', 'dinner'] as const
+const ALL_MEAL_TIMES = ['breakfast', 'lunch', 'dinner'] as const
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, mealPlan, onUpdate }) => {
@@ -17,8 +17,16 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedWeek, setSelectedWeek] = useState(1)
+
+  // Get meal times based on the meal plan configuration
+  const availableMealTimes = mealPlan.mealTypes && mealPlan.mealTypes.length > 0
+    ? mealPlan.mealTypes.filter(type => ALL_MEAL_TIMES.includes(type as typeof ALL_MEAL_TIMES[number]))
+    : ALL_MEAL_TIMES
+
+  // Get total possible meal slots per week
+  const totalSlotsPerWeek = availableMealTimes.length * DAYS_OF_WEEK.length
   const [mealSearch, setMealSearch] = useState('')
-  const [selectedMealTime, setSelectedMealTime] = useState<typeof MEAL_TIMES[number] | null>(null)
+  const [selectedMealTime, setSelectedMealTime] = useState<typeof ALL_MEAL_TIMES[number] | null>(null)
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [currentAssignment, setCurrentAssignment] = useState({
     selectedMeals: [] as string[],
@@ -30,8 +38,12 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   useEffect(() => {
     if (isOpen) {
       fetchData()
+      // Reset selected week if it exceeds current plan duration
+      if (selectedWeek > mealPlan.durationWeeks) {
+        setSelectedWeek(1)
+      }
     }
-  }, [isOpen, mealPlan._id])
+  }, [isOpen, mealPlan._id, mealPlan.durationWeeks, selectedWeek])
 
   const fetchData = async () => {
     try {
@@ -138,7 +150,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   const handleSlotClick = (week: number, dayOfWeek: number, mealTime: string) => {
     setSelectedWeek(week)
     setSelectedDay(dayOfWeek)
-    setSelectedMealTime(mealTime as typeof MEAL_TIMES[number])
+    setSelectedMealTime(mealTime as typeof ALL_MEAL_TIMES[number])
 
     // Load existing assignment if any
     const existingAssignment = getAssignmentForSlot(week, dayOfWeek, mealTime)
@@ -183,13 +195,22 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[95vh] overflow-hidden">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-7xl w-full max-h-[95vh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-700">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Meal Plan Scheduler</h2>
-              <p className="text-sm text-gray-600">{mealPlan.planName} - {mealPlan.durationWeeks} Week(s)</p>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-neutral-100">Meal Plan Scheduler</h2>
+              <p className="text-sm text-gray-600 dark:text-neutral-300">{mealPlan.planName} - {mealPlan.durationWeeks} Week(s)</p>
+              <div className="flex items-center space-x-2 mt-1">
+                <span className="text-xs text-gray-500 dark:text-neutral-400">Meal Types:</span>
+                {availableMealTimes.map((type) => (
+                  <span key={type} className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full capitalize">
+                    {type}
+                  </span>
+                ))}
+                <span className="text-xs text-gray-500 dark:text-neutral-400">({totalSlotsPerWeek} slots per week)</span>
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -208,18 +229,18 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
               {/* Week Selector */}
               <div className="mb-6">
                 <div className="flex items-center space-x-4">
-                  <label className="text-sm font-medium text-gray-700">Week:</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-neutral-200">Week:</label>
                   <select
                     value={selectedWeek}
                     onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
-                    className="px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-1 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     aria-label="Select week"
                   >
                     {Array.from({ length: mealPlan.durationWeeks }, (_, i) => (
                       <option key={i + 1} value={i + 1}>Week {i + 1}</option>
                     ))}
                   </select>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 dark:text-neutral-400">
                     Total assignments: {assignments.filter(a => a.weekNumber === selectedWeek).length}
                   </div>
                 </div>
@@ -229,24 +250,24 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading schedule...</p>
+                    <p className="text-gray-600 dark:text-neutral-300">Loading schedule...</p>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-8 gap-2">
                   {/* Header Row */}
-                  <div className="text-center font-medium text-gray-700 py-2"></div>
+                  <div className="text-center font-medium text-gray-700 dark:text-neutral-200 py-2"></div>
                   {DAYS_OF_WEEK.map((day, index) => (
-                    <div key={day} className="text-center font-medium text-gray-700 py-2 border-b">
+                    <div key={day} className="text-center font-medium text-gray-700 dark:text-neutral-200 py-2 border-b border-gray-300 dark:border-neutral-600">
                       <div>{day}</div>
-                      <div className="text-xs text-gray-500">Day {index + 1}</div>
+                      <div className="text-xs text-gray-500 dark:text-neutral-400">Day {index + 1}</div>
                     </div>
                   ))}
 
                   {/* Meal Time Rows */}
-                  {MEAL_TIMES.map((mealTime) => (
+                  {availableMealTimes.map((mealTime) => (
                     <div key={mealTime} className="contents">
-                      <div className="flex items-center justify-center font-medium text-gray-700 capitalize bg-gray-50 border-r">
+                      <div className="flex items-center justify-center font-medium text-gray-700 dark:text-neutral-200 capitalize bg-gray-50 dark:bg-neutral-700 border-r border-gray-300 dark:border-neutral-600">
                         {mealTime}
                       </div>
                       {DAYS_OF_WEEK.map((day, dayIndex) => {
@@ -272,11 +293,11 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                         return (
                           <div
                             key={`${day}-${mealTime}`}
-                            className={`min-h-[140px] border p-2 cursor-pointer transition-colors ${isSelected
-                                ? 'bg-blue-100 border-blue-400'
-                                : assignment
-                                  ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                                  : 'bg-white border-gray-200 hover:bg-gray-50'
+                            className={`min-h-[140px] border p-2 rounded-lg cursor-pointer transition-colors ${isSelected
+                              ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-500'
+                              : assignment
+                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                : 'bg-white dark:bg-neutral-800 border-gray-200 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-700'
                               }`}
                             onClick={() => handleSlotClick(selectedWeek, dayIndex + 1, mealTime)}
                           >
@@ -344,7 +365,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                                 </div>
                               </div>
                             ) : (
-                              <div className="h-full flex items-center justify-center text-gray-400">
+                              <div className="h-full flex items-center justify-center text-gray-400 dark:text-neutral-500">
                                 <PlusIcon className="w-6 h-6" />
                               </div>
                             )}
@@ -357,17 +378,22 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
               )}
 
               {/* Schedule Summary */}
-              <div className="mt-8 bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Week {selectedWeek} Summary</h3>
+              <div className="mt-8 bg-gray-50 dark:bg-neutral-700/50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-3">Week {selectedWeek} Summary</h3>
+                {availableMealTimes.length < 3 && (
+                  <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-700 dark:text-blue-300">
+                    <span className="font-medium">Note:</span> This plan only covers {availableMealTimes.join(', ')} meals
+                  </div>
+                )}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <div className="text-gray-600">Total Meals</div>
+                    <div className="text-gray-600 dark:text-neutral-300">Total Meals</div>
                     <div className="text-xl font-bold text-blue-600">
                       {assignments.filter(a => a.weekNumber === selectedWeek).length}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-600">Estimated Cost</div>
+                    <div className="text-gray-600 dark:text-neutral-300">Estimated Cost</div>
                     <div className="text-xl font-bold text-green-600">
                       {formatCurrency(
                         assignments
@@ -380,7 +406,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-600">Avg Calories/Day</div>
+                    <div className="text-gray-600 dark:text-neutral-300">Avg Calories/Day</div>
                     <div className="text-xl font-bold text-purple-600">
                       {Math.round(
                         assignments
@@ -393,9 +419,9 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-600">Completion</div>
+                    <div className="text-gray-600 dark:text-neutral-300">Completion</div>
                     <div className="text-xl font-bold text-orange-600">
-                      {Math.round((assignments.filter(a => a.weekNumber === selectedWeek).length / 21) * 100)}%
+                      {Math.round((assignments.filter(a => a.weekNumber === selectedWeek).length / totalSlotsPerWeek) * 100)}%
                     </div>
                   </div>
                 </div>
@@ -404,24 +430,24 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
           </div>
 
           {/* Enhanced Sidebar */}
-          <div className="w-96 border-l border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="w-96 border-l border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-700 flex-shrink-0">
             <div className="p-4 h-full flex flex-col max-h-[80vh]">
-              <h3 className="font-semibold text-gray-900 mb-4">
+              <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-4">
                 {selectedDay && selectedMealTime
                   ? `${currentAssignment.selectedMeals.length > 0 ? 'Edit' : 'Configure'} ${selectedMealTime} for ${DAYS_OF_WEEK[selectedDay - 1]} (Week ${selectedWeek})`
                   : 'Select a time slot to configure'
                 }
               </h3>
 
-              {selectedDay && selectedMealTime ? (
+              {selectedDay && selectedMealTime && availableMealTimes.includes(selectedMealTime) ? (
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                   {/* Meal Configuration Section */}
-                  <div className="mb-6 p-4 bg-white rounded-lg border flex-shrink-0">
-                    <h4 className="font-medium text-gray-900 mb-3">Meal Details</h4>
+                  <div className="mb-6 p-4 bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-600 flex-shrink-0">
+                    <h4 className="font-medium text-gray-900 dark:text-neutral-100 mb-3">Meal Details</h4>
 
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
                           Meal Title *
                         </label>
                         <input
@@ -429,12 +455,12 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                           value={currentAssignment.customTitle}
                           onChange={(e) => setCurrentAssignment(prev => ({ ...prev, customTitle: e.target.value }))}
                           placeholder="e.g., Traditional Nigerian Breakfast"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
                           Image URL
                         </label>
                         <input
@@ -442,12 +468,12 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                           value={currentAssignment.imageUrl}
                           onChange={(e) => setCurrentAssignment(prev => ({ ...prev, imageUrl: e.target.value }))}
                           placeholder="https://example.com/meal-image.jpg"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
                           Description
                         </label>
                         <textarea
@@ -455,7 +481,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                           onChange={(e) => setCurrentAssignment(prev => ({ ...prev, customDescription: e.target.value }))}
                           placeholder="Describe this meal combination..."
                           rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
                     </div>
@@ -464,25 +490,25 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     {currentAssignment.selectedMeals.length > 0 && (() => {
                       console.log('Sidebar - Current selected meals (IDs):', currentAssignment.selectedMeals);
                       return (
-                        <div className="mt-4 p-3 bg-blue-50 rounded">
-                          <div className="text-sm font-medium text-blue-900 mb-2">
+                        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
+                          <div className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
                             Selected Items ({currentAssignment.selectedMeals.length}):
                           </div>
                           <div className="flex flex-wrap gap-1 mb-2">
                             {currentAssignment.selectedMeals.map(mealId => {
                               const meal = getMealById(mealId)
                               return meal ? (
-                                <span key={mealId} className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs">
+                                <span key={mealId} className="px-2 py-1 bg-blue-200 dark:bg-blue-800/30 text-blue-800 dark:text-blue-300 rounded text-xs">
                                   {meal.name}
                                 </span>
                               ) : (
-                                <span key={mealId} className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs">
+                                <span key={mealId} className="px-2 py-1 bg-red-200 dark:bg-red-800/30 text-red-800 dark:text-red-300 rounded text-xs">
                                   Missing: {mealId}
                                 </span>
                               )
                             })}
                           </div>
-                          <div className="text-sm text-blue-700">
+                          <div className="text-sm text-blue-700 dark:text-blue-300">
                             Total: {formatCurrency(currentAssignment.selectedMeals.reduce((sum, id) => {
                               const meal = getMealById(id)
                               return sum + (meal?.pricing?.totalPrice || 0)
@@ -501,7 +527,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                       <button
                         onClick={handleSaveAssignment}
                         disabled={currentAssignment.selectedMeals.length === 0 || !currentAssignment.customTitle.trim()}
-                        className="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        className="flex-1 px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded text-sm hover:bg-blue-700 dark:hover:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                       >
                         {currentAssignment.selectedMeals.length > 0 &&
                           assignments.find(a => a.weekNumber === selectedWeek && a.dayOfWeek === selectedDay && a.mealTime === selectedMealTime)
@@ -518,7 +544,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                             imageUrl: ''
                           })
                         }}
-                        className="px-3 py-2 text-gray-600 hover:text-gray-800 text-sm"
+                        className="px-3 py-2 text-gray-600 dark:text-neutral-300 hover:text-gray-800 dark:hover:text-neutral-100 text-sm transition-colors"
                       >
                         Clear
                       </button>
@@ -527,17 +553,17 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
 
                   {/* Food Selection Section */}
                   <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                    <h4 className="font-medium text-gray-900 mb-3">Add Food Items</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-neutral-100 mb-3">Add Food Items</h4>
 
                     {/* Search */}
                     <div className="relative mb-3">
-                      <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                      <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-3 text-gray-400 dark:text-neutral-500" />
                       <input
                         type="text"
                         placeholder="Search food items..."
                         value={mealSearch}
                         onChange={(e) => setMealSearch(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
 
@@ -547,29 +573,29 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                         <div
                           key={meal._id}
                           className={`p-3 border rounded cursor-pointer transition-colors ${currentAssignment.selectedMeals.includes(meal._id)
-                              ? 'bg-blue-100 border-blue-400'
-                              : 'bg-white hover:bg-gray-50 border-gray-200'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-500'
+                            : 'bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700 border-gray-200 dark:border-neutral-600'
                             }`}
                           onClick={() => handleMealSelect(meal._id)}
                         >
                           <div className="flex items-start space-x-3">
-                            <div className="w-10 h-10 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
+                            <div className="w-10 h-10 bg-gray-200 dark:bg-neutral-600 rounded flex-shrink-0 overflow-hidden">
                               {meal.image ? (
                                 <img src={meal.image} alt={meal.name} className="w-full h-full object-cover" />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-neutral-500 text-sm">
                                   🍽️
                                 </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-gray-900 truncate">{meal.name}</div>
-                              <div className="text-xs text-gray-600">{meal.category}</div>
-                              <div className="text-xs text-gray-600">{formatCurrency(meal.pricing.totalPrice)}</div>
-                              <div className="text-xs text-gray-500">{meal.nutrition.calories} cal</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-neutral-100 truncate">{meal.name}</div>
+                              <div className="text-xs text-gray-600 dark:text-neutral-400">{meal.category}</div>
+                              <div className="text-xs text-gray-600 dark:text-neutral-400">{formatCurrency(meal.pricing.totalPrice)}</div>
+                              <div className="text-xs text-gray-500 dark:text-neutral-500">{meal.nutrition.calories} cal</div>
                             </div>
                             {currentAssignment.selectedMeals.includes(meal._id) && (
-                              <div className="text-blue-600">
+                              <div className="text-blue-600 dark:text-blue-400">
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
@@ -580,7 +606,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                       ))}
 
                       {filteredMeals.length === 0 && (
-                        <div className="text-center text-gray-500 py-8">
+                        <div className="text-center text-gray-500 dark:text-neutral-400 py-8">
                           <div className="text-2xl mb-2">🔍</div>
                           <p className="text-sm">No food items found</p>
                         </div>
@@ -588,9 +614,17 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     </div>
                   </div>
                 </div>
+              ) : selectedDay && selectedMealTime && !availableMealTimes.includes(selectedMealTime) ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center text-orange-600 dark:text-orange-400">
+                    <div className="text-4xl mb-2">⚠️</div>
+                    <p className="text-sm font-medium">&ldquo;{selectedMealTime}&rdquo; is not configured for this meal plan</p>
+                    <p className="text-xs text-gray-600 dark:text-neutral-400 mt-1">Available meal types: {availableMealTimes.join(', ')}</p>
+                  </div>
+                </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
+                  <div className="text-center text-gray-500 dark:text-neutral-400">
                     <div className="text-4xl mb-2">👆</div>
                     <p className="text-sm">Click on a time slot in the schedule to start configuring meals</p>
                   </div>
@@ -601,16 +635,16 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-700">
           <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-neutral-300">
               Plan Status: {mealPlan.isPublished ? 'Published' : 'Draft'} |
               Total Assignments: {assignments.length} |
               Current Price: {formatCurrency(mealPlan.totalPrice)}
             </div>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
             >
               Done
             </button>

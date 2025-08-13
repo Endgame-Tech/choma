@@ -12,7 +12,7 @@ class EmailService {
     });
     
     // Logo URL - can be updated to use Cloudinary or other CDN
-    this.logoUrl = process.env.CHOMA_LOGO_URL || 'https://via.placeholder.com/120x60/F7AE1A/FFFFFF?text=CHOMA';
+    this.logoUrl = process.env.CHOMA_LOGO_URL || 'https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png';
   }
 
   /**
@@ -207,7 +207,7 @@ class EmailService {
                 <img src="${this.logoUrl}" alt="Choma Logo" />
                 <div class="logo-text">CHOMA</div>
               </div>
-              <div class="welcome-badge">🎉 Application Approved!</div>
+              <div class="welcome-badge">Application Approved!</div>
             </div>
 
             <div class="content">
@@ -218,7 +218,7 @@ class EmailService {
               <p>At Choma, we're passionate about delivering authentic Nigerian cuisine and international flavors to food lovers across the region. Your skills and expertise will help us continue this mission while providing you with exciting opportunities to grow your culinary career.</p>
 
               <div class="next-steps">
-                <h3>🚀 Next Steps:</h3>
+                <h3>Next Steps:</h3>
                 <ul>
                   <li><strong>Download the Chef App:</strong> Get started by downloading our chef app from the App Store or Google Play</li>
                   <li><strong>Complete Your Profile:</strong> Add your specialties, available hours, and kitchen preferences</li>

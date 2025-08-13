@@ -1,6 +1,6 @@
 import React from 'react'
 import { useState, useEffect } from 'react'
-import { Line, Bar, Doughnut} from 'react-chartjs-2'
+import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,7 +16,7 @@ import {
 } from 'chart.js'
 import { analyticsApi } from '../services/analyticsApi'
 import { dashboardApi } from '../services/api'
-import AnalyticsCard from '../components/analytics/AnalyticsCard'
+// import AnalyticsCard from '../components/analytics/AnalyticsCard' // Replaced with Dashboard-style cards
 
 // Register Chart.js components
 ChartJS.register(
@@ -114,6 +114,9 @@ const AnalyticsDashboard: React.FC = () => {
   const [chartData, setChartData] = useState<ChartData | null>(null)
   const [insights, setInsights] = useState<BusinessInsights | null>(null)
   const [loading, setLoading] = useState(true)
+  const [kpiLoading, setKpiLoading] = useState(true)
+  const [chartsLoading, setChartsLoading] = useState(true)
+  const [insightsLoading, setInsightsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<DashboardPeriod>('month')
   const [refreshing, setRefreshing] = useState(false)
@@ -121,252 +124,124 @@ const AnalyticsDashboard: React.FC = () => {
   // Debug state
   console.log('Analytics Dashboard State:', { loading, error, kpiData: !!kpiData, chartData: !!chartData, insights: !!insights })
 
-  // Fetch analytics data
-  const fetchAnalyticsData = async (period: DashboardPeriod) => {
+  // Fetch KPI data first (critical data)
+  const fetchKPIData = async (period: DashboardPeriod) => {
     try {
-      setRefreshing(true)
-      setError(null)
-
-      // Convert period to API format
-      const timeRange = period === 'today' ? '1d' : 
-                       period === 'week' ? '7d' :
-                       period === 'month' ? '30d' :
-                       period === 'quarter' ? '90d' : '1y'
+      setKpiLoading(true)
+      const timeRange = period === 'today' ? '1d' :
+        period === 'week' ? '7d' :
+          period === 'month' ? '30d' :
+            period === 'quarter' ? '90d' : '1y'
 
       try {
-        // Try to fetch from advanced analytics API first
-        const [kpis, charts, businessInsights] = await Promise.all([
-          analyticsApi.getKPIData(timeRange),
-          analyticsApi.getChartsData(timeRange),
-          analyticsApi.getBusinessIntelligence(timeRange)
-        ])
-
-        console.log('Advanced Analytics API Response:', { kpis, charts, businessInsights })
-
-        // Check if we got valid data
-        if (!kpis || !kpis.overview || !charts || !businessInsights) {
-          throw new Error('Invalid or empty data from advanced analytics API')
+        const kpis = await analyticsApi.getKPIData(timeRange)
+        if (kpis && kpis.overview) {
+          setKpiData(kpis)
+        } else {
+          throw new Error('Invalid KPI data')
         }
-
-        setKpiData(kpis)
-        setChartData(charts)
-        setInsights(businessInsights)
       } catch (analyticsError) {
-        console.log('Advanced analytics not available, falling back to basic dashboard data')
-        
-        try {
-          // Fallback to basic dashboard API
-          const dashboardStats = await dashboardApi.getStats()
-          
-          console.log('Basic Dashboard API Response:', dashboardStats)
+        console.log('Advanced KPI analytics not available, falling back to basic dashboard data')
+        const dashboardStats = await dashboardApi.getStats()
 
-          // Check if we got valid dashboard data
-          if (!dashboardStats || !dashboardStats.overview) {
-            throw new Error('Invalid or empty data from basic dashboard API')
-          }
-          
-          // Transform dashboard data to analytics format
+        if (dashboardStats && dashboardStats.overview) {
           const basicKpiData: KPIData = {
             overview: {
               totalRevenue: dashboardStats.overview.totalRevenue || 0,
               totalOrders: dashboardStats.overview.totalOrders || 0,
               activeCustomers: dashboardStats.overview.activeUsers || 0,
-              totalChefs: 0, // Not available in basic dashboard
-              avgOrderValue: dashboardStats.overview.totalRevenue / Math.max(dashboardStats.overview.totalOrders, 1) || 0,
-              revenueToday: 0, // Not available in basic dashboard
-              ordersToday: 0, // Not available in basic dashboard
-              newCustomersToday: 0, // Not available in basic dashboard
-              chefsOnline: 0 // Not available in basic dashboard
-            },
-            growth: {
-              revenueGrowth: 0,
-              orderGrowth: 0,
-              customerGrowth: 0,
-              chefGrowth: 0
-            },
-            realTime: {
-              ordersInProgress: 0,
-              pendingOrders: 0,
-              activeDeliveries: 0,
-              completedOrdersToday: 0
-            }
-          }
-
-          // Create basic chart data from dashboard stats
-          const basicChartData: ChartData = {
-            revenueChart: {
-              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-              data: [
-                dashboardStats.overview.totalRevenue * 0.2,
-                dashboardStats.overview.totalRevenue * 0.25,
-                dashboardStats.overview.totalRevenue * 0.3,
-                dashboardStats.overview.totalRevenue * 0.25
-              ],
-              previousPeriod: [
-                dashboardStats.overview.totalRevenue * 0.18,
-                dashboardStats.overview.totalRevenue * 0.22,
-                dashboardStats.overview.totalRevenue * 0.28,
-                dashboardStats.overview.totalRevenue * 0.22
-              ]
-            },
-            ordersByStatus: {
-              labels: dashboardStats.orderStatusBreakdown.map(status => status._id),
-              data: dashboardStats.orderStatusBreakdown.map(status => status.count),
-              colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
-            },
-            customerSegments: {
-              labels: ['New Customers', 'Regular Customers', 'Premium Customers'],
-              data: [
-                Math.floor(dashboardStats.overview.activeUsers * 0.3),
-                Math.floor(dashboardStats.overview.activeUsers * 0.5),
-                Math.floor(dashboardStats.overview.activeUsers * 0.2)
-              ],
-              colors: ['#8B5CF6', '#3B82F6', '#10B981']
-            },
-            chefPerformance: {
-              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-              completionRate: [92, 95, 88, 94],
-              satisfaction: [4.2, 4.5, 4.1, 4.6]
-            },
-            dailyTrends: {
-              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-              orders: [45, 52, 48, 61, 55, 67, 43],
-              revenue: [144000, 166400, 153600, 195200, 176000, 214400, 137600]
-            },
-            popularMeals: {
-              labels: ['Jollof Rice', 'Fried Rice', 'Egusi Soup', 'Amala & Ewedu'],
-              orders: [156, 142, 128, 98],
-              revenue: [624000, 568000, 512000, 392000]
-            }
-          }
-
-          const basicInsights: BusinessInsights = {
-            insights: [
-              {
-                type: 'positive',
-                title: 'Revenue Performance',
-                message: `Total revenue of ${new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(dashboardStats.overview.totalRevenue)} shows healthy business growth`,
-                value: new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(dashboardStats.overview.totalRevenue)
-              },
-              {
-                type: 'neutral',
-                title: 'Order Volume',
-                message: `${dashboardStats.overview.totalOrders} total orders processed across all meal plans`,
-                value: dashboardStats.overview.totalOrders.toString()
-              }
-            ],
-            predictions: [
-              {
-                metric: 'Next Month Revenue',
-                prediction: dashboardStats.overview.totalRevenue * 1.15,
-                confidence: 75,
-                timeframe: '30 days'
-              },
-              {
-                metric: 'Order Growth',
-                prediction: dashboardStats.overview.totalOrders * 1.12,
-                confidence: 68,
-                timeframe: '30 days'
-              }
-            ]
-          }
-
-          setKpiData(basicKpiData)
-          setChartData(basicChartData)
-          setInsights(basicInsights)
-        } catch (dashboardError) {
-          console.log('Basic dashboard API also failed, showing empty analytics with zero values')
-          
-          // Create empty analytics data with zero values
-          const emptyKpiData: KPIData = {
-            overview: {
-              totalRevenue: 0,
-              totalOrders: 0,
-              activeCustomers: 0,
               totalChefs: 0,
-              avgOrderValue: 0,
+              avgOrderValue: dashboardStats.overview.totalRevenue / Math.max(dashboardStats.overview.totalOrders, 1) || 0,
               revenueToday: 0,
               ordersToday: 0,
               newCustomersToday: 0,
               chefsOnline: 0
             },
-            growth: {
-              revenueGrowth: 0,
-              orderGrowth: 0,
-              customerGrowth: 0,
-              chefGrowth: 0
-            },
-            realTime: {
-              ordersInProgress: 0,
-              pendingOrders: 0,
-              activeDeliveries: 0,
-              completedOrdersToday: 0
-            }
+            growth: { revenueGrowth: 0, orderGrowth: 0, customerGrowth: 0, chefGrowth: 0 },
+            realTime: { ordersInProgress: 0, pendingOrders: 0, activeDeliveries: 0, completedOrdersToday: 0 }
           }
-
-          const emptyChartData: ChartData = {
-            revenueChart: {
-              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-              data: [0, 0, 0, 0],
-              previousPeriod: [0, 0, 0, 0]
-            },
-            ordersByStatus: {
-              labels: ['Pending', 'Confirmed', 'Preparing', 'Delivered', 'Cancelled'],
-              data: [0, 0, 0, 0, 0],
-              colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
-            },
-            customerSegments: {
-              labels: ['New Customers', 'Regular Customers', 'Premium Customers'],
-              data: [0, 0, 0],
-              colors: ['#8B5CF6', '#3B82F6', '#10B981']
-            },
-            chefPerformance: {
-              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-              completionRate: [0, 0, 0, 0],
-              satisfaction: [0, 0, 0, 0]
-            },
-            dailyTrends: {
-              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-              orders: [0, 0, 0, 0, 0, 0, 0],
-              revenue: [0, 0, 0, 0, 0, 0, 0]
-            },
-            popularMeals: {
-              labels: ['No data available'],
-              orders: [0],
-              revenue: [0]
-            }
-          }
-
-          const emptyInsights: BusinessInsights = {
-            insights: [
-              {
-                type: 'neutral',
-                title: 'No Data Available',
-                message: 'Analytics data is currently unavailable. This may be due to no orders yet or system maintenance.',
-                value: '₦0'
-              }
-            ],
-            predictions: [
-              {
-                metric: 'Future Revenue',
-                prediction: 0,
-                confidence: 0,
-                timeframe: 'N/A'
-              }
-            ]
-          }
-
-          setKpiData(emptyKpiData)
-          setChartData(emptyChartData)
-          setInsights(emptyInsights)
-          setError('Analytics data is currently unavailable')
+          setKpiData(basicKpiData)
         }
       }
+    } catch (error) {
+      console.error('Failed to fetch KPI data:', error)
+    } finally {
+      setKpiLoading(false)
+    }
+  }
 
-    } catch (err) {
-      console.error('Unexpected error in analytics fetch:', err)
-      // This should rarely happen, but if it does, still show empty data
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+  // Fetch charts data (non-critical, can load after KPIs)
+  const fetchChartsData = async (period: DashboardPeriod) => {
+    try {
+      setChartsLoading(true)
+      const timeRange = period === 'today' ? '1d' :
+        period === 'week' ? '7d' :
+          period === 'month' ? '30d' :
+            period === 'quarter' ? '90d' : '1y'
+
+      try {
+        const charts = await analyticsApi.getChartsData(timeRange)
+        if (charts) {
+          setChartData(charts)
+        } else {
+          throw new Error('Invalid charts data')
+        }
+      } catch (error) {
+        console.log('Charts data not available')
+        setChartData(null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch charts data:', error)
+    } finally {
+      setChartsLoading(false)
+    }
+  }
+
+  // Fetch insights data (least critical, loads last)
+  const fetchInsightsData = async (period: DashboardPeriod) => {
+    try {
+      setInsightsLoading(true)
+      const timeRange = period === 'today' ? '1d' :
+        period === 'week' ? '7d' :
+          period === 'month' ? '30d' :
+            period === 'quarter' ? '90d' : '1y'
+
+      try {
+        const businessInsights = await analyticsApi.getBusinessIntelligence(timeRange)
+        if (businessInsights) {
+          setInsights(businessInsights)
+        } else {
+          throw new Error('Invalid insights data')
+        }
+      } catch (error) {
+        console.log('Insights data not available')
+        setInsights(null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch insights data:', error)
+    } finally {
+      setInsightsLoading(false)
+    }
+  }
+
+  // Main fetch function - loads critical data first, then others asynchronously
+  const fetchAnalyticsData = async (period: DashboardPeriod) => {
+    try {
+      setRefreshing(true)
+      setError(null)
+
+      // Load KPIs first (most critical)
+      await fetchKPIData(period)
+
+      // Then load charts and insights in parallel (less critical)
+      Promise.all([
+        fetchChartsData(period),
+        fetchInsightsData(period)
+      ])
+
+    } catch (error) {
+      console.error('Failed to fetch analytics data:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load analytics data')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -401,13 +276,13 @@ const AnalyticsDashboard: React.FC = () => {
     gradient: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
   }
 
-  // Loading state
-  if (loading) {
+  // Only show initial loading if all critical data is loading
+  if (loading && kpiLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading advanced analytics...</p>
+          <p className="text-gray-600 dark:text-neutral-200">Loading dashboard...</p>
         </div>
       </div>
     )
@@ -417,154 +292,262 @@ const AnalyticsDashboard: React.FC = () => {
   const showErrorNotification = error !== null
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-neutral-900 dark:to-neutral-800 p-4 lg:p-6 space-y-8">
       {/* Error Notification */}
       {showErrorNotification && (
-        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
+                <div className="w-8 h-8 bg-amber-100 dark:bg-amber-800 rounded-lg flex items-center justify-center">
+                  <i className="fi fi-sr-exclamation text-amber-600 dark:text-amber-300"></i>
+                </div>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">Analytics Data Notice</h3>
-                <p className="text-sm text-yellow-700 mt-1">{error}</p>
+              <div>
+                <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">Analytics Data Notice</h3>
+                <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">{error}</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => fetchAnalyticsData(selectedPeriod)}
               disabled={refreshing}
-              className="text-sm text-yellow-600 hover:text-yellow-800 underline disabled:opacity-50"
+              className="inline-flex items-center space-x-1 text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {refreshing ? 'Refreshing...' : 'Retry'}
+              <i className={`fi fi-sr-refresh text-xs ${refreshing ? 'animate-spin' : ''}`}></i>
+              <span>{refreshing ? 'Retrying...' : 'Retry'}</span>
             </button>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Advanced Analytics Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-300">Real-time business intelligence and performance insights</p>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <i className="fi fi-sr-stats text-white text-xl"></i>
+          </div>
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-neutral-100 tracking-tight">
+              Advanced Analytics
+            </h1>
+            <p className="text-gray-600 dark:text-neutral-300 mt-1 flex items-center space-x-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span>Real-time business intelligence and performance insights</span>
+            </p>
+          </div>
         </div>
-        
-        <div className="flex items-center space-x-3">
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {/* Period Selector */}
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value as DashboardPeriod)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="today">Today</option>
-            <option value="week">Last 7 Days</option>
-            <option value="month">Last 30 Days</option>
-            <option value="quarter">Last 3 Months</option>
-            <option value="year">Last Year</option>
-          </select>
-          
+          <div className="flex items-center space-x-2">
+            <i className="fi fi-sr-calendar text-gray-500 dark:text-neutral-400"></i>
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value as DashboardPeriod)}
+              aria-label="Select time period"
+              title="Choose time period for analytics data"
+              className="px-4 py-2.5 bg-white/90 dark:bg-neutral-800/90 border border-gray-200 dark:border-neutral-600 rounded-lg text-gray-900 dark:text-neutral-100 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 min-w-[140px]"
+            >
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+              <option value="quarter">Last 3 Months</option>
+              <option value="year">Last Year</option>
+            </select>
+          </div>
+
           {/* Refresh Button */}
           <button
             onClick={() => fetchAnalyticsData(selectedPeriod)}
             disabled={refreshing}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+            className="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 min-w-[100px]"
           >
-            <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
-            Refresh
+            <i className={`fi fi-sr-refresh text-sm ${refreshing ? 'animate-spin' : ''}`}></i>
+            <span>{refreshing ? 'Loading...' : 'Refresh'}</span>
           </button>
         </div>
       </div>
 
       {/* Key Performance Indicators */}
-      {kpiData && kpiData.overview && kpiData.growth && (
+      {kpiLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <AnalyticsCard
-            title="Total Revenue"
-            value={formatCurrency(kpiData.overview.totalRevenue || 0)}
-            change={{
-              value: kpiData.growth.revenueGrowth || 0,
-              period: 'vs last period',
-              isPositive: (kpiData.growth.revenueGrowth || 0) > 0
-            }}
-            icon="💰"
-            color="green"
-            subtitle={`${formatCurrency(kpiData.overview.revenueToday || 0)} today`}
-          />
-          
-          <AnalyticsCard
-            title="Total Orders"
-            value={(kpiData.overview.totalOrders || 0).toLocaleString()}
-            change={{
-              value: kpiData.growth.orderGrowth || 0,
-              period: 'vs last period',
-              isPositive: (kpiData.growth.orderGrowth || 0) > 0
-            }}
-            icon="📋"
-            color="blue"
-            subtitle={`${kpiData.overview.ordersToday || 0} today`}
-          />
-          
-          <AnalyticsCard
-            title="Active Customers"
-            value={(kpiData.overview.activeCustomers || 0).toLocaleString()}
-            change={{
-              value: kpiData.growth.customerGrowth || 0,
-              period: 'vs last period',
-              isPositive: (kpiData.growth.customerGrowth || 0) > 0
-            }}
-            icon="👥"
-            color="purple"
-            subtitle={`${kpiData.overview.newCustomersToday || 0} new today`}
-          />
-          
-          <AnalyticsCard
-            title="Average Order Value"
-            value={formatCurrency(kpiData.overview.avgOrderValue || 0)}
-            change={{
-              value: (kpiData.growth.revenueGrowth || 0) - (kpiData.growth.orderGrowth || 0),
-              period: 'vs last period',
-              isPositive: ((kpiData.growth.revenueGrowth || 0) - (kpiData.growth.orderGrowth || 0)) > 0
-            }}
-            icon="💳"
-            color="yellow"
-            subtitle={`${kpiData.overview.totalChefs || 0} active chefs`}
-          />
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 animate-pulse">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-300 dark:bg-neutral-600 rounded w-20 mb-2"></div>
+                  <div className="h-8 bg-gray-300 dark:bg-neutral-600 rounded w-24 mb-2"></div>
+                  <div className="h-3 bg-gray-300 dark:bg-neutral-600 rounded w-16"></div>
+                </div>
+                <div className="w-12 h-12 bg-gray-300 dark:bg-neutral-600 rounded-xl"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : kpiData && kpiData.overview && kpiData.growth && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white/95 dark:bg-neutral-800/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-200/50 dark:border-neutral-700/50 hover:shadow-xl transition-all duration-300 group">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 dark:text-neutral-300 mb-2">Total Revenue</p>
+                <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-neutral-100 mb-1">
+                  {formatCurrency(kpiData.overview.totalRevenue || 0)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-neutral-400 flex items-center space-x-1">
+                  <i className="fi fi-sr-time-quarter-to text-xs"></i>
+                  <span>{formatCurrency(kpiData.overview.revenueToday || 0)} today</span>
+                </p>
+              </div>
+              <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i className="fi fi-sr-usd-circle text-2xl text-white"></i>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+              <div className="flex items-center space-x-2">
+                <i className={`fi fi-sr-arrow-${(kpiData.growth.revenueGrowth || 0) > 0 ? 'up' : 'down'} text-xs ${(kpiData.growth.revenueGrowth || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}></i>
+                <span className={`text-sm font-medium ${(kpiData.growth.revenueGrowth || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatPercentage(kpiData.growth.revenueGrowth || 0)}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-neutral-400">vs last period</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/95 dark:bg-neutral-800/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-200/50 dark:border-neutral-700/50 hover:shadow-xl transition-all duration-300 group">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 dark:text-neutral-300 mb-2">Total Orders</p>
+                <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-neutral-100 mb-1">
+                  {(kpiData.overview.totalOrders || 0).toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-neutral-400 flex items-center space-x-1">
+                  <i className="fi fi-sr-time-quarter-to text-xs"></i>
+                  <span>{kpiData.overview.ordersToday || 0} today</span>
+                </p>
+              </div>
+              <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i className="fi fi-sr-clipboard-list text-2xl text-white"></i>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+              <div className="flex items-center space-x-2">
+                <i className={`fi fi-sr-arrow-${(kpiData.growth.orderGrowth || 0) > 0 ? 'up' : 'down'} text-xs ${(kpiData.growth.orderGrowth || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}></i>
+                <span className={`text-sm font-medium ${(kpiData.growth.orderGrowth || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatPercentage(kpiData.growth.orderGrowth || 0)}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-neutral-400">vs last period</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/95 dark:bg-neutral-800/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-200/50 dark:border-neutral-700/50 hover:shadow-xl transition-all duration-300 group">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 dark:text-neutral-300 mb-2">Active Customers</p>
+                <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-neutral-100 mb-1">
+                  {(kpiData.overview.activeCustomers || 0).toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-neutral-400 flex items-center space-x-1">
+                  <i className="fi fi-sr-user-add text-xs"></i>
+                  <span>{kpiData.overview.newCustomersToday || 0} new today</span>
+                </p>
+              </div>
+              <div className="w-14 h-14 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i className="fi fi-sr-users-alt text-2xl text-white"></i>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+              <div className="flex items-center space-x-2">
+                <i className={`fi fi-sr-arrow-${(kpiData.growth.customerGrowth || 0) > 0 ? 'up' : 'down'} text-xs ${(kpiData.growth.customerGrowth || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}></i>
+                <span className={`text-sm font-medium ${(kpiData.growth.customerGrowth || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatPercentage(kpiData.growth.customerGrowth || 0)}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-neutral-400">vs last period</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/95 dark:bg-neutral-800/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-200/50 dark:border-neutral-700/50 hover:shadow-xl transition-all duration-300 group">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 dark:text-neutral-300 mb-2">Avg Order Value</p>
+                <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-neutral-100 mb-1">
+                  {formatCurrency(kpiData.overview.avgOrderValue || 0)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-neutral-400 flex items-center space-x-1">
+                  <i className="fi fi-sr-user text-xs"></i>
+                  <span>{kpiData.overview.totalChefs || 0} active chefs</span>
+                </p>
+              </div>
+              <div className="w-14 h-14 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i className="fi fi-sr-credit-card text-2xl text-white"></i>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+              <div className="flex items-center space-x-2">
+                <i className={`fi fi-sr-arrow-${((kpiData.growth.revenueGrowth || 0) - (kpiData.growth.orderGrowth || 0)) > 0 ? 'up' : 'down'} text-xs ${((kpiData.growth.revenueGrowth || 0) - (kpiData.growth.orderGrowth || 0)) > 0 ? 'text-green-600' : 'text-red-600'}`}></i>
+                <span className={`text-sm font-medium ${((kpiData.growth.revenueGrowth || 0) - (kpiData.growth.orderGrowth || 0)) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatPercentage((kpiData.growth.revenueGrowth || 0) - (kpiData.growth.orderGrowth || 0))}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-neutral-400">vs last period</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Real-time Metrics */}
       {kpiData && kpiData.realTime && (
-        <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Real-time Operations</h3>
+        <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">Real-time Operations</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-3xl font-bold text-blue-600">{kpiData.realTime.ordersInProgress || 0}</p>
-              <p className="text-sm text-gray-600">Orders in Progress</p>
+            <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <i className="fi fi-sr-time-quarter-to text-blue-600 dark:text-blue-300"></i>
+              </div>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">{kpiData.realTime.ordersInProgress || 0}</p>
+              <p className="text-sm text-gray-600 dark:text-neutral-300">Orders in Progress</p>
             </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <p className="text-3xl font-bold text-yellow-600">{kpiData.realTime.pendingOrders || 0}</p>
-              <p className="text-sm text-gray-600">Pending Orders</p>
+            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg border border-yellow-200 dark:border-yellow-700">
+              <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-800 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <i className="fi fi-sr-hourglass text-yellow-600 dark:text-yellow-300"></i>
+              </div>
+              <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-300">{kpiData.realTime.pendingOrders || 0}</p>
+              <p className="text-sm text-gray-600 dark:text-neutral-300">Pending Orders</p>
             </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <p className="text-3xl font-bold text-purple-600">{kpiData.realTime.activeDeliveries || 0}</p>
-              <p className="text-sm text-gray-600">Active Deliveries</p>
+            <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
+              <div className="w-8 h-8 bg-purple-100 dark:bg-purple-800 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <i className="fi fi-sr-truck-side text-purple-600 dark:text-purple-300"></i>
+              </div>
+              <p className="text-3xl font-bold text-purple-600 dark:text-purple-300">{kpiData.realTime.activeDeliveries || 0}</p>
+              <p className="text-sm text-gray-600 dark:text-neutral-300">Active Deliveries</p>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-3xl font-bold text-green-600">{kpiData.realTime.completedOrdersToday || 0}</p>
-              <p className="text-sm text-gray-600">Completed Today</p>
+            <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-700">
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <i className="fi fi-sr-check-circle text-green-600 dark:text-green-300"></i>
+              </div>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-300">{kpiData.realTime.completedOrdersToday || 0}</p>
+              <p className="text-sm text-gray-600 dark:text-neutral-300">Completed Today</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Charts Grid */}
-      {chartData && (
+      {chartsLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6 animate-pulse">
+              <div className="h-6 bg-gray-300 dark:bg-neutral-600 rounded w-32 mb-4"></div>
+              <div className="h-64 bg-gray-300 dark:bg-neutral-600 rounded"></div>
+            </div>
+          ))}
+        </div>
+      ) : chartData ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Revenue Trend Chart */}
           {chartData.revenueChart && (
-            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Revenue Trend</h3>
               <Line
                 data={{
@@ -589,29 +572,30 @@ const AnalyticsDashboard: React.FC = () => {
                     }
                   ]
                 }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: 'top'
-                  }
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      callback: (value) => formatCurrency(value as number)
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: 'top'
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        // Explicitly type value to avoid implicit any (TS7006)
+                        callback: (value: string | number) => formatCurrency(Number(value))
+                      }
                     }
                   }
-                }
-              }}
-            />
+                }}
+              />
             </div>
           )}
 
           {/* Orders by Status */}
           {chartData.ordersByStatus && (
-            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Orders by Status</h3>
               <Doughnut
                 data={{
@@ -623,21 +607,21 @@ const AnalyticsDashboard: React.FC = () => {
                     borderColor: '#ffffff'
                   }]
                 }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: 'bottom'
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: 'bottom'
+                    }
                   }
-                }
-              }}
-            />
+                }}
+              />
             </div>
           )}
 
           {/* Daily Trends */}
           {chartData.dailyTrends && (
-            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Daily Performance</h3>
               <Bar
                 data={{
@@ -657,39 +641,40 @@ const AnalyticsDashboard: React.FC = () => {
                     }
                   ]
                 }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: 'top'
-                  }
-                },
-                scales: {
-                  y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left'
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: 'top'
+                    }
                   },
-                  y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    grid: {
-                      drawOnChartArea: false
+                  scales: {
+                    y: {
+                      type: 'linear',
+                      display: true,
+                      position: 'left'
                     },
-                    ticks: {
-                      callback: (value) => formatCurrency(value as number)
+                    y1: {
+                      type: 'linear',
+                      display: true,
+                      position: 'right',
+                      grid: {
+                        drawOnChartArea: false
+                      },
+                      ticks: {
+                        // Explicitly type value to avoid implicit any (TS7006)
+                        callback: (value: string | number) => formatCurrency(Number(value))
+                      }
                     }
                   }
-                }
-              }}
-            />
+                }}
+              />
             </div>
           )}
 
           {/* Customer Segments */}
           {chartData.customerSegments && (
-            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Customer Segments</h3>
               <Bar
                 data={{
@@ -701,28 +686,36 @@ const AnalyticsDashboard: React.FC = () => {
                     borderRadius: 4
                   }]
                 }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    display: false
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      display: false
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true
+                    }
                   }
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true
-                  }
-                }
-              }}
-            />
+                }}
+              />
             </div>
           )}
+        </div>
+      ) : (
+        <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-12 text-center">
+          <div className="text-gray-400 dark:text-neutral-500 mb-4">
+            <i className="fi fi-sr-chart-histogram text-4xl"></i>
+          </div>
+          <h3 className="text-lg font-medium text-gray-600 dark:text-neutral-300 mb-2">No Chart Data Available</h3>
+          <p className="text-sm text-gray-500 dark:text-neutral-400">Charts will appear here once you have orders and analytics data.</p>
         </div>
       )}
 
       {/* Chef Performance */}
       {chartData && chartData.chefPerformance && (
-        <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Chef Performance Analytics</h3>
           <Line
             data={{
@@ -776,32 +769,32 @@ const AnalyticsDashboard: React.FC = () => {
 
       {/* Popular Meals */}
       {chartData && chartData.popularMeals && chartData.popularMeals.labels && chartData.popularMeals.labels.length > 0 && (
-        <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Popular Meals Performance</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+              <thead className="bg-gray-50 dark:bg-neutral-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Meal</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Orders</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Revenue</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Performance</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">Meal</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">Orders</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">Revenue</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">Performance</th>
                 </tr>
               </thead>
-              <tbody className="bg-white/90 dark:bg-gray-800/90 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white/90 dark:bg-neutral-800/90 divide-y divide-gray-200 dark:divide-neutral-700">
                 {chartData.popularMeals.labels.map((meal, index) => (
                   <tr key={meal}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{meal}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{chartData.popularMeals.orders?.[index] || 0}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{formatCurrency(chartData.popularMeals.revenue?.[index] || 0)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-neutral-100">{meal}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-neutral-300">{chartData.popularMeals.orders?.[index] || 0}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-neutral-300">{formatCurrency(chartData.popularMeals.revenue?.[index] || 0)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ 
-                            width: `${chartData.popularMeals.orders && chartData.popularMeals.orders.length > 0 
-                              ? ((chartData.popularMeals.orders[index] || 0) / Math.max(...(chartData.popularMeals.orders || [1]))) * 100 
-                              : 0}%` 
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{
+                            width: `${chartData.popularMeals.orders && chartData.popularMeals.orders.length > 0
+                              ? ((chartData.popularMeals.orders[index] || 0) / Math.max(...(chartData.popularMeals.orders || [1]))) * 100
+                              : 0}%`
                           }}
                         ></div>
                       </div>
@@ -815,85 +808,107 @@ const AnalyticsDashboard: React.FC = () => {
       )}
 
       {/* Business Insights */}
-      {insights && (
+      {insightsLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <div key={i} className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6 animate-pulse">
+              <div className="h-6 bg-gray-300 dark:bg-neutral-600 rounded w-40 mb-4"></div>
+              <div className="space-y-4">
+                {[1, 2, 3].map((j) => (
+                  <div key={j} className="p-4 bg-gray-100 dark:bg-neutral-700 rounded-lg">
+                    <div className="h-4 bg-gray-300 dark:bg-neutral-600 rounded w-32 mb-2"></div>
+                    <div className="h-3 bg-gray-300 dark:bg-neutral-600 rounded w-full"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : insights ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* AI Insights */}
           {insights.insights && insights.insights.length > 0 && (
-            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">🧠 AI-Powered Insights</h3>
               <div className="space-y-4">
                 {insights.insights.map((insight, index) => (
-                <div 
-                  key={index}
-                  className={`p-4 rounded-lg border-l-4 ${
-                    insight.type === 'positive' 
-                      ? 'bg-green-50 border-green-400' 
+                  <div
+                    key={index}
+                    className={`p-4 rounded-lg border-l-4 ${insight.type === 'positive'
+                      ? 'bg-green-50 border-green-400'
                       : insight.type === 'negative'
-                      ? 'bg-red-50 border-red-400'
-                      : 'bg-blue-50 border-blue-400'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                        {insight.title}
-                        {insight.trend && (
-                          <span className={`text-sm ${insight.trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatPercentage(insight.trend)}
-                          </span>
-                        )}
-                      </h4>
-                      <p className="text-sm text-gray-600 mt-1">{insight.message}</p>
-                    </div>
-                    {insight.value && (
-                      <div className={`text-lg font-bold ${
-                        insight.type === 'positive' 
-                          ? 'text-green-600' 
-                          : insight.type === 'negative'
-                          ? 'text-red-600'
-                          : 'text-blue-600'
-                      }`}>
-                        {insight.value}
+                        ? 'bg-red-50 border-red-400'
+                        : 'bg-blue-50 border-blue-400'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                          {insight.title}
+                          {insight.trend && (
+                            <span className={`text-sm ${insight.trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatPercentage(insight.trend)}
+                            </span>
+                          )}
+                        </h4>
+                        <p className="text-sm text-gray-600 mt-1">{insight.message}</p>
                       </div>
-                    )}
+                      {insight.value && (
+                        <div className={`text-lg font-bold ${insight.type === 'positive'
+                          ? 'text-green-600'
+                          : insight.type === 'negative'
+                            ? 'text-red-600'
+                            : 'text-blue-600'
+                          }`}>
+                          {insight.value}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
               </div>
             </div>
           )}
 
           {/* Predictions */}
           {insights.predictions && insights.predictions.length > 0 && (
-            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">🔮 Predictive Analytics</h3>
               <div className="space-y-4">
                 {insights.predictions.map((prediction, index) => (
-                <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{prediction.metric}</h4>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{prediction.timeframe}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-blue-600">
-                      {prediction.metric.includes('Revenue') ? formatCurrency(prediction.prediction) : prediction.prediction.toFixed(0)}
-                    </span>
-                    <div className="flex items-center">
-                      <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Confidence:</span>
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-500 h-2 rounded-full" 
-                          style={{ width: `${prediction.confidence}%` }}
-                        ></div>
+                  <div key={index} className="p-4 bg-gray-50 dark:bg-neutral-700/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900 dark:text-neutral-100">{prediction.metric}</h4>
+                      <span className="text-sm text-gray-500 dark:text-neutral-400">{prediction.timeframe}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-blue-600">
+                        {prediction.metric.includes('Revenue') ? formatCurrency(prediction.prediction) : prediction.prediction.toFixed(0)}
+                      </span>
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-500 dark:text-neutral-400 mr-2">Confidence:</span>
+                        <div className="w-16 bg-gray-200 dark:bg-neutral-600 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${prediction.confidence}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-500 dark:text-neutral-400 ml-2">{prediction.confidence}%</span>
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{prediction.confidence}%</span>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
               </div>
             </div>
           )}
+        </div>
+      ) : (
+        <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-12 text-center">
+          <div className="text-gray-400 dark:text-neutral-500 mb-4">
+            <i className="fi fi-sr-brain text-4xl"></i>
+          </div>
+          <h3 className="text-lg font-medium text-gray-600 dark:text-neutral-300 mb-2">No Insights Available</h3>
+          <p className="text-sm text-gray-500 dark:text-neutral-400">Business insights will appear here once you have sufficient data.</p>
         </div>
       )}
     </div>

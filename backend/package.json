@@ -6,13 +6,15 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "seed": "node seeders/mealPlanSeeder.js"
+    "seed": "node seeders/mealPlanSeeder.js",
+    "create-indexes": "node scripts/createIndexes.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@colors/colors": "^1.6.0",
     "@sentry/node": "^9.39.0",
     "@sentry/tracing": "^7.120.3",
     "axios": "^1.10.0",

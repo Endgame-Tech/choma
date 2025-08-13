@@ -2,7 +2,7 @@
 
 export const lightColors = {
   // Primary Colors
-  primary: '#FF7A00',
+  primary: '#F7AE1A',
   primaryDark: '#D96800',
   primaryLight: '#FF9A3F',
   
@@ -38,7 +38,7 @@ export const lightColors = {
 
 export const darkColors = {
   // Primary Colors
-  primary: '#FF9A3F', // Orange accent color from the image
+  primary: '#F7AE1A', // Orange accent color from the image
   primaryDark: '#b6c530ff',
   primaryLight: '#f0fb8ee0',
   

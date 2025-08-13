@@ -1,0 +1,130 @@
+/* Analytics Dashboard Styles */
+.analytics-dashboard {
+  @apply space-y-6 p-6;
+}
+
+.analytics-header {
+  @apply flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4;
+}
+
+.analytics-title {
+  @apply text-3xl font-semibold text-gray-900 dark:text-neutral-100;
+}
+
+.analytics-subtitle {
+  @apply text-gray-600 dark:text-neutral-200;
+}
+
+.period-selector {
+  @apply px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.refresh-button {
+  @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2;
+}
+
+.kpi-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6;
+}
+
+.kpi-card {
+  @apply bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700;
+}
+
+.kpi-title {
+  @apply text-sm font-medium text-gray-600 dark:text-neutral-200;
+}
+
+.kpi-value {
+  @apply text-3xl font-semibold text-gray-900 dark:text-neutral-100;
+}
+
+.kpi-subtitle {
+  @apply text-xs text-gray-500 dark:text-neutral-400 mt-1;
+}
+
+.kpi-growth {
+  @apply text-sm;
+}
+
+.real-time-metrics {
+  @apply bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6;
+}
+
+.metric-card {
+  @apply text-center p-4 rounded-lg border;
+}
+
+.metric-value {
+  @apply text-3xl font-bold;
+}
+
+.metric-label {
+  @apply text-sm;
+}
+
+.charts-grid {
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-6;
+}
+
+.chart-container {
+  @apply bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6;
+}
+
+.chart-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4;
+}
+
+.performance-table {
+  @apply min-w-full divide-y divide-gray-200 dark:divide-neutral-700;
+}
+
+.table-header {
+  @apply bg-gray-50 dark:bg-neutral-700;
+}
+
+.table-cell {
+  @apply px-6 py-4 whitespace-nowrap text-sm;
+}
+
+.loading-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.loading-spinner {
+  @apply animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4;
+}
+
+.error-notification {
+  @apply bg-yellow-50 border border-yellow-200 p-4 rounded-lg;
+}
+
+.error-title {
+  @apply text-sm font-medium text-yellow-800;
+}
+
+.error-message {
+  @apply text-sm text-yellow-700 mt-1;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .analytics-header {
+    @apply flex-col items-start;
+  }
+  
+  .kpi-grid {
+    @apply grid-cols-1;
+  }
+  
+  .charts-grid {
+    @apply grid-cols-1;
+  }
+}
+
+/* Dark mode styles */
+.dark {
+  .analytics-dashboard {
+    @apply bg-neutral-900;
+  }
+}

@@ -11,7 +11,7 @@ class ApiService {
     this.token = null;
     this.isOnline = true;
     this.retryAttempts = 3;
-    this.timeout = 10000; // 10 seconds
+    this.timeout = 30000; // 30 seconds
   }
 
   // Set authentication token
@@ -126,6 +126,20 @@ class ApiService {
       } catch (error) {
         clearTimeout(timeoutId);
         console.error(`API Error (Attempt ${attempt}):`, error.message);
+        
+        // Check if it's an HTTP error with a response (client/server error)
+        if (error.message.includes('HTTP 4') || error.message.includes('HTTP 5')) {
+          // For HTTP errors, return immediately without retrying
+          const statusMatch = error.message.match(/HTTP (\d+):/);
+          const status = statusMatch ? parseInt(statusMatch[1]) : 500;
+          
+          return { 
+            success: false, 
+            error: error.message,
+            status: status,
+            offline: false 
+          };
+        }
         
         // If it's the last attempt or not a network error, break
         if (attempt === this.retryAttempts || !this.isNetworkError(error)) {
@@ -606,7 +620,7 @@ class ApiService {
   // Activity logging
   async logUserActivity(activityData) {
     await this.getStoredToken();
-    return this.request('/users/activity/log', {
+    return this.request('/auth/activity/log', {
       method: 'POST',
       body: activityData,
     });
@@ -1093,17 +1107,15 @@ class ApiService {
     console.log('👤 Updating user profile:', JSON.stringify(profileData, null, 2));
     await this.getStoredToken();
     
-    // Ensure we have the correct data structure
+    // Ensure we have the correct data structure that matches backend expectations
     const sanitizedData = {
-      ...profileData,
-      // Make sure we don't send null or undefined values
-      ...(profileData.profileImage && { profileImage: profileData.profileImage }),
-      ...(profileData.fullName && { fullName: profileData.fullName }),
-      ...(profileData.email && { email: profileData.email }),
-      ...(profileData.phoneNumber && { phoneNumber: profileData.phoneNumber }),
-      ...(profileData.deliveryAddress && { deliveryAddress: profileData.deliveryAddress }),
-      ...(profileData.city && { city: profileData.city }),
-      ...(profileData.state && { state: profileData.state }),
+      fullName: profileData.fullName,
+      phone: profileData.phone || '',
+      address: profileData.address || '',
+      city: profileData.city || '',
+      dietaryPreferences: profileData.dietaryPreferences || [],
+      allergies: profileData.allergies || '',
+      ...(profileData.profileImage !== undefined && { profileImage: profileData.profileImage })
     };
     
     console.log('📤 Sending sanitized profile data:', JSON.stringify(sanitizedData, null, 2));
@@ -1134,6 +1146,110 @@ class ApiService {
       console.log('✅ Profile fetched successfully');
     } else {
       console.error('❌ Failed to fetch profile:', result.error);
+    }
+    
+    return result;
+  }
+
+  // Get user stats
+  async getUserStats() {
+    console.log('📊 Fetching user stats');
+    await this.getStoredToken();
+    
+    const result = await this.request('/auth/profile/stats');
+    
+    if (result.success) {
+      console.log('✅ User stats fetched successfully');
+    } else {
+      console.error('❌ Failed to fetch user stats:', result.error);
+    }
+    
+    return result;
+  }
+
+  // Get user activity
+  async getUserActivity() {
+    console.log('📋 Fetching user activity');
+    await this.getStoredToken();
+    
+    const result = await this.request('/auth/profile/activity');
+    
+    if (result.success) {
+      console.log('✅ User activity fetched successfully');
+    } else {
+      console.error('❌ Failed to fetch user activity:', result.error);
+    }
+    
+    return result;
+  }
+
+  // Get user achievements
+  async getUserAchievements() {
+    console.log('🏆 Fetching user achievements');
+    await this.getStoredToken();
+    
+    const result = await this.request('/auth/profile/achievements');
+    
+    if (result.success) {
+      console.log('✅ User achievements fetched successfully');
+    } else {
+      console.error('❌ Failed to fetch user achievements:', result.error);
+    }
+    
+    return result;
+  }
+
+  // Get user subscriptions  
+  async getUserSubscriptions() {
+    console.log('📋 Fetching user subscriptions');
+    await this.getStoredToken();
+    
+    const result = await this.request('/auth/dashboard');
+    
+    if (result.success) {
+      console.log('✅ User subscriptions fetched successfully');
+      // Extract subscriptions from dashboard data
+      return {
+        success: true,
+        data: result.data?.subscriptions || []
+      };
+    } else {
+      console.error('❌ Failed to fetch user subscriptions:', result.error);
+    }
+    
+    return result;
+  }
+
+  // Get notification preferences
+  async getNotificationPreferences() {
+    console.log('🔔 Fetching notification preferences');
+    await this.getStoredToken();
+    
+    const result = await this.request('/auth/profile/notifications');
+    
+    if (result.success) {
+      console.log('✅ Notification preferences fetched successfully');
+    } else {
+      console.error('❌ Failed to fetch notification preferences:', result.error);
+    }
+    
+    return result;
+  }
+
+  // Update notification preferences
+  async updateNotificationPreferences(preferences) {
+    console.log('🔔 Updating notification preferences');
+    await this.getStoredToken();
+    
+    const result = await this.request('/auth/profile/notifications', {
+      method: 'PUT',
+      body: preferences,
+    });
+    
+    if (result.success) {
+      console.log('✅ Notification preferences updated successfully');
+    } else {
+      console.error('❌ Failed to update notification preferences:', result.error);
     }
     
     return result;

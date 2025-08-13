@@ -3,11 +3,34 @@ const Order = require('../models/Order');
 const Subscription = require('../models/Subscription');
 const MealPlan = require('../models/MealPlan');
 const Chef = require('../models/Chef');
+const { cacheHelpers } = require('../utils/cache');
 
 // ============= KPI DATA =============
 exports.getKPIData = async (req, res) => {
   try {
     const { timeRange = '30d' } = req.query;
+
+    // Use caching for KPI data
+    const kpiData = await cacheHelpers.cacheKPIData(timeRange, async () => {
+      return await fetchKPIDataFromDB(timeRange);
+    });
+
+    res.json({
+      success: true,
+      ...kpiData
+    });
+  } catch (error) {
+    console.error('Get KPI data error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch KPI data',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Extract KPI fetching logic into separate function
+async function fetchKPIDataFromDB(timeRange) {
     const endDate = new Date();
     const startDate = new Date();
 
@@ -34,44 +57,66 @@ exports.getKPIData = async (req, res) => {
     const prevStartDate = new Date(startDate.getTime() - periodLength);
     const prevEndDate = new Date(startDate.getTime());
 
-    // Current period data
-    const [
-      totalRevenue,
-      totalOrders,
-      activeCustomers,
-      paidOrders,
-      deliveredOrders
-    ] = await Promise.all([
-      Order.aggregate([
-        { $match: { createdDate: { $gte: startDate, $lte: endDate }, paymentStatus: 'Paid' } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
-      ]),
-      Order.countDocuments({ createdDate: { $gte: startDate, $lte: endDate } }),
-      Customer.countDocuments({ 
-        status: 'Active',
-        lastLogin: { $gte: startDate, $lte: endDate }
-      }),
-      Order.countDocuments({ 
-        createdDate: { $gte: startDate, $lte: endDate },
-        paymentStatus: 'Paid'
-      }),
-      Order.countDocuments({ 
-        createdDate: { $gte: startDate, $lte: endDate },
-        orderStatus: 'Delivered'
-      })
+    // Optimized current period data with single aggregation
+    const currentPeriodStats = await Order.aggregate([
+      { 
+        $match: { 
+          createdDate: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalRevenue: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', 'Paid'] }, '$totalAmount', 0]
+            }
+          },
+          paidOrders: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', 'Paid'] }, 1, 0]
+            }
+          },
+          deliveredOrders: {
+            $sum: {
+              $cond: [{ $eq: ['$orderStatus', 'Delivered'] }, 1, 0]
+            }
+          }
+        }
+      }
     ]);
 
-    // Previous period data for comparison
-    const [
-      prevTotalRevenue,
-      prevTotalOrders,
-      prevActiveCustomers
-    ] = await Promise.all([
+    const activeCustomers = await Customer.countDocuments({ 
+      status: 'Active',
+      lastLogin: { $gte: startDate, $lte: endDate }
+    });
+
+    const totalRevenue = currentPeriodStats[0]?.totalRevenue || 0;
+    const totalOrders = currentPeriodStats[0]?.totalOrders || 0;
+    const paidOrders = currentPeriodStats[0]?.paidOrders || 0;
+    const deliveredOrders = currentPeriodStats[0]?.deliveredOrders || 0;
+
+    // Optimized previous period data with single aggregation
+    const [prevPeriodStats, prevActiveCustomers] = await Promise.all([
       Order.aggregate([
-        { $match: { createdDate: { $gte: prevStartDate, $lte: prevEndDate }, paymentStatus: 'Paid' } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        { 
+          $match: { 
+            createdDate: { $gte: prevStartDate, $lte: prevEndDate }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            totalRevenue: {
+              $sum: {
+                $cond: [{ $eq: ['$paymentStatus', 'Paid'] }, '$totalAmount', 0]
+              }
+            }
+          }
+        }
       ]),
-      Order.countDocuments({ createdDate: { $gte: prevStartDate, $lte: prevEndDate } }),
       Customer.countDocuments({ 
         status: 'Active',
         lastLogin: { $gte: prevStartDate, $lte: prevEndDate }
@@ -79,8 +124,9 @@ exports.getKPIData = async (req, res) => {
     ]);
 
     // Calculate metrics
-    const currentRevenue = totalRevenue[0]?.total || 0;
-    const previousRevenue = prevTotalRevenue[0]?.total || 0;
+    const currentRevenue = totalRevenue;
+    const previousRevenue = prevPeriodStats[0]?.totalRevenue || 0;
+    const prevTotalOrders = prevPeriodStats[0]?.totalOrders || 0;
     const averageOrderValue = totalOrders > 0 ? currentRevenue / totalOrders : 0;
     
     // Calculate retention rate
@@ -103,19 +149,27 @@ exports.getKPIData = async (req, res) => {
     const ordersChange = prevTotalOrders > 0 ? ((totalOrders - prevTotalOrders) / prevTotalOrders) * 100 : 0;
     const customersChange = prevActiveCustomers > 0 ? ((activeCustomers - prevActiveCustomers) / prevActiveCustomers) * 100 : 0;
 
-    // Format response to match frontend expectations
-    res.json({
-      success: true,
+    // Get additional data in parallel
+    const [totalChefs, chefsOnline, ordersInProgress, pendingOrders, activeDeliveries] = await Promise.all([
+      Chef.countDocuments({ status: 'Active' }),
+      Chef.countDocuments({ status: 'Active', isOnline: true }),
+      Order.countDocuments({ orderStatus: 'Processing' }),
+      Order.countDocuments({ orderStatus: 'Pending' }),
+      Order.countDocuments({ orderStatus: 'Out for Delivery' })
+    ]);
+
+    // Return formatted data
+    return {
       overview: {
         totalRevenue: currentRevenue,
         totalOrders,
         activeCustomers,
-        totalChefs: await Chef.countDocuments({ status: 'Active' }),
+        totalChefs,
         avgOrderValue: averageOrderValue,
-        revenueToday: currentRevenue * 0.05, // Estimate today's revenue
-        ordersToday: Math.floor(totalOrders * 0.05), // Estimate today's orders
-        newCustomersToday: Math.floor(activeCustomers * 0.02), // Estimate new customers today
-        chefsOnline: await Chef.countDocuments({ status: 'Active', isOnline: true })
+        revenueToday: 0, // Will be calculated from actual today's data
+        ordersToday: 0, // Will be calculated from actual today's data  
+        newCustomersToday: 0, // Will be calculated from actual today's data
+        chefsOnline
       },
       growth: {
         revenueGrowth: revenueChange,
@@ -124,26 +178,40 @@ exports.getKPIData = async (req, res) => {
         chefGrowth: 0 // Calculate chef growth if needed
       },
       realTime: {
-        ordersInProgress: await Order.countDocuments({ orderStatus: 'Processing' }),
-        pendingOrders: await Order.countDocuments({ orderStatus: 'Pending' }),
-        activeDeliveries: await Order.countDocuments({ orderStatus: 'Out for Delivery' }),
+        ordersInProgress,
+        pendingOrders,
+        activeDeliveries,
         completedOrdersToday: deliveredOrders
       }
-    });
-  } catch (error) {
-    console.error('Get KPI data error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch KPI data',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
+    };
+}
 
 // ============= CHARTS DATA =============
 exports.getChartsData = async (req, res) => {
   try {
     const { timeRange = '30d' } = req.query;
+
+    // Use caching for chart data
+    const chartData = await cacheHelpers.cacheChartData(timeRange, async () => {
+      return await fetchChartsDataFromDB(timeRange);
+    });
+
+    res.json({
+      success: true,
+      ...chartData
+    });
+  } catch (error) {
+    console.error('Get charts data error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch charts data',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Extract charts fetching logic
+async function fetchChartsDataFromDB(timeRange) {
     const endDate = new Date();
     const startDate = new Date();
 
@@ -291,9 +359,8 @@ exports.getChartsData = async (req, res) => {
       { $sort: { '_id': 1 } }
     ]);
 
-    // Format response to match frontend expectations
-    res.json({
-      success: true,
+    // Return formatted chart data
+    return {
       revenueChart: {
         labels: revenueTrend.map(item => item._id),
         data: revenueTrend.map(item => item.revenue),
@@ -315,29 +382,21 @@ exports.getChartsData = async (req, res) => {
       },
       chefPerformance: {
         labels: revenueTrend.map(item => item._id).slice(0, 4),
-        completionRate: [92, 95, 88, 94],
-        satisfaction: [4.2, 4.5, 4.1, 4.6]
+        completionRate: revenueTrend.slice(0, 4).map(() => 0),
+        satisfaction: revenueTrend.slice(0, 4).map(() => 0)
       },
       dailyTrends: {
         labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        orders: revenueTrend.slice(0, 7).map(item => Math.floor(item.revenue / 3200)),
-        revenue: revenueTrend.slice(0, 7).map(item => item.revenue)
+        orders: revenueTrend.slice(0, 7).map(item => Math.floor(item.revenue / 3200) || 0),
+        revenue: revenueTrend.slice(0, 7).map(item => item.revenue || 0)
       },
       popularMeals: {
-        labels: mealPlans.map(item => item._id || 'Unknown Meal'),
-        orders: mealPlans.map(item => item.orders),
-        revenue: mealPlans.map(item => item.orders * 4000) // Estimate revenue per meal
+        labels: mealPlans.map(item => item._id || 'No Data'),
+        orders: mealPlans.map(item => item.orders || 0),
+        revenue: mealPlans.map(item => (item.orders || 0) * 0) // Remove estimated revenue calculation
       }
-    });
-  } catch (error) {
-    console.error('Get charts data error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch charts data',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
+    };
+}
 
 // ============= INSIGHTS DATA =============
 exports.getInsightsData = async (req, res) => {
@@ -721,125 +780,83 @@ exports.getBusinessIntelligence = async (req, res) => {
   try {
     const { timeRange = '30d' } = req.query;
     
-    // Market insights
-    const marketInsights = {
-      marketShare: 12.5,
-      competitorAnalysis: [
-        { competitor: 'FoodCo', share: 35.2, trend: 'stable' },
-        { competitor: 'MealDash', share: 22.8, trend: 'declining' },
-        { competitor: 'QuickEats', share: 18.5, trend: 'growing' },
-        { competitor: 'Others', share: 11.0, trend: 'mixed' }
-      ],
-      growthOpportunities: [
-        'Expand to new cities',
-        'Launch premium meal plans',
-        'Corporate catering services',
-        'Weekend meal options'
-      ]
-    };
+    // Get actual business data from database
+    const endDate = new Date();
+    const startDate = new Date();
+    
+    switch (timeRange) {
+      case '7d':
+        startDate.setDate(endDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(endDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(endDate.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(endDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(endDate.getDate() - 30);
+    }
 
-    // Predictive analytics
-    const predictiveAnalytics = {
-      revenueProjection: {
-        nextMonth: 12500000,
-        nextQuarter: 38000000,
-        confidence: 85
+    // Get actual revenue and order data
+    const revenueData = await Order.aggregate([
+      { 
+        $match: { 
+          createdDate: { $gte: startDate, $lte: endDate },
+          paymentStatus: 'Paid'
+        }
       },
-      customerGrowth: {
-        nextMonth: 450,
-        nextQuarter: 1350,
-        confidence: 78
-      },
-      churnRisk: {
-        highRisk: 23,
-        mediumRisk: 67,
-        lowRisk: 412
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$totalAmount' },
+          totalOrders: { $sum: 1 }
+        }
       }
-    };
+    ]);
 
-    // Operational insights
-    const operationalInsights = {
-      kitchenCapacity: {
-        current: 75,
-        optimal: 85,
-        recommendation: 'Increase capacity by 15%'
-      },
-      deliveryEfficiency: {
-        avgTime: 42,
-        target: 35,
-        improvement: 'Optimize routes'
-      },
-      chefUtilization: {
-        avg: 68,
-        peak: 95,
-        recommendation: 'Hire 2 additional chefs'
-      }
-    };
+    const revenue = revenueData[0]?.totalRevenue || 0;
+    const orders = revenueData[0]?.totalOrders || 0;
 
-    // Financial projections
-    const financialProjections = {
-      revenue: {
-        q1: 35000000,
-        q2: 42000000,
-        q3: 48000000,
-        q4: 55000000
-      },
-      profitMargin: {
-        current: 18.5,
-        projected: 22.3,
-        target: 25.0
-      },
-      breakeven: {
-        newCustomers: 125,
-        timeframe: '3 months'
-      }
-    };
+    // Get customer count
+    const customerCount = await Customer.countDocuments({
+      status: 'Active',
+      lastLogin: { $gte: startDate, $lte: endDate }
+    });
 
-    // Format response to match frontend expectations
+    // Format response with actual data (no predictions without ML model)
     res.json({
       success: true,
       insights: [
         {
-          type: 'positive',
-          title: 'Revenue Growth',
-          message: `Market share at ${marketInsights.marketShare}% shows strong position`,
-          value: `${marketInsights.marketShare}%`,
-          trend: 2.3
+          type: revenue > 0 ? 'positive' : 'neutral',
+          title: 'Revenue Performance',
+          message: revenue > 0 
+            ? `Generated ${new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(revenue)} in revenue`
+            : 'No revenue data available for this period',
+          value: new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(revenue)
         },
         {
-          type: 'neutral',
-          title: 'Customer Satisfaction',
-          message: `Operational efficiency at ${operationalInsights.kitchenCapacity.current}% capacity`,
-          value: `${operationalInsights.kitchenCapacity.current}%`
+          type: orders > 0 ? 'positive' : 'neutral',
+          title: 'Order Volume',
+          message: orders > 0 
+            ? `Processed ${orders} orders in the selected period`
+            : 'No orders found for this period',
+          value: orders.toString()
         },
         {
-          type: 'positive',
-          title: 'Profit Margin',
-          message: `Current profit margin trending upward`,
-          value: `${financialProjections.profitMargin.current}%`,
-          trend: 3.8
+          type: customerCount > 0 ? 'positive' : 'neutral',
+          title: 'Customer Activity',
+          message: customerCount > 0 
+            ? `${customerCount} active customers in the selected period`
+            : 'No active customers found for this period',
+          value: customerCount.toString()
         }
       ],
-      predictions: [
-        {
-          metric: 'Next Month Revenue',
-          prediction: predictiveAnalytics.revenueProjection.nextMonth,
-          confidence: predictiveAnalytics.revenueProjection.confidence,
-          timeframe: '30 days'
-        },
-        {
-          metric: 'Customer Growth',
-          prediction: predictiveAnalytics.customerGrowth.nextMonth,
-          confidence: predictiveAnalytics.customerGrowth.confidence,
-          timeframe: '30 days'
-        },
-        {
-          metric: 'Quarterly Revenue',
-          prediction: predictiveAnalytics.revenueProjection.nextQuarter,
-          confidence: 82,
-          timeframe: '90 days'
-        }
-      ]
+      predictions: [] // Remove fake predictions - would need ML model for real predictions
     });
   } catch (error) {
     console.error('Get business intelligence error:', error);

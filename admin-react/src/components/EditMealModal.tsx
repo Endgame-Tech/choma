@@ -12,12 +12,60 @@ interface EditMealModalProps {
 
 const categories = [
   'Breakfast',
-  'Lunch', 
+  'Lunch',
   'Dinner',
   'Snack',
   'Dessert',
   'Beverage'
 ]
+
+// Cooking cost calculation function
+const calculateCookingCost = (preparationTimeMinutes: number, _ingredientsCost: number, complexityLevel: string = 'medium'): number => {
+  // Handle invalid inputs
+  if (!preparationTimeMinutes || preparationTimeMinutes <= 0) {
+    return 0
+  }
+
+  const hours = preparationTimeMinutes / 60
+
+  // Gas cost: ₦300 per hour
+  const gasCost = hours * 300
+
+  // Utensil/Water cost based on complexity
+  let utensilCost = 75 // default medium
+  if (complexityLevel === 'low') {
+    utensilCost = 50
+  } else if (complexityLevel === 'high') {
+    utensilCost = 100
+  }
+
+  // Labour cost: ₦1,200 per hour
+  const labourCost = hours * 1200
+
+  // Base cooking cost
+  let baseCookingCost = gasCost + utensilCost + labourCost
+
+  // Apply complexity multiplier
+  let multiplier = 1.0 // medium
+  if (complexityLevel === 'low') {
+    multiplier = 0.8
+  } else if (complexityLevel === 'high') {
+    multiplier = 1.3
+  }
+
+  const result = baseCookingCost * multiplier
+  return Math.round(isNaN(result) ? 0 : result)
+}
+
+// Auto-detect complexity level based on prep time and ingredient cost
+const detectComplexityLevel = (preparationTimeMinutes: number, ingredientsCost: number): string => {
+  if (preparationTimeMinutes <= 20 && ingredientsCost < 1000) {
+    return 'low'
+  } else if (preparationTimeMinutes > 60 || ingredientsCost > 2500) {
+    return 'high'
+  }
+  return 'medium'
+}
 
 const allergenOptions = [
   'Nuts',
@@ -35,9 +83,10 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
     name: '',
     description: '',
     image: '',
-    basePrice: '',
+    ingredientsCost: '',
+    packaging: '',
+    delivery: '',
     platformFee: '',
-    chefFee: '',
     calories: '',
     protein: '',
     carbs: '',
@@ -63,9 +112,10 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
         name: meal.name || '',
         description: '',
         image: meal.image || '',
-        basePrice: meal.pricing?.basePrice?.toString() || '',
+        ingredientsCost: meal.pricing?.ingredients?.toString() || '',
+        packaging: meal.pricing?.packaging?.toString() || '',
+        delivery: meal.pricing?.delivery?.toString() || '',
         platformFee: meal.pricing?.platformFee?.toString() || '',
-        chefFee: meal.pricing?.chefFee?.toString() || '',
         calories: meal.nutrition?.calories?.toString() || '',
         protein: meal.nutrition?.protein?.toString() || '',
         carbs: meal.nutrition?.carbs?.toString() || '',
@@ -101,11 +151,34 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
     }))
   }
 
-  const calculateTotalPrice = () => {
-    const base = parseFloat(formData.basePrice) || 0
-    const platform = parseFloat(formData.platformFee) || 0
-    const chef = parseFloat(formData.chefFee) || 0
-    return base + platform + chef
+  const calculatePricing = () => {
+    const ingredients = parseFloat(formData.ingredientsCost) || 0
+    const packaging = parseFloat(formData.packaging) || 0
+    const delivery = parseFloat(formData.delivery) || 0
+    const platformFee = parseFloat(formData.platformFee) || 0
+    const preparationTime = parseFloat(formData.preparationTime) || 0
+
+    // Auto-detect complexity level
+    const complexityLevel = detectComplexityLevel(preparationTime, ingredients)
+
+    // Auto-calculate cooking costs (return 0 if prep time is not set)
+    const cookingCosts = preparationTime > 0 ? calculateCookingCost(preparationTime, ingredients, complexityLevel) : 0
+
+    const totalCosts = ingredients + cookingCosts + packaging + delivery
+    const profit = totalCosts * 0.4
+    const totalPrice = totalCosts + profit + platformFee
+    const chefEarnings = ingredients + cookingCosts + (profit * 0.5)
+    const chomaEarnings = packaging + delivery + (profit * 0.5) + platformFee
+
+    return {
+      totalCosts,
+      profit,
+      totalPrice,
+      chefEarnings,
+      chomaEarnings,
+      cookingCosts,
+      complexityLevel
+    }
   }
 
   const formatCurrency = (amount: number) => {
@@ -118,29 +191,55 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!formData.name || !formData.description || !formData.basePrice || !formData.platformFee || !formData.chefFee) {
-      alert('Please fill in all required fields')
+
+    // Debug validation - check which fields are empty
+    const emptyFields = []
+    if (!formData.name) emptyFields.push('Name')
+    // Description removed - not in backend model
+    if (!formData.ingredientsCost) emptyFields.push('Ingredients Cost')
+    if (!formData.packaging) emptyFields.push('Packaging')
+    if (!formData.delivery) emptyFields.push('Delivery')
+    if (!formData.platformFee) emptyFields.push('Platform Fee')
+    if (!formData.preparationTime) emptyFields.push('Preparation Time')
+
+    if (emptyFields.length > 0) {
+      console.log('Empty fields:', emptyFields)
+      console.log('Form data:', formData)
+      alert(`Please fill in all required fields. Missing: ${emptyFields.join(', ')}`)
       return
     }
 
     setSubmitting(true)
     try {
+      const pricing = calculatePricing()
+
       const mealData: Partial<Meal> = {
         name: formData.name,
         image: formData.image,
-        basePrice: parseFloat(formData.basePrice),
-        platformFee: parseFloat(formData.platformFee),
-        chefFee: parseFloat(formData.chefFee),
-        calories: parseInt(formData.calories) || 0,
-        protein: parseFloat(formData.protein) || 0,
-        carbs: parseFloat(formData.carbs) || 0,
-        fat: parseFloat(formData.fat) || 0,
-        fiber: parseFloat(formData.fiber) || 0,
-        sugar: parseFloat(formData.sugar) || 0,
-        weight: parseFloat(formData.weight) || 0,
+        pricing: {
+          ingredients: parseFloat(formData.ingredients),
+          cookingCosts: pricing.cookingCosts, // Auto-calculated
+          packaging: parseFloat(formData.packaging),
+          delivery: parseFloat(formData.delivery),
+          platformFee: parseFloat(formData.platformFee),
+          totalCosts: pricing.totalCosts,
+          profit: pricing.profit,
+          totalPrice: pricing.totalPrice,
+          chefEarnings: pricing.chefEarnings,
+          chomaEarnings: pricing.chomaEarnings
+        },
+        nutrition: {
+          calories: parseInt(formData.calories) || 0,
+          protein: parseFloat(formData.protein) || 0,
+          carbs: parseFloat(formData.carbs) || 0,
+          fat: parseFloat(formData.fat) || 0,
+          fiber: parseFloat(formData.fiber) || 0,
+          sugar: parseFloat(formData.sugar) || 0,
+          weight: parseFloat(formData.weight) || 0,
+        },
         ingredients: formData.ingredients,
         preparationTime: parseInt(formData.preparationTime) || 0,
+        complexityLevel: calculatePricing().complexityLevel as 'low' | 'medium' | 'high',
         allergens: formData.allergens,
         category: formData.category,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
@@ -160,17 +259,18 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Edit Meal</h2>
-              <p className="text-sm text-gray-600">ID: {meal.mealId}</p>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Meal</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-300">ID: {meal.mealId}</p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              title="Close modal"
+              className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100"
               disabled={submitting}
             >
               <XMarkIcon className="w-6 h-6" />
@@ -182,19 +282,20 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto max-h-[70vh]">
           <div className="p-6 space-y-6">
             {/* Current Status */}
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium text-gray-900">Current Status</h3>
-                  <p className="text-sm text-gray-600">Last updated: {new Date(meal.updatedAt).toLocaleString()}</p>
+                  <h3 className="font-medium text-gray-900 dark:text-white">Current Status</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Last updated: {new Date(meal.updatedAt).toLocaleString()}</p>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    meal.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${meal.isAvailable
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                    : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                    }`}>
                     {meal.isAvailable ? 'Available' : 'Unavailable'}
                   </span>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
                     Current Price: {formatCurrency(meal.pricing.totalPrice)}
                   </span>
                 </div>
@@ -204,7 +305,7 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                   Meal Name *
                 </label>
                 <input
@@ -212,21 +313,24 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
+                  title="Enter meal name"
+                  placeholder="Enter meal name"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                   Category *
                 </label>
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleInputChange}
+                  title="Select meal category"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -236,21 +340,23 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                Description
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
+                title="Enter meal description"
+                placeholder="Describe the meal..."
                 required
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Image URL
               </label>
               <input
@@ -258,13 +364,15 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                 name="image"
                 value={formData.image}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                title="Enter image URL"
+                placeholder="https://example.com/image.jpg"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               {formData.image && (
                 <div className="mt-2">
-                  <img 
-                    src={formData.image} 
-                    alt="Meal preview" 
+                  <img
+                    src={formData.image}
+                    alt="Meal preview"
                     className="h-20 w-20 object-cover rounded-lg"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none'
@@ -275,27 +383,63 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
             </div>
 
             {/* Pricing Information */}
-            <div className="bg-blue-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 Pricing Breakdown</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">💰 Cost Breakdown</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Base Price (₦) *
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
+                    Ingredients (₦) *
                   </label>
                   <input
                     type="number"
-                    name="basePrice"
-                    value={formData.basePrice}
+                    name="ingredientsCost"
+                    value={formData.ingredientsCost}
                     onChange={handleInputChange}
                     required
                     min="0"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="800"
+                  />
+                </div>
+
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
+                    Packaging (₦) *
+                  </label>
+                  <input
+                    type="number"
+                    name="packaging"
+                    value={formData.packaging}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="150"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
+                    Delivery (₦) *
+                  </label>
+                  <input
+                    type="number"
+                    name="delivery"
+                    value={formData.delivery}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Platform Fee (₦) *
                   </label>
                   <input
@@ -306,55 +450,97 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                     required
                     min="0"
                     step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="300"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Chef Fee (₦) *
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Complexity Level
                   </label>
-                  <input
-                    type="number"
-                    name="chefFee"
-                    value={formData.chefFee}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg">
+                    {calculatePricing().complexityLevel ? (
+                      <span className="capitalize font-medium">
+                        {calculatePricing().complexityLevel}
+                        {calculatePricing().complexityLevel === 'low' && ' (≤20 mins, <₦1,000)'}
+                        {calculatePricing().complexityLevel === 'medium' && ' (21-60 mins, ₦1,000-₦2,500)'}
+                        {calculatePricing().complexityLevel === 'high' && ' (>60 mins, >₦2,500)'}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 dark:text-gray-500">Enter prep time and ingredients cost to auto-detect</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Auto-detected based on preparation time and ingredients cost
+                  </p>
                 </div>
               </div>
-              
-              {/* Price Comparison */}
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-100 rounded-lg">
-                  <div className="text-sm text-gray-600">Current Price</div>
-                  <div className="text-lg font-semibold text-gray-900">
-                    {formatCurrency(meal.pricing.totalPrice)}
-                  </div>
-                </div>
-                <div className="p-3 bg-white rounded-lg border-2 border-blue-200">
-                  <div className="text-sm text-gray-600">New Price</div>
-                  <div className="text-lg font-semibold text-gray-900">
-                    {formatCurrency(calculateTotalPrice())}
-                  </div>
-                  {calculateTotalPrice() !== meal.pricing.totalPrice && (
-                    <div className="text-xs text-blue-600">
-                      {calculateTotalPrice() > meal.pricing.totalPrice ? '↗️ Increase' : '↘️ Decrease'}: {formatCurrency(Math.abs(calculateTotalPrice() - meal.pricing.totalPrice))}
+
+              {/* Price Calculations Display */}
+              <div className="mt-4 space-y-3">
+                <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border-2 border-blue-200 dark:border-blue-600">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-600 dark:text-gray-300">Cooking Cost:</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">{formatCurrency(calculatePricing().cookingCosts)}</div>
+                      <div className="text-xs text-blue-600 dark:text-blue-400">Auto-calculated</div>
                     </div>
-                  )}
+                    <div>
+                      <span className="font-medium text-gray-600 dark:text-gray-300">Total Costs:</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">{formatCurrency(calculatePricing().totalCosts)}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600 dark:text-gray-300">40% Profit:</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">{formatCurrency(calculatePricing().profit)}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600 dark:text-gray-300">Platform Fee:</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">{formatCurrency(parseFloat(formData.platformFee) || 0)}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-green-600 dark:text-green-400">New Price:</span>
+                      <div className="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(calculatePricing().totalPrice)}</div>
+                    </div>
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">Current Price</div>
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {formatCurrency(meal.pricing.totalPrice)}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-700">
+                    <div className="text-sm font-medium text-green-700 dark:text-green-300">Chef Earnings</div>
+                    <div className="text-lg font-semibold text-green-800 dark:text-green-200">{formatCurrency(calculatePricing().chefEarnings)}</div>
+                    <div className="text-xs text-green-600 dark:text-green-400">Ingredients + Cooking + 50% Profit</div>
+                  </div>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+                    <div className="text-sm font-medium text-blue-700 dark:text-blue-300">Choma Earnings</div>
+                    <div className="text-lg font-semibold text-blue-800 dark:text-blue-200">{formatCurrency(calculatePricing().chomaEarnings)}</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400">Packaging + Delivery + 50% Profit + Platform Fee</div>
+                  </div>
+                </div>
+
+                {calculatePricing().totalPrice !== meal.pricing.totalPrice && (
+                  <div className="p-2 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded text-center">
+                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                      {calculatePricing().totalPrice > meal.pricing.totalPrice ? '↗️ Price Increase' : '↘️ Price Decrease'}:
+                      {formatCurrency(Math.abs(calculatePricing().totalPrice - meal.pricing.totalPrice))}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Nutrition Information */}
-            <div className="bg-green-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">🥗 Nutrition Information</h3>
+            <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🥗 Nutrition Information</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Calories
                   </label>
                   <input
@@ -362,13 +548,15 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                     name="calories"
                     value={formData.calories}
                     onChange={handleInputChange}
+                    title="Enter calories"
+                    placeholder="Enter calories"
                     min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Protein (g)
                   </label>
                   <input
@@ -376,14 +564,16 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                     name="protein"
                     value={formData.protein}
                     onChange={handleInputChange}
+                    title="Enter protein in grams"
+                    placeholder="Enter protein (g)"
                     min="0"
                     step="0.1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Carbs (g)
                   </label>
                   <input
@@ -391,14 +581,16 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                     name="carbs"
                     value={formData.carbs}
                     onChange={handleInputChange}
+                    title="Enter carbohydrates in grams"
+                    placeholder="Enter carbs (g)"
                     min="0"
                     step="0.1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Fat (g)
                   </label>
                   <input
@@ -406,14 +598,16 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                     name="fat"
                     value={formData.fat}
                     onChange={handleInputChange}
+                    title="Enter fat in grams"
+                    placeholder="Enter fat (g)"
                     min="0"
                     step="0.1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Fiber (g)
                   </label>
                   <input
@@ -421,14 +615,16 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                     name="fiber"
                     value={formData.fiber}
                     onChange={handleInputChange}
+                    title="Enter fiber in grams"
+                    placeholder="Enter fiber (g)"
                     min="0"
                     step="0.1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Sugar (g)
                   </label>
                   <input
@@ -436,14 +632,16 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                     name="sugar"
                     value={formData.sugar}
                     onChange={handleInputChange}
+                    title="Enter sugar in grams"
+                    placeholder="Enter sugar (g)"
                     min="0"
                     step="0.1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Weight (g)
                   </label>
                   <input
@@ -451,14 +649,16 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                     name="weight"
                     value={formData.weight}
                     onChange={handleInputChange}
+                    title="Enter weight in grams"
+                    placeholder="Enter weight (g)"
                     min="0"
                     step="0.1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Prep Time (min)
                   </label>
                   <input
@@ -466,8 +666,10 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                     name="preparationTime"
                     value={formData.preparationTime}
                     onChange={handleInputChange}
+                    title="Enter preparation time in minutes"
+                    placeholder="Enter prep time (min)"
                     min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -476,20 +678,22 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
             {/* Additional Information */}
             <div className="grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                   Ingredients
                 </label>
                 <textarea
                   name="ingredients"
                   value={formData.ingredients}
                   onChange={handleInputChange}
+                  title="Enter ingredients list"
+                  placeholder="List all ingredients..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                   Allergens
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -499,16 +703,16 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                         type="checkbox"
                         checked={formData.allergens.includes(allergen)}
                         onChange={() => handleAllergenChange(allergen)}
-                        className="rounded mr-2"
+                        className="rounded mr-2 border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm">{allergen}</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-200">{allergen}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                   Tags (comma-separated)
                 </label>
                 <input
@@ -516,34 +720,40 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                   name="tags"
                   value={formData.tags}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  title="Enter tags separated by commas"
+                  placeholder="e.g. spicy, vegetarian, gluten-free"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Admin Notes
                   </label>
                   <textarea
                     name="adminNotes"
                     value={formData.adminNotes}
                     onChange={handleInputChange}
+                    title="Enter admin notes"
+                    placeholder="Internal notes for admin use..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Chef Instructions
                   </label>
                   <textarea
                     name="chefNotes"
                     value={formData.chefNotes}
                     onChange={handleInputChange}
+                    title="Enter chef instructions"
+                    placeholder="Special instructions for the chef..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -552,20 +762,20 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
           <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-50"
             >
               {submitting ? 'Updating...' : 'Update Meal'}
             </button>

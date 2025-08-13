@@ -252,19 +252,28 @@ exports.createMealPlan = async (req, res) => {
     const {
       planName,
       description,
-      planType,
-      pricing,
-      nutritionInfo,
-      specializations,
-      features,
+      targetAudience,
+      durationWeeks,
+      mealTypes,
+      planFeatures,
+      adminNotes,
+      coverImage,
       isActive = true
     } = req.body;
 
     // Validate required fields
-    if (!planName || !description || !planType || !pricing) {
+    if (!planName || !description) {
       return res.status(400).json({
         success: false,
-        message: 'Plan name, description, plan type, and pricing are required'
+        message: 'Plan name and description are required'
+      });
+    }
+
+    // Validate mealTypes if provided
+    if (mealTypes && mealTypes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one meal type must be selected'
       });
     }
 
@@ -293,19 +302,13 @@ exports.createMealPlan = async (req, res) => {
     const mealPlan = new MealPlan({
       planName: planName.trim(),
       description: description.trim(),
-      planType,
-      pricing: {
-        daily: pricing.daily || 0,
-        weekly: pricing.weekly || 0,
-        monthly: pricing.monthly || 0
-      },
-      nutritionInfo: nutritionInfo || {},
-      specializations: specializations || [],
-      features: features || [],
-      mainImageUrl,
-      isActive,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      targetAudience: targetAudience || 'Family',
+      durationWeeks: durationWeeks || 4,
+      mealTypes: mealTypes || ['breakfast', 'lunch', 'dinner'],
+      planFeatures: planFeatures || [],
+      adminNotes: adminNotes || '',
+      coverImage: coverImage || '',
+      isActive
     });
 
     await mealPlan.save();
@@ -610,6 +613,99 @@ exports.toggleMealPlanStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to toggle meal plan status',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Publish meal plan
+exports.publishMealPlan = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid meal plan ID'
+      });
+    }
+
+    const mealPlan = await MealPlan.findById(id);
+    if (!mealPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meal plan not found'
+      });
+    }
+
+    // Check if meal plan has assignments
+    const MealPlanAssignment = mongoose.model('MealPlanAssignment');
+    const assignmentCount = await MealPlanAssignment.countDocuments({ mealPlanId: id });
+    
+    if (assignmentCount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot publish meal plan without meal assignments'
+      });
+    }
+
+    const updatedPlan = await MealPlan.findByIdAndUpdate(
+      id,
+      { isPublished: true },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Meal plan published successfully',
+      data: updatedPlan
+    });
+  } catch (err) {
+    console.error('Publish meal plan error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to publish meal plan',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Unpublish meal plan
+exports.unpublishMealPlan = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid meal plan ID'
+      });
+    }
+
+    const mealPlan = await MealPlan.findById(id);
+    if (!mealPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meal plan not found'
+      });
+    }
+
+    const updatedPlan = await MealPlan.findByIdAndUpdate(
+      id,
+      { isPublished: false },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Meal plan unpublished successfully',
+      data: updatedPlan
+    });
+  } catch (err) {
+    console.error('Unpublish meal plan error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unpublish meal plan',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }

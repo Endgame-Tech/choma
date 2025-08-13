@@ -1,5 +1,6 @@
 // src/services/cloudStorage.js - Cloud Storage Service
 import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class CloudStorageService {
   constructor() {
@@ -120,13 +121,18 @@ class CloudStorageService {
         name: `profile_${userId}_${Date.now()}.jpg`,
       });
       
-      formData.append('userId', userId);
+      // Get the API base URL (this should match your backend URL)
+      const API_BASE_URL = 'http://192.168.177.28:5001'; // Update this to match your backend IP
       
-      const response = await fetch('http://192.168.0.118:5001/api/upload/profile-image', {
+      // Get auth token for authenticated request
+      const token = await AsyncStorage.getItem('authToken');
+      
+      const response = await fetch(`${API_BASE_URL}/api/upload/profile-image`, {
         method: 'POST',
         body: formData,
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
         },
       });
       
@@ -135,6 +141,11 @@ class CloudStorageService {
       }
       
       const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Upload failed');
+      }
+      
       return data.imageUrl;
       
     } catch (error) {

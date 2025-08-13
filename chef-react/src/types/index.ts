@@ -190,6 +190,8 @@ export interface RegisterData {
     bankName: string
     bankCode?: string
     bvn?: string
+    isVerified: boolean
+    recipientCode?: string
   }
   
   // Profile & Portfolio

@@ -206,8 +206,8 @@ const CodeVerification: React.FC = () => {
 
           {/* Logo */}
           <div className="flex justify-center mb-8">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-2xl shadow-lg">
-              <img src={logo} alt="Choma Logo" className="w-8 h-8" />
+            <div className="">
+              <img src={logo} alt="Choma Logo" className="w-20" />
             </div>
           </div>
 
@@ -255,6 +255,8 @@ const CodeVerification: React.FC = () => {
                   onChange={(e) => handleCodeChange(index, e.target.value.replace(/\D/g, ''))}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
+                  aria-label={`Verification code digit ${index + 1}`}
+                  title={`Enter digit ${index + 1} of verification code`}
                   className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
                   disabled={isLoading}
                 />
@@ -331,7 +333,7 @@ const CodeVerification: React.FC = () => {
       {/* Right side - Image */}
       <div className="hidden lg:flex flex-[0_0_65%] relative">
         <div 
-          className="w-full bg-cover bg-center relative"
+          className="w-full bg-cover bg-center relative bg-image-container"
           style={{ backgroundImage: `url(${chefBgImage})` }}
         >
           {/* Overlay */}

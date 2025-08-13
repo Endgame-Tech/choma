@@ -220,7 +220,8 @@ const requireApiKey = (req, res, next) => {
 };
 
 // Rate limiting middleware for sensitive operations
-const sensitiveOperationLimiter = require('express-rate-limit')({
+const rateLimit = require('express-rate-limit');
+const sensitiveOperationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // limit each admin to 10 sensitive operations per windowMs
   message: {
@@ -229,7 +230,8 @@ const sensitiveOperationLimiter = require('express-rate-limit')({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.admin?.adminId || req.ip
+  // Remove custom keyGenerator to use default IP handling
+  // skip: (req) => req.admin?.adminId !== undefined
 });
 
 module.exports = {

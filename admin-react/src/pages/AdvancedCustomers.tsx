@@ -2,7 +2,6 @@ import React from 'react'
 import { useState, useEffect } from 'react'
 import { usersApi } from '../services/api'
 import CustomerDetailsModal from '../components/customers/CustomerDetailsModal'
-import { MagnifyingGlassIcon, FunnelIcon, ArrowDownTrayIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import type { User } from '../types'
 
 interface CustomerFilters {
@@ -19,11 +18,9 @@ interface CustomerFilters {
 }
 
 const AdvancedCustomers: React.FC = () => {
-
   // State management
   const [customers, setCustomers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  // const [error, setError] = useState<string | null>(null)
   const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [pagination, setPagination] = useState({
@@ -66,8 +63,6 @@ const AdvancedCustomers: React.FC = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true)
-      // setError(null)
-
       const response = await usersApi.getUsers(filters as unknown as Record<string, string | number | boolean | undefined>)
       setCustomers(response.users as User[])
       
@@ -84,9 +79,6 @@ const AdvancedCustomers: React.FC = () => {
       calculateAnalytics(response.users as User[])
       
     } catch (err) {
-      // setError(err instanceof Error ? err.message : 'Failed to fetch customers')
-      
-      // Mock data for demonstration
       setMockData()
     } finally {
       setLoading(false)
@@ -186,7 +178,7 @@ const AdvancedCustomers: React.FC = () => {
     setFilters((prev: CustomerFilters) => ({
       ...prev,
       [key]: value,
-      page: key !== 'page' ? 1 : Number(value) // Reset page when other filters change
+      page: key !== 'page' ? 1 : Number(value)
     }))
   }
 
@@ -214,7 +206,6 @@ const AdvancedCustomers: React.FC = () => {
     try {
       await usersApi.updateUserStatus(customerId, status)
       
-      // Update local state
       setCustomers((prev: User[]) => 
         prev.map((customer: User) => 
           customer._id === customerId 
@@ -223,7 +214,6 @@ const AdvancedCustomers: React.FC = () => {
         )
       )
       
-      // Update selected customer if open
       if (selectedCustomer?._id === customerId) {
         setSelectedCustomer((prev: User | null) => prev ? { ...prev, status: status as User['status'] } : null)
       }
@@ -272,11 +262,11 @@ const AdvancedCustomers: React.FC = () => {
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Active': return 'bg-green-100 text-green-800'
-      case 'Inactive': return 'bg-gray-100 text-gray-800'
-      case 'Suspended': return 'bg-yellow-100 text-yellow-800'
-      case 'Deleted': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'Active': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+      case 'Inactive': return 'bg-gray-100 dark:bg-neutral-700/30 text-gray-800 dark:text-neutral-300'
+      case 'Suspended': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+      case 'Deleted': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+      default: return 'bg-gray-100 dark:bg-neutral-700/30 text-gray-800 dark:text-neutral-300'
     }
   }
 
@@ -291,19 +281,19 @@ const AdvancedCustomers: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading customer data...</p>
+          <p className="text-gray-600 dark:text-neutral-200">Loading customer data...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900">Customer Management</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">Customer Management</h1>
+          <p className="text-gray-600 dark:text-neutral-200">
             Manage and analyze your customer base ({analytics.totalCustomers} customers)
           </p>
         </div>
@@ -311,20 +301,20 @@ const AdvancedCustomers: React.FC = () => {
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-700 dark:text-neutral-100 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
           >
-            <FunnelIcon className="h-4 w-4 mr-2" />
+            <i className="fi fi-sr-filter text-base mr-2"></i>
             Filters
           </button>
           <button
             onClick={handleExport}
-            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
           >
-            <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+            <i className="fi fi-sr-download text-base mr-2"></i>
             Export
           </button>
-          <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            <UserPlusIcon className="h-4 w-4 mr-2" />
+          <button className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors">
+            <i className="fi fi-sr-user-add text-base mr-2"></i>
             Add Customer
           </button>
         </div>
@@ -332,55 +322,55 @@ const AdvancedCustomers: React.FC = () => {
 
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Customers</p>
-              <p className="text-3xl font-semibold text-gray-900">{analytics.totalCustomers}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-neutral-200">Total Customers</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">{analytics.totalCustomers}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">👥</span>
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+              <i className="fi fi-sr-users-alt text-2xl text-gray-900 dark:text-neutral-100"></i>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Customers</p>
-              <p className="text-3xl font-semibold text-gray-900">{analytics.activeCustomers}</p>
-              <p className="text-xs text-green-600">
+              <p className="text-sm font-medium text-gray-600 dark:text-neutral-200">Active Customers</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">{analytics.activeCustomers}</p>
+              <p className="text-xs text-green-600 dark:text-green-300">
                 {((analytics.activeCustomers / analytics.totalCustomers) * 100).toFixed(1)}% active
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">✅</span>
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+              <i className="fi fi-sr-check-circle text-2xl text-gray-900 dark:text-neutral-100"></i>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">New This Month</p>
-              <p className="text-3xl font-semibold text-gray-900">{analytics.newCustomersThisMonth}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-neutral-200">New This Month</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">{analytics.newCustomersThisMonth}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">🆕</span>
+            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+              <i className="fi fi-sr-star text-2xl text-gray-900 dark:text-neutral-100"></i>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
-              <p className="text-3xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-gray-600 dark:text-neutral-200">Avg Order Value</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">
                 {formatCurrency(analytics.averageOrderValue)}
               </p>
             </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">💰</span>
+            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
+              <i className="fi fi-sr-usd-circle text-2xl text-gray-900 dark:text-neutral-100"></i>
             </div>
           </div>
         </div>
@@ -388,29 +378,31 @@ const AdvancedCustomers: React.FC = () => {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+        <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">Filters</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Search</label>
               <div className="relative">
-                <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+                <i className="fi fi-sr-search text-base absolute left-3 top-3 text-gray-400 dark:text-neutral-400"></i>
                 <input
                   type="text"
                   placeholder="Search customers..."
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Filter by customer status"
+                title="Filter customers by their status"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Statuses</option>
                 <option value="Active">Active</option>
@@ -421,11 +413,13 @@ const AdvancedCustomers: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Sort By</label>
               <select
                 value={filters.sortBy}
                 onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Sort customers by field"
+                title="Choose field to sort customers by"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="registrationDate">Registration Date</option>
                 <option value="fullName">Name</option>
@@ -436,11 +430,13 @@ const AdvancedCustomers: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Order</label>
               <select
                 value={filters.sortOrder}
                 onChange={(e) => handleFilterChange('sortOrder', e.target.value as 'asc' | 'desc')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Sort order"
+                title="Choose ascending or descending sort order"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="desc">Descending</option>
                 <option value="asc">Ascending</option>
@@ -452,21 +448,21 @@ const AdvancedCustomers: React.FC = () => {
 
       {/* Bulk Actions */}
       {selectedCustomers.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <span className="text-blue-800 font-medium">
+              <span className="text-blue-800 dark:text-blue-300 font-medium">
                 {selectedCustomers.length} customer{selectedCustomers.length !== 1 ? 's' : ''} selected
               </span>
             </div>
             <div className="flex space-x-3">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+              <button className="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors">
                 Activate
               </button>
-              <button className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
+              <button className="px-4 py-2 bg-yellow-600 dark:bg-yellow-700 text-white rounded-lg hover:bg-yellow-700 dark:hover:bg-yellow-800 transition-colors">
                 Suspend
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <button className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors">
                 Send Email
               </button>
             </div>
@@ -475,48 +471,52 @@ const AdvancedCustomers: React.FC = () => {
       )}
 
       {/* Customer Table */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-neutral-700">
               <tr>
                 <th className="w-12 px-6 py-3">
                   <input
                     type="checkbox"
                     checked={selectAll}
                     onChange={handleSelectAll}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    aria-label="Select all customers"
+                    title="Select or deselect all customers"
+                    className="rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500"
                   />
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">
                   Orders
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">
                   Total Spent
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">
                   Last Login
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white/90 dark:bg-neutral-800/90 divide-y divide-gray-200 dark:divide-neutral-700">
               {customers.map((customer) => (
-                <tr key={customer._id} className="hover:bg-gray-50">
+                <tr key={customer._id} className="hover:bg-gray-100 dark:hover:bg-neutral-700">
                   <td className="px-6 py-4">
                     <input
                       type="checkbox"
                       checked={selectedCustomers.includes(customer._id)}
                       onChange={() => handleCustomerSelect(customer._id)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      aria-label={`Select customer ${customer.fullName}`}
+                      title={`Select or deselect ${customer.fullName}`}
+                      className="rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500"
                     />
                   </td>
                   <td className="px-6 py-4">
@@ -527,10 +527,10 @@ const AdvancedCustomers: React.FC = () => {
                         </span>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{customer.fullName}</div>
-                        <div className="text-sm text-gray-500">{customer.email}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">{customer.fullName}</div>
+                        <div className="text-sm text-gray-500 dark:text-neutral-300">{customer.email}</div>
                         {customer.customerId && (
-                          <div className="text-xs text-gray-400">ID: {customer.customerId}</div>
+                          <div className="text-xs text-gray-400 dark:text-neutral-400">ID: {customer.customerId}</div>
                         )}
                       </div>
                     </div>
@@ -540,25 +540,25 @@ const AdvancedCustomers: React.FC = () => {
                       {customer.status}
                     </span>
                     {!customer.emailVerified && (
-                      <div className="text-xs text-red-500 mt-1">Email not verified</div>
+                      <div className="text-xs text-red-500 dark:text-red-300 mt-1">Email not verified</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-neutral-100">
                     <div className="font-medium">{customer.totalOrders || 0}</div>
                     {customer.subscriptionStatus && (
-                      <div className="text-xs text-gray-500">{customer.subscriptionStatus}</div>
+                      <div className="text-xs text-gray-500 dark:text-neutral-300">{customer.subscriptionStatus}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-neutral-100">
                     {formatCurrency(customer.totalSpent || 0)}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-neutral-300">
                     {customer.lastLogin ? formatDate(customer.lastLogin) : 'Never'}
                   </td>
                   <td className="px-6 py-4 text-sm font-medium">
                     <button
                       onClick={() => setSelectedCustomer(customer)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
+                      className="text-blue-600 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-400 mr-4"
                     >
                       View Details
                     </button>
@@ -571,9 +571,9 @@ const AdvancedCustomers: React.FC = () => {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div className="bg-white/90 dark:bg-neutral-800/90 px-4 py-3 border-t border-gray-200 dark:border-neutral-700 sm:px-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
+              <div className="text-sm text-gray-700 dark:text-neutral-200">
                 Showing {((pagination.currentPage - 1) * filters.limit) + 1} to{' '}
                 {Math.min(pagination.currentPage * filters.limit, pagination.totalUsers)} of{' '}
                 {pagination.totalUsers} customers
@@ -582,17 +582,17 @@ const AdvancedCustomers: React.FC = () => {
                 <button
                   onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
                   disabled={!pagination.hasPrev}
-                  className="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 rounded hover:bg-gray-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
-                <span className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded">
+                <span className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
                   {pagination.currentPage} of {pagination.totalPages}
                 </span>
                 <button
                   onClick={() => handleFilterChange('page', filters.page + 1)}
                   disabled={!pagination.hasNext}
-                  className="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 rounded hover:bg-gray-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>

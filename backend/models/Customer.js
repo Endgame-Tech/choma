@@ -41,7 +41,10 @@ const CustomerSchema = new mongoose.Schema({
     isActive: { type: Boolean, default: true },
     lastUsed: { type: Date, default: Date.now }
   }],
-  password: { type: String, required: true, select: false }
+  password: { type: String, required: true, select: false },
+  profileImage: { type: String }, // URL to profile image
+  resetPasswordCode: String,
+  resetPasswordExpires: Date
 });
 
 // Auto-generate customerId before saving

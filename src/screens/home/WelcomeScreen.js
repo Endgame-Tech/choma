@@ -3,12 +3,13 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import ChomaLogo from '../../components/ui/ChomaLogo';
 
 const WelcomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Ionicons name="restaurant" size={100} color="#4ECDC4" />
+        <ChomaLogo width={150} height={81} />
         <Text style={styles.title}>Welcome to choma! 🍽️</Text>
         <Text style={styles.subtitle}>Your personalized meal delivery service</Text>
           <TouchableOpacity 

@@ -16,6 +16,7 @@ import WelcomeScreen from '../screens/home/WelcomeScreen';
 // Auth screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignupScreen from '../screens/auth/SignupScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import OnboardingScreen  from '../screens/onboarding/OnboardingScreen';
 
 // Meal Plans screens
@@ -88,7 +89,7 @@ const TabIcon = ({ focused, route, color, size, colors }) => {
       <Ionicons 
         name={iconName} 
         size={size} 
-        color={focused ? colors.primary : color} 
+        color={focused ? colors.background : color} 
       />
     </View>
   );
@@ -106,6 +107,7 @@ const AuthStack = () => {
     >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
     </Stack.Navigator>
@@ -113,9 +115,18 @@ const AuthStack = () => {
 };
 
 
-// Main Tab Navigator with Modern Design
+// Main Tab Navigator with Modern Design - Always Dark Mode
 const TabNavigator = () => {
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
+  
+  // Fixed dark mode colors for tab bar
+  const darkTabColors = {
+    background: '#1a1a1a',
+    white: '#ffffff',
+    primary: '#4ECDC4', // Your primary color
+    textMuted: '#f3f1f1ff'
+  };
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -130,13 +141,13 @@ const TabNavigator = () => {
             route={route} 
             color={color} 
             size={size} 
-            colors={colors}
+            colors={darkTabColors}
           />
         ),
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: isDark === true ? '#f3f1f1ff' : colors.textMuted,
+        tabBarActiveTintColor: darkTabColors.primary,
+        tabBarInactiveTintColor: darkTabColors.textMuted,
         tabBarStyle: {
-          backgroundColor: isDark === true ? '#1a1a1af6' : 'rgba(255, 255, 255, 0.8)', // Ensure background is semi-transparent
+          backgroundColor: '#1a1a1af6', // Always dark
           borderTopWidth: 0, // Remove top border
           paddingBottom: 8,
           paddingTop: 17,
@@ -146,7 +157,7 @@ const TabNavigator = () => {
           borderRadius: 50,
           position: 'absolute',
           borderWidth: 1,
-          borderColor: isDark === true ? 'rgba(255, 255, 255, 0.53)' : 'rgba(0, 0, 0, 0.1)',
+          borderColor: 'rgba(255, 255, 255, 0.53)', // Always dark border
           elevation: 0, // Crucial for Android to see through
         },
         tabBarLabelStyle: {
@@ -160,7 +171,7 @@ const TabNavigator = () => {
       tabBarBackground={() => (
         <View style={styles.tabBarBackgroundContainer}>
           <BlurView
-            tint={isDark === true ? "dark" : "light"}
+            tint="dark" // Always dark blur
             intensity={80}
             style={styles.blurView}
           />

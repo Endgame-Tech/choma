@@ -2693,7 +2693,11 @@ exports.getAllMeals = async (req, res) => {
     // Build filter
     const filter = {};
     if (search) {
-      filter.$text = { $search: search };
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } }
+      ];
     }
     if (category) {
       filter.category = category;
@@ -2770,18 +2774,11 @@ exports.createMeal = async (req, res) => {
       name,
       description,
       image,
-      basePrice,
-      platformFee,
-      chefFee,
-      calories,
-      protein,
-      carbs,
-      fat,
-      fiber,
-      sugar,
-      weight,
+      pricing,
+      nutrition,
       ingredients,
       preparationTime,
+      complexityLevel,
       allergens,
       category,
       tags,
@@ -2794,22 +2791,29 @@ exports.createMeal = async (req, res) => {
       description,
       image,
       pricing: {
-        basePrice: parseFloat(basePrice),
-        platformFee: parseFloat(platformFee),
-        chefFee: parseFloat(chefFee),
-        totalPrice: parseFloat(basePrice) + parseFloat(platformFee) + parseFloat(chefFee)
+        ingredients: parseFloat(pricing?.ingredients) || 0,
+        cookingCosts: parseFloat(pricing?.cookingCosts) || 0,
+        packaging: parseFloat(pricing?.packaging) || 0,
+        delivery: parseFloat(pricing?.delivery) || 0,
+        platformFee: parseFloat(pricing?.platformFee) || 0,
+        totalCosts: parseFloat(pricing?.totalCosts) || 0,
+        profit: parseFloat(pricing?.profit) || 0,
+        totalPrice: parseFloat(pricing?.totalPrice) || 0,
+        chefEarnings: parseFloat(pricing?.chefEarnings) || 0,
+        chomaEarnings: parseFloat(pricing?.chomaEarnings) || 0
       },
       nutrition: {
-        calories: parseInt(calories) || 0,
-        protein: parseFloat(protein) || 0,
-        carbs: parseFloat(carbs) || 0,
-        fat: parseFloat(fat) || 0,
-        fiber: parseFloat(fiber) || 0,
-        sugar: parseFloat(sugar) || 0,
-        weight: parseFloat(weight) || 0
+        calories: parseInt(nutrition?.calories) || 0,
+        protein: parseFloat(nutrition?.protein) || 0,
+        carbs: parseFloat(nutrition?.carbs) || 0,
+        fat: parseFloat(nutrition?.fat) || 0,
+        fiber: parseFloat(nutrition?.fiber) || 0,
+        sugar: parseFloat(nutrition?.sugar) || 0,
+        weight: parseFloat(nutrition?.weight) || 0
       },
       ingredients,
       preparationTime: parseInt(preparationTime) || 0,
+      complexityLevel: complexityLevel || 'medium',
       allergens: allergens || [],
       category,
       tags: tags || [],
@@ -2839,8 +2843,9 @@ exports.updateMeal = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    // If pricing data is provided, calculate total
-    if (updateData.basePrice || updateData.platformFee || updateData.chefFee) {
+    // Handle pricing data updates - no need for manual calculation as model will handle it
+    if (updateData.pricing) {
+      // Ensure all required pricing fields are present for calculations
       const meal = await Meal.findById(id);
       if (!meal) {
         return res.status(404).json({
@@ -2848,13 +2853,6 @@ exports.updateMeal = async (req, res) => {
           message: 'Meal not found'
         });
       }
-
-      updateData.pricing = {
-        basePrice: parseFloat(updateData.basePrice) || meal.pricing.basePrice,
-        platformFee: parseFloat(updateData.platformFee) || meal.pricing.platformFee,
-        chefFee: parseFloat(updateData.chefFee) || meal.pricing.chefFee
-      };
-      updateData.pricing.totalPrice = updateData.pricing.basePrice + updateData.pricing.platformFee + updateData.pricing.chefFee;
     }
 
     const meal = await Meal.findByIdAndUpdate(id, updateData, { new: true });
@@ -2892,17 +2890,10 @@ exports.updateMeal = async (req, res) => {
 exports.deleteMeal = async (req, res) => {
   try {
     const { id } = req.params;
+    const { force = false } = req.body;
 
-    // Check if meal is assigned to any meal plans
-    const assignmentCount = await MealPlanAssignment.countDocuments({ mealIds: id });
-    if (assignmentCount > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `Cannot delete meal. It is assigned to ${assignmentCount} meal plan(s). Remove assignments first.`
-      });
-    }
-
-    const meal = await Meal.findByIdAndDelete(id);
+    // Check if meal exists first
+    const meal = await Meal.findById(id);
     if (!meal) {
       return res.status(404).json({
         success: false,
@@ -2910,9 +2901,40 @@ exports.deleteMeal = async (req, res) => {
       });
     }
 
+    // Check if meal is assigned to any meal plans
+    const assignmentCount = await MealPlanAssignment.countDocuments({ mealIds: id });
+    
+    if (assignmentCount > 0 && !force) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete meal. It is assigned to ${assignmentCount} meal plan(s). Remove assignments first.`
+      });
+    }
+
+    // If force delete is requested, remove meal from all meal plan assignments
+    if (force && assignmentCount > 0) {
+      console.log(`🔄 Force deleting meal ${id}, removing from ${assignmentCount} meal plan assignments...`);
+      
+      // Remove the meal from all meal plan assignments
+      const updateResult = await MealPlanAssignment.updateMany(
+        { mealIds: id },
+        { $pull: { mealIds: id } }
+      );
+      
+      // Remove empty assignments (assignments with no meals left)
+      await MealPlanAssignment.deleteMany({ mealIds: { $size: 0 } });
+      
+      console.log(`✅ Removed meal from ${updateResult.modifiedCount} assignments`);
+    }
+
+    // Now delete the meal
+    await Meal.findByIdAndDelete(id);
+
     res.json({
       success: true,
-      message: 'Meal deleted successfully'
+      message: force && assignmentCount > 0 
+        ? `Meal deleted successfully. Removed from ${assignmentCount} meal plan assignment(s).`
+        : 'Meal deleted successfully'
     });
   } catch (error) {
     console.error('Delete meal error:', error);
@@ -3644,6 +3666,97 @@ exports.bulkUpdateMealAvailability = async (req, res) => {
       success: false,
       message: 'Failed to bulk update meal availability',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// ============= MEAL PLAN PUBLISHING SYSTEM =============
+exports.publishMealPlan = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid meal plan ID'
+      });
+    }
+
+    const mealPlan = await MealPlan.findById(id);
+    if (!mealPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meal plan not found'
+      });
+    }
+
+    // Check if meal plan has assignments
+    const assignmentCount = await MealPlanAssignment.countDocuments({ mealPlanId: id });
+    
+    if (assignmentCount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot publish meal plan without meal assignments'
+      });
+    }
+
+    const updatedPlan = await MealPlan.findByIdAndUpdate(
+      id,
+      { isPublished: true },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Meal plan published successfully',
+      data: updatedPlan
+    });
+  } catch (err) {
+    console.error('Publish meal plan error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to publish meal plan',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+exports.unpublishMealPlan = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid meal plan ID'
+      });
+    }
+
+    const mealPlan = await MealPlan.findById(id);
+    if (!mealPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meal plan not found'
+      });
+    }
+
+    const updatedPlan = await MealPlan.findByIdAndUpdate(
+      id,
+      { isPublished: false },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Meal plan unpublished successfully',
+      data: updatedPlan
+    });
+  } catch (err) {
+    console.error('Unpublish meal plan error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unpublish meal plan',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 };
