@@ -188,8 +188,8 @@ export interface RegisterData {
     accountName: string
     accountNumber: string
     bankName: string
-    bankCode?: string
-    bvn?: string
+    bankCode: string
+    bvn: string
     isVerified: boolean
     recipientCode?: string
   }

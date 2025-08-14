@@ -1,6 +1,75 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// Admin Role Schema
+const adminRoleSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  permissions: {
+    dashboard: {
+      view: { type: Boolean, default: false }
+    },
+    analytics: {
+      view: { type: Boolean, default: false }
+    },
+    orders: {
+      view: { type: Boolean, default: false },
+      create: { type: Boolean, default: false },
+      edit: { type: Boolean, default: false },
+      delete: { type: Boolean, default: false },
+      approve: { type: Boolean, default: false }
+    },
+    chefs: {
+      view: { type: Boolean, default: false },
+      create: { type: Boolean, default: false },
+      edit: { type: Boolean, default: false },
+      delete: { type: Boolean, default: false },
+      approve: { type: Boolean, default: false },
+      manageApplications: { type: Boolean, default: false }
+    },
+    users: {
+      view: { type: Boolean, default: false },
+      create: { type: Boolean, default: false },
+      edit: { type: Boolean, default: false },
+      delete: { type: Boolean, default: false },
+      viewSensitiveInfo: { type: Boolean, default: false }
+    },
+    customers: {
+      view: { type: Boolean, default: false },
+      edit: { type: Boolean, default: false },
+      delete: { type: Boolean, default: false },
+      viewSensitiveInfo: { type: Boolean, default: false }
+    },
+    meals: {
+      view: { type: Boolean, default: false },
+      create: { type: Boolean, default: false },
+      edit: { type: Boolean, default: false },
+      delete: { type: Boolean, default: false },
+      bulkUpload: { type: Boolean, default: false },
+      manageAvailability: { type: Boolean, default: false }
+    },
+    mealPlans: {
+      view: { type: Boolean, default: false },
+      create: { type: Boolean, default: false },
+      edit: { type: Boolean, default: false },
+      delete: { type: Boolean, default: false },
+      publish: { type: Boolean, default: false },
+      schedule: { type: Boolean, default: false }
+    },
+    adminManagement: {
+      view: { type: Boolean, default: false },
+      create: { type: Boolean, default: false },
+      edit: { type: Boolean, default: false },
+      delete: { type: Boolean, default: false },
+      managePermissions: { type: Boolean, default: false },
+      view_activity_logs: { type: Boolean, default: false },
+      manage_sessions: { type: Boolean, default: false }
+    }
+  },
+  isDefault: { type: Boolean, default: false }
+});
+
 const adminSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -25,25 +94,16 @@ const adminSchema = new mongoose.Schema({
     trim: true
   },
   role: {
-    type: String,
-    enum: ['super_admin', 'admin', 'manager', 'staff'],
-    default: 'staff'
+    type: adminRoleSchema,
+    required: true
   },
-  permissions: [{
-    type: String,
-    enum: [
-      'users.read', 'users.write', 'users.delete',
-      'orders.read', 'orders.write', 'orders.delete',
-      'meals.read', 'meals.write', 'meals.delete',
-      'chefs.read', 'chefs.write', 'chefs.delete',
-      'payments.read', 'payments.write',
-      'settings.read', 'settings.write',
-      'analytics.read', 'reports.read'
-    ]
-  }],
   isActive: {
     type: Boolean,
     default: true
+  },
+  isAlphaAdmin: {
+    type: Boolean,
+    default: false
   },
   lastLogin: {
     type: Date
@@ -78,11 +138,17 @@ const adminSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin'
   },
-  auditLog: [{
-    action: String,
-    timestamp: { type: Date, default: Date.now },
-    details: mongoose.Schema.Types.Mixed,
-    ipAddress: String
+  sessions: [{
+    sessionId: String,
+    deviceInfo: {
+      browser: String,
+      os: String,
+      device: String,
+      ip: String
+    },
+    loginTime: { type: Date, default: Date.now },
+    lastActivity: { type: Date, default: Date.now },
+    isActive: { type: Boolean, default: true }
   }]
 }, {
   timestamps: true
@@ -146,71 +212,120 @@ adminSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 // Method to check permissions
-adminSchema.methods.hasPermission = function(permission) {
-  if (this.role === 'super_admin') return true;
-  return this.permissions.includes(permission);
+adminSchema.methods.hasPermission = function(module, action) {
+  // Alpha admin has all permissions
+  if (this.isAlphaAdmin) return true;
+  
+  // Check if the role has the specific permission
+  if (this.role && this.role.permissions && this.role.permissions[module]) {
+    return this.role.permissions[module][action] || false;
+  }
+  
+  return false;
 };
 
-// Method to add audit log entry
-adminSchema.methods.addAuditLog = function(action, details = null, ipAddress = null) {
-  this.auditLog.push({
-    action,
-    details,
-    ipAddress,
-    timestamp: new Date()
+// Method to add session
+adminSchema.methods.addSession = function(sessionData) {
+  // Remove old inactive sessions (keep last 5)
+  this.sessions = this.sessions.filter(s => s.isActive).slice(-4);
+  
+  this.sessions.push({
+    sessionId: sessionData.sessionId,
+    deviceInfo: sessionData.deviceInfo,
+    loginTime: new Date(),
+    lastActivity: new Date(),
+    isActive: true
   });
-  
-  // Keep only last 100 audit entries
-  if (this.auditLog.length > 100) {
-    this.auditLog = this.auditLog.slice(-100);
+};
+
+// Method to update session activity
+adminSchema.methods.updateSessionActivity = function(sessionId) {
+  const session = this.sessions.find(s => s.sessionId === sessionId);
+  if (session) {
+    session.lastActivity = new Date();
   }
 };
 
-// Static method to get role permissions
-adminSchema.statics.getRolePermissions = function(role) {
-  const rolePermissions = {
-    super_admin: [
-      'users.read', 'users.write', 'users.delete',
-      'orders.read', 'orders.write', 'orders.delete',
-      'meals.read', 'meals.write', 'meals.delete',
-      'chefs.read', 'chefs.write', 'chefs.delete',
-      'payments.read', 'payments.write',
-      'settings.read', 'settings.write',
-      'analytics.read', 'reports.read'
-    ],
-    admin: [
-      'users.read', 'users.write',
-      'orders.read', 'orders.write',
-      'meals.read', 'meals.write',
-      'chefs.read', 'chefs.write',
-      'payments.read', 'payments.write',
-      'analytics.read', 'reports.read'
-    ],
-    manager: [
-      'users.read', 'users.write',
-      'orders.read', 'orders.write',
-      'meals.read', 'meals.write',
-      'chefs.read',
-      'payments.read',
-      'analytics.read'
-    ],
-    staff: [
-      'users.read',
-      'orders.read', 'orders.write',
-      'meals.read',
-      'chefs.read'
-    ]
-  };
-  
-  return rolePermissions[role] || [];
+// Method to deactivate session
+adminSchema.methods.deactivateSession = function(sessionId) {
+  const session = this.sessions.find(s => s.sessionId === sessionId);
+  if (session) {
+    session.isActive = false;
+  }
 };
 
-// Pre-save middleware to set default permissions based on role
-adminSchema.pre('save', function(next) {
-  if (this.isNew || this.isModified('role')) {
-    this.permissions = this.constructor.getRolePermissions(this.role);
-  }
-  next();
-});
+// Static method to get predefined roles
+adminSchema.statics.getPredefinedRoles = function() {
+  return [
+    {
+      id: 'super_admin',
+      name: 'Super Admin',
+      description: 'Full system access with all permissions',
+      permissions: {
+        dashboard: { view: true },
+        analytics: { view: true },
+        orders: { view: true, create: true, edit: true, delete: true, approve: true },
+        chefs: { view: true, create: true, edit: true, delete: true, approve: true, manageApplications: true },
+        users: { view: true, create: true, edit: true, delete: true, viewSensitiveInfo: true },
+        customers: { view: true, edit: true, delete: true, viewSensitiveInfo: true },
+        meals: { view: true, create: true, edit: true, delete: true, bulkUpload: true, manageAvailability: true },
+        mealPlans: { view: true, create: true, edit: true, delete: true, publish: true, schedule: true },
+        adminManagement: { view: true, create: true, edit: true, delete: true, managePermissions: true, view_activity_logs: true, manage_sessions: true }
+      },
+      isDefault: true
+    },
+    {
+      id: 'content_manager',
+      name: 'Content Manager',
+      description: 'Manage meals, meal plans, and content creation',
+      permissions: {
+        dashboard: { view: true },
+        analytics: { view: false },
+        orders: { view: true, create: false, edit: false, delete: false, approve: false },
+        chefs: { view: true, create: false, edit: false, delete: false, approve: false, manageApplications: false },
+        users: { view: true, create: false, edit: false, delete: false, viewSensitiveInfo: false },
+        customers: { view: true, edit: false, delete: false, viewSensitiveInfo: false },
+        meals: { view: true, create: true, edit: true, delete: true, bulkUpload: true, manageAvailability: true },
+        mealPlans: { view: true, create: true, edit: true, delete: true, publish: true, schedule: true },
+        adminManagement: { view: false, create: false, edit: false, delete: false, managePermissions: false, view_activity_logs: false, manage_sessions: false }
+      },
+      isDefault: true
+    },
+    {
+      id: 'operations_staff',
+      name: 'Operations Staff',
+      description: 'Handle orders, chefs, and daily operations',
+      permissions: {
+        dashboard: { view: true },
+        analytics: { view: false },
+        orders: { view: true, create: true, edit: true, delete: false, approve: true },
+        chefs: { view: true, create: false, edit: true, delete: false, approve: true, manageApplications: true },
+        users: { view: true, create: false, edit: true, delete: false, viewSensitiveInfo: false },
+        customers: { view: true, edit: true, delete: false, viewSensitiveInfo: false },
+        meals: { view: true, create: false, edit: false, delete: false, bulkUpload: false, manageAvailability: true },
+        mealPlans: { view: true, create: false, edit: false, delete: false, publish: false, schedule: false },
+        adminManagement: { view: false, create: false, edit: false, delete: false, managePermissions: false, view_activity_logs: false, manage_sessions: false }
+      },
+      isDefault: true
+    },
+    {
+      id: 'viewer',
+      name: 'Viewer',
+      description: 'Read-only access to basic information',
+      permissions: {
+        dashboard: { view: true },
+        analytics: { view: false },
+        orders: { view: true, create: false, edit: false, delete: false, approve: false },
+        chefs: { view: true, create: false, edit: false, delete: false, approve: false, manageApplications: false },
+        users: { view: true, create: false, edit: false, delete: false, viewSensitiveInfo: false },
+        customers: { view: true, edit: false, delete: false, viewSensitiveInfo: false },
+        meals: { view: true, create: false, edit: false, delete: false, bulkUpload: false, manageAvailability: false },
+        mealPlans: { view: true, create: false, edit: false, delete: false, publish: false, schedule: false },
+        adminManagement: { view: false, create: false, edit: false, delete: false, managePermissions: false, view_activity_logs: false, manage_sessions: false }
+      },
+      isDefault: true
+    }
+  ];
+};
 
 module.exports = mongoose.model('Admin', adminSchema);

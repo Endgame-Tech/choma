@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Order } from '../types'
+import { FileText, Utensils, ChefHat, BarChart3 } from 'lucide-react'
 
 interface OrderDetailsModalProps {
   order: Order | null
@@ -108,7 +109,10 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
           <div className="p-6 space-y-6">
             {/* Order Information */}
             <div className="bg-blue-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">📋 Order Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                <FileText size={20} className="mr-2" />
+                Order Information
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Customer ID</p>
@@ -126,7 +130,10 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             {/* Meal Plan Details */}
             {order.subscription?.mealPlanId && (
               <div className="bg-green-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">🍽️ Meal Plan Details</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                  <Utensils size={20} className="mr-2" />
+                  Meal Plan Details
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <p className="text-sm text-gray-600">Plan Name</p>
@@ -143,18 +150,21 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 {/* View Meal Plan Placeholder */}
                 <div className="text-center py-6">
                   <button className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    <span className="text-lg mr-2">📋</span>
+                    <FileText size={18} className="mr-2" />
                     View Meal Plan
                   </button>
                   <p className="text-sm text-gray-500 mt-2">
                     Click to view detailed meal plan and cooking instructions
                   </p>
                 </div>
-                
+
                 {/* Cooking Items Summary */}
                 {order.items && order.items.length > 0 && (
                   <div>
-                    <p className="text-sm text-gray-600 mb-3">🍳 Items to Prepare ({order.items.length} items):</p>
+                    <p className="text-sm text-gray-600 mb-3 flex items-center">
+                      <ChefHat size={16} className="mr-1" />
+                      Items to Prepare ({order.items.length} items):
+                    </p>
                     <div className="space-y-3">
                       {order.items.map((item, index) => (
                         <div key={index} className="bg-white rounded-lg p-4 border border-green-200">
@@ -188,7 +198,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
             {/* Order Summary */}
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">📊 Order Summary</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center"><BarChart3 size={20} className="mr-2" /> Order Summary</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Order Value</p>
@@ -203,7 +213,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
             {/* Status Information */}
             <div className="bg-purple-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">📊 Status & Delivery Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center"><BarChart3 size={20} className="mr-2" /> Status & Delivery Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Order Status (Business)</p>
@@ -231,7 +241,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             {/* Special Instructions */}
             {order.specialInstructions && (
               <div className="bg-orange-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">📝 Special Instructions</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center"><FileText size={20} className="mr-2" /> Special Instructions</h3>
                 <p className="text-gray-700">{order.specialInstructions}</p>
               </div>
             )}
@@ -239,7 +249,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             {/* Admin Notes for Chef */}
             {(order.adminNotes || order.chefNotes) && (
               <div className="bg-indigo-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">📝 Admin Notes</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center"><FileText size={20} className="mr-2" /> Admin Notes</h3>
                 <p className="text-gray-700">{order.adminNotes || order.chefNotes}</p>
               </div>
             )}

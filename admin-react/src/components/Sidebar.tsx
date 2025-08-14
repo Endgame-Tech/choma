@@ -8,18 +8,22 @@ import {
   UsersIcon,
   BookOpenIcon,
   CubeIcon,
+  CogIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline'
+import { usePermissionCheck } from '../contexts/PermissionContext'
+import type { AdminPermissions } from '../types/admin'
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon },
-  { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
-  { name: 'Orders', href: '/orders', icon: ClipboardDocumentListIcon },
-  { name: 'Chefs', href: '/chefs', icon: UserGroupIcon },
-  { name: 'Users', href: '/users', icon: UsersIcon },
-  { name: 'Customers', href: '/customers', icon: UsersIcon },
-  { name: 'Meals', href: '/meals', icon: CubeIcon },
-  { name: 'Meal Plans', href: '/meal-plans', icon: BookOpenIcon },
+const navigationItems = [
+  { name: 'Dashboard', href: '/', icon: HomeIcon, permission: 'dashboard' as keyof AdminPermissions },
+  { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, permission: 'analytics' as keyof AdminPermissions },
+  { name: 'Orders', href: '/orders', icon: ClipboardDocumentListIcon, permission: 'orders' as keyof AdminPermissions },
+  { name: 'Chefs', href: '/chefs', icon: UserGroupIcon, permission: 'chefs' as keyof AdminPermissions },
+  { name: 'Users', href: '/users', icon: UsersIcon, permission: 'users' as keyof AdminPermissions },
+  { name: 'Customers', href: '/customers', icon: UsersIcon, permission: 'customers' as keyof AdminPermissions },
+  { name: 'Meals', href: '/meals', icon: CubeIcon, permission: 'meals' as keyof AdminPermissions },
+  { name: 'Meal Plans', href: '/meal-plans', icon: BookOpenIcon, permission: 'mealPlans' as keyof AdminPermissions },
+  { name: 'Admin Management', href: '/admin-management', icon: CogIcon, permission: 'adminManagement' as keyof AdminPermissions },
 ]
 
 interface SidebarProps {
@@ -28,6 +32,13 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { hasAnyPermission, currentAdmin } = usePermissionCheck();
+
+  // Filter navigation items based on permissions
+  const allowedNavigation = navigationItems.filter(item => 
+    hasAnyPermission(item.permission)
+  );
+
   return (
     <>
       {/* Desktop sidebar */}
@@ -39,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {navigation.map((item) => (
+          {allowedNavigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
@@ -59,6 +70,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         
         {/* Footer */}
         <div className="px-6 py-4 border-t border-choma-orange/20">
+          {currentAdmin && (
+            <div className="mb-3 text-center">
+              <p className="text-xs text-choma-white/80 font-medium">
+                {currentAdmin.firstName} {currentAdmin.lastName}
+              </p>
+              <p className="text-xs text-choma-white/60">
+                {currentAdmin.role.name}
+                {currentAdmin.isAlphaAdmin && (
+                  <span className="ml-1 px-1 py-0.5 bg-choma-orange/20 text-choma-orange rounded text-[10px]">
+                    Alpha
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
           <p className="text-xs text-choma-white/60 text-center">
             © {new Date().getFullYear()} Choma. All rights reserved.
           </p>
@@ -66,9 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       </div>
 
       {/* Mobile sidebar */}
-      <div className={`lg:hidden fixed inset-y-0 left-0 z-30 w-64 bg-choma-brown dark:bg-choma-black shadow-lg transform transition-transform duration-300 ease-in-out ${
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div className={`lg:hidden fixed inset-y-0 left-0 z-30 w-64 bg-choma-brown dark:bg-choma-black shadow-lg transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-choma-orange/20">
           <h1 className="text-xl font-semibold font-heading text-choma-white">
             <span className="text-choma-orange">choma</span> Admin
@@ -83,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {navigation.map((item) => (
+          {allowedNavigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
@@ -104,6 +128,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         
         {/* Footer */}
         <div className="px-6 py-4 border-t border-choma-orange/20">
+          {currentAdmin && (
+            <div className="mb-3 text-center">
+              <p className="text-xs text-choma-white/80 font-medium">
+                {currentAdmin.firstName} {currentAdmin.lastName}
+              </p>
+              <p className="text-xs text-choma-white/60">
+                {currentAdmin.role.name}
+                {currentAdmin.isAlphaAdmin && (
+                  <span className="ml-1 px-1 py-0.5 bg-choma-orange/20 text-choma-orange rounded text-[10px]">
+                    Alpha
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
           <p className="text-xs text-choma-white/60 text-center">
             © {new Date().getFullYear()} Choma. All rights reserved.
           </p>

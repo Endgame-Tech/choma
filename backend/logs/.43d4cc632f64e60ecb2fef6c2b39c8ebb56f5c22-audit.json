@@ -6,11 +6,6 @@
     "auditLog": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\choma\\backend\\logs\\.43d4cc632f64e60ecb2fef6c2b39c8ebb56f5c22-audit.json",
     "files": [
         {
-            "date": 1753950454899,
-            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\choma\\backend\\logs\\error-2025-07-31.log",
-            "hash": "886f253e8a98ecfbbe4b6c4f93c13e477c811f87eb83b1e34b60c9b0733ec1f9"
-        },
-        {
             "date": 1754323102233,
             "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\choma\\backend\\logs\\error-2025-08-04.log",
             "hash": "637538e6495fa6127e7ad9514551c8b589edebaf5aaed870b9435e6d942c1ecb"
@@ -34,6 +29,11 @@
             "date": 1755079120396,
             "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\choma\\backend\\logs\\error-2025-08-13.log",
             "hash": "7ccb2e8d5612f9f3b9a765ab5ae7977229f3bef3fdb6243d44261decd4eb663d"
+        },
+        {
+            "date": 1755165678917,
+            "name": "C:\\Users\\endga\\OneDrive\\Desktop\\Web Dev Projects\\Projects\\choma\\backend\\logs\\error-2025-08-14.log",
+            "hash": "c69265bf8275df57a898476084727a9f68860d171bcc501179a0c2b961ed8320"
         }
     ],
     "hashType": "sha256"

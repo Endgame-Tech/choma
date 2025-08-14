@@ -92,6 +92,43 @@ const api = axios.create({
   },
 });
 
+// Request interceptor for authentication
+api.interceptors.request.use((config) => {
+  console.log(`🔍 Analytics API Request: ${config.method?.toUpperCase()} ${config.url}`);
+  
+  // Add authentication token if available
+  const token = localStorage.getItem('choma-admin-token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  return config;
+});
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => {
+    console.log(`✅ Analytics API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`);
+    return response;
+  },
+  (error) => {
+    console.error(`❌ Analytics API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.message);
+    
+    // Handle authentication errors
+    if (error.response?.status === 401) {
+      console.warn('🔒 Analytics API authentication failed - clearing stored credentials');
+      localStorage.removeItem('choma-admin-token');
+      localStorage.removeItem('choma-admin-data');
+      // You might want to redirect to login page here
+      if (window.location.pathname !== '/login') {
+        window.location.reload(); // This will trigger the auth check and redirect to login
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 // Real Analytics API Service
 export const analyticsApi = {
   // Get KPI Data (Key Performance Indicators)

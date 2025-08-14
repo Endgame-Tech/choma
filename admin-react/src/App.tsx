@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 // import 'flaticon-uicons/css/uicons-solid-rounded.css';
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { PermissionProvider } from './contexts/PermissionContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -13,6 +14,7 @@ import Users from './pages/Users'
 import AdvancedCustomers from './pages/AdvancedCustomers'
 import Meals from './pages/Meals'
 import MealPlans from './pages/MealPlans'
+import AdminManagement from './pages/AdminManagement'
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -37,7 +39,11 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />
   }
 
-  return <Layout>{children}</Layout>
+  return (
+    <PermissionProvider>
+      <Layout>{children}</Layout>
+    </PermissionProvider>
+  )
 }
 
 // Public Route Component (redirects to dashboard if already authenticated)
@@ -115,6 +121,11 @@ function AppRoutes() {
       <Route path="/meal-plans" element={
         <ProtectedRoute>
           <MealPlans />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin-management" element={
+        <ProtectedRoute>
+          <AdminManagement />
         </ProtectedRoute>
       } />
 

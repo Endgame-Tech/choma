@@ -123,6 +123,9 @@ app.get('/health', (req, res) => {
 // Auth routes (with stricter rate limiting)
 app.use('/api/auth', authLimiter, require('./routes/auth'));
 
+// Admin authentication routes (with admin-specific rate limiting)
+app.use('/api/admin/auth', adminLimiter, require('./routes/adminAuth'));
+
 // API routes (with general rate limiting)
 app.use('/api/mealplans', require('./routes/mealplans'));
 app.use('/api/orders', require('./routes/orders'));

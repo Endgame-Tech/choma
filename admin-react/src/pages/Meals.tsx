@@ -5,8 +5,11 @@ import EditMealModal from '../components/EditMealModal'
 import BulkMealUpload from '../components/BulkMealUpload'
 import MealCard from '../components/MealCard'
 import ConfirmationModal from '../components/ConfirmationModal'
+import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
+import { activityLogger } from '../services/activityLogger'
 
 const Meals: React.FC = () => {
+  const { hasPermission, currentAdmin } = usePermissionCheck();
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -118,9 +121,33 @@ const Meals: React.FC = () => {
   const handleCreateMeal = async (mealData: Partial<Meal>) => {
     try {
       await mealsApi.createMeal(mealData)
+      
+      // Log activity
+      if (currentAdmin) {
+        await activityLogger.logMealAction(
+          currentAdmin._id,
+          `${currentAdmin.firstName} ${currentAdmin.lastName}`,
+          currentAdmin.email,
+          'CREATE',
+          undefined,
+          { mealName: mealData.name, category: mealData.category }
+        );
+      }
+      
       await fetchMeals()
       setCreateModalOpen(false)
     } catch (err) {
+      // Log failed activity
+      if (currentAdmin) {
+        await activityLogger.logMealAction(
+          currentAdmin._id,
+          `${currentAdmin.firstName} ${currentAdmin.lastName}`,
+          currentAdmin.email,
+          'CREATE',
+          undefined,
+          { mealName: mealData.name, successful: false, errorMessage: err instanceof Error ? err.message : 'Unknown error' }
+        );
+      }
       alert(`Failed to create meal: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
@@ -130,10 +157,34 @@ const Meals: React.FC = () => {
 
     try {
       await mealsApi.updateMeal(selectedMeal._id, mealData)
+      
+      // Log activity
+      if (currentAdmin) {
+        await activityLogger.logMealAction(
+          currentAdmin._id,
+          `${currentAdmin.firstName} ${currentAdmin.lastName}`,
+          currentAdmin.email,
+          'UPDATE',
+          selectedMeal._id,
+          { mealName: selectedMeal.name, updatedFields: Object.keys(mealData) }
+        );
+      }
+      
       await fetchMeals()
       setEditModalOpen(false)
       setSelectedMeal(null)
     } catch (err) {
+      // Log failed activity
+      if (currentAdmin) {
+        await activityLogger.logMealAction(
+          currentAdmin._id,
+          `${currentAdmin.firstName} ${currentAdmin.lastName}`,
+          currentAdmin.email,
+          'UPDATE',
+          selectedMeal._id,
+          { mealName: selectedMeal.name, successful: false, errorMessage: err instanceof Error ? err.message : 'Unknown error' }
+        );
+      }
       alert(`Failed to update meal: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
@@ -152,6 +203,19 @@ const Meals: React.FC = () => {
         setConfirmationModal(prev => ({ ...prev, loading: true }))
         try {
           await mealsApi.deleteMeal(id)
+          
+          // Log activity
+          if (currentAdmin) {
+            await activityLogger.logMealAction(
+              currentAdmin._id,
+              `${currentAdmin.firstName} ${currentAdmin.lastName}`,
+              currentAdmin.email,
+              'DELETE',
+              id,
+              { mealName }
+            );
+          }
+          
           await fetchMeals()
           setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
         } catch (err: unknown) {
@@ -212,10 +276,39 @@ const Meals: React.FC = () => {
         setConfirmationModal(prev => ({ ...prev, loading: true }))
         try {
           await mealsApi.bulkUpdateAvailability(selectedMeals, isAvailable)
+          
+          // Log activity
+          if (currentAdmin) {
+            await activityLogger.logMealAction(
+              currentAdmin._id,
+              `${currentAdmin.firstName} ${currentAdmin.lastName}`,
+              currentAdmin.email,
+              'BULK_AVAILABILITY',
+              undefined,
+              { mealCount: selectedMeals.length, isAvailable, mealIds: selectedMeals }
+            );
+          }
+          
           setSelectedMeals([])
           await fetchMeals()
           setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
         } catch (err) {
+          // Log failed activity
+          if (currentAdmin) {
+            await activityLogger.logMealAction(
+              currentAdmin._id,
+              `${currentAdmin.firstName} ${currentAdmin.lastName}`,
+              currentAdmin.email,
+              'BULK_AVAILABILITY',
+              undefined,
+              { 
+                mealCount: selectedMeals.length, 
+                isAvailable, 
+                successful: false, 
+                errorMessage: err instanceof Error ? err.message : 'Unknown error' 
+              }
+            );
+          }
           alert(`Failed to update availability: ${err instanceof Error ? err.message : 'Unknown error'}`)
           setConfirmationModal(prev => ({ ...prev, loading: false }))
         }
@@ -240,6 +333,19 @@ const Meals: React.FC = () => {
           for (const mealId of selectedMeals) {
             await mealsApi.deleteMeal(mealId)
           }
+          
+          // Log activity
+          if (currentAdmin) {
+            await activityLogger.logMealAction(
+              currentAdmin._id,
+              `${currentAdmin.firstName} ${currentAdmin.lastName}`,
+              currentAdmin.email,
+              'BULK_DELETE',
+              undefined,
+              { mealCount: selectedMeals.length, mealIds: selectedMeals }
+            );
+          }
+          
           setSelectedMeals([])
           await fetchMeals()
           setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
@@ -367,20 +473,25 @@ const Meals: React.FC = () => {
             </button>
           </div>
 
-          <button
-            onClick={() => setBulkUploadModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-green-600 dark:bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
-          >
-            <i className="fi fi-sr-cloud-upload mr-2"></i>
-            Bulk Upload
-          </button>
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
-          >
-            <i className="fi fi-sr-plus mr-2"></i>
-            Create Meal
-          </button>
+          <PermissionGate module="meals" action="bulkUpload">
+            <button
+              onClick={() => setBulkUploadModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-green-600 dark:bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
+            >
+              <i className="fi fi-sr-cloud-upload mr-2"></i>
+              Bulk Upload
+            </button>
+          </PermissionGate>
+          
+          <PermissionGate module="meals" action="create">
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
+            >
+              <i className="fi fi-sr-plus mr-2"></i>
+              Create Meal
+            </button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -469,27 +580,36 @@ const Meals: React.FC = () => {
               {selectedMeals.length} meals selected
             </span>
             <div className="flex items-center space-x-2">
-              <button
-                onClick={() => handleBulkAvailabilityUpdate(true)}
-                className="text-sm bg-green-600 dark:bg-green-700 text-white px-3 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
-              >
-                <i className="fi fi-sr-check mr-1"></i>
-                Enable Selected
-              </button>
-              <button
-                onClick={() => handleBulkAvailabilityUpdate(false)}
-                className="text-sm bg-orange-600 dark:bg-orange-700 text-white px-3 py-2 rounded-lg hover:bg-orange-700 dark:hover:bg-orange-800 transition-colors"
-              >
-                <i className="fi fi-sr-cross mr-1"></i>
-                Disable Selected
-              </button>
-              <button
-                onClick={handleBulkDelete}
-                className="text-sm bg-red-600 dark:bg-red-700 text-white px-3 py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors"
-              >
-                <i className="fi fi-sr-trash mr-1"></i>
-                Delete Selected
-              </button>
+              <PermissionGate module="meals" action="manageAvailability">
+                <button
+                  onClick={() => handleBulkAvailabilityUpdate(true)}
+                  className="text-sm bg-green-600 dark:bg-green-700 text-white px-3 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
+                >
+                  <i className="fi fi-sr-check mr-1"></i>
+                  Enable Selected
+                </button>
+              </PermissionGate>
+              
+              <PermissionGate module="meals" action="manageAvailability">
+                <button
+                  onClick={() => handleBulkAvailabilityUpdate(false)}
+                  className="text-sm bg-orange-600 dark:bg-orange-700 text-white px-3 py-2 rounded-lg hover:bg-orange-700 dark:hover:bg-orange-800 transition-colors"
+                >
+                  <i className="fi fi-sr-cross mr-1"></i>
+                  Disable Selected
+                </button>
+              </PermissionGate>
+              
+              <PermissionGate module="meals" action="delete">
+                <button
+                  onClick={handleBulkDelete}
+                  className="text-sm bg-red-600 dark:bg-red-700 text-white px-3 py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors"
+                >
+                  <i className="fi fi-sr-trash mr-1"></i>
+                  Delete Selected
+                </button>
+              </PermissionGate>
+              
               <button
                 onClick={() => setSelectedMeals([])}
                 className="text-sm text-gray-600 dark:text-neutral-300 hover:text-gray-800 dark:hover:text-neutral-100 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -540,12 +660,12 @@ const Meals: React.FC = () => {
                   <MealCard
                     key={meal._id}
                     meal={meal}
-                    onEdit={(meal) => {
+                    onEdit={hasPermission('meals', 'edit') ? (meal) => {
                       setSelectedMeal(meal)
                       setEditModalOpen(true)
-                    }}
-                    onDelete={handleDeleteMeal}
-                    onToggleAvailability={handleToggleAvailability}
+                    } : undefined}
+                    onDelete={hasPermission('meals', 'delete') ? handleDeleteMeal : undefined}
+                    onToggleAvailability={hasPermission('meals', 'manageAvailability') ? handleToggleAvailability : undefined}
                     onSelect={handleSelectMeal}
                     isSelected={selectedMeals.includes(meal._id)}
                   />
@@ -686,37 +806,52 @@ const Meals: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => handleToggleAvailability(meal._id)}
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${meal.isAvailable
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50'
+                        {hasPermission('meals', 'manageAvailability') ? (
+                          <button
+                            onClick={() => handleToggleAvailability(meal._id)}
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${meal.isAvailable
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
+                              : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50'
+                              }`}
+                          >
+                            {meal.isAvailable ? 'Available' : 'Unavailable'}
+                          </button>
+                        ) : (
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${meal.isAvailable
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
                             }`}
-                        >
-                          {meal.isAvailable ? 'Available' : 'Unavailable'}
-                        </button>
+                          >
+                            {meal.isAvailable ? 'Available' : 'Unavailable'}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <button
-                            onClick={() => {
-                              setSelectedMeal(meal)
-                              setEditModalOpen(true)
-                            }}
-                            className="text-blue-600 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-400"
-                            aria-label={`Edit meal: ${meal.name}`}
-                            title={`Edit meal: ${meal.name}`}
-                          >
-                            <i className="fi fi-sr-pencil"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMeal(meal._id)}
-                            className="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-400"
-                            aria-label={`Delete meal: ${meal.name}`}
-                            title={`Delete meal: ${meal.name}`}
-                          >
-                            <i className="fi fi-sr-trash"></i>
-                          </button>
+                          <PermissionGate module="meals" action="edit">
+                            <button
+                              onClick={() => {
+                                setSelectedMeal(meal)
+                                setEditModalOpen(true)
+                              }}
+                              className="text-blue-600 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-400"
+                              aria-label={`Edit meal: ${meal.name}`}
+                              title={`Edit meal: ${meal.name}`}
+                            >
+                              <i className="fi fi-sr-pencil"></i>
+                            </button>
+                          </PermissionGate>
+                          
+                          <PermissionGate module="meals" action="delete">
+                            <button
+                              onClick={() => handleDeleteMeal(meal._id)}
+                              className="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-400"
+                              aria-label={`Delete meal: ${meal.name}`}
+                              title={`Delete meal: ${meal.name}`}
+                            >
+                              <i className="fi fi-sr-trash"></i>
+                            </button>
+                          </PermissionGate>
                         </div>
                       </td>
                     </tr>

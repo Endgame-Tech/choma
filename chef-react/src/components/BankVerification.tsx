@@ -55,7 +55,7 @@ const BankVerification: React.FC<BankVerificationProps> = ({ formData, onUpdate 
       setLoadingBanks(true)
       const response = await api.get('/api/chef/banks')
       const responseData = response.data as BanksApiResponse
-      
+
       if (responseData.success) {
         setBanks(responseData.data)
       } else {
@@ -127,7 +127,7 @@ const BankVerification: React.FC<BankVerificationProps> = ({ formData, onUpdate 
 
       if (responseData.success) {
         const verifiedData = responseData.data
-        
+
         onUpdate({
           ...formData.bankDetails,
           accountName: verifiedData.account_name,
@@ -150,9 +150,9 @@ const BankVerification: React.FC<BankVerificationProps> = ({ formData, onUpdate 
     }
   }
 
-  const canVerify = formData.bankDetails.accountNumber.length === 10 && 
-                   formData.bankDetails.bankCode && 
-                   !formData.bankDetails.isVerified
+  const canVerify = formData.bankDetails.accountNumber.length === 10 &&
+    formData.bankDetails.bankCode &&
+    !formData.bankDetails.isVerified
 
   return (
     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -206,11 +206,10 @@ const BankVerification: React.FC<BankVerificationProps> = ({ formData, onUpdate 
             type="button"
             onClick={verifyBankAccount}
             disabled={!canVerify || isVerifying}
-            className={`w-full px-4 py-2 rounded-md font-medium transition-colors ${
-              canVerify && !isVerifying
+            className={`w-full px-4 py-2 rounded-md font-medium transition-colors ${canVerify && !isVerifying
                 ? 'bg-blue-600 hover:bg-blue-700 text-white'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+              }`}
           >
             {isVerifying ? (
               <div className="flex items-center justify-center">
@@ -231,11 +230,10 @@ const BankVerification: React.FC<BankVerificationProps> = ({ formData, onUpdate 
             value={formData.bankDetails.accountName}
             readOnly
             placeholder="Account name will appear here after verification"
-            className={`w-full px-3 py-2 border rounded-md ${
-              formData.bankDetails.isVerified
+            className={`w-full px-3 py-2 border rounded-md ${formData.bankDetails.isVerified
                 ? 'bg-green-50 border-green-300 text-green-800'
                 : 'bg-gray-100 border-gray-300 text-gray-500'
-            }`}
+              }`}
           />
           {formData.bankDetails.isVerified && (
             <div className="flex items-center mt-2 text-green-600">

@@ -3,6 +3,16 @@ import { ordersApi } from '../services/api'
 import OrderDetailsModal from '../components/OrderDetailsModal'
 import ChefStatusModal from '../components/ChefStatusModal'
 import type { Order } from '../types'
+import {
+  FileText,
+  CheckCircle,
+  ChefHat,
+  Target,
+  Sparkles,
+  Clock,
+  Eye,
+  AlertTriangle
+} from 'lucide-react';
 
 const statusOptions = [
   { value: 'all', label: 'All Orders' },
@@ -46,7 +56,7 @@ const Orders: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      
+
       const filters: any = {}
       if (filter !== 'all') {
         filters.status = filter
@@ -143,12 +153,12 @@ const Orders: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Assigned': return '📋'
-      case 'Accepted': return '✅'
-      case 'In Progress': return '🍳'
-      case 'Ready': return '🎯'
-      case 'Completed': return '✨'
-      default: return '⏳'
+      case 'Assigned': return FileText
+      case 'Accepted': return CheckCircle
+      case 'In Progress': return ChefHat
+      case 'Ready': return Target
+      case 'Completed': return Sparkles
+      default: return Clock
     }
   }
 
@@ -202,7 +212,7 @@ const Orders: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your orders...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading your orders...</p>
         </div>
       </div>
     )
@@ -210,15 +220,15 @@ const Orders: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
         <div className="flex items-center">
-          <div className="text-red-400 mr-3">⚠️</div>
+          <AlertTriangle className="text-red-400 mr-3" size={20} />
           <div>
-            <h3 className="text-red-800 font-medium">Error loading orders</h3>
-            <p className="text-red-600">{error}</p>
+            <h3 className="text-red-800 dark:text-red-200 font-medium">Error loading orders</h3>
+            <p className="text-red-600 dark:text-red-300">{error}</p>
             <button
               onClick={fetchOrders}
-              className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+              className="mt-2 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 underline"
             >
               Try again
             </button>
@@ -232,12 +242,12 @@ const Orders: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">My Orders</h1>
-        <p className="text-gray-600">Manage your assigned cooking orders</p>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">My Orders</h1>
+        <p className="text-gray-600 dark:text-gray-400">Manage your assigned cooking orders</p>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Filter tabs */}
           <div className="flex flex-wrap gap-2">
@@ -245,11 +255,10 @@ const Orders: React.FC = () => {
               <button
                 key={option.value}
                 onClick={() => setFilter(option.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filter === option.value
-                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === option.value
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border-2 border-blue-200 dark:border-blue-700'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
               >
                 {option.label}
               </button>
@@ -263,10 +272,10 @@ const Orders: React.FC = () => {
               placeholder="Search by order number..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full md:w-64"
+              className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full md:w-64 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-200"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-400">🔍</span>
+              <Eye className="text-gray-400 dark:text-gray-500" size={20} />
             </div>
           </div>
         </div>
@@ -274,23 +283,23 @@ const Orders: React.FC = () => {
 
       {/* Orders Grid */}
       {filteredOrders.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow-sm border">
-          <div className="text-6xl mb-4">🍳</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-          <p className="text-gray-500">
-            {filter === 'all' 
-              ? "You don't have any assigned orders yet." 
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+          <ChefHat size={60} className="text-gray-500 dark:text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No orders found</h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            {filter === 'all'
+              ? "You don't have any assigned orders yet."
               : `No ${filter.toLowerCase()} orders at the moment.`}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredOrders.map((order) => (
-            <div key={order._id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+            <div key={order._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md dark:hover:shadow-lg transition-all duration-200">
               {/* Order Header */}
-              <div className="p-4 border-b border-gray-200">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-gray-900">#{order.orderNumber}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">#{order.orderNumber}</h3>
                   <div className="flex items-center space-x-2">
                     {order.priority && order.priority !== 'Medium' && (
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(order.priority)}`}>
@@ -302,8 +311,8 @@ const Orders: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600">Customer #{order.customer?._id?.slice(-6).toUpperCase() || 'UNKNOWN'}</p>
-                <p className="text-lg font-semibold text-gray-900 mt-1">{formatCurrency(order.totalAmount)}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Customer #{order.customer?._id?.slice(-6).toUpperCase() || 'UNKNOWN'}</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">{formatCurrency(order.totalAmount)}</p>
               </div>
 
               {/* Order Preview */}
@@ -311,10 +320,10 @@ const Orders: React.FC = () => {
                 {/* Meal Plan Info */}
                 {order.subscription?.mealPlanId && (
                   <div className="mb-4">
-                    <p className="text-sm text-gray-600">Meal Plan</p>
-                    <p className="font-medium text-gray-900">{order.subscription.mealPlanId.planName}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Meal Plan</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{order.subscription.mealPlanId.planName}</p>
                     {order.subscription.mealPlanId.planType && (
-                      <p className="text-xs text-gray-500">{order.subscription.mealPlanId.planType}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{order.subscription.mealPlanId.planType}</p>
                     )}
                   </div>
                 )}
@@ -370,7 +379,9 @@ const Orders: React.FC = () => {
                         <span className="text-sm font-medium text-gray-900">
                           {getStatusLabel(order.delegationStatus || 'Assigned')}
                         </span>
-                        <span className="ml-2">{getStatusIcon(order.delegationStatus || 'Assigned')}</span>
+                        <span className="ml-2">
+                          {React.createElement(getStatusIcon(order.delegationStatus || 'Assigned'), { size: 16 })}
+                        </span>
                       </div>
                       <button
                         onClick={() => openStatusModal(order)}
@@ -397,11 +408,12 @@ const Orders: React.FC = () => {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => openOrderDetails(order)}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                   >
+                    <Eye size={16} className="mr-2" />
                     View Details
                   </button>
-                  
+
                   {order.orderStatus === 'Pending' && (
                     <>
                       <button
@@ -409,7 +421,7 @@ const Orders: React.FC = () => {
                         disabled={actionLoading === order._id}
                         className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
                       >
-                        {actionLoading === order._id ? 'Processing...' : '✅ Accept Order'}
+                        {actionLoading === order._id ? 'Processing...' : <><CheckCircle size={16} className="mr-1" /> Accept Order</>}
                       </button>
                       <button
                         onClick={() => handleRejectOrder(order._id)}
@@ -420,7 +432,7 @@ const Orders: React.FC = () => {
                       </button>
                     </>
                   )}
-                  
+
                   {order.orderStatus !== 'Pending' && order.orderStatus !== 'Cancelled' && (
                     <button
                       onClick={() => openStatusModal(order)}

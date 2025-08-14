@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Clock, ArrowLeft, RefreshCw } from 'lucide-react'
+import { Clock, ArrowLeft, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react'
 import logo from '../assets/logo.svg'
 import chefBgImage from '../assets/chefsingin.jpg'
 
@@ -13,11 +13,11 @@ const CodeVerification: React.FC = () => {
   const [canResend, setCanResend] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
   const [attemptsRemaining, setAttemptsRemaining] = useState(5)
-  
+
   const navigate = useNavigate()
   const location = useLocation()
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-  
+
   const email = location.state?.email
 
   // Redirect if no email provided
@@ -53,7 +53,7 @@ const CodeVerification: React.FC = () => {
 
   const handleCodeChange = (index: number, value: string) => {
     if (value.length > 1) return // Prevent multiple characters
-    
+
     const newCode = [...code]
     newCode[index] = value
 
@@ -80,7 +80,7 @@ const CodeVerification: React.FC = () => {
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault()
     const pastedText = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    
+
     if (pastedText.length === 6) {
       const newCode = pastedText.split('')
       setCode(newCode)
@@ -90,7 +90,7 @@ const CodeVerification: React.FC = () => {
 
   const handleVerifyCode = async (verificationCode?: string) => {
     const codeToVerify = verificationCode || code.join('')
-    
+
     if (codeToVerify.length !== 6) {
       setError('Please enter all 6 digits')
       return
@@ -119,18 +119,18 @@ const CodeVerification: React.FC = () => {
         setSuccess('Email verified successfully!')
         // Navigate to full registration form
         setTimeout(() => {
-          navigate('/register/complete', { 
-            state: { 
-              email, 
+          navigate('/register/complete', {
+            state: {
+              email,
               verificationToken: data.data.token,
-              verified: true 
+              verified: true
             }
           })
         }, 1000)
       } else {
         setError(data.message || 'Invalid verification code')
         setAttemptsRemaining(data.attemptsRemaining || 0)
-        
+
         // Clear the code on error
         setCode(['', '', '', '', '', ''])
         inputRefs.current[0]?.focus()
@@ -224,7 +224,7 @@ const CodeVerification: React.FC = () => {
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">
-                <div className="text-red-400 mr-3">⚠️</div>
+                <AlertTriangle className="text-red-400 mr-3" size={20} />
                 <p className="text-red-700 text-sm">{error}</p>
               </div>
             </div>
@@ -234,7 +234,7 @@ const CodeVerification: React.FC = () => {
           {success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center">
-                <div className="text-green-400 mr-3">✅</div>
+                <CheckCircle className="text-green-400 mr-3" size={20} />
                 <p className="text-green-700 text-sm">{success}</p>
               </div>
             </div>
@@ -332,7 +332,7 @@ const CodeVerification: React.FC = () => {
 
       {/* Right side - Image */}
       <div className="hidden lg:flex flex-[0_0_65%] relative">
-        <div 
+        <div
           className="w-full bg-cover bg-center relative bg-image-container"
           style={{ backgroundImage: `url(${chefBgImage})` }}
         >
@@ -343,7 +343,7 @@ const CodeVerification: React.FC = () => {
                 Almost there! Let's verify your email.
               </h2>
               <p className="text-lg opacity-90 leading-relaxed">
-                We've sent a verification code to your email. 
+                We've sent a verification code to your email.
                 Enter it here to continue your chef registration.
               </p>
             </div>

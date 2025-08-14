@@ -249,8 +249,9 @@ export const earningsApi = {
 export const notificationsApi = {
   // Get chef notifications
   async getNotifications(): Promise<any[]> {
-    const response = await api.get<ApiResponse<any[]>>('/notifications')
-    return handleResponse(response)
+    const response = await api.get<ApiResponse<{notifications: any[], pagination: any}>>('/notifications')
+    const responseData = handleResponse(response)
+    return responseData.notifications || []
   },
 
   // Mark notification as read

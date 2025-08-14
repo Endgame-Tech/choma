@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import type { RegisterData } from '../types'
 import logo from '../assets/logo.svg'
 import BankVerification from '../components/BankVerification'
+import { CheckCircle } from 'lucide-react'
 
 const specialtyOptions = [
   'Nigerian Cuisine',
@@ -311,7 +312,7 @@ const Register: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center">
-            <div className="text-6xl mb-4">✅</div>
+            <CheckCircle size={60} className="text-green-500 mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               Application Submitted!
             </h2>
@@ -1091,7 +1092,7 @@ const Register: React.FC = () => {
                 </div>
 
                 {/* Bank Details with Verification */}
-                <BankVerification 
+                <BankVerification
                   formData={formData}
                   onUpdate={(bankDetails) => {
                     setFormData(prev => ({

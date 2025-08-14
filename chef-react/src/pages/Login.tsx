@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import logo from '../assets/logo.svg';
 import chefBgImage from '../assets/chefsingin.jpg';
 import styles from './Login.module.css';
@@ -65,7 +65,7 @@ const Login: React.FC = () => {
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">
-                <div className="text-red-400 mr-3">⚠️</div>
+                <AlertTriangle className="text-red-400 mr-3" size={20} />
                 <p className="text-red-700 text-sm">{error}</p>
               </div>
             </div>

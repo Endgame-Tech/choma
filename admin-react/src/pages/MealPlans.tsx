@@ -5,8 +5,10 @@ import CreateMealPlanModal from '../components/CreateMealPlanModal'
 import EditMealPlanModal from '../components/EditMealPlanModal'
 import MealPlanScheduler from '../components/MealPlanScheduler'
 import MealPlanCard from '../components/MealPlanCard'
+import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
 
 const MealPlans: React.FC = () => {
+  const { hasPermission } = usePermissionCheck();
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -224,13 +226,15 @@ const MealPlans: React.FC = () => {
           </div>
 
           {/* Create Button */}
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
-          >
-            <i className="fi fi-sr-plus mr-2"></i>
-            Create Meal Plan
-          </button>
+          <PermissionGate module="mealPlans" action="create">
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
+            >
+              <i className="fi fi-sr-plus mr-2"></i>
+              Create Meal Plan
+            </button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -323,13 +327,15 @@ const MealPlans: React.FC = () => {
               ? "No plans match your current filters."
               : "Get started by creating your first meal plan template."}
           </p>
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800"
-          >
-            <i className="fi fi-sr-plus mr-2"></i>
-            Create Meal Plan
-          </button>
+          <PermissionGate module="mealPlans" action="create">
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800"
+            >
+              <i className="fi fi-sr-plus mr-2"></i>
+              Create Meal Plan
+            </button>
+          </PermissionGate>
         </div>
       ) : viewMode === 'cards' ? (
         /* Card View */
@@ -338,16 +344,16 @@ const MealPlans: React.FC = () => {
             <MealPlanCard
               key={plan._id}
               mealPlan={plan}
-              onEdit={(plan) => {
+              onEdit={hasPermission('mealPlans', 'edit') ? (plan) => {
                 setSelectedMealPlan(plan)
                 setEditModalOpen(true)
-              }}
-              onDelete={handleDeleteMealPlan}
-              onSchedule={(plan) => {
+              } : undefined}
+              onDelete={hasPermission('mealPlans', 'delete') ? handleDeleteMealPlan : undefined}
+              onSchedule={hasPermission('mealPlans', 'schedule') ? (plan) => {
                 setSelectedMealPlan(plan)
                 setSchedulerModalOpen(true)
-              }}
-              onTogglePublish={handleTogglePublish}
+              } : undefined}
+              onTogglePublish={hasPermission('mealPlans', 'publish') ? handleTogglePublish : undefined}
               onSelect={handleSelectMealPlan}
               isSelected={selectedMealPlans.includes(plan._id)}
             />
@@ -478,64 +484,85 @@ const MealPlans: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => handleTogglePublish(plan)}
-                        disabled={!plan.isPublished && (!plan.assignmentCount || plan.assignmentCount === 0)}
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${plan.isPublished
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
-                          : (!plan.assignmentCount || plan.assignmentCount === 0)
-                            ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 opacity-75 cursor-not-allowed'
-                            : 'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-900/50'
-                          }`}
-                        title={
-                          !plan.isPublished && (!plan.assignmentCount || plan.assignmentCount === 0)
-                            ? 'Schedule meals before publishing'
-                            : plan.isPublished ? 'Click to unpublish' : 'Click to publish'
+                      <PermissionGate 
+                        module="mealPlans" 
+                        action="publish"
+                        fallback={
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${plan.isPublished
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : (!plan.assignmentCount || plan.assignmentCount === 0)
+                              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                              : 'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+                            }`}>
+                            {plan.isPublished ? 'Published' : (!plan.assignmentCount || plan.assignmentCount === 0) ? 'No Meals' : 'Draft'}
+                          </span>
                         }
                       >
-                        {plan.isPublished ? 'Published' : (!plan.assignmentCount || plan.assignmentCount === 0) ? 'No Meals' : 'Draft'}
-                      </button>
+                        <button
+                          onClick={() => handleTogglePublish(plan)}
+                          disabled={!plan.isPublished && (!plan.assignmentCount || plan.assignmentCount === 0)}
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${plan.isPublished
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
+                            : (!plan.assignmentCount || plan.assignmentCount === 0)
+                              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 opacity-75 cursor-not-allowed'
+                              : 'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-900/50'
+                            }`}
+                          title={
+                            !plan.isPublished && (!plan.assignmentCount || plan.assignmentCount === 0)
+                              ? 'Schedule meals before publishing'
+                              : plan.isPublished ? 'Click to unpublish' : 'Click to publish'
+                          }
+                        >
+                          {plan.isPublished ? 'Published' : (!plan.assignmentCount || plan.assignmentCount === 0) ? 'No Meals' : 'Draft'}
+                        </button>
+                      </PermissionGate>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-3">
                         {/* Schedule Button */}
-                        <button
-                          onClick={() => {
-                            setSelectedMealPlan(plan)
-                            setSchedulerModalOpen(true)
-                          }}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                          title="Schedule meals for this plan"
-                          aria-label={`Schedule meals for ${plan.planName}`}
-                        >
-                          <i className="fi fi-sr-calendar mr-1"></i>
-                          Schedule
-                        </button>
+                        <PermissionGate module="mealPlans" action="schedule">
+                          <button
+                            onClick={() => {
+                              setSelectedMealPlan(plan)
+                              setSchedulerModalOpen(true)
+                            }}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                            title="Schedule meals for this plan"
+                            aria-label={`Schedule meals for ${plan.planName}`}
+                          >
+                            <i className="fi fi-sr-calendar mr-1"></i>
+                            Schedule
+                          </button>
+                        </PermissionGate>
 
                         {/* Edit Button */}
-                        <button
-                          onClick={() => {
-                            setSelectedMealPlan(plan)
-                            setEditModalOpen(true)
-                          }}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                          title="Edit meal plan details"
-                          aria-label={`Edit ${plan.planName}`}
-                        >
-                          <i className="fi fi-sr-pencil mr-1"></i>
-                          Edit
-                        </button>
+                        <PermissionGate module="mealPlans" action="edit">
+                          <button
+                            onClick={() => {
+                              setSelectedMealPlan(plan)
+                              setEditModalOpen(true)
+                            }}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                            title="Edit meal plan details"
+                            aria-label={`Edit ${plan.planName}`}
+                          >
+                            <i className="fi fi-sr-pencil mr-1"></i>
+                            Edit
+                          </button>
+                        </PermissionGate>
 
                         {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteMealPlan(plan._id)}
-                          className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                          title="Delete meal plan permanently"
-                          aria-label={`Delete ${plan.planName}`}
-                        >
-                          <i className="fi fi-sr-trash mr-1"></i>
-                          Delete
-                        </button>
+                        <PermissionGate module="mealPlans" action="delete">
+                          <button
+                            onClick={() => handleDeleteMealPlan(plan._id)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                            title="Delete meal plan permanently"
+                            aria-label={`Delete ${plan.planName}`}
+                          >
+                            <i className="fi fi-sr-trash mr-1"></i>
+                            Delete
+                          </button>
+                        </PermissionGate>
                       </div>
                     </td>
                   </tr>

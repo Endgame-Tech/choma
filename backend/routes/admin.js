@@ -4,56 +4,11 @@ const adminController = require('../controllers/adminController');
 const adminOrderController = require('../controllers/adminOrderController');
 const advancedAnalyticsController = require('../controllers/advancedAnalyticsController');
 const assignmentController = require('../controllers/assignmentController');
+const adminManagementController = require('../controllers/adminManagementController');
 
 // Import auth middleware
-const auth = require('../middleware/auth');
+const { authenticateAdmin } = require('../middleware/adminAuth');
 const { validateApiKey } = require('../middleware/security');
-
-// Middleware to check if user is admin
-const isAdmin = (req, res, next) => {
-  // Temporary bypass for production admin access (until authentication is implemented)
-  // TODO: Implement proper admin authentication system
-  req.user = {
-    id: 'admin-temp',
-    email: 'admin@choma.com',
-    role: 'admin',
-    isAdmin: true
-  };
-  return next();
-  
-  // Original authentication logic (commented out for now)
-  /*
-  // Development bypass for local admin access
-  if (process.env.NODE_ENV !== 'production') {
-    // In development, create a mock admin user
-    req.user = {
-      id: 'admin-dev',
-      email: 'admin@choma.com',
-      role: 'admin',
-      isAdmin: true
-    };
-    return next();
-  }
-  
-  // Production authentication required
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Authentication required'
-    });
-  }
-  
-  // Check if user has admin role
-  if (!req.user.id) {
-    return res.status(403).json({
-      success: false,
-      message: 'Admin access required'
-    });
-  }
-  
-  next();
-  */
-};
 
 // ============= HEALTH CHECK ROUTE (NO AUTH REQUIRED) =============
 router.get('/health', (req, res) => {
@@ -66,21 +21,8 @@ router.get('/health', (req, res) => {
   });
 });
 
-// Temporarily disabled for production access (until proper auth is implemented)
-// TODO: Re-enable API key validation and authentication
-/*
-// Apply API key validation for all admin routes in production
-if (process.env.NODE_ENV === 'production') {
-  router.use(validateApiKey);
-}
-
-// Apply authentication middleware first, then admin check
-// Skip auth middleware in development mode
-if (process.env.NODE_ENV === 'production') {
-  router.use(auth);
-}
-*/
-router.use(isAdmin);
+// Apply admin authentication to all routes except health check
+router.use(authenticateAdmin);
 
 // ============= DASHBOARD ROUTES =============
 router.get('/dashboard/stats', adminController.getDashboardStats);
@@ -252,6 +194,22 @@ router.get('/test-connection', async (req, res) => {
 });
 
 // Utility endpoint to fix chef capacity issues
-router.post('/chefs/recalculate-capacity', isAdmin, adminOrderController.recalculateChefCapacities);
+router.post('/chefs/recalculate-capacity', adminOrderController.recalculateChefCapacities);
+
+// ============= ADMIN MANAGEMENT ROUTES =============
+router.get('/admins', adminManagementController.getAllAdmins);
+router.get('/admins/:id', adminManagementController.getAdmin);
+router.post('/admins', adminManagementController.createAdmin);
+router.put('/admins/:id', adminManagementController.updateAdmin);
+router.delete('/admins/:id', adminManagementController.deleteAdmin);
+router.put('/admins/:id/toggle-status', adminManagementController.toggleAdminStatus);
+router.get('/roles/predefined', adminManagementController.getPredefinedRoles);
+
+// ============= ACTIVITY LOGGING ROUTES =============
+router.get('/activity-logs', adminManagementController.getActivityLogs);
+
+// ============= SECURITY ALERTS ROUTES =============
+router.get('/security-alerts', adminManagementController.getSecurityAlerts);
+router.put('/security-alerts/:id/resolve', adminManagementController.resolveSecurityAlert);
 
 module.exports = router;

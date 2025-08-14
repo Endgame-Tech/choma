@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Clock, ArrowLeft } from 'lucide-react';
+import { Mail, Clock, ArrowLeft, AlertTriangle, CheckCircle } from 'lucide-react';
 import logo from '../assets/logo.svg';
 import chefBgImage from '../assets/chefsingin.jpg';
 import TermsModal from '../components/TermsModal';
@@ -109,7 +109,7 @@ const EmailVerification: React.FC = () => {
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">
-                <div className="text-red-400 mr-3">⚠️</div>
+                <AlertTriangle size={20} className="text-red-400 mr-3" />
                 <p className="text-red-700 text-sm">{error}</p>
               </div>
             </div>
@@ -119,7 +119,7 @@ const EmailVerification: React.FC = () => {
           {success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center">
-                <div className="text-green-400 mr-3">✅</div>
+                <CheckCircle className="text-green-400 mr-3" size={20} />
                 <p className="text-green-700 text-sm">{success}</p>
               </div>
             </div>

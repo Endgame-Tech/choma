@@ -292,7 +292,7 @@ const AnalyticsDashboard: React.FC = () => {
   const showErrorNotification = error !== null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-neutral-900 dark:to-neutral-800 p-4 lg:p-6 space-y-8">
+    <div className="min-h-screen  p-4 lg:p-6 space-y-8">
       {/* Error Notification */}
       {showErrorNotification && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 shadow-sm">

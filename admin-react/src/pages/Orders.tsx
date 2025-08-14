@@ -30,28 +30,28 @@ const Orders: React.FC = () => {
 
     return () => clearTimeout(timer)
   }, [searchTerm])
-  
+
   // Build filters based on current filter (memoized to prevent infinite re-renders)
   const filters: OrderFilters = useMemo(() => ({
     page: 1,
     limit: 50,
     search: debouncedSearchTerm || undefined,
-    orderStatus: filter === 'completed' ? 'Delivered' : 
-                 filter === 'pending' ? 'Pending' : 
-                 filter === 'confirmed' ? 'Confirmed' : undefined,
+    orderStatus: filter === 'completed' ? 'Delivered' :
+      filter === 'pending' ? 'Pending' :
+        filter === 'confirmed' ? 'Confirmed' : undefined,
     sortBy: 'createdDate',
     sortOrder: 'desc'
   }), [debouncedSearchTerm, filter])
-  
-  const { 
-    orders, 
-    loading, 
-    error, 
-    refreshOrders, 
-    updateOrderStatus, 
-    updateOrder 
+
+  const {
+    orders,
+    loading,
+    error,
+    refreshOrders,
+    updateOrderStatus,
+    updateOrder
   } = useOrders(filters)
-  
+
   const { chefs: availableChefs, loading: chefsLoading, error: chefsError } = useAvailableChefs()
 
   // Handle opening chef assignment modal
@@ -91,8 +91,8 @@ const Orders: React.FC = () => {
     chefFeePercentage: number
   }) => {
     try {
-      await delegationApi.assignOrder({ 
-        orderId: chefAssignmentModal.orderId, 
+      await delegationApi.assignOrder({
+        orderId: chefAssignmentModal.orderId,
         chefId,
         ...assignmentDetails
       })
@@ -123,8 +123,8 @@ const Orders: React.FC = () => {
 
   // Handle selection
   const handleSelectOrder = (orderId: string) => {
-    setSelectedOrders(prev => 
-      prev.includes(orderId) 
+    setSelectedOrders(prev =>
+      prev.includes(orderId)
         ? prev.filter(id => id !== orderId)
         : [...prev, orderId]
     )
@@ -239,7 +239,7 @@ const Orders: React.FC = () => {
                 <p>Check browser console for detailed error logs</p>
               </div>
             </details>
-            <button 
+            <button
               onClick={refreshOrders}
               className="mt-2 text-red-600 dark:text-red-300 hover:text-red-800 dark:hover:text-red-400 text-sm font-medium"
             >
@@ -287,11 +287,10 @@ const Orders: React.FC = () => {
             <button
               key={filterType}
               onClick={() => setFilter(filterType)}
-              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
-                filter === filterType
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${filter === filterType
                   ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-neutral-100 shadow-sm'
                   : 'text-gray-500 dark:text-neutral-300 hover:text-gray-700 dark:hover:text-neutral-100'
-              }`}
+                }`}
             >
               <span className="hidden sm:inline">{filterType.charAt(0).toUpperCase() + filterType.slice(1)} Orders</span>
               <span className="sm:hidden">{filterType.charAt(0).toUpperCase() + filterType.slice(1)}</span>
@@ -327,7 +326,7 @@ const Orders: React.FC = () => {
                 <option value="Delivered">Delivered</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
-              
+
               {/* Bulk Chef Assignment */}
               <select
                 onChange={(e) => {
@@ -351,8 +350,8 @@ const Orders: React.FC = () => {
                   </option>
                 ))}
               </select>
-              
-              <button 
+
+              <button
                 onClick={() => setSelectedOrders([])}
                 className="text-sm text-gray-600 dark:text-neutral-300 hover:text-gray-800 dark:hover:text-neutral-100"
               >
@@ -370,11 +369,11 @@ const Orders: React.FC = () => {
             <thead className="bg-gray-50 dark:bg-neutral-700">
               <tr>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     aria-label="Select all orders"
                     title="Select or deselect all orders"
-                    className="rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500" 
+                    className="rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500"
                     checked={selectedOrders.length === orders.length && orders.length > 0}
                     onChange={handleSelectAll}
                   />
@@ -423,8 +422,8 @@ const Orders: React.FC = () => {
                 orders.map((order) => (
                   <tr key={order._id} className="hover:bg-gray-100 dark:hover:bg-neutral-700">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         aria-label={`Select order ${order.orderNumber}`}
                         title={`Select or deselect order ${order.orderNumber}`}
                         className="rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500"
@@ -474,10 +473,9 @@ const Orders: React.FC = () => {
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span 
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          getChefStatusColor(order.delegationStatus || 'Not Assigned')
-                        }`}
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getChefStatusColor(order.delegationStatus || 'Not Assigned')
+                          }`}
                         title="Chef-controlled cooking status"
                       >
                         {getChefStatusDisplay(order.delegationStatus)}
@@ -508,7 +506,7 @@ const Orders: React.FC = () => {
                           <div className="text-green-600 dark:text-green-300 font-medium">
                             <i className="fi fi-sr-user mr-1"></i> {order.assignedChef.fullName}
                           </div>
-                          <button 
+                          <button
                             className="text-xs text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-400 underline"
                             onClick={() => openChefAssignmentModal({ ...order, deliveryDate: order.deliveryDate ?? '' })}
                           >

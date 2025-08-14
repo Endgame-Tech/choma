@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { Admin } from '../types/admin'
 
 interface AuthContextType {
   isAuthenticated: boolean
+  admin: Admin | null
+  token: string | null
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   loading: boolean
@@ -21,66 +24,84 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-
-
-// Admin credentials (hashed)
-const ADMIN_CREDENTIALS = {
-  email: 'getchoma@gmail.com',
-  // This is the hashed version of 'S0BwB$cuIqx_82Z'
-  passwordHash: 'b8f3c2d4e5a6f7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2'
-}
-
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [admin, setAdmin] = useState<Admin | null>(null)
+  const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   // Check if user is already authenticated on app start
   useEffect(() => {
-    const checkAuth = () => {
-      const authStatus = localStorage.getItem('choma-admin-auth')
-      const authTimestamp = localStorage.getItem('choma-admin-auth-timestamp')
-      
-      if (authStatus === 'true' && authTimestamp) {
-        const timestamp = parseInt(authTimestamp)
-        const now = Date.now()
-        const sessionDuration = 24 * 60 * 60 * 1000 // 24 hours
-        
-        if (now - timestamp < sessionDuration) {
-          setIsAuthenticated(true)
-        } else {
-          // Session expired
-          localStorage.removeItem('choma-admin-auth')
-          localStorage.removeItem('choma-admin-auth-timestamp')
+    const checkAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem('choma-admin-token')
+        const storedAdmin = localStorage.getItem('choma-admin-data')
+
+        if (storedToken && storedAdmin) {
+          // Verify token is still valid by making a request to get profile
+          const response = await fetch('http://localhost:5001/api/admin/auth/profile', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${storedToken}`,
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            setToken(storedToken)
+            setAdmin(data.data)
+            setIsAuthenticated(true)
+          } else {
+            // Token is invalid, clear stored data
+            localStorage.removeItem('choma-admin-token')
+            localStorage.removeItem('choma-admin-data')
+          }
         }
+      } catch (error) {
+        console.error('Auth check error:', error)
+        // Clear stored data on error
+        localStorage.removeItem('choma-admin-token')
+        localStorage.removeItem('choma-admin-data')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
-    
+
     checkAuth()
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true)
-      
-      // Validate email
-      if (email.toLowerCase() !== ADMIN_CREDENTIALS.email.toLowerCase()) {
+
+      const response = await fetch('http://localhost:5001/api/admin/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        const { admin: adminData, token: authToken } = data.data
+
+        // Store auth data
+        localStorage.setItem('choma-admin-token', authToken)
+        localStorage.setItem('choma-admin-data', JSON.stringify(adminData))
+
+        // Update state
+        setToken(authToken)
+        setAdmin(adminData)
+        setIsAuthenticated(true)
+
+        return true
+      } else {
+        console.error('Login failed:', data.error || 'Unknown error')
         return false
       }
-      
-      // For demo purposes, we'll use a simple comparison
-      // In production, you'd want to use a proper password hashing library like bcrypt
-      // const hashedPassword = await hashPassword(password)
-      const isValidPassword = password === 'S0BwB$cuIqx_82Z'
-      
-      if (isValidPassword) {
-        setIsAuthenticated(true)
-        localStorage.setItem('choma-admin-auth', 'true')
-        localStorage.setItem('choma-admin-auth-timestamp', Date.now().toString())
-        return true
-      }
-      
-      return false
     } catch (error) {
       console.error('Login error:', error)
       return false
@@ -89,14 +110,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
-  const logout = () => {
-    setIsAuthenticated(false)
-    localStorage.removeItem('choma-admin-auth')
-    localStorage.removeItem('choma-admin-auth-timestamp')
+  const logout = async () => {
+    try {
+      // Call backend logout endpoint if token exists
+      if (token) {
+        await fetch('http://localhost:5001/api/admin/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Clear state and storage regardless of API call result
+      setIsAuthenticated(false)
+      setAdmin(null)
+      setToken(null)
+      localStorage.removeItem('choma-admin-token')
+      localStorage.removeItem('choma-admin-data')
+    }
   }
 
   const value: AuthContextType = {
     isAuthenticated,
+    admin,
+    token,
     login,
     logout,
     loading

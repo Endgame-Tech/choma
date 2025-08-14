@@ -78,10 +78,6 @@ const adminLogin = async (req, res) => {
     // Verify password
     const isValidPassword = await admin.comparePassword(password);
     if (!isValidPassword) {
-      // Add failed login attempt to audit log
-      admin.addAuditLog('failed_login', { email }, clientIP);
-      await admin.save();
-      
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
@@ -90,7 +86,6 @@ const adminLogin = async (req, res) => {
 
     // Update last login
     admin.lastLogin = new Date();
-    admin.addAuditLog('successful_login', null, clientIP);
     await admin.save();
 
     // Generate tokens
@@ -99,15 +94,18 @@ const adminLogin = async (req, res) => {
 
     // Remove sensitive data
     const adminData = {
-      id: admin._id,
+      _id: admin._id,
       email: admin.email,
       firstName: admin.firstName,
       lastName: admin.lastName,
       role: admin.role,
-      permissions: admin.permissions,
+      isActive: admin.isActive,
+      isAlphaAdmin: admin.isAlphaAdmin,
       department: admin.department,
       profileImage: admin.profileImage,
-      lastLogin: admin.lastLogin
+      lastLogin: admin.lastLogin,
+      createdAt: admin.createdAt,
+      updatedAt: admin.updatedAt
     };
 
     res.json({
@@ -133,12 +131,6 @@ const adminLogin = async (req, res) => {
 // Admin logout
 const adminLogout = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.admin.adminId);
-    if (admin) {
-      admin.addAuditLog('logout', null, req.ip);
-      await admin.save();
-    }
-
     res.json({
       success: true,
       message: 'Logged out successfully'
@@ -254,7 +246,6 @@ const updateAdminProfile = async (req, res) => {
       });
     }
 
-    admin.addAuditLog('profile_updated', updateData, req.ip);
     await admin.save();
 
     res.json({
@@ -309,7 +300,6 @@ const changeAdminPassword = async (req, res) => {
 
     // Update password
     admin.password = newPassword;
-    admin.addAuditLog('password_changed', null, req.ip);
     await admin.save();
 
     res.json({
@@ -325,74 +315,12 @@ const changeAdminPassword = async (req, res) => {
   }
 };
 
-// Create admin (super admin only)
+// Create admin (deprecated - use adminManagementController instead)
 const createAdmin = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, role, department } = req.body;
-
-    // Check if current admin has permission
-    const currentAdmin = await Admin.findById(req.admin.adminId);
-    if (currentAdmin.role !== 'super_admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Only super admins can create new admin accounts'
-      });
-    }
-
-    // Validate input
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({
-        success: false,
-        error: 'Email, password, first name, and last name are required'
-      });
-    }
-
-    // Check if admin already exists
-    const existingAdmin = await Admin.findOne({ email: email.toLowerCase().trim() });
-    if (existingAdmin) {
-      return res.status(409).json({
-        success: false,
-        error: 'Admin with this email already exists'
-      });
-    }
-
-    // Create new admin
-    const newAdmin = new Admin({
-      email: email.toLowerCase().trim(),
-      password,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      role: role || 'staff',
-      department: department?.trim(),
-      createdBy: req.admin.adminId
-    });
-
-    await newAdmin.save();
-
-    // Add audit log
-    currentAdmin.addAuditLog('admin_created', {
-      createdAdminId: newAdmin._id,
-      email: newAdmin.email,
-      role: newAdmin.role
-    }, req.ip);
-    await currentAdmin.save();
-
-    // Remove sensitive data
-    const adminData = {
-      id: newAdmin._id,
-      email: newAdmin.email,
-      firstName: newAdmin.firstName,
-      lastName: newAdmin.lastName,
-      role: newAdmin.role,
-      department: newAdmin.department,
-      isActive: newAdmin.isActive,
-      createdAt: newAdmin.createdAt
-    };
-
-    res.status(201).json({
-      success: true,
-      message: 'Admin created successfully',
-      data: adminData
+    return res.status(400).json({
+      success: false,
+      error: 'This endpoint is deprecated. Use /api/admin/admins instead'
     });
   } catch (error) {
     console.error('Create admin error:', error);

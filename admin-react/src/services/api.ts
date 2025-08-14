@@ -22,9 +22,16 @@ const api = axios.create({
   },
 })
 
-// Request interceptor for logging
+// Request interceptor for authentication and logging
 api.interceptors.request.use((config) => {
   console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`)
+  
+  // Add authentication token if available
+  const token = localStorage.getItem('choma-admin-token')
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  
   return config
 })
 
@@ -36,6 +43,18 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.message)
+    
+    // Handle authentication errors
+    if (error.response?.status === 401) {
+      console.warn('🔒 Authentication failed - clearing stored credentials')
+      localStorage.removeItem('choma-admin-token')
+      localStorage.removeItem('choma-admin-data')
+      // You might want to redirect to login page here
+      if (window.location.pathname !== '/login') {
+        window.location.reload() // This will trigger the auth check and redirect to login
+      }
+    }
+    
     return Promise.reject(error)
   }
 )
@@ -290,6 +309,116 @@ export const healthApi = {
       return response.status === 200
     } catch (error) {
       return false
+    }
+  }
+}
+
+// Admin Management API
+export const adminManagementApi = {
+  // Get all admins
+  async getAllAdmins(): Promise<{ admins: unknown[]; pagination?: Record<string, unknown> }> {
+    try {
+      const response = await api.get('/admins')
+      const data = response.data as ApiResponse<{ admins: unknown[] }> & { pagination?: Record<string, unknown> }
+      if (data.success && data.data) {
+        return {
+          admins: data.data.admins || [],
+          pagination: data.pagination || {}
+        }
+      }
+      return { admins: [] }
+    } catch (error) {
+      console.error('Error fetching admins:', error)
+      return { admins: [] }
+    }
+  },
+
+  // Create new admin
+  async createAdmin(adminData: Record<string, unknown>): Promise<{ success: boolean; message: string; admin?: unknown }> {
+    try {
+      const response = await api.post<ApiResponse<{ admin: unknown }>>('/admins', adminData)
+      return {
+        success: response.data.success,
+        message: response.data.message || 'Admin created successfully',
+        admin: response.data.data?.admin
+      }
+    } catch (error) {
+      console.error('Error creating admin:', error)
+      return {
+        success: false,
+        message: 'Failed to create admin'
+      }
+    }
+  },
+
+  // Update admin
+  async updateAdmin(adminId: string, adminData: Record<string, unknown>): Promise<{ success: boolean; message: string; admin?: unknown }> {
+    try {
+      const response = await api.put<ApiResponse<{ admin: unknown }>>(`/admins/${adminId}`, adminData)
+      return {
+        success: response.data.success,
+        message: response.data.message || 'Admin updated successfully',
+        admin: response.data.data?.admin
+      }
+    } catch (error) {
+      console.error('Error updating admin:', error)
+      return {
+        success: false,
+        message: 'Failed to update admin'
+      }
+    }
+  },
+
+  // Delete admin
+  async deleteAdmin(adminId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await api.delete<ApiResponse<null>>(`/admins/${adminId}`)
+      return {
+        success: response.data.success,
+        message: response.data.message || 'Admin deleted successfully'
+      }
+    } catch (error) {
+      console.error('Error deleting admin:', error)
+      return {
+        success: false,
+        message: 'Failed to delete admin'
+      }
+    }
+  },
+
+  // Toggle admin status
+  async toggleAdminStatus(adminId: string): Promise<{ success: boolean; message: string; admin?: unknown }> {
+    try {
+      const response = await api.patch<ApiResponse<{ admin: unknown }>>(`/admins/${adminId}/toggle-status`)
+      return {
+        success: response.data.success,
+        message: response.data.message || 'Admin status updated successfully',
+        admin: response.data.data?.admin
+      }
+    } catch (error) {
+      console.error('Error toggling admin status:', error)
+      return {
+        success: false,
+        message: 'Failed to update admin status'
+      }
+    }
+  },
+
+  // Create custom role
+  async createRole(roleData: Record<string, unknown>): Promise<{ success: boolean; message: string; role?: unknown }> {
+    try {
+      const response = await api.post<ApiResponse<{ role: unknown }>>('/roles', roleData)
+      return {
+        success: response.data.success,
+        message: response.data.message || 'Role created successfully',
+        role: response.data.data?.role
+      }
+    } catch (error) {
+      console.error('Error creating role:', error)
+      return {
+        success: false,
+        message: 'Failed to create role'
+      }
     }
   }
 }

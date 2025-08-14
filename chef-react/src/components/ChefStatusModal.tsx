@@ -1,4 +1,11 @@
 import React, { useState } from 'react'
+import {
+  FileText,
+  CheckCircle,
+  ChefHat,
+  Target,
+  Sparkles
+} from 'lucide-react'
 
 interface ChefStatusModalProps {
   isOpen: boolean
@@ -10,11 +17,11 @@ interface ChefStatusModalProps {
 }
 
 const statusOptions = [
-  { value: 'Assigned', label: 'Just Assigned', icon: '📋', color: 'bg-blue-500' },
-  { value: 'Accepted', label: 'Accepted Order', icon: '✅', color: 'bg-green-500' },
-  { value: 'In Progress', label: 'Preparing Food', icon: '🍳', color: 'bg-orange-500' },
-  { value: 'Ready', label: 'Food Ready', icon: '🎯', color: 'bg-purple-500' },
-  { value: 'Completed', label: 'Completed', icon: '✨', color: 'bg-emerald-500' }
+  { value: 'Assigned', label: 'Just Assigned', icon: FileText, color: 'bg-blue-500' },
+  { value: 'Accepted', label: 'Accepted Order', icon: CheckCircle, color: 'bg-green-500' },
+  { value: 'In Progress', label: 'Preparing Food', icon: ChefHat, color: 'bg-orange-500' },
+  { value: 'Ready', label: 'Food Ready', icon: Target, color: 'bg-purple-500' },
+  { value: 'Completed', label: 'Completed', icon: Sparkles, color: 'bg-emerald-500' }
 ]
 
 const ChefStatusModal: React.FC<ChefStatusModalProps> = ({
@@ -78,7 +85,9 @@ const ChefStatusModal: React.FC<ChefStatusModalProps> = ({
         <div className="px-6 py-4 bg-gray-50">
           <p className="text-sm text-gray-600 mb-2">Current Status</p>
           <div className="flex items-center">
-            <span className="text-lg mr-2">{getCurrentStatusInfo().icon}</span>
+            <span className="mr-2">
+              {React.createElement(getCurrentStatusInfo().icon, { size: 18 })}
+            </span>
             <span className="font-medium text-gray-900">{getCurrentStatusInfo().label}</span>
           </div>
         </div>
@@ -92,14 +101,15 @@ const ChefStatusModal: React.FC<ChefStatusModalProps> = ({
                 key={option.value}
                 onClick={() => setSelectedStatus(option.value)}
                 disabled={updating}
-                className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                  selectedStatus === option.value
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                } disabled:opacity-50`}
+                className={`w-full text-left p-3 rounded-lg border-2 transition-all ${selectedStatus === option.value
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  } disabled:opacity-50`}
               >
                 <div className="flex items-center">
-                  <span className="text-lg mr-3">{option.icon}</span>
+                  <span className="mr-3">
+                    {React.createElement(option.icon, { size: 18 })}
+                  </span>
                   <div className="flex-1">
                     <div className="font-medium text-gray-900">{option.label}</div>
                     {option.value === currentStatus && (

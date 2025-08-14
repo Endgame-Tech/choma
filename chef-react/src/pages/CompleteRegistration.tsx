@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, CheckCircle, User, MapPin, Briefcase, Shield, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, CheckCircle, User, MapPin, Briefcase, Shield, Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import logo from '../assets/logo.svg'
 // import chefBgImage from '../assets/chefsingin.jpg'
 import TermsModal from '../components/TermsModal'
@@ -140,7 +140,8 @@ const CompleteRegistration: React.FC = () => {
       accountNumber: '',
       bankName: '',
       bankCode: '',
-      bvn: ''
+      bvn: '',
+      isVerified: false
     },
 
     // Profile & Portfolio
@@ -1400,7 +1401,7 @@ const CompleteRegistration: React.FC = () => {
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
                 <div className="flex items-center">
-                  <div className="text-red-400 mr-3">⚠️</div>
+                  <AlertTriangle size={20} className="text-red-400 mr-3" />
                   <div>
                     <p className="text-red-800 text-sm">{error}</p>
                   </div>
