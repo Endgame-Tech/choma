@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ClockIcon, 
-  ExclamationTriangleIcon, 
-  UserIcon, 
+import {
+  ClockIcon,
+  ExclamationTriangleIcon,
+  UserIcon,
   ChevronLeftIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline';
@@ -51,17 +51,17 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
     }
   };
 
-  const handleFilterChange = (key: keyof ActivityFilters, value: any) => {
+  const handleFilterChange = (key: keyof ActivityFilters, value: ActivityFilters[keyof ActivityFilters]) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      page: key === 'page' ? value : 1, // Reset to page 1 when changing other filters
+      page: key === 'page' ? (value as number) : 1, // Reset to page 1 when changing other filters
     }));
   };
 
   const handleResolveAlert = async (alertId: string) => {
     if (!currentAdmin) return;
-    
+
     try {
       await activityLogger.resolveSecurityAlert(alertId, currentAdmin._id);
       setSecurityAlerts(prev => prev.filter(alert => alert._id !== alertId));
@@ -95,7 +95,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
               Access Denied
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              You don't have permission to view activity logs.
+              You don&apos;t have permission to view activity logs.
             </p>
             <button
               onClick={onClose}
@@ -123,6 +123,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            aria-label="Close activity dashboard"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -134,21 +135,19 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
         <div className="flex border-b border-gray-200 dark:border-gray-700">
           <button
             onClick={() => setActiveTab('activities')}
-            className={`px-6 py-3 text-sm font-medium ${
-              activeTab === 'activities'
-                ? 'border-b-2 border-choma-orange text-choma-orange'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }`}
+            className={`px-6 py-3 text-sm font-medium ${activeTab === 'activities'
+              ? 'border-b-2 border-choma-orange text-choma-orange'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
           >
             Activity Logs
           </button>
           <button
             onClick={() => setActiveTab('alerts')}
-            className={`px-6 py-3 text-sm font-medium relative ${
-              activeTab === 'alerts'
-                ? 'border-b-2 border-choma-orange text-choma-orange'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }`}
+            className={`px-6 py-3 text-sm font-medium relative ${activeTab === 'alerts'
+              ? 'border-b-2 border-choma-orange text-choma-orange'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
           >
             Security Alerts
             {securityAlerts && securityAlerts.length > 0 && (
@@ -172,6 +171,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                     value={filters.module || ''}
                     onChange={(e) => handleFilterChange('module', e.target.value || undefined)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-choma-black text-gray-900 dark:text-white"
+                    aria-label="Filter by module"
                   >
                     <option value="">All Modules</option>
                     <option value="auth">Authentication</option>
@@ -193,6 +193,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                     value={filters.severity || ''}
                     onChange={(e) => handleFilterChange('severity', e.target.value || undefined)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-choma-black text-gray-900 dark:text-white"
+                    aria-label="Filter by severity level"
                   >
                     <option value="">All Severities</option>
                     <option value="critical">Critical</option>
@@ -210,6 +211,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                     value={filters.successful !== undefined ? filters.successful.toString() : ''}
                     onChange={(e) => handleFilterChange('successful', e.target.value === '' ? undefined : e.target.value === 'true')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-choma-black text-gray-900 dark:text-white"
+                    aria-label="Filter by status"
                   >
                     <option value="">All Status</option>
                     <option value="true">Successful</option>
@@ -225,6 +227,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                     value={filters.limit || 10}
                     onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-choma-black text-gray-900 dark:text-white"
+                    aria-label="Select items per page"
                   >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
@@ -262,26 +265,25 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(activity.severity)}`}>
                               {activity.severity.toUpperCase()}
                             </span>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              activity.successful
-                                ? 'text-green-700 bg-green-100 dark:bg-green-900/20'
-                                : 'text-red-700 bg-red-100 dark:bg-red-900/20'
-                            }`}>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${activity.successful
+                              ? 'text-green-700 bg-green-100 dark:bg-green-900/20'
+                              : 'text-red-700 bg-red-100 dark:bg-red-900/20'
+                              }`}>
                               {activity.successful ? 'SUCCESS' : 'FAILED'}
                             </span>
                           </div>
-                          
+
                           <p className="text-gray-700 dark:text-gray-300 mb-2">
                             <span className="font-medium">{activity.action}</span> in{' '}
                             <span className="font-medium">{activity.module}</span>
                           </p>
-                          
+
                           {activity.errorMessage && (
                             <p className="text-red-600 dark:text-red-400 text-sm mb-2">
                               Error: {activity.errorMessage}
                             </p>
                           )}
-                          
+
                           {Object.keys(activity.details).length > 0 && (
                             <details className="text-sm text-gray-600 dark:text-gray-400">
                               <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">
@@ -293,7 +295,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                             </details>
                           )}
                         </div>
-                        
+
                         <div className="text-right text-sm text-gray-500 dark:text-gray-400">
                           <p>{formatTimestamp(activity.timestamp)}</p>
                           {activity.ipAddress && (
@@ -351,15 +353,14 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                   {securityAlerts?.map((alert) => (
                     <div
                       key={alert._id}
-                      className={`rounded-lg p-4 border-l-4 ${
-                        alert.severity === 'critical'
-                          ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
-                          : alert.severity === 'high'
+                      className={`rounded-lg p-4 border-l-4 ${alert.severity === 'critical'
+                        ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
+                        : alert.severity === 'high'
                           ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-500'
                           : alert.severity === 'medium'
-                          ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
-                          : 'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
-                      }`}
+                            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
+                            : 'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
+                        }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -372,15 +373,15 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                               {alert.severity.toUpperCase()}
                             </span>
                           </div>
-                          
+
                           <p className="text-gray-700 dark:text-gray-300 mb-2">
                             {alert.description}
                           </p>
-                          
+
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             Admin: {alert.adminName} • {formatTimestamp(alert.timestamp)}
                           </p>
-                          
+
                           {Object.keys(alert.metadata).length > 0 && (
                             <details className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                               <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">
@@ -392,7 +393,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                             </details>
                           )}
                         </div>
-                        
+
                         <button
                           onClick={() => handleResolveAlert(alert._id)}
                           className="ml-4 px-3 py-1 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg"

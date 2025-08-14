@@ -8,7 +8,7 @@ import {
 } from '../types/activity';
 
 class ActivityLogger {
-  private baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+  private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
   
   // Track admin activities
   async logActivity(params: {
@@ -17,7 +17,7 @@ class ActivityLogger {
     adminEmail: string;
     action: string;
     module: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
     successful?: boolean;
     errorMessage?: string;
   }): Promise<void> {
@@ -71,7 +71,7 @@ class ActivityLogger {
     currentAdminEmail: string,
     action: keyof typeof ACTIVITY_ACTIONS.ADMIN,
     targetAdminId?: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     await this.logActivity({
       adminId: currentAdminId,
@@ -93,7 +93,7 @@ class ActivityLogger {
     adminEmail: string,
     action: keyof typeof ACTIVITY_ACTIONS.MEALS,
     mealId?: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     await this.logActivity({
       adminId,
@@ -115,7 +115,7 @@ class ActivityLogger {
     adminEmail: string,
     action: keyof typeof ACTIVITY_ACTIONS.MEAL_PLANS,
     mealPlanId?: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     await this.logActivity({
       adminId,
@@ -277,7 +277,7 @@ class ActivityLogger {
     adminName: string;
     description: string;
     severity: SecurityAlert['severity'];
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
   }): Promise<void> {
     try {
       const alert: Omit<SecurityAlert, '_id' | 'timestamp'> = {
@@ -293,7 +293,7 @@ class ActivityLogger {
   }
 
   // Send data to API (generic method)
-  private async sendToAPI(endpoint: string, data: any): Promise<void> {
+  private async sendToAPI(endpoint: string, data: Record<string, unknown>): Promise<void> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',

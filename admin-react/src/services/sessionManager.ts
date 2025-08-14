@@ -8,24 +8,24 @@ interface SessionChangeEvent {
   adminName: string;
   changedBy: string;
   reason: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class SessionManager {
-  private baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
-  private sessionCheckInterval: NodeJS.Timeout | null = null;
+  private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  private sessionCheckInterval: number | null = null;
   private listeners: Map<string, (event: SessionChangeEvent) => void> = new Map();
 
   // Start session monitoring
   startSessionMonitoring(adminId: string): void {
     if (this.sessionCheckInterval) {
-      clearInterval(this.sessionCheckInterval);
+      window.clearInterval(this.sessionCheckInterval);
     }
 
     // Check session validity every 5 minutes
-    this.sessionCheckInterval = setInterval(async () => {
+    this.sessionCheckInterval = window.setInterval(async () => {
       await this.checkSessionValidity(adminId);
-    }, 5 * 60 * 1000);
+    }, 5 * 60 * 1000) as unknown as number;
 
     console.log(`Session monitoring started for admin: ${adminId}`);
   }
@@ -33,7 +33,7 @@ class SessionManager {
   // Stop session monitoring
   stopSessionMonitoring(): void {
     if (this.sessionCheckInterval) {
-      clearInterval(this.sessionCheckInterval);
+      window.clearInterval(this.sessionCheckInterval);
       this.sessionCheckInterval = null;
     }
     this.listeners.clear();
@@ -97,7 +97,7 @@ class SessionManager {
     targetAdmin: Admin,
     changedBy: Admin,
     changeType: 'role_change' | 'permission_change' | 'deactivation' | 'deletion',
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<void> {
     try {
       const event: SessionChangeEvent = {

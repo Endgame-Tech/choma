@@ -9,11 +9,11 @@ interface EditAdminModalProps {
   admin: Admin;
 }
 
-const EditAdminModal: React.FC<EditAdminModalProps> = ({ 
-  isOpen, 
-  onClose, 
+const EditAdminModal: React.FC<EditAdminModalProps> = ({
+  isOpen,
+  onClose,
   onSubmit,
-  admin 
+  admin
 }) => {
   const [formData, setFormData] = useState<UpdateAdminRequest>({
     firstName: admin.firstName,
@@ -21,7 +21,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
     roleId: admin.role.id,
     isActive: admin.isActive
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -71,7 +71,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
   };
 
   const selectedRole = PREDEFINED_ROLES.find(role => role.id === formData.roleId);
-  const hasChanges = 
+  const hasChanges =
     formData.firstName !== admin.firstName ||
     formData.lastName !== admin.lastName ||
     formData.roleId !== admin.role.id ||
@@ -88,7 +88,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-neutral-100">Edit Admin</h2>
               <p className="text-sm text-gray-600 dark:text-neutral-300">
-                Update {admin.firstName} {admin.lastName}'s information and permissions
+                Update {admin.firstName} {admin.lastName}&apos;s information and permissions
                 {admin.isAlphaAdmin && (
                   <span className="ml-2 px-2 py-1 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full">
                     Alpha Admin
@@ -128,7 +128,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
             {/* Personal Information */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-4">Personal Information</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
@@ -138,11 +138,10 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.firstName 
-                        ? 'border-red-300 dark:border-red-600' 
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.firstName
+                        ? 'border-red-300 dark:border-red-600'
                         : 'border-gray-300 dark:border-neutral-600'
-                    } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
+                      } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
                     placeholder="Enter first name"
                   />
                   {errors.firstName && (
@@ -158,11 +157,10 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.lastName 
-                        ? 'border-red-300 dark:border-red-600' 
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.lastName
+                        ? 'border-red-300 dark:border-red-600'
                         : 'border-gray-300 dark:border-neutral-600'
-                    } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
+                      } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
                     placeholder="Enter last name"
                   />
                   {errors.lastName && (
@@ -172,10 +170,11 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                <label htmlFor="admin-email" className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                   Email Address
                 </label>
                 <input
+                  id="admin-email"
                   type="email"
                   value={admin.email}
                   disabled
@@ -190,22 +189,22 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
             {/* Role Selection */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-4">Role & Permissions</h3>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                <label htmlFor="admin-role" className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                   Admin Role *
                 </label>
                 <select
+                  id="admin-role"
                   value={formData.roleId}
                   onChange={(e) => setFormData(prev => ({ ...prev, roleId: e.target.value }))}
                   disabled={admin.isAlphaAdmin}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    admin.isAlphaAdmin 
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${admin.isAlphaAdmin
                       ? 'bg-gray-100 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400 cursor-not-allowed'
-                      : errors.roleId 
-                        ? 'border-red-300 dark:border-red-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100' 
+                      : errors.roleId
+                        ? 'border-red-300 dark:border-red-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100'
                         : 'border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100'
-                  }`}
+                    }`}
                 >
                   <option value="">Select a role</option>
                   {PREDEFINED_ROLES.map(role => (
@@ -227,16 +226,16 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
                 <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
                   <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">{selectedRole.name}</h4>
                   <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">{selectedRole.description}</p>
-                  
+
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-blue-800 dark:text-blue-300">Key Permissions:</p>
                     <div className="flex flex-wrap gap-1">
                       {Object.entries(selectedRole.permissions).map(([section, perms]) => {
                         const hasPermissions = Object.values(perms).some(p => p === true);
                         if (!hasPermissions) return null;
-                        
+
                         return (
-                          <span 
+                          <span
                             key={section}
                             className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-800/30 text-blue-800 dark:text-blue-300 rounded-full capitalize"
                           >
@@ -253,7 +252,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
             {/* Account Status */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-4">Account Status</h3>
-              
+
               <div className="flex items-center space-x-3">
                 <label className="flex items-center">
                   <input
@@ -261,18 +260,17 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
                     checked={formData.isActive}
                     onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
                     disabled={admin.isAlphaAdmin}
-                    className={`rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500 ${
-                      admin.isAlphaAdmin ? 'cursor-not-allowed opacity-50' : ''
-                    }`}
+                    className={`rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500 ${admin.isAlphaAdmin ? 'cursor-not-allowed opacity-50' : ''
+                      }`}
                   />
                   <span className="ml-2 text-sm text-gray-700 dark:text-neutral-200">
                     Active account
                   </span>
                 </label>
               </div>
-              
+
               <p className="mt-2 text-xs text-gray-500 dark:text-neutral-400">
-                {admin.isAlphaAdmin 
+                {admin.isAlphaAdmin
                   ? 'Alpha Admin account is always active and cannot be deactivated'
                   : 'Inactive accounts cannot log in to the admin panel'
                 }
@@ -282,7 +280,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
             {/* Account Information */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-4">Account Information</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500 dark:text-neutral-400">Created:</span>
@@ -294,16 +292,16 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
                     })}
                   </p>
                 </div>
-                
+
                 <div>
                   <span className="text-gray-500 dark:text-neutral-400">Last Login:</span>
                   <p className="text-gray-900 dark:text-neutral-100">
-                    {admin.lastLogin 
+                    {admin.lastLogin
                       ? new Date(admin.lastLogin).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
                       : 'Never'
                     }
                   </p>
@@ -319,7 +317,7 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({
             <div className="text-sm text-gray-500 dark:text-neutral-400">
               {hasChanges ? 'You have unsaved changes' : 'No changes made'}
             </div>
-            
+
             <div className="flex space-x-3">
               <button
                 type="button"

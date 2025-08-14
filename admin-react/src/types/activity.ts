@@ -5,7 +5,7 @@ export interface ActivityLog {
   adminEmail: string;
   action: string;
   module: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   timestamp: string;
@@ -38,7 +38,7 @@ export interface SecurityAlert {
   resolved: boolean;
   resolvedBy?: string;
   resolvedAt?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface ActivityFilters {
