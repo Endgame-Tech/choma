@@ -32,7 +32,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       setTwoFactorStatus(status)
     } catch (error) {
       console.error('Error loading 2FA status:', error)
-      setTwoFactorStatus(null)
+      // Set a default disabled status to prevent UI blocking
+      setTwoFactorStatus({
+        isEnabled: false,
+        lastVerified: undefined,
+        backupCodesRemaining: 0
+      })
     } finally {
       setLoading2FA(false)
     }
