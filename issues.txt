@@ -1,31 +1,10 @@
-Error getting 2FA status: Error: Failed to get 2FA status
-    at Object.getTwoFactorStatus (index-BG0_Cl0r.js:72:98282)
-    at async g (index-BG0_Cl0r.js:75:7967)
-getTwoFactorStatus @ index-BG0_Cl0r.js:72
-await in getTwoFactorStatus
-g @ index-BG0_Cl0r.js:75
-(anonymous) @ index-BG0_Cl0r.js:75
-Eu @ index-BG0_Cl0r.js:40
-io @ index-BG0_Cl0r.js:40
-(anonymous) @ index-BG0_Cl0r.js:40
-_ @ index-BG0_Cl0r.js:25
-P @ index-BG0_Cl0r.js:25Understand this error
-index-BG0_Cl0r.js:75 Error loading 2FA status: Error: Failed to get 2FA status
-    at Object.getTwoFactorStatus (index-BG0_Cl0r.js:72:98282)
-    at async g (index-BG0_Cl0r.js:75:7967)
-g @ index-BG0_Cl0r.js:75
-await in g
-(anonymous) @ index-BG0_Cl0r.js:75
-Eu @ index-BG0_Cl0r.js:40
-io @ index-BG0_Cl0r.js:40
-(anonymous) @ index-BG0_Cl0r.js:40
-_ @ index-BG0_Cl0r.js:25
-P @ index-BG0_Cl0r.js:25Understand this error
+✅ API Response: GET /dashboard/stats
+index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /?limit=50
 index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /stats
 index-BG0_Cl0r.js:72 Error fetching notification stats: Error: Failed to fetch notification stats
     at Object.getNotificationStats (index-BG0_Cl0r.js:72:6902)
     at async S (index-BG0_Cl0r.js:72:59901)
-    at async Promise.all (index 1)
+    at async Promise.all (/index 1)
     at async k (index-BG0_Cl0r.js:72:58876)
 getNotificationStats @ index-BG0_Cl0r.js:72
 await in getNotificationStats
@@ -40,7 +19,7 @@ P @ index-BG0_Cl0r.js:25Understand this error
 index-BG0_Cl0r.js:72 Error fetching notification stats: Error: Failed to fetch notification stats
     at Object.getNotificationStats (index-BG0_Cl0r.js:72:6902)
     at async S (index-BG0_Cl0r.js:72:59901)
-    at async Promise.all (index 1)
+    at async Promise.all (/index 1)
     at async k (index-BG0_Cl0r.js:72:58876)
 S @ index-BG0_Cl0r.js:72
 await in S
@@ -64,10 +43,91 @@ io @ index-BG0_Cl0r.js:40
 (anonymous) @ index-BG0_Cl0r.js:40
 _ @ index-BG0_Cl0r.js:25
 P @ index-BG0_Cl0r.js:25Understand this error
-index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /?limit=50
+index-BG0_Cl0r.js:72 ✅ 2FA API Response: GET /status
+index-BG0_Cl0r.js:72 Error getting 2FA status: Error: Failed to get 2FA status
+    at Object.getTwoFactorStatus (index-BG0_Cl0r.js:72:98282)
+    at async g (index-BG0_Cl0r.js:75:7967)
+getTwoFactorStatus @ index-BG0_Cl0r.js:72
+await in getTwoFactorStatus
+g @ index-BG0_Cl0r.js:75
+(anonymous) @ index-BG0_Cl0r.js:75
+Eu @ index-BG0_Cl0r.js:40
+io @ index-BG0_Cl0r.js:40
+(anonymous) @ index-BG0_Cl0r.js:40
+_ @ index-BG0_Cl0r.js:25
+P @ index-BG0_Cl0r.js:25Understand this error
+index-BG0_Cl0r.js:75 Error loading 2FA status: Error: Failed to get 2FA status
+    at Object.getTwoFactorStatus (index-BG0_Cl0r.js:72:98282)
+    at async g (index-BG0_Cl0r.js:75:7967)
+g @ index-BG0_Cl0r.js:75
+await in g
+(anonymous) @ index-BG0_Cl0r.js:75
+Eu @ index-BG0_Cl0r.js:40
+io @ index-BG0_Cl0r.js:40
+(anonymous) @ index-BG0_Cl0r.js:40
+_ @ index-BG0_Cl0r.js:25
+P @ index-BG0_Cl0r.js:25Understand this error
 index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /unread-count
 index-BG0_Cl0r.js:72 ✅ Notifications initialized successfully
-index-BG0_Cl0r.js:89 ✅ API Response: GET /admins
 index-BG0_Cl0r.js:72 🔌 Connected to WebSocket server
-index-BG0_Cl0r.js:89 🌐 API Request: GET /dashboard/stats
-index-BG0_Cl0r.js:89 ✅ API Response: GET /dashboard/stats
+
+
+==> ///////////////////////////////////////////////////////////
+Admin alpha@choma.com authenticated for socket connection
+Admin alpha@choma.com connected via socket: ouz6GysrqncffFMOAAAB
+Admin alpha@choma.com disconnected: transport close
+CORS - Origin: https://chomaadmin-delta.vercel.app
+CORS - Origin: https://chomaadmin-delta.vercel.app
+Admin alpha@choma.com authenticated for socket connection
+Admin alpha@choma.com authenticated for socket connection
+Admin alpha@choma.com connected via socket: J8tSUqN2Shv7EIbTAAAF
+Admin alpha@choma.com disconnected: transport close
+CORS - Origin: https://chomaadmin-delta.vercel.app
+CORS - Origin: https://chomaadmin-delta.vercel.app
+Admin alpha@choma.com authenticated for socket connection
+Admin alpha@choma.com authenticated for socket connection
+Admin alpha@choma.com connected via socket: gYjbj7XiFRQFpQVvAAAJ
+
+
+✅ API Response: GET /chefs?status=Active
+index-BG0_Cl0r.js:89 Unexpected chef response structure: <!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>choma Admin Dashboard</title>
+    <script type="module" crossorigin src="/assets/index-BG0_Cl0r.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-j_RI1guL.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+getAvailableChefs @ index-BG0_Cl0r.js:89
+await in getAvailableChefs
+(anonymous) @ index-BG0_Cl0r.js:106
+(anonymous) @ index-BG0_Cl0r.js:106
+Eu @ index-BG0_Cl0r.js:40
+io @ index-BG0_Cl0r.js:40
+YS @ index-BG0_Cl0r.js:40
+Wn @ index-BG0_Cl0r.js:40
+S1 @ index-BG0_Cl0r.js:40
+Fn @ index-BG0_Cl0r.js:38
+(anonymous) @ index-BG0_Cl0r.js:40Understand this error
+index-BG0_Cl0r.js:89 🌐 API Request: GET /chefs?status=Active
+index-BG0_Cl0r.js:89 ✅ API Response: GET /chefs?status=Active
+index-BG0_Cl0r.js:89 Unexpected chef response structure: <!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>choma Admin Dashboard</title>
+    <script type="module" crossorigin src="/assets/index-BG0_Cl0r.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-j_RI1guL.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
