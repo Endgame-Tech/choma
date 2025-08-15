@@ -106,7 +106,7 @@ app.use((req, res, next) => {
 app.get('/', (req, res) => {
   res.json({
     message: 'choma API is running',
-    version: '1.0.0',
+    version: '1.0.1',
     status: 'healthy'
   });
 });
