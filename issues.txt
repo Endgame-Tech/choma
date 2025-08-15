@@ -1,42 +1,33 @@
-Access to fetch at 'http://localhost:5001/api/admin/auth/login' from origin 'https://chomaadmin-delta.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.Understand this error
-index-C0wCTwGo.js:67  POST http://localhost:5001/api/admin/auth/login net::ERR_FAILED
-login @ index-C0wCTwGo.js:67
-h @ index-C0wCTwGo.js:67
-J4 @ index-C0wCTwGo.js:37
-Z4 @ index-C0wCTwGo.js:37
-e3 @ index-C0wCTwGo.js:37
-tp @ index-C0wCTwGo.js:37
-Kb @ index-C0wCTwGo.js:37
-(anonymous) @ index-C0wCTwGo.js:37
-tm @ index-C0wCTwGo.js:40
-vb @ index-C0wCTwGo.js:37
-Xu @ index-C0wCTwGo.js:37
-Tx @ index-C0wCTwGo.js:37
-g3 @ index-C0wCTwGo.js:37Understand this error
-index-C0wCTwGo.js:67 Login error: TypeError: Failed to fetch
-    at login (index-C0wCTwGo.js:67:5707)
-    at h (index-C0wCTwGo.js:67:38171)
-    at Object.J4 (index-C0wCTwGo.js:37:9864)
-    at Z4 (index-C0wCTwGo.js:37:10018)
-    at e3 (index-C0wCTwGo.js:37:10075)
-    at tp (index-C0wCTwGo.js:37:31462)
-    at Kb (index-C0wCTwGo.js:37:31879)
-    at index-C0wCTwGo.js:37:36792
-    at tm (index-C0wCTwGo.js:40:36957)
-    at vb (index-C0wCTwGo.js:37:8999)
-overrideMethod @ hook.js:608
-login @ index-C0wCTwGo.js:67
-await in login
-h @ index-C0wCTwGo.js:67
-J4 @ index-C0wCTwGo.js:37
-Z4 @ index-C0wCTwGo.js:37
-e3 @ index-C0wCTwGo.js:37
-tp @ index-C0wCTwGo.js:37
-Kb @ index-C0wCTwGo.js:37
-(anonymous) @ index-C0wCTwGo.js:37
-tm @ index-C0wCTwGo.js:40
-vb @ index-C0wCTwGo.js:37
-Xu @ index-C0wCTwGo.js:37
-Tx @ index-C0wCTwGo.js:37
-g3 @ index-C0wCTwGo.js:37Understand this error
-12login:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+index-VGcyPceQ.js:67 
+ POST https://chomaadmin-delta.vercel.app/undefined/api/admin/auth/login 405 (Method Not Allowed)
+login	@	index-VGcyPceQ.js:67
+h	@	index-VGcyPceQ.js:86
+t3	@	index-VGcyPceQ.js:37
+a3	@	index-VGcyPceQ.js:37
+n3	@	index-VGcyPceQ.js:37
+Ip	@	index-VGcyPceQ.js:37
+I2	@	index-VGcyPceQ.js:37
+(anonymous)	@	index-VGcyPceQ.js:37
+Dx	@	index-VGcyPceQ.js:40
+l2	@	index-VGcyPceQ.js:37
+vf	@	index-VGcyPceQ.js:37
+ox	@	index-VGcyPceQ.js:37
+b3	@	index-VGcyPceQ.js:37
+
+index-VGcyPceQ.js:67 Login error: SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input
+    at login (index-VGcyPceQ.js:67:5847)
+    at async h (index-VGcyPceQ.js:86:741)
+login	@	index-VGcyPceQ.js:67
+await in login		
+h	@	index-VGcyPceQ.js:86
+t3	@	index-VGcyPceQ.js:37
+a3	@	index-VGcyPceQ.js:37
+n3	@	index-VGcyPceQ.js:37
+Ip	@	index-VGcyPceQ.js:37
+I2	@	index-VGcyPceQ.js:37
+(anonymous)	@	index-VGcyPceQ.js:37
+Dx	@	index-VGcyPceQ.js:40
+l2	@	index-VGcyPceQ.js:37
+vf	@	index-VGcyPceQ.js:37
+ox	@	index-VGcyPceQ.js:37
+b3	@	index-VGcyPceQ.js:37

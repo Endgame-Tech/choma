@@ -25,6 +25,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  console.log("VITE_API_URL:", import.meta.env.VITE_API_URL); // Debugging line
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [admin, setAdmin] = useState<Admin | null>(null)
   const [token, setToken] = useState<string | null>(null)
