@@ -10,7 +10,7 @@ class TwoFactorController {
   // Get 2FA status for current admin
   static async getStatus(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       
       const twoFactor = await TwoFactorAuth.findByAdminId(adminId);
       
@@ -53,7 +53,7 @@ class TwoFactorController {
   // Initialize 2FA setup
   static async initializeSetup(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const admin = await Admin.findById(adminId);
       
       if (!admin) {
@@ -127,7 +127,7 @@ class TwoFactorController {
   // Verify setup and enable 2FA
   static async verifySetup(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { token } = req.body;
 
       if (!token) {
@@ -226,7 +226,7 @@ class TwoFactorController {
   // Disable 2FA
   static async disable(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { password, currentToken } = req.body;
 
       if (!password || !currentToken) {
@@ -333,7 +333,7 @@ class TwoFactorController {
   // Verify 2FA code
   static async verify(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { token, trustDevice = false } = req.body;
 
       if (!token) {
@@ -450,7 +450,7 @@ class TwoFactorController {
   // Verify backup code
   static async verifyBackupCode(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { backupCode, trustDevice = false } = req.body;
 
       if (!backupCode) {
@@ -551,7 +551,7 @@ class TwoFactorController {
   // Get backup codes info
   static async getBackupCodesInfo(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       
       const twoFactor = await TwoFactorAuth.findByAdminId(adminId);
       if (!twoFactor || !twoFactor.isEnabled) {
@@ -583,7 +583,7 @@ class TwoFactorController {
   // Regenerate backup codes
   static async regenerateBackupCodes(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { currentToken } = req.body;
 
       if (!currentToken) {
@@ -662,7 +662,7 @@ class TwoFactorController {
   // Get trusted devices
   static async getTrustedDevices(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       
       const twoFactor = await TwoFactorAuth.findByAdminId(adminId);
       if (!twoFactor) {
@@ -703,7 +703,7 @@ class TwoFactorController {
   // Trust current device
   static async trustDevice(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { deviceName, currentToken } = req.body;
 
       if (!currentToken) {
@@ -776,7 +776,7 @@ class TwoFactorController {
   // Remove trusted device
   static async removeTrustedDevice(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { deviceId } = req.params;
       const { currentToken } = req.body;
 
@@ -850,7 +850,7 @@ class TwoFactorController {
   // Get 2FA settings
   static async getSettings(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       
       const twoFactor = await TwoFactorAuth.findByAdminId(adminId);
       if (!twoFactor || !twoFactor.isEnabled) {
@@ -881,7 +881,7 @@ class TwoFactorController {
   // Update 2FA settings
   static async updateSettings(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { currentToken, settings } = req.body;
 
       if (!currentToken) {
@@ -950,7 +950,7 @@ class TwoFactorController {
   // Get audit logs
   static async getAuditLogs(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { page = 1, limit = 50, action, dateRange } = req.query;
 
       const query = { adminId };
@@ -999,7 +999,7 @@ class TwoFactorController {
   // Get audit summary
   static async getAuditSummary(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { days = 30 } = req.query;
 
       const summary = await TwoFactorAuditLog.getAdminSummary(adminId, parseInt(days));
@@ -1021,7 +1021,7 @@ class TwoFactorController {
   // Get suspicious activity
   static async getSuspiciousActivity(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { hours = 24 } = req.query;
 
       const activity = await TwoFactorAuditLog.getSuspiciousActivity(adminId, parseInt(hours));
@@ -1043,7 +1043,7 @@ class TwoFactorController {
   // Emergency disable 2FA
   static async emergencyDisable(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { reason, adminPassword } = req.body;
 
       if (!reason || !adminPassword) {
@@ -1131,7 +1131,7 @@ class TwoFactorController {
   // Request 2FA recovery
   static async requestRecovery(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { contactInfo, reason } = req.body;
 
       if (!contactInfo || !reason) {

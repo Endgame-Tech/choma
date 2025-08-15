@@ -1,163 +1,36 @@
-🔔 Notification API Request: GET /preferences/settings
-index-BRS5rwg1.js:72 ✅ 2FA API Response: GET /status
-index-BRS5rwg1.js:72 Error getting 2FA status: Error: Failed to get 2FA status
-    at Object.getTwoFactorStatus (index-BRS5rwg1.js:72:98089)
-    at async g (index-BRS5rwg1.js:75:7967)
-getTwoFactorStatus @ index-BRS5rwg1.js:72
-await in getTwoFactorStatus
-g @ index-BRS5rwg1.js:75
-(anonymous) @ index-BRS5rwg1.js:75
-Eu @ index-BRS5rwg1.js:40
-io @ index-BRS5rwg1.js:40
-(anonymous) @ index-BRS5rwg1.js:40
-_ @ index-BRS5rwg1.js:25
-P @ index-BRS5rwg1.js:25Understand this error
-index-BRS5rwg1.js:75 Error loading 2FA status: Error: Failed to get 2FA status
-    at Object.getTwoFactorStatus (index-BRS5rwg1.js:72:98089)
-    at async g (index-BRS5rwg1.js:75:7967)
-g @ index-BRS5rwg1.js:75
-await in g
-(anonymous) @ index-BRS5rwg1.js:75
-Eu @ index-BRS5rwg1.js:40
-io @ index-BRS5rwg1.js:40
-(anonymous) @ index-BRS5rwg1.js:40
-_ @ index-BRS5rwg1.js:25
-P @ index-BRS5rwg1.js:25Understand this error
-index-BRS5rwg1.js:89 ✅ API Response: GET /dashboard/stats
-index-BRS5rwg1.js:72 ✅ Notification API Response: GET /?limit=50
-index-BRS5rwg1.js:72 ✅ Notification API Response: GET /preferences/settings
-index-BRS5rwg1.js:72 Error fetching notification preferences: Error: Failed to fetch notification preferences
-    at Object.getNotificationPreferences (index-BRS5rwg1.js:72:8183)
-    at async K (index-BRS5rwg1.js:72:60962)
-getNotificationPreferences @ index-BRS5rwg1.js:72
-await in getNotificationPreferences
-K @ index-BRS5rwg1.js:72
-(anonymous) @ index-BRS5rwg1.js:72
-Eu @ index-BRS5rwg1.js:40
-io @ index-BRS5rwg1.js:40
-(anonymous) @ index-BRS5rwg1.js:40
-_ @ index-BRS5rwg1.js:25
-P @ index-BRS5rwg1.js:25Understand this error
-index-BRS5rwg1.js:72 ✅ Notification API Response: GET /unread-count
-index-BRS5rwg1.js:72 ✅ Notification API Response: GET /stats
-index-BRS5rwg1.js:72 Error fetching notification stats: Error: Failed to fetch notification stats
-    at Object.getNotificationStats (index-BRS5rwg1.js:72:6902)
-    at async S (index-BRS5rwg1.js:72:59708)
+index-BG0_Cl0r.js:72 Error getting 2FA status: Error: Failed to get 2FA status
+    at Object.getTwoFactorStatus (index-BG0_Cl0r.js:72:98282)
+    at async g (index-BG0_Cl0r.js:75:7967)
+getTwoFactorStatus	@	index-BG0_Cl0r.js:72
+await in getTwoFactorStatus		
+g	@	index-BG0_Cl0r.js:75
+(anonymous)	@	index-BG0_Cl0r.js:75
+Eu	@	index-BG0_Cl0r.js:40
+io	@	index-BG0_Cl0r.js:40
+(anonymous)	@	index-BG0_Cl0r.js:40
+_	@	index-BG0_Cl0r.js:25
+P	@	index-BG0_Cl0r.js:25
+
+index-BG0_Cl0r.js:75 Error loading 2FA status: Error: Failed to get 2FA status
+    at Object.getTwoFactorStatus (index-BG0_Cl0r.js:72:98282)
+    at async g (index-BG0_Cl0r.js:75:7967)
+index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /stats
+index-BG0_Cl0r.js:72 Error fetching notification stats: Error: Failed to fetch notification stats
+    at Object.getNotificationStats (index-BG0_Cl0r.js:72:6902)
+    at async S (index-BG0_Cl0r.js:72:59901)
     at async Promise.all (/index 1)
-    at async k (index-BRS5rwg1.js:72:58683)
-getNotificationStats @ index-BRS5rwg1.js:72
-await in getNotificationStats
-S @ index-BRS5rwg1.js:72
-k @ index-BRS5rwg1.js:72
-(anonymous) @ index-BRS5rwg1.js:72
-Eu @ index-BRS5rwg1.js:40
-io @ index-BRS5rwg1.js:40
-(anonymous) @ index-BRS5rwg1.js:40
-_ @ index-BRS5rwg1.js:25
-P @ index-BRS5rwg1.js:25Understand this error
-index-BRS5rwg1.js:72 Error fetching notification stats: Error: Failed to fetch notification stats
-    at Object.getNotificationStats (index-BRS5rwg1.js:72:6902)
-    at async S (index-BRS5rwg1.js:72:59708)
+    at async k (index-BG0_Cl0r.js:72:58876)
+index-BG0_Cl0r.js:72 Error fetching notification stats: Error: Failed to fetch notification stats
+    at Object.getNotificationStats (index-BG0_Cl0r.js:72:6902)
+    at async S (index-BG0_Cl0r.js:72:59901)
     at async Promise.all (/index 1)
-    at async k (index-BRS5rwg1.js:72:58683)
-S @ index-BRS5rwg1.js:72
-await in S
-k @ index-BRS5rwg1.js:72
-(anonymous) @ index-BRS5rwg1.js:72
-Eu @ index-BRS5rwg1.js:40
-io @ index-BRS5rwg1.js:40
-(anonymous) @ index-BRS5rwg1.js:40
-_ @ index-BRS5rwg1.js:25
-P @ index-BRS5rwg1.js:25Understand this error
-index-BRS5rwg1.js:72 ✅ Notifications initialized successfully
-index-BRS5rwg1.js:72 🔌 Connection error: Error: Authentication error: Invalid admin
-    at Qw.onpacket (index-BRS5rwg1.js:72:45684)
-    at Ut.emit (index-BRS5rwg1.js:72:16805)
-    at index-BRS5rwg1.js:72:51589
-(anonymous) @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-onpacket @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-(anonymous) @ index-BRS5rwg1.js:72
-Promise.then
-(anonymous) @ index-BRS5rwg1.js:72
-ondecoded @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-add @ index-BRS5rwg1.js:72
-ondata @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-_onPacket @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-onPacket @ index-BRS5rwg1.js:72
-onData @ index-BRS5rwg1.js:72
-ws.onmessage @ index-BRS5rwg1.js:72Understand this error
-index-BRS5rwg1.js:72 🔌 Attempting reconnection 1/5 in 2000ms...
-index-BRS5rwg1.js:72 🔌 Connecting to WebSocket server...
-index-BRS5rwg1.js:72 🔌 Connection error: Error: Authentication error: Invalid admin
-    at Qw.onpacket (index-BRS5rwg1.js:72:45684)
-    at Ut.emit (index-BRS5rwg1.js:72:16805)
-    at index-BRS5rwg1.js:72:51589
-(anonymous) @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-onpacket @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-(anonymous) @ index-BRS5rwg1.js:72
-Promise.then
-(anonymous) @ index-BRS5rwg1.js:72
-ondecoded @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-add @ index-BRS5rwg1.js:72
-ondata @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-_onPacket @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-onPacket @ index-BRS5rwg1.js:72
-onData @ index-BRS5rwg1.js:72
-ws.onmessage @ index-BRS5rwg1.js:72Understand this error
-index-BRS5rwg1.js:72 🔌 Attempting reconnection 2/5 in 4000ms...
-index-BRS5rwg1.js:72 🔌 Connecting to WebSocket server...
-index-BRS5rwg1.js:72 🔌 Connection error: Error: Authentication error: Invalid admin
-    at Qw.onpacket (index-BRS5rwg1.js:72:45684)
-    at Ut.emit (index-BRS5rwg1.js:72:16805)
-    at index-BRS5rwg1.js:72:51589
-(anonymous) @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-onpacket @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-(anonymous) @ index-BRS5rwg1.js:72
-Promise.then
-(anonymous) @ index-BRS5rwg1.js:72
-ondecoded @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-add @ index-BRS5rwg1.js:72
-ondata @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-_onPacket @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-onPacket @ index-BRS5rwg1.js:72
-onData @ index-BRS5rwg1.js:72
-ws.onmessage @ index-BRS5rwg1.js:72Understand this error
-index-BRS5rwg1.js:72 🔌 Attempting reconnection 3/5 in 8000ms...
-index-BRS5rwg1.js:72 🔌 Connecting to WebSocket server...
-index-BRS5rwg1.js:72 🔌 Connection error: Error: Authentication error: Invalid admin
-    at Qw.onpacket (index-BRS5rwg1.js:72:45684)
-    at Ut.emit (index-BRS5rwg1.js:72:16805)
-    at index-BRS5rwg1.js:72:51589
-(anonymous) @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-onpacket @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-(anonymous) @ index-BRS5rwg1.js:72
-Promise.then
-(anonymous) @ index-BRS5rwg1.js:72
-ondecoded @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-add @ index-BRS5rwg1.js:72
-ondata @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-_onPacket @ index-BRS5rwg1.js:72
-Ut.emit @ index-BRS5rwg1.js:72
-onPacket @ index-BRS5rwg1.js:72
-onData @ index-BRS5rwg1.js:72
-ws.onmessage @ index-BRS5rwg1.js:72Understand this error
-index-BRS5rwg1.js:72 🔌 Attempting reconnection 4/5 in 16000ms...
+    at async k (index-BG0_Cl0r.js:72:58876)
+index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /?limit=50
+index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /preferences/settings
+index-BG0_Cl0r.js:72 Error fetching notification preferences: Error: Failed to fetch notification preferences
+    at Object.getNotificationPreferences (index-BG0_Cl0r.js:72:8183)
+    at async K (index-BG0_Cl0r.js:72:61155)
+index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /unread-count
+index-BG0_Cl0r.js:72 ✅ Notifications initialized successfully
+index-BG0_Cl0r.js:72 🔌 Connected to WebSocket server
+﻿
