@@ -7,7 +7,7 @@ class AdminNotificationController {
   // Get admin notifications with filtering and pagination
   static async getNotifications(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const {
         page = 1,
         limit = 50,
@@ -94,7 +94,7 @@ class AdminNotificationController {
   // Get unread notification count
   static async getUnreadCount(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const unreadCount = await AdminNotification.getUnreadCount(adminId);
       
       res.json({
@@ -114,7 +114,7 @@ class AdminNotificationController {
   // Get notification statistics
   static async getStats(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const stats = await AdminNotification.getStats(adminId);
       
       res.json({
@@ -143,7 +143,7 @@ class AdminNotificationController {
   static async getNotification(req, res) {
     try {
       const { id } = req.params;
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       
       const notification = await AdminNotification.findOne({ _id: id, adminId })
         .populate('adminId', 'firstName lastName email')
@@ -174,7 +174,7 @@ class AdminNotificationController {
   static async markAsRead(req, res) {
     try {
       const { id } = req.params;
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       
       const notification = await AdminNotification.findOne({ _id: id, adminId });
       
@@ -204,7 +204,7 @@ class AdminNotificationController {
   // Mark all notifications as read
   static async markAllAsRead(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       
       const result = await AdminNotification.updateMany(
         { adminId, read: false },
@@ -230,7 +230,7 @@ class AdminNotificationController {
   static async deleteNotification(req, res) {
     try {
       const { id } = req.params;
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       
       const result = await AdminNotification.findOneAndDelete({ _id: id, adminId });
       
@@ -258,7 +258,7 @@ class AdminNotificationController {
   // Bulk delete notifications
   static async bulkDeleteNotifications(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { ids, filters } = req.body;
       
       let query = { adminId };
@@ -296,7 +296,7 @@ class AdminNotificationController {
   // Get notification preferences
   static async getPreferences(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       
       let preferences = await NotificationPreferences.findOne({ adminId });
       
@@ -323,7 +323,7 @@ class AdminNotificationController {
   // Update notification preferences
   static async updatePreferences(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const preferences = req.body;
       
       const updatedPreferences = await NotificationPreferences.upsertPreferences(adminId, preferences);
@@ -495,7 +495,7 @@ class AdminNotificationController {
   // Get security alerts
   static async getSecurityAlerts(req, res) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const {
         page = 1,
         limit = 20,
@@ -610,7 +610,7 @@ class AdminNotificationController {
   static async resolveSecurityAlert(req, res) {
     try {
       const { id } = req.params;
-      const adminId = req.admin.id;
+      const adminId = req.admin.adminId;
       const { resolution } = req.body;
 
       const alert = await AdminNotification.findOne({

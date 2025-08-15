@@ -1,36 +1,73 @@
-index-BG0_Cl0r.js:72 Error getting 2FA status: Error: Failed to get 2FA status
+Error getting 2FA status: Error: Failed to get 2FA status
     at Object.getTwoFactorStatus (index-BG0_Cl0r.js:72:98282)
     at async g (index-BG0_Cl0r.js:75:7967)
-getTwoFactorStatus	@	index-BG0_Cl0r.js:72
-await in getTwoFactorStatus		
-g	@	index-BG0_Cl0r.js:75
-(anonymous)	@	index-BG0_Cl0r.js:75
-Eu	@	index-BG0_Cl0r.js:40
-io	@	index-BG0_Cl0r.js:40
-(anonymous)	@	index-BG0_Cl0r.js:40
-_	@	index-BG0_Cl0r.js:25
-P	@	index-BG0_Cl0r.js:25
-
+getTwoFactorStatus @ index-BG0_Cl0r.js:72
+await in getTwoFactorStatus
+g @ index-BG0_Cl0r.js:75
+(anonymous) @ index-BG0_Cl0r.js:75
+Eu @ index-BG0_Cl0r.js:40
+io @ index-BG0_Cl0r.js:40
+(anonymous) @ index-BG0_Cl0r.js:40
+_ @ index-BG0_Cl0r.js:25
+P @ index-BG0_Cl0r.js:25Understand this error
 index-BG0_Cl0r.js:75 Error loading 2FA status: Error: Failed to get 2FA status
     at Object.getTwoFactorStatus (index-BG0_Cl0r.js:72:98282)
     at async g (index-BG0_Cl0r.js:75:7967)
+g @ index-BG0_Cl0r.js:75
+await in g
+(anonymous) @ index-BG0_Cl0r.js:75
+Eu @ index-BG0_Cl0r.js:40
+io @ index-BG0_Cl0r.js:40
+(anonymous) @ index-BG0_Cl0r.js:40
+_ @ index-BG0_Cl0r.js:25
+P @ index-BG0_Cl0r.js:25Understand this error
 index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /stats
 index-BG0_Cl0r.js:72 Error fetching notification stats: Error: Failed to fetch notification stats
     at Object.getNotificationStats (index-BG0_Cl0r.js:72:6902)
     at async S (index-BG0_Cl0r.js:72:59901)
-    at async Promise.all (/index 1)
+    at async Promise.all (index 1)
     at async k (index-BG0_Cl0r.js:72:58876)
+getNotificationStats @ index-BG0_Cl0r.js:72
+await in getNotificationStats
+S @ index-BG0_Cl0r.js:72
+k @ index-BG0_Cl0r.js:72
+(anonymous) @ index-BG0_Cl0r.js:72
+Eu @ index-BG0_Cl0r.js:40
+io @ index-BG0_Cl0r.js:40
+(anonymous) @ index-BG0_Cl0r.js:40
+_ @ index-BG0_Cl0r.js:25
+P @ index-BG0_Cl0r.js:25Understand this error
 index-BG0_Cl0r.js:72 Error fetching notification stats: Error: Failed to fetch notification stats
     at Object.getNotificationStats (index-BG0_Cl0r.js:72:6902)
     at async S (index-BG0_Cl0r.js:72:59901)
-    at async Promise.all (/index 1)
+    at async Promise.all (index 1)
     at async k (index-BG0_Cl0r.js:72:58876)
-index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /?limit=50
+S @ index-BG0_Cl0r.js:72
+await in S
+k @ index-BG0_Cl0r.js:72
+(anonymous) @ index-BG0_Cl0r.js:72
+Eu @ index-BG0_Cl0r.js:40
+io @ index-BG0_Cl0r.js:40
+(anonymous) @ index-BG0_Cl0r.js:40
+_ @ index-BG0_Cl0r.js:25
+P @ index-BG0_Cl0r.js:25Understand this error
 index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /preferences/settings
 index-BG0_Cl0r.js:72 Error fetching notification preferences: Error: Failed to fetch notification preferences
     at Object.getNotificationPreferences (index-BG0_Cl0r.js:72:8183)
     at async K (index-BG0_Cl0r.js:72:61155)
+getNotificationPreferences @ index-BG0_Cl0r.js:72
+await in getNotificationPreferences
+K @ index-BG0_Cl0r.js:72
+(anonymous) @ index-BG0_Cl0r.js:72
+Eu @ index-BG0_Cl0r.js:40
+io @ index-BG0_Cl0r.js:40
+(anonymous) @ index-BG0_Cl0r.js:40
+_ @ index-BG0_Cl0r.js:25
+P @ index-BG0_Cl0r.js:25Understand this error
+index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /?limit=50
 index-BG0_Cl0r.js:72 ✅ Notification API Response: GET /unread-count
 index-BG0_Cl0r.js:72 ✅ Notifications initialized successfully
+index-BG0_Cl0r.js:89 ✅ API Response: GET /admins
 index-BG0_Cl0r.js:72 🔌 Connected to WebSocket server
-﻿
+index-BG0_Cl0r.js:89 🌐 API Request: GET /dashboard/stats
+index-BG0_Cl0r.js:89 ✅ API Response: GET /dashboard/stats
