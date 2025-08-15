@@ -40,7 +40,7 @@ class SocketService {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         // Find admin
-        const admin = await Admin.findById(decoded.id).select('-password');
+        const admin = await Admin.findById(decoded.adminId).select('-password');
         if (!admin || !admin.isActive) {
           console.log('Socket connection rejected: Invalid admin or inactive status');
           return next(new Error('Authentication error: Invalid admin'));
