@@ -141,7 +141,9 @@ export type SecurityEventType =
   | 'admin_created'
   | 'admin_deleted'
   | 'permission_changed'
-  | 'critical_data_modified';
+  | 'critical_data_modified'
+  | 'role_created'
+  | 'admin_status_changed';
 
 // API Response types
 export interface NotificationResponse {

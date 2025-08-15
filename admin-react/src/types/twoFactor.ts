@@ -12,6 +12,12 @@ export interface TwoFactorStatus {
   lastVerified?: string;
   backupCodesRemaining: number;
   setupDate?: string;
+  backupCodes?: {
+    total: number;
+    used: number;
+    remaining: number;
+    lastGenerated?: string;
+  };
 }
 
 export interface TwoFactorVerification {
@@ -29,9 +35,12 @@ export interface TwoFactorSettings {
 }
 
 export interface TwoFactorBackupCodes {
-  codes: string[];
-  generatedAt: string;
-  usedCodes: string[];
+  total: number;
+  used: number;
+  remaining: number;
+  lastGenerated: string;
+  codes?: string[];
+  usedCodes?: string[];
 }
 
 export interface DeviceInfo {

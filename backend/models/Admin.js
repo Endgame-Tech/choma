@@ -155,7 +155,7 @@ const adminSchema = new mongoose.Schema({
 });
 
 // Indexes
-adminSchema.index({ email: 1 });
+// Note: email index is automatically created by 'unique: true' field property
 adminSchema.index({ role: 1 });
 adminSchema.index({ isActive: 1 });
 

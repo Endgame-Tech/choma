@@ -88,7 +88,8 @@ export class TwoFactorEnforcementService {
       const settings = await twoFactorApi.getSettings();
       
       // Check if 2FA is required for sensitive actions
-      return settings.requireForSensitiveActions;
+      // All operations defined in SensitiveOperation enum require 2FA when enabled
+      return settings.requireForSensitiveActions && operation in SENSITIVE_OPERATIONS;
     } catch (error) {
       console.error('Error checking 2FA requirements:', error);
       // Fail safe - require 2FA if we can't determine status

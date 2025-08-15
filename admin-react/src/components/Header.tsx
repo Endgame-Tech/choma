@@ -226,7 +226,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         <TwoFactorSetup
           isOpen={showTwoFactorSetup}
           onClose={() => setShowTwoFactorSetup(false)}
-          onComplete={handleTwoFactorComplete}
+          onSetupComplete={handleTwoFactorComplete}
         />
       )}
 

@@ -29,7 +29,6 @@ const BackupCodesManager: React.FC<BackupCodesManagerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showCodes, setShowCodes] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);
-  const [pendingOperation, setPendingOperation] = useState<(() => Promise<void>) | null>(null);
   const [copiedCodes, setCopiedCodes] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -81,22 +80,18 @@ const BackupCodesManager: React.FC<BackupCodesManagerProps> = ({
   };
 
   const handleRegenerateBackupCodes = () => {
-    setPendingOperation(() => async (data?: any) => {
-      const verificationToken = data?.verificationToken;
-      if (verificationToken) {
-        await executeRegenerateBackupCodes(verificationToken);
-      } else {
-        throw new Error('Verification token is required');
-      }
-    });
     setShow2FAModal(true);
   };
 
   const handleTwoFactorVerified = async (verified: boolean, data?: any) => {
-    if (verified && pendingOperation) {
+    if (verified) {
       try {
-        await pendingOperation(data);
-        setPendingOperation(null);
+        const verificationToken = data?.verificationToken;
+        if (verificationToken) {
+          await executeRegenerateBackupCodes(verificationToken);
+        } else {
+          throw new Error('Verification token is required');
+        }
       } catch (error) {
         console.error('Error executing operation after 2FA verification:', error);
         setError(error instanceof Error ? error.message : 'Operation failed');
@@ -387,7 +382,6 @@ const BackupCodesManager: React.FC<BackupCodesManagerProps> = ({
           isOpen={show2FAModal}
           onClose={() => {
             setShow2FAModal(false);
-            setPendingOperation(null);
           }}
           onVerified={handleTwoFactorVerified}
           title="Verify Identity"
