@@ -97,7 +97,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   useEffect(() => {
     if (currentAdmin) {
       initializeNotifications();
-      // connectWebSocket();
+      connectWebSocket();
       loadPreferences();
     }
 
