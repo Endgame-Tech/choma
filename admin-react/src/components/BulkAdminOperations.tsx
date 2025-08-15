@@ -12,6 +12,8 @@ import {
 import { Admin, AdminRole, PREDEFINED_ROLES } from '../types/admin';
 import { activityLogger } from '../services/activityLogger';
 import { usePermissions } from '../contexts/PermissionContext';
+import WithTwoFactorAuth from './WithTwoFactorAuth';
+import { SensitiveOperation } from '../services/twoFactorEnforcement';
 
 interface BulkAdminOperationsProps {
   selectedAdmins: Admin[];
@@ -374,24 +376,46 @@ const BulkAdminOperations: React.FC<BulkAdminOperationsProps> = ({
           </button>
 
           {/* Deactivate Button */}
-          <button
-            onClick={handleBulkDeactivate}
-            disabled={loading || validSelectedAdmins.filter(a => a.isActive).length === 0}
-            className="inline-flex items-center px-3 py-2 text-sm font-medium text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          <WithTwoFactorAuth
+            operation={SensitiveOperation.ADMIN_DEACTIVATE}
+            onVerified={async () => {
+              handleBulkDeactivate();
+            }}
+            customTitle="Confirm Bulk Admin Deactivation"
+            customDescription="Deactivating multiple admin accounts will immediately revoke their access."
           >
-            <XMarkIcon className="w-4 h-4 mr-1" />
-            Deactivate ({validSelectedAdmins.filter(a => a.isActive).length})
-          </button>
+            {({ executeWithVerification, isVerifying }) => (
+              <button
+                onClick={executeWithVerification}
+                disabled={loading || isVerifying || validSelectedAdmins.filter(a => a.isActive).length === 0}
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <XMarkIcon className={`w-4 h-4 mr-1 ${isVerifying ? 'animate-spin' : ''}`} />
+                {isVerifying ? 'Verifying...' : `Deactivate (${validSelectedAdmins.filter(a => a.isActive).length})`}
+              </button>
+            )}
+          </WithTwoFactorAuth>
 
           {/* Change Role Button */}
-          <button
-            onClick={handleRoleChange}
-            disabled={loading || validSelectedAdmins.length === 0}
-            className="inline-flex items-center px-3 py-2 text-sm font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          <WithTwoFactorAuth
+            operation={SensitiveOperation.BULK_ADMIN_ROLE_CHANGE}
+            onVerified={async () => {
+              handleRoleChange();
+            }}
+            customTitle="Confirm Bulk Role Change"
+            customDescription="Changing admin roles will modify permissions for multiple accounts."
           >
-            <ShieldCheckIcon className="w-4 h-4 mr-1" />
-            Change Role
-          </button>
+            {({ executeWithVerification, isVerifying }) => (
+              <button
+                onClick={executeWithVerification}
+                disabled={loading || isVerifying || validSelectedAdmins.length === 0}
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ShieldCheckIcon className={`w-4 h-4 mr-1 ${isVerifying ? 'animate-spin' : ''}`} />
+                {isVerifying ? 'Verifying...' : 'Change Role'}
+              </button>
+            )}
+          </WithTwoFactorAuth>
 
           {/* Export Button */}
           <button
@@ -415,14 +439,25 @@ const BulkAdminOperations: React.FC<BulkAdminOperationsProps> = ({
 
           {/* Delete Button */}
           {currentAdmin?.isAlphaAdmin && (
-            <button
-              onClick={handleBulkDelete}
-              disabled={loading || validSelectedAdmins.length === 0}
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            <WithTwoFactorAuth
+              operation={SensitiveOperation.BULK_ADMIN_DELETE}
+              onVerified={async () => {
+                handleBulkDelete();
+              }}
+              customTitle="Confirm Bulk Admin Deletion"
+              customDescription="Permanently deleting multiple admin accounts is irreversible and highly dangerous."
             >
-              <TrashIcon className="w-4 h-4 mr-1" />
-              Delete ({validSelectedAdmins.length})
-            </button>
+              {({ executeWithVerification, isVerifying }) => (
+                <button
+                  onClick={executeWithVerification}
+                  disabled={loading || isVerifying || validSelectedAdmins.length === 0}
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <TrashIcon className={`w-4 h-4 mr-1 ${isVerifying ? 'animate-spin' : ''}`} />
+                  {isVerifying ? 'Verifying...' : `Delete (${validSelectedAdmins.length})`}
+                </button>
+              )}
+            </WithTwoFactorAuth>
           )}
         </div>
       </div>

@@ -7,11 +7,15 @@ import ActivityDashboard from '../components/ActivityDashboard';
 import SessionManagement from '../components/SessionManagement';
 import CreateRoleModal from '../components/CreateRoleModal';
 import BulkAdminOperations from '../components/BulkAdminOperations';
+import WithTwoFactorAuth from '../components/WithTwoFactorAuth';
+import { SensitiveOperation } from '../services/twoFactorEnforcement';
 import { usePermissions } from '../contexts/PermissionContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { adminManagementApi } from '../services/api';
 
 const AdminManagement: React.FC = () => {
   const { hasPermission, currentAdmin } = usePermissions();
+  const { createSecurityNotification } = useNotifications();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +71,30 @@ const AdminManagement: React.FC = () => {
     }
   };
 
-  const handleCreateRole = async (roleData: Omit<AdminRole, 'id'>) => {
+  const executeCreateRole = async (roleData: Omit<AdminRole, 'id'>) => {
     try {
       const result = await adminManagementApi.createRole(roleData);
       if (result.success) {
+        // Create security notification for role creation
+        await createSecurityNotification({
+          title: 'New Custom Role Created',
+          message: `Custom role "${roleData.name}" was created with specific permissions`,
+          type: 'security_alert',
+          severity: 'warning',
+          adminId: currentAdmin?._id || '',
+          securityEventType: 'role_created',
+          riskLevel: 'high',
+          affectedResource: 'admin_roles',
+          metadata: {
+            action: 'create_role',
+            roleName: roleData.name,
+            roleDescription: roleData.description,
+            permissions: roleData.permissions,
+            performedBy: currentAdmin?.email,
+            timestamp: new Date().toISOString()
+          }
+        });
+
         alert(result.message);
         setCreateRoleModalOpen(false);
       } else {
@@ -79,6 +103,11 @@ const AdminManagement: React.FC = () => {
     } catch (err) {
       alert(`Failed to create role: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
+  };
+
+  const handleCreateRole = (roleData: Omit<AdminRole, 'id'>) => {
+    // Custom role creation is a high-risk operation
+    return executeCreateRole(roleData);
   };
 
   const handleEditAdmin = async (adminData: UpdateAdminRequest) => {
@@ -99,20 +128,33 @@ const AdminManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteAdmin = async (id: string) => {
+  const executeDeleteAdmin = async (id: string) => {
     const admin = admins.find(a => a._id === id);
-    if (admin?.isAlphaAdmin) {
-      alert('Cannot delete the Alpha Admin account');
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete admin "${admin?.firstName} ${admin?.lastName}"? This action cannot be undone.`)) {
-      return;
-    }
+    if (!admin) return;
 
     try {
       const result = await adminManagementApi.deleteAdmin(id);
       if (result.success) {
+        // Create security notification
+        await createSecurityNotification({
+          title: 'Critical: Admin Account Deleted',
+          message: `Admin account for ${admin.firstName} ${admin.lastName} (${admin.email}) was permanently deleted`,
+          type: 'security_alert',
+          severity: 'error',
+          adminId: currentAdmin?._id || '',
+          securityEventType: 'admin_deleted',
+          riskLevel: 'critical',
+          affectedResource: 'admin_accounts',
+          metadata: {
+            action: 'delete_admin',
+            targetAdminId: admin._id,
+            targetAdminEmail: admin.email,
+            performedBy: currentAdmin?.email,
+            timestamp: new Date().toISOString(),
+            riskLevel: 'critical'
+          }
+        });
+
         await fetchAdmins();
         alert(result.message);
       } else {
@@ -123,16 +165,52 @@ const AdminManagement: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = async (id: string) => {
+  const handleDeleteAdmin = (id: string) => {
     const admin = admins.find(a => a._id === id);
     if (admin?.isAlphaAdmin) {
-      alert('Cannot modify the Alpha Admin status');
+      alert('Cannot delete the Alpha Admin account');
       return;
     }
+
+    if (!confirm(`Are you sure you want to delete admin "${admin?.firstName} ${admin?.lastName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    // This will be wrapped with 2FA enforcement in the JSX
+    return executeDeleteAdmin(id);
+  };
+
+  const executeToggleStatus = async (id: string) => {
+    const admin = admins.find(a => a._id === id);
+    if (!admin) return;
 
     try {
       const result = await adminManagementApi.toggleAdminStatus(id);
       if (result.success) {
+        const isDeactivating = admin.isActive;
+        
+        // Create security notification for deactivation
+        if (isDeactivating) {
+          await createSecurityNotification({
+            title: 'Admin Account Deactivated',
+            message: `Admin account for ${admin.firstName} ${admin.lastName} (${admin.email}) was deactivated`,
+            type: 'security_alert',
+            severity: 'warning',
+            adminId: currentAdmin?._id || '',
+            securityEventType: 'admin_status_changed',
+            riskLevel: 'medium',
+            affectedResource: 'admin_accounts',
+            metadata: {
+              action: 'deactivate_admin',
+              targetAdminId: admin._id,
+              targetAdminEmail: admin.email,
+              statusChanged: { from: 'active', to: 'inactive' },
+              performedBy: currentAdmin?.email,
+              timestamp: new Date().toISOString()
+            }
+          });
+        }
+
         await fetchAdmins();
         alert(result.message);
       } else {
@@ -140,6 +218,24 @@ const AdminManagement: React.FC = () => {
       }
     } catch (err) {
       alert(`Failed to update admin status: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleToggleStatus = (id: string) => {
+    const admin = admins.find(a => a._id === id);
+    if (admin?.isAlphaAdmin) {
+      alert('Cannot modify the Alpha Admin status');
+      return;
+    }
+
+    // For deactivation, we want to use 2FA enforcement
+    // For activation, it's less sensitive so no 2FA required
+    if (admin?.isActive) {
+      // Deactivating - requires 2FA
+      return executeToggleStatus(id);
+    } else {
+      // Activating - no 2FA required, execute directly
+      executeToggleStatus(id);
     }
   };
 
@@ -285,13 +381,25 @@ const AdminManagement: React.FC = () => {
 
           {/* Create Role Button - Only Alpha Admin */}
           {currentAdmin?.isAlphaAdmin && (
-            <button
-              onClick={() => setCreateRoleModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-green-600 dark:bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
+            <WithTwoFactorAuth
+              operation={SensitiveOperation.CUSTOM_ROLE_CREATE}
+              onVerified={async () => {
+                setCreateRoleModalOpen(true);
+              }}
+              customTitle="Confirm Role Creation"
+              customDescription="Creating custom roles grants specific admin permissions and requires verification."
             >
-              <i className="fi fi-sr-shield mr-2"></i>
-              Create Role
-            </button>
+              {({ executeWithVerification, isVerifying }) => (
+                <button
+                  onClick={executeWithVerification}
+                  disabled={isVerifying}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 dark:bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors disabled:opacity-50"
+                >
+                  <i className={`fi ${isVerifying ? 'fi-sr-loading animate-spin' : 'fi-sr-shield'} mr-2`}></i>
+                  {isVerifying ? 'Verifying...' : 'Create Role'}
+                </button>
+              )}
+            </WithTwoFactorAuth>
           )}
 
           {/* Create Button */}
@@ -526,16 +634,36 @@ const AdminManagement: React.FC = () => {
 
                         {!admin.isAlphaAdmin && (
                           <>
-                            <button
-                              onClick={() => handleToggleStatus(admin._id)}
-                              className={`inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-colors ${admin.isActive
-                                ? 'text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50'
-                                : 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50'
-                                }`}
-                            >
-                              <i className={`fi ${admin.isActive ? 'fi-sr-ban' : 'fi-sr-check'} mr-1`}></i>
-                              {admin.isActive ? 'Deactivate' : 'Activate'}
-                            </button>
+{admin.isActive ? (
+                              <WithTwoFactorAuth
+                                operation={SensitiveOperation.ADMIN_DEACTIVATE}
+                                onVerified={async () => {
+                                  const toggleAction = handleToggleStatus(admin._id);
+                                  if (toggleAction) await toggleAction;
+                                }}
+                                customTitle="Confirm Admin Deactivation"
+                                customDescription="Deactivating an admin account will immediately revoke their access."
+                              >
+                                {({ executeWithVerification, isVerifying }) => (
+                                  <button
+                                    onClick={executeWithVerification}
+                                    disabled={isVerifying}
+                                    className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors disabled:opacity-50"
+                                  >
+                                    <i className={`fi ${isVerifying ? 'fi-sr-loading animate-spin' : 'fi-sr-ban'} mr-1`}></i>
+                                    {isVerifying ? 'Verifying...' : 'Deactivate'}
+                                  </button>
+                                )}
+                              </WithTwoFactorAuth>
+                            ) : (
+                              <button
+                                onClick={() => handleToggleStatus(admin._id)}
+                                className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                              >
+                                <i className="fi fi-sr-check mr-1"></i>
+                                Activate
+                              </button>
+                            )}
 
                             <button
                               onClick={() => {
@@ -548,13 +676,26 @@ const AdminManagement: React.FC = () => {
                               Edit
                             </button>
 
-                            <button
-                              onClick={() => handleDeleteAdmin(admin._id)}
-                              className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                            <WithTwoFactorAuth
+                              operation={SensitiveOperation.ADMIN_DELETE}
+                              onVerified={async () => {
+                                const deleteAction = handleDeleteAdmin(admin._id);
+                                if (deleteAction) await deleteAction;
+                              }}
+                              customTitle="Confirm Admin Deletion"
+                              customDescription="Deleting an admin account is irreversible and requires verification."
                             >
-                              <i className="fi fi-sr-trash mr-1"></i>
-                              Delete
-                            </button>
+                              {({ executeWithVerification, isVerifying }) => (
+                                <button
+                                  onClick={executeWithVerification}
+                                  disabled={isVerifying}
+                                  className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50"
+                                >
+                                  <i className={`fi ${isVerifying ? 'fi-sr-loading animate-spin' : 'fi-sr-trash'} mr-1`}></i>
+                                  {isVerifying ? 'Verifying...' : 'Delete'}
+                                </button>
+                              )}
+                            </WithTwoFactorAuth>
                           </>
                         )}
                         {admin.isAlphaAdmin && (
