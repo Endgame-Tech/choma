@@ -97,7 +97,13 @@ class SocketService implements SocketServiceInterface {
     this.socket.on('connect_error', (error) => {
       console.error('🔌 Connection error:', error);
       this.isConnected = false;
-      this.handleReconnection();
+      if (error.message.includes('Authentication error')) {
+        console.error('🔌 Authentication failed. Clearing token and stopping reconnection.');
+        localStorage.removeItem('choma-admin-token');
+        this.disconnect();
+      } else {
+        this.handleReconnection();
+      }
     });
 
     this.socket.on('reconnect', (attemptNumber) => {
