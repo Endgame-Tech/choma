@@ -137,6 +137,12 @@ app.use('/api/payments', paymentLimiter, require('./routes/payments'));
 // Admin routes (with admin-specific rate limiting)
 app.use('/api/admin', adminLimiter, require('./routes/admin'));
 
+// Admin 2FA routes (with admin-specific rate limiting)
+app.use('/api/admin/2fa', adminLimiter, require('./routes/twoFactor'));
+
+// Admin notification routes (with admin-specific rate limiting)
+app.use('/api/admin/notifications', adminLimiter, require('./routes/adminNotifications'));
+
 // Chef routes (with general rate limiting)
 app.use('/api/chef', require('./routes/chef'));
 

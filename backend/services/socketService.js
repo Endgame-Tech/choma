@@ -41,7 +41,7 @@ class SocketService {
         
         // Find admin
         const admin = await Admin.findById(decoded.id).select('-password');
-        if (!admin || admin.status !== 'active') {
+        if (!admin || !admin.isActive) {
           console.log('Socket connection rejected: Invalid admin or inactive status');
           return next(new Error('Authentication error: Invalid admin'));
         }
