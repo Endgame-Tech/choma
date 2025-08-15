@@ -293,7 +293,7 @@ class ActivityLogger {
   }
 
   // Send data to API (generic method)
-  private async sendToAPI(endpoint: string, data: Record<string, unknown>): Promise<void> {
+  private async sendToAPI(endpoint: string, data: unknown): Promise<void> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',

@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Admin } from '../types/admin';
+import { TwoFactorStatus } from '../types/twoFactor';
+import { twoFactorApi } from '../services/twoFactorApi';
 import {
   FiEdit,
   FiTrash2,
   FiUser,
   FiShield,
   FiClock,
-  FiMonitor
+  FiMonitor,
+  FiKey,
+  FiLock
 } from 'react-icons/fi';
 
 interface AdminCardProps {
@@ -15,6 +19,7 @@ interface AdminCardProps {
   onDelete?: (id: string) => void;
   onToggleStatus?: (id: string) => void;
   onViewSessions?: (adminId: string) => void;
+  onSetup2FA?: (adminId: string) => void;
 }
 
 const AdminCard: React.FC<AdminCardProps> = ({ 
@@ -22,8 +27,28 @@ const AdminCard: React.FC<AdminCardProps> = ({
   onEdit, 
   onDelete, 
   onToggleStatus,
-  onViewSessions
+  onViewSessions,
+  onSetup2FA
 }) => {
+  const [twoFactorStatus, setTwoFactorStatus] = useState<TwoFactorStatus | null>(null);
+  const [loading2FA, setLoading2FA] = useState(false);
+
+  useEffect(() => {
+    loadTwoFactorStatus();
+  }, [admin._id]);
+
+  const loadTwoFactorStatus = async () => {
+    try {
+      setLoading2FA(true);
+      const status = await twoFactorApi.getTwoFactorStatus();
+      setTwoFactorStatus(status);
+    } catch (error) {
+      console.error('Error loading 2FA status:', error);
+      setTwoFactorStatus(null);
+    } finally {
+      setLoading2FA(false);
+    }
+  };
   const formatLastLogin = (lastLogin?: string) => {
     if (!lastLogin) return 'Never';
     const date = new Date(lastLogin);
@@ -62,6 +87,26 @@ const AdminCard: React.FC<AdminCardProps> = ({
 
       {/* Admin Actions - Show on hover */}
       <div className="absolute top-[16px] right-[16px] flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        {onSetup2FA && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSetup2FA(admin._id); }}
+            className={`p-1.5 bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full shadow-md ${
+              twoFactorStatus?.isEnabled 
+                ? 'text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30'
+                : 'text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30'
+            }`}
+            title={twoFactorStatus?.isEnabled ? 'Manage 2FA' : 'Setup 2FA'}
+            disabled={loading2FA}
+          >
+            {loading2FA ? (
+              <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : twoFactorStatus?.isEnabled ? (
+              <FiLock className="w-4 h-4" />
+            ) : (
+              <FiKey className="w-4 h-4" />
+            )}
+          </button>
+        )}
         {onViewSessions && (
           <button
             onClick={(e) => { e.stopPropagation(); onViewSessions(admin._id); }}
@@ -158,13 +203,32 @@ const AdminCard: React.FC<AdminCardProps> = ({
         </div>
 
         {/* Permission Stats */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
           <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
             {getPermissionCount()} permissions
           </span>
           <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">
             {Object.keys(admin.role.permissions).length} modules
           </span>
+          {twoFactorStatus && (
+            <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
+              twoFactorStatus.isEnabled
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+            }`}>
+              {twoFactorStatus.isEnabled ? (
+                <>
+                  <FiLock className="w-3 h-3" />
+                  2FA
+                </>
+              ) : (
+                <>
+                  <FiKey className="w-3 h-3" />
+                  No 2FA
+                </>
+              )}
+            </span>
+          )}
         </div>
 
         {/* Divider */}

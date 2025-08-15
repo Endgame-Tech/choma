@@ -4,7 +4,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { PermissionProvider } from './contexts/PermissionContext'
+import { NotificationProvider } from './contexts/NotificationContext'
 import Layout from './components/Layout'
+import ToastContainer from './components/ToastContainer'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import AnalyticsDashboard from './pages/AnalyticsDashboard'
@@ -41,7 +43,10 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   return (
     <PermissionProvider>
-      <Layout>{children}</Layout>
+      <NotificationProvider>
+        <Layout>{children}</Layout>
+        <ToastContainer />
+      </NotificationProvider>
     </PermissionProvider>
   )
 }

@@ -127,15 +127,15 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSu
   // Initialize permissions with all false
   React.useEffect(() => {
     if (isOpen) {
-      const initialPermissions: Record<string, Record<string, boolean>> = {};
+      const initialPermissions = {} as AdminPermissions;
       permissionModules.forEach(module => {
         const modulePermissions: Record<string, boolean> = {};
         module.actions.forEach(action => {
           modulePermissions[action.key] = false;
         });
-        initialPermissions[module.key] = modulePermissions;
+        (initialPermissions as unknown as Record<string, Record<string, boolean>>)[module.key] = modulePermissions;
       });
-      setFormData(prev => ({ ...prev, permissions: initialPermissions as unknown as AdminPermissions }));
+      setFormData(prev => ({ ...prev, permissions: initialPermissions }));
     }
   }, [isOpen]);
 
@@ -284,9 +284,10 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSu
             </p>
           </div>
           <button
+            type="button"
             onClick={handleClose}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            aria-label="Close create role modal"
+            aria-label="Close"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>

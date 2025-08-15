@@ -51,7 +51,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
     }
   };
 
-  const handleFilterChange = (key: keyof ActivityFilters, value: ActivityFilters[keyof ActivityFilters]) => {
+  const handleFilterChange = (key: keyof ActivityFilters, value: string | number | boolean | undefined) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
@@ -122,8 +122,8 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             aria-label="Close activity dashboard"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -136,8 +136,8 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
           <button
             onClick={() => setActiveTab('activities')}
             className={`px-6 py-3 text-sm font-medium ${activeTab === 'activities'
-              ? 'border-b-2 border-choma-orange text-choma-orange'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                ? 'border-b-2 border-choma-orange text-choma-orange'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
               }`}
           >
             Activity Logs
@@ -145,8 +145,8 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
           <button
             onClick={() => setActiveTab('alerts')}
             className={`px-6 py-3 text-sm font-medium relative ${activeTab === 'alerts'
-              ? 'border-b-2 border-choma-orange text-choma-orange'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                ? 'border-b-2 border-choma-orange text-choma-orange'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
               }`}
           >
             Security Alerts
@@ -164,14 +164,14 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
               {/* Filters */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="module-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Module
                   </label>
                   <select
+                    id="module-filter"
                     value={filters.module || ''}
                     onChange={(e) => handleFilterChange('module', e.target.value || undefined)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-choma-black text-gray-900 dark:text-white"
-                    aria-label="Filter by module"
                   >
                     <option value="">All Modules</option>
                     <option value="auth">Authentication</option>
@@ -186,14 +186,14 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="severity-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Severity
                   </label>
                   <select
+                    id="severity-filter"
                     value={filters.severity || ''}
                     onChange={(e) => handleFilterChange('severity', e.target.value || undefined)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-choma-black text-gray-900 dark:text-white"
-                    aria-label="Filter by severity level"
                   >
                     <option value="">All Severities</option>
                     <option value="critical">Critical</option>
@@ -204,14 +204,14 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Status
                   </label>
                   <select
+                    id="status-filter"
                     value={filters.successful !== undefined ? filters.successful.toString() : ''}
                     onChange={(e) => handleFilterChange('successful', e.target.value === '' ? undefined : e.target.value === 'true')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-choma-black text-gray-900 dark:text-white"
-                    aria-label="Filter by status"
                   >
                     <option value="">All Status</option>
                     <option value="true">Successful</option>
@@ -220,14 +220,14 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="limit-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Items per page
                   </label>
                   <select
+                    id="limit-filter"
                     value={filters.limit || 10}
                     onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-choma-black text-gray-900 dark:text-white"
-                    aria-label="Select items per page"
                   >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
@@ -266,8 +266,8 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                               {activity.severity.toUpperCase()}
                             </span>
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${activity.successful
-                              ? 'text-green-700 bg-green-100 dark:bg-green-900/20'
-                              : 'text-red-700 bg-red-100 dark:bg-red-900/20'
+                                ? 'text-green-700 bg-green-100 dark:bg-green-900/20'
+                                : 'text-red-700 bg-red-100 dark:bg-red-900/20'
                               }`}>
                               {activity.successful ? 'SUCCESS' : 'FAILED'}
                             </span>
@@ -354,12 +354,12 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ isOpen, onClose }
                     <div
                       key={alert._id}
                       className={`rounded-lg p-4 border-l-4 ${alert.severity === 'critical'
-                        ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
-                        : alert.severity === 'high'
-                          ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-500'
-                          : alert.severity === 'medium'
-                            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
-                            : 'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
+                          ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
+                          : alert.severity === 'high'
+                            ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-500'
+                            : alert.severity === 'medium'
+                              ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
+                              : 'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
                         }`}
                     >
                       <div className="flex items-start justify-between">

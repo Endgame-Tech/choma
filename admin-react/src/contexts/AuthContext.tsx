@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (storedToken && storedAdmin) {
           // Verify token is still valid by making a request to get profile
-          const response = await fetch('http://localhost:5001/api/admin/auth/profile', {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/auth/profile`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${storedToken}`,
@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true)
 
-      const response = await fetch('http://localhost:5001/api/admin/auth/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -114,7 +114,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Call backend logout endpoint if token exists
       if (token) {
-        await fetch('http://localhost:5001/api/admin/auth/logout', {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/admin/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

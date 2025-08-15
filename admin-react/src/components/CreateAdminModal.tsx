@@ -8,10 +8,10 @@ interface CreateAdminModalProps {
   onSubmit: (adminData: CreateAdminRequest) => void;
 }
 
-const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit
+const CreateAdminModal: React.FC<CreateAdminModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit 
 }) => {
   const [formData, setFormData] = useState<CreateAdminRequest>({
     email: '',
@@ -20,7 +20,7 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
     roleId: '',
     password: ''
   });
-
+  
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -70,7 +70,7 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
-
+      
       // Reset form
       setFormData({
         email: '',
@@ -118,20 +118,22 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
             {/* Personal Information */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-4">Personal Information</h3>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                  <label htmlFor="first-name" className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                     First Name *
                   </label>
                   <input
+                    id="first-name"
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.firstName
-                        ? 'border-red-300 dark:border-red-600'
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.firstName 
+                        ? 'border-red-300 dark:border-red-600' 
                         : 'border-gray-300 dark:border-neutral-600'
-                      } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
+                    } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
                     placeholder="Enter first name"
                   />
                   {errors.firstName && (
@@ -140,17 +142,19 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                  <label htmlFor="last-name" className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                     Last Name *
                   </label>
                   <input
+                    id="last-name"
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.lastName
-                        ? 'border-red-300 dark:border-red-600'
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.lastName 
+                        ? 'border-red-300 dark:border-red-600' 
                         : 'border-gray-300 dark:border-neutral-600'
-                      } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
+                    } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
                     placeholder="Enter last name"
                   />
                   {errors.lastName && (
@@ -160,17 +164,19 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                   Email Address *
                 </label>
                 <input
+                  id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.email
-                      ? 'border-red-300 dark:border-red-600'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.email 
+                      ? 'border-red-300 dark:border-red-600' 
                       : 'border-gray-300 dark:border-neutral-600'
-                    } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
+                  } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
                   placeholder="Enter email address"
                 />
                 {errors.email && (
@@ -182,19 +188,20 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
             {/* Role Selection */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-4">Role & Permissions</h3>
-
+              
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                <label htmlFor="admin-role" className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                   Admin Role *
                 </label>
                 <select
+                  id="admin-role"
                   value={formData.roleId}
                   onChange={(e) => setFormData(prev => ({ ...prev, roleId: e.target.value }))}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.roleId
-                      ? 'border-red-300 dark:border-red-600'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.roleId 
+                      ? 'border-red-300 dark:border-red-600' 
                       : 'border-gray-300 dark:border-neutral-600'
-                    } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
-                  aria-label="Select admin role"
+                  } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
                 >
                   <option value="">Select a role</option>
                   {PREDEFINED_ROLES.map(role => (
@@ -211,16 +218,16 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
                 <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
                   <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">{selectedRole.name}</h4>
                   <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">{selectedRole.description}</p>
-
+                  
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-blue-800 dark:text-blue-300">Key Permissions:</p>
                     <div className="flex flex-wrap gap-1">
                       {Object.entries(selectedRole.permissions).map(([section, perms]) => {
                         const hasPermissions = Object.values(perms).some(p => p === true);
                         if (!hasPermissions) return null;
-
+                        
                         return (
-                          <span
+                          <span 
                             key={section}
                             className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-800/30 text-blue-800 dark:text-blue-300 rounded-full capitalize"
                           >
@@ -237,21 +244,23 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
             {/* Password */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-4">Account Security</h3>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                     Password *
                   </label>
                   <div className="relative">
                     <input
+                      id="password"
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.password
-                          ? 'border-red-300 dark:border-red-600'
+                      className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.password 
+                          ? 'border-red-300 dark:border-red-600' 
                           : 'border-gray-300 dark:border-neutral-600'
-                        } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
+                      } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
                       placeholder="Enter password"
                     />
                     <button
@@ -268,18 +277,20 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                     Confirm Password *
                   </label>
                   <div className="relative">
                     <input
+                      id="confirm-password"
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.confirmPassword
-                          ? 'border-red-300 dark:border-red-600'
+                      className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.confirmPassword 
+                          ? 'border-red-300 dark:border-red-600' 
                           : 'border-gray-300 dark:border-neutral-600'
-                        } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
+                      } bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100`}
                       placeholder="Confirm password"
                     />
                     <button

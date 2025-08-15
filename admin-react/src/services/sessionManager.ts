@@ -13,19 +13,19 @@ interface SessionChangeEvent {
 
 class SessionManager {
   private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-  private sessionCheckInterval: number | null = null;
+  private sessionCheckInterval: ReturnType<typeof setInterval> | null = null;
   private listeners: Map<string, (event: SessionChangeEvent) => void> = new Map();
 
   // Start session monitoring
   startSessionMonitoring(adminId: string): void {
     if (this.sessionCheckInterval) {
-      window.clearInterval(this.sessionCheckInterval);
+      clearInterval(this.sessionCheckInterval);
     }
 
     // Check session validity every 5 minutes
-    this.sessionCheckInterval = window.setInterval(async () => {
+    this.sessionCheckInterval = setInterval(async () => {
       await this.checkSessionValidity(adminId);
-    }, 5 * 60 * 1000) as unknown as number;
+    }, 5 * 60 * 1000);
 
     console.log(`Session monitoring started for admin: ${adminId}`);
   }
@@ -33,7 +33,7 @@ class SessionManager {
   // Stop session monitoring
   stopSessionMonitoring(): void {
     if (this.sessionCheckInterval) {
-      window.clearInterval(this.sessionCheckInterval);
+      clearInterval(this.sessionCheckInterval);
       this.sessionCheckInterval = null;
     }
     this.listeners.clear();

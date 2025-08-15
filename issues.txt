@@ -1,12 +1,42 @@
- LOG  ✅ User stats loaded and validated: {"activeSubscriptions": 0, "favoriteCategory": "Fitness", "nextDelivery": null, "nutritionScore": 65, "ordersThisMonth": 0, "streakDays": 0, "totalOrdersCompleted": 0, "totalSaved": 0}
- LOG  Shared successfully
-Android Bundling failed 72ms index.js (1 module)
- ERROR  SyntaxError: C:\Users\endga\OneDrive\Desktop\Web Dev Projects\Projects\choma\src\screens\dashboard\ProfileScreen.js: Unterminated string constant. (497:17)
-
-  495 |
-  496 |     if (activity.type === 'delivery') {
-> 497 |       message += '
-      |                  ^
-  498 |
-  499 | Order delivered successfully! Rate your experience?';
-  500 |     } else if (activity.type === 'achievement') {
+Access to fetch at 'http://localhost:5001/api/admin/auth/login' from origin 'https://chomaadmin-delta.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.Understand this error
+index-C0wCTwGo.js:67  POST http://localhost:5001/api/admin/auth/login net::ERR_FAILED
+login @ index-C0wCTwGo.js:67
+h @ index-C0wCTwGo.js:67
+J4 @ index-C0wCTwGo.js:37
+Z4 @ index-C0wCTwGo.js:37
+e3 @ index-C0wCTwGo.js:37
+tp @ index-C0wCTwGo.js:37
+Kb @ index-C0wCTwGo.js:37
+(anonymous) @ index-C0wCTwGo.js:37
+tm @ index-C0wCTwGo.js:40
+vb @ index-C0wCTwGo.js:37
+Xu @ index-C0wCTwGo.js:37
+Tx @ index-C0wCTwGo.js:37
+g3 @ index-C0wCTwGo.js:37Understand this error
+index-C0wCTwGo.js:67 Login error: TypeError: Failed to fetch
+    at login (index-C0wCTwGo.js:67:5707)
+    at h (index-C0wCTwGo.js:67:38171)
+    at Object.J4 (index-C0wCTwGo.js:37:9864)
+    at Z4 (index-C0wCTwGo.js:37:10018)
+    at e3 (index-C0wCTwGo.js:37:10075)
+    at tp (index-C0wCTwGo.js:37:31462)
+    at Kb (index-C0wCTwGo.js:37:31879)
+    at index-C0wCTwGo.js:37:36792
+    at tm (index-C0wCTwGo.js:40:36957)
+    at vb (index-C0wCTwGo.js:37:8999)
+overrideMethod @ hook.js:608
+login @ index-C0wCTwGo.js:67
+await in login
+h @ index-C0wCTwGo.js:67
+J4 @ index-C0wCTwGo.js:37
+Z4 @ index-C0wCTwGo.js:37
+e3 @ index-C0wCTwGo.js:37
+tp @ index-C0wCTwGo.js:37
+Kb @ index-C0wCTwGo.js:37
+(anonymous) @ index-C0wCTwGo.js:37
+tm @ index-C0wCTwGo.js:40
+vb @ index-C0wCTwGo.js:37
+Xu @ index-C0wCTwGo.js:37
+Tx @ index-C0wCTwGo.js:37
+g3 @ index-C0wCTwGo.js:37Understand this error
+12login:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error

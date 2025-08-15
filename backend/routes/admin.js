@@ -212,4 +212,12 @@ router.get('/activity-logs', adminManagementController.getActivityLogs);
 router.get('/security-alerts', adminManagementController.getSecurityAlerts);
 router.put('/security-alerts/:id/resolve', adminManagementController.resolveSecurityAlert);
 
+// ============= ADMIN NOTIFICATION ROUTES =============
+// Import admin notification routes
+router.use('/notifications', require('./adminNotifications'));
+
+// ============= TWO-FACTOR AUTHENTICATION ROUTES =============
+// Import 2FA routes
+router.use('/2fa', require('./twoFactor'));
+
 module.exports = router;

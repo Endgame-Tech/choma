@@ -4,7 +4,7 @@ import { Mail, Clock, ArrowLeft, AlertTriangle, CheckCircle } from 'lucide-react
 import logo from '../assets/logo.svg';
 import chefBgImage from '../assets/chefsingin.jpg';
 import TermsModal from '../components/TermsModal';
-import styles from './EmailVerification.module.css';
+import styles from '../styles/EmailVerification.module.css';
 
 const EmailVerification: React.FC = () => {
   const [email, setEmail] = useState('');

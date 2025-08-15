@@ -443,6 +443,52 @@ exports.getChefDashboard = async (req, res) => {
   }
 };
 
+// ============= CHEF DASHBOARD STATS =============
+exports.getChefDashboardStats = async (req, res) => {
+  try {
+    const chefId = req.chef.chefId;
+
+    // Get chef's basic stats
+    const chef = await Chef.findById(chefId);
+
+    // Get orders assigned to chef
+    const assignedOrders = await Order.find({ assignedChef: chefId });
+
+    // Get order statistics
+    const stats = {
+      totalOrders: assignedOrders.length,
+      pendingOrders: assignedOrders.filter(
+        (o) => o.delegationStatus === "Assigned"
+      ).length,
+      inProgressOrders: assignedOrders.filter(
+        (o) => o.delegationStatus === "In Progress"
+      ).length,
+      completedOrders: assignedOrders.filter(
+        (o) => o.delegationStatus === "Completed"
+      ).length,
+      currentCapacity: chef.currentCapacity,
+      maxCapacity: chef.maxCapacity,
+      rating: chef.rating,
+      totalEarnings: chef.earnings.total,
+      thisMonthEarnings: chef.earnings.thisMonth,
+    };
+
+    res.json({
+      success: true,
+      data: {
+        stats,
+      },
+    });
+  } catch (error) {
+    console.error("Get chef dashboard stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to load dashboard stats",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
 // ============= ORDER MANAGEMENT =============
 exports.getChefOrders = async (req, res) => {
   try {
@@ -837,7 +883,7 @@ exports.getChefAnalytics = async (req, res) => {
           .reduce((sum, o) => sum + o.chefRating, 0) /
           orders.filter((o) => o.chefRating).length || 0,
       totalEarnings:
-        orders.filter((o) => o.delegationStatus === "Completed").length * 500, // Assuming 500 per order
+        orders.filter((o) => o.delegationStatus === "Completed").length * (process.env.PER_ORDER_EARNING || 500), // Use env variable or default
       completionRate:
         orders.length > 0
           ? (

@@ -79,6 +79,9 @@ router.post('/verify-bank-account', async (req, res) => {
 // GET /api/chef/dashboard - Get chef dashboard data
 router.get('/dashboard', chefAuth, chefController.getChefDashboard);
 
+// GET /api/chef/dashboard/stats - Get chef dashboard stats
+router.get('/dashboard/stats', chefAuth, chefController.getChefDashboardStats);
+
 // GET /api/chef/profile - Get chef profile
 router.get('/profile', chefAuth, chefController.getChefProfile);
 

@@ -8,6 +8,9 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // TODO: Re-enable 2FA functionality when backend supports it
+  // const [show2FAModal, setShow2FAModal] = useState(false)
+  // const [pendingLoginData, setPendingLoginData] = useState<{ adminId: string; tempToken: string } | null>(null)
 
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -18,14 +21,21 @@ const Login: React.FC = () => {
     setLoading(true)
 
     try {
-      const success = await login(email, password)
-      if (success) {
+      // First attempt login with credentials
+      const loginResult = await login(email, password)
+
+      if (loginResult === true) {
+        // Login successful
         navigate('/')
       } else {
         setError('Invalid credentials. Access denied.')
       }
     } catch (err: unknown) {
-      setError('Login failed. Please check your credentials.')
+      if (err instanceof Error) {
+        setError(err.message || 'Login failed. Please check your credentials.')
+      } else {
+        setError('Login failed. Please check your credentials.')
+      }
     } finally {
       setLoading(false)
     }
@@ -37,7 +47,7 @@ const Login: React.FC = () => {
         <div className="flex justify-center">
           <div className="bg-choma-orange rounded-full p-4">
             <svg className="w-12 h-12 text-choma-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L2 7v10c0 5.55 3.84 9.739 9 11 5.16-1.261 9-5.45 9-11V7l-10-5z"/>
+              <path d="M12 2L2 7v10c0 5.55 3.84 9.739 9 11 5.16-1.261 9-5.45 9-11V7l-10-5z" />
             </svg>
           </div>
         </div>

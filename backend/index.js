@@ -224,7 +224,15 @@ app.use(notFoundHandler);
 const PORT = process.env.PORT || 5001;
 const HOST = '0.0.0.0'; // Listen on all interfaces
 
-app.listen(PORT, HOST, () => {
+// Create HTTP server for Socket.IO
+const { createServer } = require('http');
+const server = createServer(app);
+
+// Initialize Socket.IO service
+const socketService = require('./services/socketService');
+socketService.initialize(server);
+
+server.listen(PORT, HOST, () => {
   // Get the local network IP address for easier mobile device connection
   const { networkInterfaces } = require('os');
   const nets = networkInterfaces();
@@ -245,6 +253,8 @@ app.listen(PORT, HOST, () => {
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
   console.log(`🔗 Network API URL: http://${localIp}:${PORT}/api`);
+  console.log(`🔌 WebSocket URL: ws://localhost:${PORT}/socket.io`);
+  console.log(`🔌 Network WebSocket URL: ws://${localIp}:${PORT}/socket.io`);
   console.log(`✅ Server is listening on all interfaces (${HOST})`);
   console.log(`💻 For mobile devices, use: http://${localIp}:${PORT}/api`);
   console.log(`📱 Mobile connection test: http://${localIp}:${PORT}/health`);
