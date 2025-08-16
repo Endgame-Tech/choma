@@ -19,13 +19,27 @@ const {
 // ============= DASHBOARD ANALYTICS =============
 exports.getDashboardStats = async (req, res) => {
   try {
+    console.log('📊 Dashboard Stats: Starting to fetch data...');
+    
     // Get total counts with status breakdown
+    console.log('👥 Fetching user counts...');
     const totalUsers = await Customer.countDocuments();
     const activeUsers = await Customer.countDocuments({ status: "Active" });
     const deletedUsers = await Customer.countDocuments({ status: "Deleted" });
+    
+    console.log('📦 Fetching order counts...');
     const totalOrders = await Order.countDocuments();
+    
+    console.log('📋 Fetching subscription counts...');
     const totalSubscriptions = await Subscription.countDocuments();
+    
+    console.log('🍽️ Fetching meal plan counts...');
     const totalMealPlans = await MealPlan.countDocuments({ isActive: true });
+    
+    console.log('📊 User stats:', { totalUsers, activeUsers, deletedUsers });
+    console.log('📦 Order stats:', { totalOrders });
+    console.log('📋 Subscription stats:', { totalSubscriptions });
+    console.log('🍽️ Meal plan stats:', { totalMealPlans });
 
     // Get revenue data
     const totalRevenue = await Order.aggregate([

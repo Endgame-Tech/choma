@@ -251,6 +251,11 @@ export const dashboardApi = {
   // Get dashboard stats
   async getStats(): Promise<DashboardStats> {
     const response = await api.get<ApiResponse<DashboardStats>>('/dashboard/stats')
+    console.log('🐛 Dashboard Response Data:', response.data)
+    console.log('🐛 Dashboard Response Success:', response.data.success)
+    if (response.data.message) {
+      console.log('🐛 Dashboard Response Message:', response.data.message)
+    }
     return handleResponse(response)
   }
 }
