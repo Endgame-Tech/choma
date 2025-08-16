@@ -318,6 +318,51 @@ class NotificationController {
       });
     }
   }
+
+  // Get notification statistics
+  static async getNotificationStats(req, res) {
+    try {
+      const userId = req.user.id;
+      
+      const totalNotifications = await Notification.countDocuments({ userId });
+      const unreadCount = await Notification.countDocuments({ userId, isRead: false });
+      const readCount = totalNotifications - unreadCount;
+      
+      // Get stats by type
+      const typeStats = await Notification.aggregate([
+        { $match: { userId: userId } },
+        { $group: { _id: '$type', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ]);
+      
+      // Get recent activity (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const recentNotifications = await Notification.countDocuments({
+        userId,
+        createdAt: { $gte: sevenDaysAgo }
+      });
+      
+      res.json({
+        success: true,
+        data: {
+          total: totalNotifications,
+          unread: unreadCount,
+          read: readCount,
+          recent: recentNotifications,
+          byType: typeStats
+        }
+      });
+    } catch (error) {
+      console.error('Get notification stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch notification stats',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
   
   // Admin: Get all notifications with filters
   static async getAllNotifications(req, res) {

@@ -13,8 +13,17 @@ router.get('/unread-count', auth, NotificationController.getUnreadCount);
 // GET /api/notifications/preferences - Get notification preferences
 router.get('/preferences', auth, NotificationController.getPreferences);
 
+// GET /api/notifications/preferences/settings - Get notification preferences (alias)
+router.get('/preferences/settings', auth, NotificationController.getPreferences);
+
+// GET /api/notifications/stats - Get notification statistics
+router.get('/stats', auth, NotificationController.getNotificationStats);
+
 // PUT /api/notifications/preferences - Update notification preferences
 router.put('/preferences', auth, notificationValidations.preferences, NotificationController.updatePreferences);
+
+// PUT /api/notifications/preferences/settings - Update notification preferences (alias)
+router.put('/preferences/settings', auth, notificationValidations.preferences, NotificationController.updatePreferences);
 
 // GET /api/notifications/:id - Get notification by ID
 router.get('/:id', auth, NotificationController.getNotificationById);
