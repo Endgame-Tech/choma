@@ -83,7 +83,7 @@ const BackupCodesManager: React.FC<BackupCodesManagerProps> = ({
     setShow2FAModal(true);
   };
 
-  const handleTwoFactorVerified = async (verified: boolean, data?: any) => {
+  const handleTwoFactorVerified = async (verified: boolean, data?: { verificationToken?: string }) => {
     if (verified) {
       try {
         const verificationToken = data?.verificationToken;
@@ -337,7 +337,7 @@ const BackupCodesManager: React.FC<BackupCodesManagerProps> = ({
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-choma-orange rounded-full mt-2 mr-3"></span>
-                  Use backup codes when you don't have access to your authenticator app
+                  Use backup codes when you don&apos;t have access to your authenticator app
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-choma-orange rounded-full mt-2 mr-3"></span>
@@ -345,7 +345,7 @@ const BackupCodesManager: React.FC<BackupCodesManagerProps> = ({
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-choma-orange rounded-full mt-2 mr-3"></span>
-                  Regenerate new codes if you've used most of your current codes
+                  Regenerate new codes if you&apos;ve used most of your current codes
                 </li>
               </ul>
             </div>

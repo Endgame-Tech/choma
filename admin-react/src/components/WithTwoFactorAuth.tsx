@@ -23,7 +23,7 @@ const WithTwoFactorAuth: React.FC<WithTwoFactorAuthProps> = ({
 }) => {
   const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [pendingExecution, setPendingExecution] = useState<(() => Promise<void>) | null>(null);
+  const [pendingExecution, setPendingExecution] = useState<((verificationData?: TwoFactorVerificationResponse['data']) => Promise<void>) | null>(null);
 
   const executeWithVerification = async () => {
     setIsVerifying(true);
@@ -54,14 +54,14 @@ const WithTwoFactorAuth: React.FC<WithTwoFactorAuthProps> = ({
     }
   };
 
-  const handleTwoFactorVerified = async (verified: boolean, _verificationData?: TwoFactorVerificationResponse['data']) => {
+  const handleTwoFactorVerified = async (verified: boolean, verificationData?: TwoFactorVerificationResponse['data']) => {
     if (verified && pendingExecution) {
       try {
         // Mark verification as complete for this operation type
         TwoFactorEnforcementService.markVerificationComplete(operation);
         
         // Execute the pending operation
-        await pendingExecution();
+        await pendingExecution(verificationData);
       } catch (error) {
         console.error('Error executing operation after 2FA verification:', error);
         throw error;

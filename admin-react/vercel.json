@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "https://choma.onrender.com/api/admin/:path*"
+      "destination": "/index.html"
     }
   ]
 }
