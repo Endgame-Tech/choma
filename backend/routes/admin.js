@@ -25,7 +25,10 @@ router.get('/health', (req, res) => {
 router.use(authenticateAdmin);
 
 // ============= DASHBOARD ROUTES =============
-router.get('/dashboard/stats', adminController.getDashboardStats);
+router.get('/dashboard/stats', (req, res, next) => {
+  console.log('🎯 Dashboard stats route hit!');
+  next();
+}, adminController.getDashboardStats);
 
 // ============= USER ANALYTICS ROUTES =============
 router.get('/analytics/users/:id', adminController.getUserAnalytics);
