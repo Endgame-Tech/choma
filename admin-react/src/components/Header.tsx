@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import ThemeToggle from './ThemeToggle'
 import TwoFactorSetup from './TwoFactorSetup'
 import BackupCodesManager from './BackupCodesManager'
+import NotificationDropdown from './NotificationDropdown'
 import { TwoFactorStatus } from '../types/twoFactor'
 import { twoFactorApi } from '../services/twoFactorApi'
 
@@ -13,17 +14,20 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false)
   const [showBackupCodesManager, setShowBackupCodesManager] = useState(false)
   const [twoFactorStatus, setTwoFactorStatus] = useState<TwoFactorStatus | null>(null)
   const [loading2FA, setLoading2FA] = useState(false)
   const { logout, admin } = useAuth()
   const menuRef = useRef<HTMLDivElement>(null)
+  const notificationsRef = useRef<HTMLDivElement>(null)
 
   const handleLogout = () => {
     logout()
     setShowUserMenu(false)
   }
+
 
   const loadTwoFactorStatus = async () => {
     try {
@@ -74,6 +78,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false)
       }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
@@ -106,12 +113,16 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           <div className="flex items-center space-x-2 sm:space-x-4">
             <ThemeToggle />
 
-            <button
-              className="p-2 text-choma-brown/60 dark:text-choma-white/60 hover:text-choma-brown dark:hover:text-choma-white transition-colors"
-              aria-label="View notifications"
-            >
-              <BellIcon className="w-6 h-6" />
-            </button>
+            <div className="relative" ref={notificationsRef}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2 text-choma-brown/60 dark:text-choma-white/60 hover:text-choma-brown dark:hover:text-choma-white transition-colors"
+                aria-label="View notifications"
+              >
+                <BellIcon className="w-6 h-6" />
+              </button>
+              {showNotifications && <NotificationDropdown />}
+            </div>
 
             <div className="relative" ref={menuRef}>
               <button
@@ -165,7 +176,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                         Security
                       </p>
                     </div>
-                    
+
                     <button
                       onClick={handleTwoFactorSetup}
                       disabled={loading2FA}

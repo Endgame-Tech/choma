@@ -96,10 +96,19 @@ exports.getDashboardStats = async (req, res) => {
     });
   } catch (err) {
     console.error("Get dashboard stats error:", err);
+    console.error("Error details:", {
+      message: err.message,
+      stack: err.stack,
+      name: err.name
+    });
     res.status(500).json({
       success: false,
       message: "Failed to fetch dashboard statistics",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+      error: err.message, // Show error in production too for debugging
+      errorDetails: {
+        name: err.name,
+        message: err.message
+      }
     });
   }
 };
