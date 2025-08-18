@@ -21,7 +21,7 @@ const createRateLimiter = (windowMs, max, message) => rateLimit({
 // General rate limiting
 const generalLimiter = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
-  process.env.NODE_ENV === 'production' ? 100 : 10000, // Much higher limit for development
+  process.env.NODE_ENV === 'production' ? 1000 : 10000, // Increased from 100 to 1000 for dashboard apps
   'Too many requests from this IP, please try again later.'
 );
 
@@ -35,7 +35,7 @@ const authLimiter = createRateLimiter(
 // Admin rate limiting (more permissive in development)
 const adminLimiter = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
-  process.env.NODE_ENV === 'production' ? 20 : 10000, // Much higher limit for development
+  process.env.NODE_ENV === 'production' ? 500 : 10000, // Increased from 20 to 500 for admin dashboard
   'Too many admin requests, please try again later.'
 );
 
@@ -44,6 +44,27 @@ const paymentLimiter = createRateLimiter(
   5 * 60 * 1000, // 5 minutes
   10, // limit each IP to 10 payment requests per windowMs
   'Too many payment requests, please try again later.'
+);
+
+// Dashboard/Analytics rate limiting (very permissive for frequent polling)
+const dashboardLimiter = createRateLimiter(
+  15 * 60 * 1000, // 15 minutes
+  process.env.NODE_ENV === 'production' ? 2000 : 10000, // High limit for dashboard polling
+  'Too many dashboard requests, please try again later.'
+);
+
+// File upload rate limiting
+const uploadLimiter = createRateLimiter(
+  15 * 60 * 1000, // 15 minutes
+  process.env.NODE_ENV === 'production' ? 50 : 1000, // Moderate limit for uploads
+  'Too many upload requests, please try again later.'
+);
+
+// 2FA rate limiting (very permissive for setup/verification process)
+const twoFactorLimiter = createRateLimiter(
+  15 * 60 * 1000, // 15 minutes
+  process.env.NODE_ENV === 'production' ? 100 : 1000, // High limit for 2FA operations
+  'Too many 2FA requests, please try again later.'
 );
 
 // Slow down middleware for repeated requests
@@ -252,6 +273,9 @@ module.exports = {
   authLimiter,
   adminLimiter,
   paymentLimiter,
+  dashboardLimiter,
+  uploadLimiter,
+  twoFactorLimiter,
   speedLimiter,
   
   // Security middleware

@@ -8,6 +8,7 @@ const {
   authLimiter,
   adminLimiter,
   paymentLimiter,
+  twoFactorLimiter,
   speedLimiter,
   helmet,
   cors,
@@ -137,8 +138,8 @@ app.use('/api/payments', paymentLimiter, require('./routes/payments'));
 // Admin routes (with admin-specific rate limiting)
 app.use('/api/admin', adminLimiter, require('./routes/admin'));
 
-// Admin 2FA routes (with admin-specific rate limiting)
-app.use('/api/admin/2fa', adminLimiter, require('./routes/twoFactor'));
+// Admin 2FA routes (with dedicated 2FA rate limiting)
+app.use('/api/admin/2fa', twoFactorLimiter, require('./routes/twoFactor'));
 
 // Admin notification routes (with admin-specific rate limiting)
 app.use('/api/admin/notifications', adminLimiter, require('./routes/adminNotifications'));

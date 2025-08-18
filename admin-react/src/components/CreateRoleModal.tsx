@@ -272,9 +272,10 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSu
   const totalCount = getTotalPermissionCount();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-choma-dark rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-choma-dark rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Create Custom Role
@@ -293,7 +294,8 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSu
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto p-6">
             {/* Basic Information */}
             <div className="space-y-4 mb-6">
@@ -415,8 +417,8 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSu
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-choma-black/30">
+          {/* Fixed Footer */}
+          <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-choma-black/30 flex-shrink-0">
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {totalCount.enabled > 0 && (
                 <span>{totalCount.enabled} permission{totalCount.enabled !== 1 ? 's' : ''} selected</span>

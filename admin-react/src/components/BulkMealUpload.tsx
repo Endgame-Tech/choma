@@ -262,7 +262,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
       }
 
       // Optional field validations - Case insensitive category check
-      if (meal.category && !CATEGORIES.some(cat => cat.toLowerCase() === meal.category.toLowerCase())) {
+      if (meal.category && !CATEGORIES.some(cat => cat.toLowerCase() === meal.category!.toLowerCase())) {
         errors.push({ row: rowNum, field: 'Category', message: `Category must be one of: ${CATEGORIES.join(', ')}`, value: meal.category })
       }
 
