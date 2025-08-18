@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Clock, ArrowLeft, AlertTriangle, CheckCircle } from 'lucide-react';
 import logo from '../assets/logo.svg';
@@ -13,13 +13,6 @@ const EmailVerification: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [showTermsModal, setShowTermsModal] = useState(false);
   const navigate = useNavigate();
-  const bgRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (bgRef.current) {
-      bgRef.current.style.setProperty('--bg-image', `url(${chefBgImage})`);
-    }
-  }, []);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -74,9 +67,30 @@ const EmailVerification: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Form */}
-      <div className="flex-[0_0_35%] flex flex-col justify-center px-8 sm:px-12 lg:px-16 bg-white">
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Mobile Image Section - Shows at top on mobile */}
+      <div className="lg:hidden relative h-80 sm:h-96 rounded-b-3xl overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${chefBgImage})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60 flex items-center justify-center">
+          <div className="text-center text-white px-6">
+            <div className="mb-6">
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 inline-block">
+                <img src={logo} alt="Choma Logo" className="w-16 h-16" />
+              </div>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3">Join Our Chef Community</h2>
+            <p className="text-base sm:text-lg opacity-90 leading-relaxed max-w-sm">
+              Never forget to go green everyday, because the greener you go the higher you get
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Section */}
+      <div className="flex-1 lg:flex-[0_0_35%] rounded-t-3xl lg:rounded-none flex flex-col justify-center px-6 sm:px-8 lg:px-16 bg-white -mt-6 lg:mt-0 relative z-10 py-8 lg:py-0">
         <div className="w-full max-w-md mx-auto">
           {/* Back Button */}
           <button
@@ -87,16 +101,16 @@ const EmailVerification: React.FC = () => {
             Back to Login
           </button>
 
-          {/* Logo */}
-          <div className="mb-8">
+          {/* Desktop Logo - Hidden on mobile */}
+          <div className="hidden lg:block mb-8">
             <div>
               <img src={logo} alt="Choma Logo" className="w-20" />
             </div>
           </div>
 
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account.</h1>
+          <div className="mb-8 text-center lg:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
             <p className="text-gray-600">
               Already have an account?{' '}
               <button onClick={() => navigate('/login')} className="text-orange-600 hover:text-orange-700 font-medium">
@@ -167,20 +181,30 @@ const EmailVerification: React.FC = () => {
               </label>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Sending verification code...
-                </div>
-              ) : (
-                'Get Started'
-              )}
-            </button>
+            <div className="space-y-4">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-4 px-4 rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Sending verification code...
+                  </div>
+                ) : (
+                  'Sign Up'
+                )}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="w-full border-2 border-orange-600 text-orange-600 hover:bg-orange-50 font-semibold py-4 px-4 rounded-2xl transition-all duration-200"
+              >
+                Log In
+              </button>
+            </div>
           </form>
 
           {/* Info Box */}
@@ -203,12 +227,11 @@ const EmailVerification: React.FC = () => {
         </div>
       </div>
 
-      {/* Right side - Image */}
+      {/* Desktop Image Section - Hidden on mobile */}
       <div className="hidden lg:flex flex-[0_0_65%] relative">
         <div
-          className={`w-full bg-cover bg-center relative ${styles.bgImage}`}
-          data-bg-image={chefBgImage}
-          ref={bgRef}
+          className="w-full bg-cover bg-center bg-no-repeat relative"
+          style={{ backgroundImage: `url(${chefBgImage})` }}
         >
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60 flex items-end">

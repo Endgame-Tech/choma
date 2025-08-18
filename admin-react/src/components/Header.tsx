@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { BellIcon, ArrowRightOnRectangleIcon, Bars3Icon, UserCircleIcon, KeyIcon, Cog6ToothIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
+import { ArrowRightOnRectangleIcon, Bars3Icon, UserCircleIcon, KeyIcon, Cog6ToothIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext'
 import ThemeToggle from './ThemeToggle'
 import TwoFactorSetup from './TwoFactorSetup'

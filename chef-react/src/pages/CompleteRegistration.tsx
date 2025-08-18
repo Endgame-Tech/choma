@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, User, MapPin, Briefcase, Shield, Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import logo from '../assets/logo.svg'
-// import chefBgImage from '../assets/chefsingin.jpg'
+import chefBgImage from '../assets/chefsingin.jpg'
 import TermsModal from '../components/TermsModal'
 import PrivacyModal from '../components/PrivacyModal'
 import type { RegisterData } from '../types'
@@ -1339,10 +1339,33 @@ const CompleteRegistration: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex">
-      <div className="flex-[0_0_35%] flex flex-col justify-center px-6 sm:px-8 lg:px-10 bg-white overflow-y-auto">
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Mobile Image Section - Shows at top on mobile */}
+      <div className="lg:hidden relative h-80 sm:h-96 rounded-b-3xl overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${chefBgImage})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60 flex items-center justify-center">
+          <div className="text-center text-white px-6">
+            <div className="mb-6">
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 inline-block">
+                <img src={logo} alt="Choma Logo" className="w-16 h-16" />
+              </div>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3">Complete Your Profile</h2>
+            <p className="text-base sm:text-lg opacity-90 leading-relaxed max-w-sm">
+              Step {currentStep} of {steps.length}: {steps[currentStep - 1]?.title}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Section */}
+      <div className="flex-1 lg:flex-[0_0_35%] rounded-t-3xl lg:rounded-none flex flex-col justify-center px-6 sm:px-8 lg:px-10 bg-white overflow-y-auto -mt-6 lg:mt-0 relative z-10 py-8 lg:py-0">
         <div className="w-full max-w-2xl mx-auto">
-          <div className="flex justify-start items-center mb-6">
+          {/* Desktop Logo - Hidden on mobile */}
+          <div className="hidden lg:flex justify-start items-center mb-6">
             <div className="pr-6">
               <img src={logo} alt="Choma Logo" className="w-20" />
             </div>
@@ -1446,9 +1469,11 @@ const CompleteRegistration: React.FC = () => {
         </div>
       </div>
 
+      {/* Desktop Image Section - Hidden on mobile */}
       <div className="hidden lg:flex flex-[0_0_65%] relative">
         <div
-          className="w-full bg-cover bg-center relative bg-chef-image"
+          className="w-full bg-cover bg-center relative"
+          style={{ backgroundImage: `url(${chefBgImage})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60 flex items-end">
             <div className="p-12 text-white">
