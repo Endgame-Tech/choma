@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, User, MapPin, Briefcase, Shield, Eye, EyeOff, AlertTriangle } from 'lucide-react'
-import logo from '../assets/logo.svg'
-import chefBgImage from '../assets/chefsingin.jpg'
-import styles from '../styles/Login.module.css'
+import AuthLayout from '../components/AuthLayout'
 import TermsModal from '../components/TermsModal'
 import PrivacyModal from '../components/PrivacyModal'
 import type { RegisterData } from '../types'
@@ -44,10 +42,27 @@ const transportationOptions = [
   'Own Vehicle', 'Motorcycle', 'Public Transport', 'Delivery Service'
 ]
 
+const bankOptions = [
+  { name: 'Access Bank', code: '044' },
+  { name: 'Guaranty Trust Bank (GTBank)', code: '058' },
+  { name: 'United Bank for Africa (UBA)', code: '033' },
+  { name: 'Zenith Bank', code: '057' },
+  { name: 'First Bank of Nigeria', code: '011' },
+  { name: 'Fidelity Bank', code: '070' },
+  { name: 'Union Bank', code: '032' },
+  { name: 'Sterling Bank', code: '232' },
+  { name: 'Stanbic IBTC Bank', code: '221' },
+  { name: 'Ecobank', code: '050' },
+  { name: 'First City Monument Bank (FCMB)', code: '214' },
+  { name: 'Keystone Bank', code: '082' },
+  { name: 'Polaris Bank', code: '076' },
+  { name: 'Wema Bank', code: '035' },
+  { name: 'Unity Bank', code: '215' }
+]
+
 const CompleteRegistration: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const bgRef = useRef<HTMLDivElement>(null)
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -60,21 +75,36 @@ const CompleteRegistration: React.FC = () => {
   const verificationToken = location.state?.verificationToken
   const isVerified = location.state?.verified
 
-  // Set background image
-  useEffect(() => {
-    if (bgRef.current) {
-      bgRef.current.style.backgroundImage = `url(${chefBgImage})`
-      bgRef.current.style.backgroundSize = 'cover'
-      bgRef.current.style.backgroundPosition = 'center'
-    }
-  }, [])
 
-  // Redirect if not verified
+  // Redirect if not verified, unless using already_verified token
   useEffect(() => {
-    if (!email || !verificationToken || !isVerified) {
+    if (!email || (!verificationToken && verificationToken !== 'already_verified') || !isVerified) {
       navigate('/register')
     }
   }, [email, verificationToken, isVerified, navigate])
+
+  // Load existing chef data if available
+  useEffect(() => {
+    const loadExistingChefData = async () => {
+      if (!email || verificationToken !== 'already_verified') return;
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/chef/registration-status/${encodeURIComponent(email.toLowerCase())}`);
+        const data = await response.json();
+
+        if (data.success && data.data.chefExists && !data.data.registrationComplete) {
+          // Chef exists but registration incomplete, fetch their data to pre-populate
+          // For now, we'll just show them the form with empty fields
+          // In a real app, you might want to fetch the partial data and pre-populate
+          console.log('Chef exists with incomplete registration, allowing them to continue');
+        }
+      } catch (error) {
+        console.error('Error loading existing chef data:', error);
+      }
+    };
+
+    loadExistingChefData();
+  }, [email, verificationToken])
 
   const [formData, setFormData] = useState<RegisterData>({
     // Personal Information
@@ -180,6 +210,47 @@ const CompleteRegistration: React.FC = () => {
     { number: 7, title: 'Terms', icon: Shield }
   ]
 
+  // Function to check if a specific step is completed
+  const isStepCompleted = (stepNumber: number): boolean => {
+    switch (stepNumber) {
+      case 1: // Personal Information
+        return !!(formData.fullName && formData.email && formData.phone && formData.dateOfBirth &&
+          formData.password && formData.confirmPassword && formData.password === formData.confirmPassword);
+
+      case 2: // Identity Verification
+        return !!(formData.identityVerification.idType && formData.identityVerification.idNumber &&
+          validateIdNumber(formData.identityVerification.idType, formData.identityVerification.idNumber));
+
+      case 3: // Professional Details
+        return !!(formData.specialties.length > 0 && formData.experience >= 0 && formData.languagesSpoken.length > 0);
+
+      case 4: // Location
+        return !!(formData.location.streetAddress && formData.location.city && formData.location.state);
+
+      case 5: // Kitchen & Availability
+        return !!(formData.kitchenDetails.kitchenEquipment.length > 0 &&
+          formData.availability.daysAvailable.length > 0 &&
+          formData.kitchenDetails.transportationMethod);
+
+      case 6: // References & Bank Details
+        return !!(formData.emergencyContact.name && formData.emergencyContact.phone &&
+          formData.emergencyContact.relationship && formData.bankDetails.accountName &&
+          formData.bankDetails.accountNumber && formData.bankDetails.bankName);
+
+      case 7: // Terms & Conditions
+        return !!(formData.agreedToTerms && formData.agreedToPrivacyPolicy && formData.agreedToBackgroundCheck);
+
+      default:
+        return false;
+    }
+  };
+
+  // Function to handle step navigation
+  const navigateToStep = (stepNumber: number) => {
+    setCurrentStep(stepNumber);
+    setError(''); // Clear any existing errors
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const isCheckbox = type === 'checkbox';
@@ -195,7 +266,7 @@ const CompleteRegistration: React.FC = () => {
             [child]: {
               ...(prev[parent as keyof RegisterData] as any)[child],
               [grandchild]: isCheckbox ? checked :
-                name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius')
+                (name && (name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius')))
                   ? parseInt(value) || 0 : value
             }
           }
@@ -206,7 +277,7 @@ const CompleteRegistration: React.FC = () => {
           [parent]: {
             ...((prev[parent as keyof RegisterData] as object) || {}),
             [child]: isCheckbox ? checked :
-              name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius')
+              (name && (name.includes('experience') || name.includes('maxOrdersPerDay') || name.includes('serviceRadius')))
                 ? parseInt(value) || 0 : value
           }
         }))
@@ -215,7 +286,7 @@ const CompleteRegistration: React.FC = () => {
       setFormData(prev => ({
         ...prev,
         [name]: isCheckbox ? checked :
-          name === 'experience' || name === 'maxOrdersPerDay' || name === 'serviceRadius'
+          (name && (name === 'experience' || name === 'maxOrdersPerDay' || name === 'serviceRadius'))
             ? parseInt(value) || 0 : value
       }))
     }
@@ -269,46 +340,196 @@ const CompleteRegistration: React.FC = () => {
     setError('')
   }
 
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!(formData.fullName && formData.email && formData.phone && formData.dateOfBirth &&
-          formData.password && formData.confirmPassword)
-      case 2:
-        return !!(formData.identityVerification.idType && formData.identityVerification.idNumber)
-      case 3:
-        return !!(formData.specialties.length > 0 && formData.experience >= 0 && formData.languagesSpoken.length > 0)
-      case 4:
-        return !!(formData.location.streetAddress && formData.location.city && formData.location.state)
-      case 5:
-        return !!(formData.kitchenDetails.kitchenEquipment.length > 0 && formData.availability.daysAvailable.length > 0)
-      case 6:
-        return !!(formData.emergencyContact.name && formData.emergencyContact.phone &&
-          formData.emergencyContact.relationship && formData.bankDetails.accountName &&
-          formData.bankDetails.accountNumber && formData.bankDetails.bankName)
-      case 7:
-        return !!(formData.agreedToTerms && formData.agreedToPrivacyPolicy && formData.agreedToBackgroundCheck)
+  const handleBankSelection = (bankName: string) => {
+    const selectedBank = bankOptions.find(bank => bank.name === bankName)
+    setFormData(prev => ({
+      ...prev,
+      bankDetails: {
+        ...prev.bankDetails,
+        bankName: bankName,
+        bankCode: selectedBank ? selectedBank.code : '',
+        isVerified: false // Reset verification when bank changes
+      }
+    }))
+    setError('')
+  }
+
+  // ID validation functions
+  const validateIdNumber = (idType: string, idNumber: string) => {
+    switch (idType) {
+      case 'National ID':
+        return /^\d{11}$/.test(idNumber); // 11 digits
+      case 'Driver License':
+        return /^[A-Z]{3}\d{9}$/.test(idNumber); // 3 letters + 9 digits (e.g., LAG123456789)
+      case 'International Passport':
+        return /^[A-Z]\d{8}$/.test(idNumber); // 1 letter + 8 digits (e.g., A12345678)
+      case 'Voter Card':
+        return /^[A-Z0-9]{19}$/.test(idNumber); // 19 alphanumeric characters
       default:
-        return false
+        return true;
     }
+  };
+
+  const getIdFormatInfo = (idType: string) => {
+    switch (idType) {
+      case 'National ID':
+        return { placeholder: '12345678901', maxLength: 11, format: '11 digits' };
+      case 'Driver License':
+        return { placeholder: 'LAG123456789', maxLength: 12, format: '3 letters + 9 digits' };
+      case 'International Passport':
+        return { placeholder: 'A12345678', maxLength: 9, format: '1 letter + 8 digits' };
+      case 'Voter Card':
+        return { placeholder: '90F5B4F877D45670891234A', maxLength: 19, format: '19 alphanumeric characters' };
+      default:
+        return { placeholder: 'Enter ID number', maxLength: 20, format: '' };
+    }
+  };
+
+  const validateBvn = (bvn: string) => {
+    return /^\d{11}$/.test(bvn);
+  };
+
+  const verifyBankAccount = async () => {
+    const { accountNumber, bankCode } = formData.bankDetails;
+
+    if (!accountNumber || !bankCode || accountNumber.length !== 10) {
+      setError('Please enter a valid 10-digit account number and select a bank');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-bank-account`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          accountNumber,
+          bankCode
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setFormData(prev => ({
+          ...prev,
+          bankDetails: {
+            ...prev.bankDetails,
+            accountName: data.account_name,
+            isVerified: true
+          }
+        }));
+      } else {
+        setError(data.message || 'Unable to verify bank account. Please check your details.');
+        setFormData(prev => ({
+          ...prev,
+          bankDetails: {
+            ...prev.bankDetails,
+            isVerified: false
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Bank verification error:', error);
+      setError('Network error. Please check your connection and try again.');
+      setFormData(prev => ({
+        ...prev,
+        bankDetails: {
+          ...prev.bankDetails,
+          isVerified: false
+        }
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const validateAllRequiredFields = (): boolean => {
+    // Check all required fields across all steps
+    const requiredFieldsCheck = {
+      // Step 1: Personal Information
+      personalInfo: !!(formData.fullName && formData.email && formData.phone && formData.dateOfBirth &&
+        formData.password && formData.confirmPassword),
+
+      // Step 2: Identity Verification
+      identity: !!(formData.identityVerification.idType && formData.identityVerification.idNumber),
+
+      // Step 3: Professional Details
+      professional: !!(formData.specialties.length > 0 && formData.experience >= 0 && formData.languagesSpoken.length > 0),
+
+      // Step 4: Location
+      location: !!(formData.location.streetAddress && formData.location.city && formData.location.state),
+
+      // Step 5: Kitchen & Availability
+      kitchen: !!(formData.kitchenDetails.kitchenEquipment.length > 0 && formData.availability.daysAvailable.length > 0),
+
+      // Step 6: References & Bank Details
+      references: !!(formData.emergencyContact.name && formData.emergencyContact.phone &&
+        formData.emergencyContact.relationship && formData.bankDetails.accountName &&
+        formData.bankDetails.accountNumber && formData.bankDetails.bankName),
+
+      // Step 7: Terms & Conditions
+      terms: !!(formData.agreedToTerms && formData.agreedToPrivacyPolicy && formData.agreedToBackgroundCheck)
+    };
+
+    return Object.values(requiredFieldsCheck).every(Boolean);
+  }
+
+  const getIncompleteSteps = (): string[] => {
+    const incompleteSteps = [];
+
+    if (!(formData.fullName && formData.email && formData.phone && formData.dateOfBirth &&
+      formData.password && formData.confirmPassword)) {
+      incompleteSteps.push('Personal Information');
+    }
+
+    if (!(formData.identityVerification.idType && formData.identityVerification.idNumber)) {
+      incompleteSteps.push('Identity Verification');
+    }
+
+    if (!(formData.specialties.length > 0 && formData.experience >= 0 && formData.languagesSpoken.length > 0)) {
+      incompleteSteps.push('Professional Details');
+    }
+
+    if (!(formData.location.streetAddress && formData.location.city && formData.location.state)) {
+      incompleteSteps.push('Location & Service Area');
+    }
+
+    if (!(formData.kitchenDetails.kitchenEquipment.length > 0 && formData.availability.daysAvailable.length > 0)) {
+      incompleteSteps.push('Kitchen & Availability');
+    }
+
+    if (!(formData.emergencyContact.name && formData.emergencyContact.phone &&
+      formData.emergencyContact.relationship && formData.bankDetails.accountName &&
+      formData.bankDetails.accountNumber && formData.bankDetails.bankName)) {
+      incompleteSteps.push('References & Bank Details');
+    }
+
+    if (!(formData.agreedToTerms && formData.agreedToPrivacyPolicy && formData.agreedToBackgroundCheck)) {
+      incompleteSteps.push('Terms & Conditions');
+    }
+
+    return incompleteSteps;
   }
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, steps.length))
-    } else {
-      setError('Please fill in all required fields')
-    }
+    setCurrentStep(prev => Math.min(prev + 1, steps.length))
+    setError('') // Clear any existing errors
   }
 
   const handlePrevious = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1))
-    setError('')
+    setError('') // Clear any existing errors
   }
 
   const handleSubmit = async () => {
-    if (!validateStep(steps.length)) {
-      setError('Please complete all required fields')
+    if (!validateAllRequiredFields()) {
+      const incompleteSteps = getIncompleteSteps();
+      setError(`Please complete the following sections: ${incompleteSteps.join(', ')}`);
       return
     }
 
@@ -349,9 +570,17 @@ const CompleteRegistration: React.FC = () => {
           }
         })
       } else {
-        setError(data.message || 'Registration failed. Please try again.')
-        if (data.requiresVerification) {
-          navigate('/register')
+        if (data.message && data.message.includes('already exists')) {
+          // Chef already exists, this might be a duplicate registration attempt
+          setError('A chef with this email is already registered. Redirecting to login...')
+          setTimeout(() => {
+            navigate('/login')
+          }, 2000)
+        } else {
+          setError(data.message || 'Registration failed. Please try again.')
+          if (data.requiresVerification) {
+            navigate('/register')
+          }
         }
       }
     } catch (error) {
@@ -573,11 +802,45 @@ const CompleteRegistration: React.FC = () => {
                   type="text"
                   name="identityVerification.idNumber"
                   value={formData.identityVerification.idNumber}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  placeholder="Enter your ID number"
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase();
+                    const syntheticEvent = {
+                      ...e,
+                      target: {
+                        ...e.target,
+                        name: 'identityVerification.idNumber',
+                        value: value
+                      }
+                    };
+                    handleInputChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
+                  }}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${formData.identityVerification.idNumber && formData.identityVerification.idType &&
+                    !validateIdNumber(formData.identityVerification.idType, formData.identityVerification.idNumber)
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-gray-300'
+                    }`}
+                  placeholder={getIdFormatInfo(formData.identityVerification.idType).placeholder}
+                  maxLength={getIdFormatInfo(formData.identityVerification.idType).maxLength}
                   required
                 />
+                {formData.identityVerification.idType && getIdFormatInfo(formData.identityVerification.idType).format && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: {getIdFormatInfo(formData.identityVerification.idType).format}
+                  </p>
+                )}
+                {formData.identityVerification.idNumber && formData.identityVerification.idType &&
+                  !validateIdNumber(formData.identityVerification.idType, formData.identityVerification.idNumber) && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Invalid format. Expected: {getIdFormatInfo(formData.identityVerification.idType).format}
+                    </p>
+                  )}
+                {formData.identityVerification.idNumber && formData.identityVerification.idType &&
+                  validateIdNumber(formData.identityVerification.idType, formData.identityVerification.idNumber) && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center">
+                      <CheckCircle size={12} className="mr-1" />
+                      Valid {formData.identityVerification.idType} format
+                    </p>
+                  )}
               </div>
 
               <div>
@@ -1149,22 +1412,6 @@ const CompleteRegistration: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="accountName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Account Name *
-                  </label>
-                  <input
-                    id="accountName"
-                    type="text"
-                    name="bankDetails.accountName"
-                    value={formData.bankDetails.accountName}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="Account holder's name"
-                    required
-                  />
-                </div>
-
-                <div>
                   <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700 mb-2">
                     Account Number *
                   </label>
@@ -1173,9 +1420,30 @@ const CompleteRegistration: React.FC = () => {
                     type="text"
                     name="bankDetails.accountNumber"
                     value={formData.bankDetails.accountNumber}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      const syntheticEvent = {
+                        ...e,
+                        target: {
+                          ...e.target,
+                          name: 'bankDetails.accountNumber',
+                          value: value
+                        }
+                      };
+                      handleInputChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
+                      // Reset verification when account number changes
+                      setFormData(prev => ({
+                        ...prev,
+                        bankDetails: {
+                          ...prev.bankDetails,
+                          accountNumber: value,
+                          isVerified: false
+                        }
+                      }));
+                    }}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="10-digit account number"
+                    maxLength={10}
                     required
                   />
                 </div>
@@ -1188,32 +1456,69 @@ const CompleteRegistration: React.FC = () => {
                     id="bankName"
                     name="bankDetails.bankName"
                     value={formData.bankDetails.bankName}
-                    onChange={handleInputChange}
+                    onChange={(e) => handleBankSelection(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     required
                   >
                     <option value="">Select Bank</option>
-                    <option value="Access Bank">Access Bank</option>
-                    <option value="Guaranty Trust Bank">Guaranty Trust Bank (GTBank)</option>
-                    <option value="United Bank for Africa">United Bank for Africa (UBA)</option>
-                    <option value="Zenith Bank">Zenith Bank</option>
-                    <option value="First Bank of Nigeria">First Bank of Nigeria</option>
-                    <option value="Fidelity Bank">Fidelity Bank</option>
-                    <option value="Union Bank">Union Bank</option>
-                    <option value="Sterling Bank">Sterling Bank</option>
-                    <option value="Stanbic IBTC Bank">Stanbic IBTC Bank</option>
-                    <option value="Ecobank">Ecobank</option>
-                    <option value="First City Monument Bank">First City Monument Bank (FCMB)</option>
-                    <option value="Keystone Bank">Keystone Bank</option>
-                    <option value="Polaris Bank">Polaris Bank</option>
-                    <option value="Wema Bank">Wema Bank</option>
-                    <option value="Unity Bank">Unity Bank</option>
+                    {bankOptions.map((bank) => (
+                      <option key={bank.code} value={bank.name}>
+                        {bank.name}
+                      </option>
+                    ))}
                   </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <div className="flex items-center gap-4 mb-4">
+                    <button
+                      type="button"
+                      onClick={verifyBankAccount}
+                      disabled={!formData.bankDetails.accountNumber || !formData.bankDetails.bankCode || formData.bankDetails.accountNumber.length !== 10 || isLoading}
+                      className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Verifying...
+                        </div>
+                      ) : (
+                        'Verify Account'
+                      )}
+                    </button>
+
+                    {formData.bankDetails.isVerified && (
+                      <div className="flex items-center text-green-600">
+                        <CheckCircle size={20} className="mr-2" />
+                        <span className="font-medium">Account Verified</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="accountName" className="block text-sm font-medium text-gray-700 mb-2">
+                    Account Name *
+                  </label>
+                  <input
+                    id="accountName"
+                    type="text"
+                    name="bankDetails.accountName"
+                    value={formData.bankDetails.accountName}
+                    readOnly={formData.bankDetails.isVerified}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${formData.bankDetails.isVerified ? 'bg-green-50 text-green-800' : ''}`}
+                    placeholder={formData.bankDetails.isVerified ? "Account name will appear here after verification" : "Account holder's name"}
+                    required
+                  />
+                  {formData.bankDetails.isVerified && (
+                    <p className="text-xs text-green-600 mt-1">✓ Account name verified from bank records</p>
+                  )}
                 </div>
 
                 <div>
                   <label htmlFor="bvn" className="block text-sm font-medium text-gray-700 mb-2">
-                    BVN
+                    BVN (Optional)
                   </label>
                   <input
                     id="bvn"
@@ -1222,15 +1527,32 @@ const CompleteRegistration: React.FC = () => {
                     value={formData.bankDetails.bvn}
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, '').slice(0, 11);
-                      handleInputChange({ ...e, target: { ...e.target, value } });
+                      const syntheticEvent = {
+                        ...e,
+                        target: {
+                          ...e.target,
+                          name: 'bankDetails.bvn',
+                          value: value
+                        }
+                      };
+                      handleInputChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
                     }}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${formData.bankDetails.bvn && !validateBvn(formData.bankDetails.bvn)
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-300'
+                      }`}
                     placeholder="12345678901 (optional)"
                     maxLength={11}
                   />
                   <p className="text-xs text-gray-500 mt-1">BVN must be exactly 11 digits (optional)</p>
-                  {formData.bankDetails.bvn && formData.bankDetails.bvn.length !== 11 && (
+                  {formData.bankDetails.bvn && !validateBvn(formData.bankDetails.bvn) && (
                     <p className="text-xs text-red-500 mt-1">BVN must be exactly 11 digits</p>
+                  )}
+                  {formData.bankDetails.bvn && validateBvn(formData.bankDetails.bvn) && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center">
+                      <CheckCircle size={12} className="mr-1" />
+                      Valid BVN format
+                    </p>
                   )}
                 </div>
               </div>
@@ -1350,153 +1672,113 @@ const CompleteRegistration: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Mobile Image Section - Shows at top on mobile */}
-      <div className="lg:hidden relative h-96 sm:h-64 rounded-b-xl">
-        <div
-          className={`absolute h-[30rem] -z-10 inset-0 ${styles.mobileBgImage}`}
-          ref={bgRef}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b h-[30rem] -z-10 from-black/40 via-black/30 to-black/50 flex items-center justify-center">
-          <div className="text-center text-white px-4">
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">Complete Your Profile</h2>
-            <p className="text-sm sm:text-base opacity-90">
-              Step {currentStep} of {steps.length}: {steps[currentStep - 1]?.title}
-            </p>
+    <AuthLayout
+      title="Complete your chef profile."
+      subtitle="Tell us about your culinary skills, experience, and preferences. This helps us match you with the perfect customers."
+    >
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/register/verify-code', { state: { email } })}
+        className="flex items-center text-orange-600 hover:text-orange-700 mb-6 transition-colors"
+      >
+        <ArrowLeft size={20} className="mr-2" />
+        Back to Verification
+      </button>
+
+      {/* Progress Steps */}
+      <div className="mb-6">
+        <div className="flex justify-start">
+          <div className="flex flex-wrap justify-start items-center gap-x-2 gap-y-3 max-w-sm">
+            {steps.map((step, index) => {
+              const Icon = step.icon
+              const isActive = currentStep === step.number
+              const isCompleted = isStepCompleted(step.number)
+
+              return (
+                <div key={step.number} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <button
+                      onClick={() => navigateToStep(step.number)}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-300 ${isCompleted
+                        ? 'bg-green-500 text-white cursor-pointer'
+                        : isActive
+                          ? 'bg-orange-500 text-white cursor-pointer'
+                          : 'bg-gray-200 text-gray-500 cursor-pointer hover:bg-gray-300'
+                        }`}
+                      title={`Go to ${step.title} step`}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle size={16} />
+                      ) : (
+                        <Icon size={16} />
+                      )}
+                    </button>
+                    <span className={`text-xs mt-1 text-left max-w-12 leading-tight ${isActive ? 'text-orange-600 font-medium' :
+                      isCompleted ? 'text-green-600 font-medium' : 'text-gray-500'
+                      }`}>
+                      {step.title}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && index % 4 !== 3 && (
+                    <div className={`w-6 h-0.5 mx-1 ${isCompleted ? 'bg-green-500' : 'bg-gray-200'
+                      }`} />
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
 
-      {/* Form Section */}
-      <div className="flex-1 lg:flex-[0_0_35%] rounded-t-[3rem] flex flex-col px-6 sm:px-8 lg:px-10 bg-white overflow-y-auto py-8 lg:py-12">
-        <div className="w-full max-w-2xl mx-auto">
-          {/* Logo */}
-          <div className="mb-6 lg:mb-8 text-center lg:text-left">
-            <img src={logo} alt="Choma Logo" className="w-16 sm:w-20 mx-auto lg:mx-0" />
-          </div>
+      {/* Form Content */}
+      <div className="bg-white">
+        {renderStepContent()}
 
-          {/* Back Button */}
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
+            <div className="flex items-center">
+              <AlertTriangle size={20} className="text-red-400 mr-3 flex-shrink-0" />
+              <div>
+                <p className="text-red-800 text-sm">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-6 lg:mt-8">
           <button
-            onClick={() => navigate('/register/verify-code', { state: { email } })}
-            className="flex items-center text-orange-600 hover:text-orange-700 mb-6 transition-colors"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+            className="px-4 sm:px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
-            <ArrowLeft size={20} className="mr-2" />
-            Back to Verification
+            Previous
           </button>
 
-          {/* Progress Steps */}
-          <div className="mb-6">
-            <div className="flex justify-start">
-              <div className="flex flex-wrap justify-start items-center gap-x-2 gap-y-3 max-w-sm">
-                {steps.map((step, index) => {
-                  const Icon = step.icon
-                  const isActive = currentStep === step.number
-                  const isCompleted = currentStep > step.number
-
-                  return (
-                    <div key={step.number} className="flex items-center">
-                      <div className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted
-                          ? 'bg-green-500 text-white'
-                          : isActive
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-gray-200 text-gray-500'
-                          }`}>
-                          {isCompleted ? (
-                            <CheckCircle size={16} />
-                          ) : (
-                            <Icon size={16} />
-                          )}
-                        </div>
-                        <span className={`text-xs mt-1 text-left max-w-12 leading-tight ${isActive ? 'text-orange-600 font-medium' : 'text-gray-500'
-                          }`}>
-                          {step.title}
-                        </span>
-                      </div>
-                      {index < steps.length - 1 && index % 4 !== 3 && (
-                        <div className={`w-6 h-0.5 mx-1 ${currentStep > step.number ? 'bg-green-500' : 'bg-gray-200'
-                          }`} />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Form Content */}
-          <div className="bg-white">
-            {renderStepContent()}
-
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
+          {currentStep < steps.length ? (
+            <button
+              onClick={handleNext}
+              className="px-4 sm:px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] text-sm sm:text-base"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="px-4 sm:px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm sm:text-base"
+            >
+              {isLoading ? (
                 <div className="flex items-center">
-                  <AlertTriangle size={20} className="text-red-400 mr-3 flex-shrink-0" />
-                  <div>
-                    <p className="text-red-800 text-sm">{error}</p>
-                  </div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Submitting...
                 </div>
-              </div>
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-6 lg:mt-8">
-              <button
-                onClick={handlePrevious}
-                disabled={currentStep === 1}
-                className="px-4 sm:px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-              >
-                Previous
-              </button>
-
-              {currentStep < steps.length ? (
-                <button
-                  onClick={handleNext}
-                  className="px-4 sm:px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] text-sm sm:text-base"
-                >
-                  Next
-                </button>
               ) : (
-                <button
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                  className="px-4 sm:px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm sm:text-base"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Submitting...
-                    </div>
-                  ) : (
-                    'Submit Application'
-                  )}
-                </button>
+                'Submit Application'
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop Image Section - Hidden on mobile */}
-      <div className="hidden lg:flex flex-[0_0_65%] fixed right-0 top-0 h-screen">
-        <div
-          className={`w-full relative ${styles.bgImage}`}
-          data-bg-image={chefBgImage}
-          ref={bgRef}
-        >
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60 flex items-end">
-            <div className="p-12 text-white">
-              <h2 className="text-4xl font-bold mb-4 leading-tight">
-                Complete your chef profile.
-              </h2>
-              <p className="text-lg opacity-90 leading-relaxed">
-                Tell us about your culinary skills, experience, and preferences.
-                This helps us match you with the perfect customers.
-              </p>
-            </div>
-          </div>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1511,7 +1793,7 @@ const CompleteRegistration: React.FC = () => {
         isOpen={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
       />
-    </div>
+    </AuthLayout>
   )
 }
 

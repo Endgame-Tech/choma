@@ -9,7 +9,7 @@ const CodeVerification: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [timeLeft, setTimeLeft] = useState(600) // 10 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(300) // 5 minutes in seconds
   const [canResend, setCanResend] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
   const [attemptsRemaining, setAttemptsRemaining] = useState(5)
@@ -166,7 +166,7 @@ const CodeVerification: React.FC = () => {
 
       if (data.success) {
         setSuccess('New verification code sent!')
-        setTimeLeft(600) // Reset timer
+        setTimeLeft(300) // Reset timer
         setResendCooldown(60) // 1 minute cooldown
         setCanResend(false)
         setAttemptsRemaining(5) // Reset attempts
@@ -191,9 +191,30 @@ const CodeVerification: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Form */}
-      <div className="flex-[0_0_35%] flex flex-col justify-center px-8 sm:px-12 lg:px-16 bg-white">
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Mobile Image Section - Shows at top on mobile */}
+      <div className="lg:hidden relative h-80 sm:h-96 rounded-b-3xl overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${chefBgImage})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60 flex items-center justify-center">
+          <div className="text-center text-white px-6">
+            <div className="mb-6">
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 inline-block">
+                <img src={logo} alt="Choma Logo" className="w-16 h-16" />
+              </div>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3">Almost there!</h2>
+            <p className="text-base sm:text-lg opacity-90 leading-relaxed max-w-sm">
+              Let's verify your email to continue your chef registration
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Section */}
+      <div className="flex-1 lg:flex-[0_0_35%] rounded-t-3xl lg:rounded-none flex flex-col justify-center px-6 sm:px-8 lg:px-16 bg-white -mt-6 lg:mt-0 relative z-10 py-8 lg:py-0">
         <div className="w-full max-w-md mx-auto">
           {/* Back Button */}
           <button
@@ -204,16 +225,16 @@ const CodeVerification: React.FC = () => {
             Back
           </button>
 
-          {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <div className="">
-              <img src={logo} alt="Choma Logo" className="w-20" />
+          {/* Desktop Logo - Hidden on mobile */}
+          <div className="hidden lg:block mb-8">
+            <div className="text-center flex justify-center">
+              <img src={logo} alt="Choma Logo" className="w-20 mx-auto lg:mx-0" />
             </div>
           </div>
 
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Enter Verification Code</h1>
+          <div className="text-center lg:text-center mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Enter Verification Code</h1>
             <p className="text-gray-600 mb-1">
               We sent a 6-digit code to
             </p>
@@ -285,7 +306,7 @@ const CodeVerification: React.FC = () => {
           <button
             onClick={() => handleVerifyCode()}
             disabled={isLoading || code.join('').length !== 6}
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg mb-4"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-4 px-4 rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm mb-4"
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
@@ -323,17 +344,17 @@ const CodeVerification: React.FC = () => {
               <ul className="space-y-1">
                 <li>• Check your spam/junk folder</li>
                 <li>• Make sure you entered the correct email</li>
-                <li>• Code expires in 10 minutes</li>
+                <li>• Code expires in 5 minutes</li>
               </ul>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right side - Image */}
+      {/* Desktop Image Section - Hidden on mobile */}
       <div className="hidden lg:flex flex-[0_0_65%] relative">
         <div
-          className="w-full bg-cover bg-center relative bg-image-container"
+          className="w-full bg-cover bg-center bg-no-repeat relative"
           style={{ backgroundImage: `url(${chefBgImage})` }}
         >
           {/* Overlay */}
