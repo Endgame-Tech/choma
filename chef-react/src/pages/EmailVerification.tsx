@@ -4,7 +4,6 @@ import { Mail, Clock, ArrowLeft, AlertTriangle, CheckCircle } from 'lucide-react
 import logo from '../assets/logo.svg';
 import chefBgImage from '../assets/chefsingin.jpg';
 import TermsModal from '../components/TermsModal';
-import styles from '../styles/EmailVerification.module.css';
 
 const EmailVerification: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -196,7 +195,7 @@ const EmailVerification: React.FC = () => {
                   'Sign Up'
                 )}
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => navigate('/login')}
