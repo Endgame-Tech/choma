@@ -153,4 +153,9 @@ router.get('/verification-status/:email', emailVerificationController.checkVerif
 // POST /api/auth/cleanup-verifications - Cleanup expired verifications (admin/cron)
 router.post('/cleanup-verifications', emailVerificationController.cleanupExpiredVerifications);
 
+// ============= BANK VERIFICATION ROUTES =============
+
+// POST /api/auth/verify-bank-account - Verify bank account details
+router.post('/verify-bank-account', authController.verifyBankAccount);
+
 module.exports = router;

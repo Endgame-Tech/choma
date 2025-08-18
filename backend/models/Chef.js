@@ -325,6 +325,17 @@ const chefSchema = new mongoose.Schema({
         type: Date
     },
     
+    // Password Reset
+    resetPasswordToken: {
+        type: String
+    },
+    resetPasswordExpires: {
+        type: Date
+    },
+    passwordChangedAt: {
+        type: Date
+    },
+    
     // Earnings
     earnings: {
         total: {

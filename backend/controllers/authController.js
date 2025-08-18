@@ -1104,6 +1104,73 @@ exports.logUserActivity = async (req, res) => {
   }
 };
 
+// Bank account verification controller
+exports.verifyBankAccount = async (req, res) => {
+  try {
+    const { accountNumber, bankCode } = req.body;
+
+    // Validation
+    if (!accountNumber || !bankCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account number and bank code are required'
+      });
+    }
+
+    if (accountNumber.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account number must be exactly 10 digits'
+      });
+    }
+
+    // Call Paystack API to verify account using axios
+    const axios = require('axios');
+    const response = await axios.get('https://api.paystack.co/bank/resolve', {
+      headers: {
+        'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      params: {
+        account_number: accountNumber,
+        bank_code: bankCode
+      }
+    });
+
+    if (response.data.status) {
+      return res.json({
+        success: true,
+        account_name: response.data.data.account_name,
+        account_number: response.data.data.account_number,
+        bank_id: response.data.data.bank_id
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: response.data.message || 'Unable to verify account details'
+      });
+    }
+
+  } catch (err) {
+    console.error('Bank verification error:', err);
+    
+    // Handle specific Paystack errors
+    if (err.response) {
+      const errorMessage = err.response.data?.message || 'Bank verification failed';
+      return res.status(400).json({
+        success: false,
+        message: errorMessage
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Bank verification service temporarily unavailable',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
 // Logout controller
 exports.logout = async (req, res) => {
   try {

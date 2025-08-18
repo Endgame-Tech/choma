@@ -13,6 +13,69 @@ if (!process.env.JWT_SECRET) {
 }
 
 // ============= CHEF AUTHENTICATION =============
+
+exports.getRegistrationStatus = async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    // Check if chef exists
+    const chef = await Chef.findOne({ email: email.toLowerCase() }).select('-password');
+    
+    if (!chef) {
+      return res.json({
+        success: true,
+        data: {
+          chefExists: false,
+          registrationComplete: false
+        }
+      });
+    }
+
+    // Check if registration is complete by verifying required fields
+    const isRegistrationComplete = !!(
+      chef.fullName && 
+      chef.email && 
+      chef.phone && 
+      chef.dateOfBirth &&
+      chef.specialties && chef.specialties.length > 0 &&
+      chef.location && chef.location.streetAddress && chef.location.city && chef.location.state &&
+      chef.emergencyContact && chef.emergencyContact.name && chef.emergencyContact.phone &&
+      chef.bankDetails && chef.bankDetails.accountName && chef.bankDetails.accountNumber
+    );
+
+    res.json({
+      success: true,
+      data: {
+        chefExists: true,
+        registrationComplete: isRegistrationComplete,
+        approvalStatus: chef.approvalStatus,
+        isActive: chef.isActive,
+        chefData: isRegistrationComplete ? {
+          fullName: chef.fullName,
+          email: chef.email,
+          phone: chef.phone,
+          approvalStatus: chef.approvalStatus,
+          isActive: chef.isActive
+        } : null
+      }
+    });
+
+  } catch (error) {
+    console.error('Get registration status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check registration status',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 exports.registerChef = async (req, res) => {
   // Log incoming request details for debugging aborted requests
   console.log("--- Incoming Chef Registration Request ---");
@@ -1090,6 +1153,194 @@ exports.updateChefStatus = async (req, res) => {
       success: false,
       message: "Failed to update chef status",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+// ============= PASSWORD RESET =============
+
+// Forgot password - Send reset link
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    // Find chef by email
+    const chef = await Chef.findOne({ email: email.toLowerCase() });
+    if (!chef) {
+      // For security, don't reveal if email exists or not
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a reset link has been sent.'
+      });
+    }
+
+    // Generate reset token
+    const crypto = require('crypto');
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Store reset token
+    chef.resetPasswordToken = resetToken;
+    chef.resetPasswordExpires = resetTokenExpires;
+    await chef.save();
+
+    // Send reset email
+    const EmailService = require('../services/emailService');
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(chef.email)}`;
+    
+    try {
+      await EmailService.sendPasswordResetEmail({
+        email: chef.email,
+        name: chef.fullName,
+        resetUrl: resetUrl
+      });
+
+      res.json({
+        success: true,
+        message: 'Password reset link sent to your email address.'
+      });
+    } catch (emailError) {
+      console.error('Failed to send reset email:', emailError);
+      
+      // Clear the reset token if email failed
+      chef.resetPasswordToken = undefined;
+      chef.resetPasswordExpires = undefined;
+      await chef.save();
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send reset email. Please try again.'
+      });
+    }
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process password reset request.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Verify reset token
+exports.verifyResetToken = async (req, res) => {
+  try {
+    const { token, email } = req.body;
+
+    if (!token || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token and email are required'
+      });
+    }
+
+    // Find chef with valid reset token
+    const chef = await Chef.findOne({
+      email: email.toLowerCase(),
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!chef) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Reset token is valid'
+    });
+
+  } catch (error) {
+    console.error('Verify reset token error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify reset token',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Reset password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, email, password } = req.body;
+
+    if (!token || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token, email, and password are required'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long'
+      });
+    }
+
+    // Find chef with valid reset token
+    const chef = await Chef.findOne({
+      email: email.toLowerCase(),
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!chef) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    // Hash new password
+    const bcrypt = require('bcryptjs');
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Update password and clear reset token
+    chef.password = hashedPassword;
+    chef.resetPasswordToken = undefined;
+    chef.resetPasswordExpires = undefined;
+    chef.passwordChangedAt = new Date();
+    
+    await chef.save();
+
+    // Send confirmation email
+    const EmailService = require('../services/emailService');
+    try {
+      await EmailService.sendPasswordResetConfirmation({
+        email: chef.email,
+        name: chef.fullName
+      });
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Don't fail the request if confirmation email fails
+    }
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully'
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

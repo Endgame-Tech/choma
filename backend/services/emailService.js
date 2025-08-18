@@ -438,7 +438,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         to: email,
         subject: "Verify Your Email - Choma Chef Registration",
         html: this.generateVerificationTemplate(verificationCode, purpose),
-        text: `Your Choma verification code is: ${verificationCode}. This code expires in 10 minutes. If you didn't request this, please ignore this email.`,
+        text: `Your Choma verification code is: ${verificationCode}. This code expires in 5 minutes. If you didn't request this, please ignore this email.`,
       };
 
       await this.transporter.sendMail(mailOptions);
@@ -575,7 +575,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             </div>
 
             <p class="warning">
-              ⚠️ This code expires in <strong>10 minutes</strong> and can only be used once.
+              ⚠️ This code expires in <strong>5 minutes</strong> and can only be used once.
             </p>
 
             <div class="footer">
@@ -1266,6 +1266,315 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             
             <div class="footer">
               <p>Thank you for your patience,<br>The Choma Team</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Send password reset email
+   * @param {Object} data - Email data
+   * @param {string} data.email - Chef's email address
+   * @param {string} data.name - Chef's full name
+   * @param {string} data.resetUrl - Password reset URL
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendPasswordResetEmail(data) {
+    try {
+      const { email, name, resetUrl } = data;
+
+      const emailTemplate = this.generatePasswordResetTemplate(name, resetUrl);
+
+      const mailOptions = {
+        from: {
+          name: "Choma Team",
+          address: process.env.GMAIL_USER,
+        },
+        to: email,
+        subject: "Reset Your Choma Password 🔐",
+        html: emailTemplate,
+        text: `Dear ${name}, we received a request to reset your password for your Choma chef account. Click the following link to reset your password: ${resetUrl} This link will expire in 15 minutes for security reasons. If you didn't request this, please ignore this email.`,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Password reset email sent successfully to ${email}`);
+      return true;
+    } catch (error) {
+      console.error("❌ Failed to send password reset email:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Send password reset confirmation email
+   * @param {Object} data - Email data
+   * @param {string} data.email - Chef's email address
+   * @param {string} data.name - Chef's full name
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendPasswordResetConfirmation(data) {
+    try {
+      const { email, name } = data;
+
+      const emailTemplate = this.generatePasswordResetConfirmationTemplate(name);
+
+      const mailOptions = {
+        from: {
+          name: "Choma Team",
+          address: process.env.GMAIL_USER,
+        },
+        to: email,
+        subject: "Password Successfully Reset ✅",
+        html: emailTemplate,
+        text: `Dear ${name}, your Choma password has been successfully reset. If you didn't make this change, please contact our support team immediately. For security, you've been logged out of all devices.`,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Password reset confirmation email sent successfully to ${email}`);
+      return true;
+    } catch (error) {
+      console.error("❌ Failed to send password reset confirmation email:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Generate password reset email template
+   */
+  generatePasswordResetTemplate(name, resetUrl) {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Reset Your Password - Choma</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+              background-color: #f8f9fa;
+            }
+            .container {
+              background: white;
+              padding: 40px;
+              border-radius: 12px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              border-left: 4px solid #dc3545;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .logo img {
+              width: 120px;
+              height: auto;
+            }
+            .reset-badge {
+              background: #dc3545;
+              color: white;
+              padding: 12px 24px;
+              border-radius: 25px;
+              display: inline-block;
+              font-weight: bold;
+              margin-bottom: 20px;
+            }
+            .content h1 {
+              color: #dc3545;
+              font-size: 24px;
+              margin-bottom: 15px;
+            }
+            .reset-button {
+              display: inline-block;
+              background: #652815;
+              color: white;
+              padding: 16px 32px;
+              text-decoration: none;
+              border-radius: 25px;
+              font-weight: bold;
+              margin: 20px 0;
+              text-align: center;
+            }
+            .security-info {
+              background: #fff3cd;
+              border: 1px solid #ffeaa7;
+              padding: 15px;
+              border-radius: 8px;
+              margin: 20px 0;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 30px;
+              color: #777;
+              font-size: 14px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <img src="${this.logoUrl}" alt="Choma Logo" width="120">
+              <div class="reset-badge">Password Reset</div>
+            </div>
+            
+            <div class="content">
+              <h1>Reset Your Password</h1>
+              
+              <p>Dear ${name},</p>
+              
+              <p>We received a request to reset the password for your Choma chef account. Click the button below to create a new password:</p>
+              
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="reset-button">Reset My Password</a>
+              </div>
+              
+              <div class="security-info">
+                <h4>🔒 Security Information:</h4>
+                <ul>
+                  <li>This link will expire in <strong>15 minutes</strong> for your security</li>
+                  <li>You can only use this link once</li>
+                  <li>If you didn't request this reset, you can safely ignore this email</li>
+                  <li>Your current password remains unchanged until you complete the reset</li>
+                </ul>
+              </div>
+              
+              <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; color: #007bff;">${resetUrl}</p>
+              
+              <p>If you didn't request this password reset, please ignore this email or contact our support team if you have concerns.</p>
+            </div>
+            
+            <div class="footer">
+              <p>Best regards,<br>The Choma Team</p>
+              <p>This is an automated message. Please do not reply directly to this email.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Generate password reset confirmation email template
+   */
+  generatePasswordResetConfirmationTemplate(name) {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset Successful - Choma</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+              background-color: #f8f9fa;
+            }
+            .container {
+              background: white;
+              padding: 40px;
+              border-radius: 12px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              border-left: 4px solid #28a745;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .logo img {
+              width: 120px;
+              height: auto;
+            }
+            .success-badge {
+              background: #28a745;
+              color: white;
+              padding: 12px 24px;
+              border-radius: 25px;
+              display: inline-block;
+              font-weight: bold;
+              margin-bottom: 20px;
+            }
+            .content h1 {
+              color: #28a745;
+              font-size: 24px;
+              margin-bottom: 15px;
+            }
+            .success-icon {
+              text-align: center;
+              font-size: 48px;
+              margin: 20px 0;
+            }
+            .security-info {
+              background: #d4edda;
+              border: 1px solid #c3e6cb;
+              padding: 15px;
+              border-radius: 8px;
+              margin: 20px 0;
+            }
+            .login-button {
+              display: inline-block;
+              background: #652815;
+              color: white;
+              padding: 16px 32px;
+              text-decoration: none;
+              border-radius: 25px;
+              font-weight: bold;
+              margin: 20px 0;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 30px;
+              color: #777;
+              font-size: 14px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <img src="${this.logoUrl}" alt="Choma Logo" width="120">
+              <div class="success-badge">Password Reset Complete</div>
+            </div>
+            
+            <div class="content">
+              <div class="success-icon">✅</div>
+              <h1>Password Successfully Reset!</h1>
+              
+              <p>Dear ${name},</p>
+              
+              <p>Your Choma password has been successfully reset. You can now log in to your chef account using your new password.</p>
+              
+              <div class="security-info">
+                <h4>🛡️ Security Update:</h4>
+                <ul>
+                  <li>Your password has been securely updated</li>
+                  <li>You've been automatically logged out of all devices</li>
+                  <li>You'll need to log in again with your new password</li>
+                  <li>Your account security has been enhanced</li>
+                </ul>
+              </div>
+              
+              <div style="text-align: center;">
+                <a href="https://chef.choma.com/login" class="login-button">Log In Now</a>
+              </div>
+              
+              <p><strong>Didn't reset your password?</strong> If you didn't make this change, please contact our support team immediately at support@choma.com.</p>
+            </div>
+            
+            <div class="footer">
+              <p>Stay secure,<br>The Choma Team</p>
+              <p>This is an automated message. Please do not reply directly to this email.</p>
             </div>
           </div>
         </body>

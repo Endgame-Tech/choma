@@ -7,7 +7,8 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "seed": "node seeders/mealPlanSeeder.js",
-    "create-indexes": "node scripts/createIndexes.js"
+    "create-indexes": "node scripts/createIndexes.js",
+    "create-alpha-admin": "node scripts/createAlphaAdmin.js"
   },
   "keywords": [],
   "author": "",

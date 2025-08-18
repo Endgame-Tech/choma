@@ -84,7 +84,7 @@ exports.sendVerificationCode = async (req, res) => {
       message: 'Verification code sent successfully',
       data: {
         email: email.toLowerCase(),
-        expiresIn: 600 // 10 minutes in seconds
+        expiresIn: 300 // 5 minutes in seconds
       }
     });
 
@@ -228,7 +228,7 @@ exports.resendVerificationCode = async (req, res) => {
     const newVerificationCode = EmailVerification.generateCode();
     existingVerification.verificationCode = newVerificationCode;
     existingVerification.attempts = 0;
-    existingVerification.expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    existingVerification.expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
     existingVerification.createdAt = new Date();
 
     await existingVerification.save();
@@ -252,7 +252,7 @@ exports.resendVerificationCode = async (req, res) => {
       message: 'New verification code sent successfully',
       data: {
         email: email.toLowerCase(),
-        expiresIn: 600 // 10 minutes
+        expiresIn: 300 // 5 minutes
       }
     });
 

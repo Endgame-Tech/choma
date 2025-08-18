@@ -7,11 +7,24 @@ const chefAuth = require('../middleware/chefAuth');
 const paystackService = require('../services/paystackService');
 
 // ============= AUTHENTICATION ROUTES =============
+// GET /api/chef/registration-status/:email - Check chef registration status
+router.get('/registration-status/:email', chefController.getRegistrationStatus);
+
 // POST /api/chef/register - Chef registration
 router.post('/register', chefController.registerChef);
 
 // POST /api/chef/login - Chef login
 router.post('/login', chefController.loginChef);
+
+// ============= PASSWORD RESET ROUTES =============
+// POST /api/chef/forgot-password - Send password reset link
+router.post('/forgot-password', chefController.forgotPassword);
+
+// POST /api/chef/verify-reset-token - Verify password reset token
+router.post('/verify-reset-token', chefController.verifyResetToken);
+
+// POST /api/chef/reset-password - Reset password
+router.post('/reset-password', chefController.resetPassword);
 
 // ============= BANK VERIFICATION ROUTES =============
 // GET /api/chef/banks - Get list of Nigerian banks

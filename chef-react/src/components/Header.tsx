@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle from './ThemeToggle'
 import logo from '../assets/logo.svg'
 import {
   Menu,
+  X,
   BarChart3,
   FileText,
   User,
@@ -15,6 +16,14 @@ import {
 const Header: React.FC = () => {
   const { chef, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+  }, [mobileMenuOpen])
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -115,21 +124,46 @@ const Header: React.FC = () => {
       </div>
 
       {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            <a href="/dashboard" className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
-              <BarChart3 size={18} className="mr-2" /> Dashboard
-            </a>
-            <a href="/orders" className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
-              <FileText size={18} className="mr-2" /> My Orders
-            </a>
-            <a href="/profile" className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
-              <User size={18} className="mr-2" /> Profile
-            </a>
-            <a href="/earnings" className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
-              <DollarSign size={18} className="mr-2" /> Earnings
-            </a>
+      <div
+        className={`fixed inset-0 z-50 transform transition-transform duration-300 ease-in-out ${
+          mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        } md:hidden`}
+      >
+        <div
+          className="absolute inset-0 bg-black/50"
+          onClick={() => setMobileMenuOpen(false)}
+        ></div>
+        <div className="relative z-10 flex flex-col w-full max-w-xs h-full bg-white dark:bg-gray-800 ml-auto">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <img src={logo} alt="Choma Logo" className="h-6 w-auto" />
+              <h1 className="ml-2 text-lg font-semibold text-gray-900 dark:text-white">choma Chef</h1>
+            </div>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Close menu"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              <a href="/dashboard" className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                <BarChart3 size={18} className="mr-2" /> Dashboard
+              </a>
+              <a href="/orders" className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                <FileText size={18} className="mr-2" /> My Orders
+              </a>
+              <a href="/profile" className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                <User size={18} className="mr-2" /> Profile
+              </a>
+              <a href="/earnings" className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                <DollarSign size={18} className="mr-2" /> Earnings
+              </a>
+            </div>
+          </div>
+          <div className="px-2 py-3 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={logout}
               className="w-full text-left flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
@@ -138,7 +172,7 @@ const Header: React.FC = () => {
             </button>
           </div>
         </div>
-      )}
+      </div>
     </header>
   )
 }

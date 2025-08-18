@@ -91,6 +91,13 @@ interface UploadResult {
 
 const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert', 'Beverage']
 
+// Helper function to normalize category case
+const normalizeCategoryCase = (category: string): string => {
+  if (!category) return 'Lunch'
+  const normalizedCategory = CATEGORIES.find(cat => cat.toLowerCase() === category.toLowerCase())
+  return normalizedCategory || 'Lunch'
+}
+
 export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealUploadProps) {
   const [dragActive, setDragActive] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -254,8 +261,8 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
         errors.push({ row: rowNum, field: 'Platform Fee', message: 'Valid platform fee is required (must be >= 0)', value: meal.platformFee })
       }
 
-      // Optional field validations
-      if (meal.category && !CATEGORIES.includes(meal.category)) {
+      // Optional field validations - Case insensitive category check
+      if (meal.category && !CATEGORIES.some(cat => cat.toLowerCase() === meal.category.toLowerCase())) {
         errors.push({ row: rowNum, field: 'Category', message: `Category must be one of: ${CATEGORIES.join(', ')}`, value: meal.category })
       }
 
@@ -342,7 +349,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
           sugar: Number(meal.sugar) || 0,
           weight: Number(meal.weight) || 0
         },
-        category: meal.category || 'Lunch',
+        category: normalizeCategoryCase(meal.category || 'Lunch'),
         ingredients: meal.ingredientsList?.trim() || '',
         preparationTime: preparationTime,
         complexityLevel: complexityLevel as 'low' | 'medium' | 'high',
