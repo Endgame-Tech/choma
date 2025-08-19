@@ -134,16 +134,16 @@ class CacheService {
 // Export singleton instance
 export const cacheService = new CacheService();
 
-// Cache TTL constants (in milliseconds)
+// Cache TTL constants (in milliseconds) - OPTIMIZED to reduce server load
 export const CACHE_DURATIONS = {
-  DASHBOARD_STATS: 30000,     // 30 seconds - frequently changing
-  ANALYTICS: 60000,           // 1 minute - analytics data
-  USER_LIST: 45000,           // 45 seconds - user data
-  MEAL_PLANS: 120000,         // 2 minutes - meal plans change less frequently
-  CHEFS: 60000,               // 1 minute - chef data
-  ORDERS: 15000,              // 15 seconds - orders change frequently
-  SETTINGS: 300000,           // 5 minutes - settings rarely change
-  NOTIFICATIONS: 10000,       // 10 seconds - notifications are real-time
+  DASHBOARD_STATS: 300000,    // 5 minutes (was 30s) - reduced frequency for dashboard
+  ANALYTICS: 600000,          // 10 minutes (was 1m) - analytics don't change rapidly
+  USER_LIST: 180000,          // 3 minutes (was 45s) - user data is relatively stable
+  MEAL_PLANS: 900000,         // 15 minutes (was 2m) - meal plans are static content
+  CHEFS: 600000,              // 10 minutes (was 1m) - chef data changes infrequently
+  ORDERS: 60000,              // 1 minute (was 15s) - balance between freshness and load
+  SETTINGS: 1800000,          // 30 minutes (was 5m) - settings change very rarely
+  NOTIFICATIONS: 60000,       // 1 minute (was 10s) - reduced with WebSocket fallback
 } as const;
 
 export default cacheService;

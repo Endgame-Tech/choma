@@ -1,6 +1,7 @@
 import messaging from "@react-native-firebase/messaging";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
 class FirebaseService {
   constructor() {
@@ -9,6 +10,12 @@ class FirebaseService {
 
   async initializeFirebase() {
     try {
+      // Skip Firebase in development mode (Expo Go doesn't support Firebase)
+      if (__DEV__ && !Constants.appOwnership) {
+        console.log("🚫 Skipping Firebase in development mode (Expo Go)");
+        return null;
+      }
+
       // Request permission for iOS
       if (Platform.OS === "ios") {
         const authStatus = await messaging().requestPermission();

@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { mealsApi, mealPlansApi, type Meal, type MealPlan as BaseMealPlan, type MealPlanAssignment } from '../services/mealApi'
+import { Meal, MealPlan, MealPlanAssignment } from '../services/mealApi'
+import { mealPlansApi, mealsApi } from '../services/mealApi'
+import { requestDeduplicationService } from '../services/requestDeduplicationService'
 import { XMarkIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-
-interface MealPlan extends BaseMealPlan {
-  assignments?: MealPlanAssignment[]
-}
 
 interface MealPlanSchedulerProps {
   isOpen: boolean
@@ -45,7 +43,11 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
 
   const fetchMealPlanAssignments = async () => {
     try {
-      const response = await mealPlansApi.getMealPlanAssignments(mealPlan._id) as { data: { assignments: MealPlanAssignment[] } }
+      const response = await requestDeduplicationService.deduplicateApiCall(
+        `/meal-plans/${mealPlan._id}/assignments`,
+        'GET',
+        () => mealPlansApi.getMealPlanAssignments(mealPlan._id)
+      ) as { data: { assignments: MealPlanAssignment[] } }
       const assignments = response.data?.assignments || []
       setMealPlanWithAssignments({ ...mealPlan, assignments })
     } catch (error) {
@@ -82,7 +84,11 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   const fetchAvailableMeals = async () => {
     try {
       setLoading(true)
-      const mealsResponse = await mealsApi.getAllMeals({ limit: 1000, isAvailable: true }) as { data: { meals: Meal[] } }
+      const mealsResponse = await requestDeduplicationService.deduplicateApiCall(
+        '/meals?limit=1000&isAvailable=true',
+        'GET',
+        () => mealsApi.getAllMeals({ limit: 1000, isAvailable: true })
+      ) as { data: { meals: Meal[] } }
       setAvailableMeals(mealsResponse.data.meals || [])
     } catch (error) {
       console.error('Failed to fetch available meals:', error)

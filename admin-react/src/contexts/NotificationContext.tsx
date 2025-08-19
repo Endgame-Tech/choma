@@ -106,14 +106,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     };
   }, [currentAdmin]);
 
-  // Auto-refresh notifications periodically
+  // Auto-refresh notifications periodically (reduced frequency to reduce server load)
   useEffect(() => {
     if (!currentAdmin) return;
 
     const interval = setInterval(() => {
       fetchNotifications();
       fetchUnreadCount();
-    }, 60000); // Refresh every minute
+    }, 300000); // Refresh every 5 minutes instead of 1 minute
 
     return () => clearInterval(interval);
   }, [currentAdmin]);
@@ -485,8 +485,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         setConnected(socketService.getConnectionStatus());
       };
 
-      // Check connection status periodically
-      const connectionInterval = setInterval(checkConnection, 5000);
+      // Check connection status periodically (reduced frequency)
+      const connectionInterval = setInterval(checkConnection, 30000); // Check every 30 seconds instead of 5
       cleanupFunctionsRef.current.push(() => clearInterval(connectionInterval));
 
       setConnected(socketService.getConnectionStatus());

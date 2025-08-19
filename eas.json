@@ -46,13 +46,5 @@
         "appleTeamId": "your-apple-team-id"
       }
     }
-  },
-  "update": {
-    "production": {
-      "channel": "production"
-    },
-    "preview": {
-      "channel": "preview"
-    }
   }
 }
