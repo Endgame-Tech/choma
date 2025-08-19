@@ -40,16 +40,41 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   // Track the previous meal plan ID to detect updates
   const [prevMealPlanId, setPrevMealPlanId] = useState(mealPlan._id)
   const [weekBeforeUpdate, setWeekBeforeUpdate] = useState<number | null>(null)
+  // State to store meal plan with assignments
+  const [mealPlanWithAssignments, setMealPlanWithAssignments] = useState<MealPlan>(mealPlan)
+
+  // Function to fetch meal plan assignments
+  const fetchMealPlanAssignments = async () => {
+    try {
+      const assignmentsResponse = await mealPlansApi.getMealPlanAssignments(mealPlan._id)
+      // The response could be either an array directly or wrapped in a data property
+      const assignments = Array.isArray(assignmentsResponse)
+        ? assignmentsResponse
+        : (assignmentsResponse as { data?: MealPlanAssignment[] })?.data || []
+
+      setMealPlanWithAssignments({
+        ...mealPlan,
+        assignments
+      })
+    } catch (error) {
+      console.error('Failed to fetch meal plan assignments:', error)
+      setMealPlanWithAssignments({
+        ...mealPlan,
+        assignments: []
+      })
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
       fetchAvailableMeals()
+      fetchMealPlanAssignments() // Fetch assignments when modal opens
       // Reset selected week if it exceeds current plan duration
       if (selectedWeek > mealPlan.durationWeeks) {
         setSelectedWeek(1)
       }
     }
-  }, [isOpen, mealPlan.durationWeeks, selectedWeek])
+  }, [isOpen, mealPlan.durationWeeks, selectedWeek, mealPlan._id])
 
   // Effect to detect meal plan updates and restore week selection
   useEffect(() => {
@@ -97,6 +122,9 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
         // Update the meal plan data
         onUpdate()
 
+        // Refresh assignments to show new data
+        await fetchMealPlanAssignments()
+
         // Reset form
         setCurrentAssignment({
           selectedMeals: [],
@@ -132,7 +160,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   }
 
   const getAssignmentForSlot = (week: number, dayOfWeek: number, mealTime: string) => {
-    return mealPlan.assignments?.find(a =>
+    return mealPlanWithAssignments.assignments?.find(a =>
       a.weekNumber === week && a.dayOfWeek === dayOfWeek && a.mealTime === mealTime
     )
   }
@@ -252,7 +280,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     ))}
                   </select>
                   <div className="text-sm text-gray-500 dark:text-neutral-400">
-                    Total assignments: {mealPlan.assignments?.filter(a => a.weekNumber === selectedWeek).length}
+                    Total assignments: {mealPlanWithAssignments.assignments?.filter(a => a.weekNumber === selectedWeek).length}
                   </div>
                 </div>
               </div>
@@ -400,14 +428,14 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                   <div>
                     <div className="text-gray-600 dark:text-neutral-300">Total Meals</div>
                     <div className="text-xl font-bold text-blue-600">
-                      {mealPlan.assignments?.filter(a => a.weekNumber === selectedWeek).length}
+                      {mealPlanWithAssignments.assignments?.filter(a => a.weekNumber === selectedWeek).length}
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-600 dark:text-neutral-300">Estimated Cost</div>
                     <div className="text-xl font-bold text-green-600">
                       {formatCurrency(
-                        mealPlan.assignments
+                        mealPlanWithAssignments.assignments
                           ?.filter(a => a.weekNumber === selectedWeek)
                           .reduce((total, assignment) => {
                             const meals = getMealsByIds(assignment.mealIds as string[])
@@ -420,7 +448,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     <div className="text-gray-600 dark:text-neutral-300">Avg Calories/Day</div>
                     <div className="text-xl font-bold text-purple-600">
                       {Math.round(
-                        (mealPlan.assignments
+                        (mealPlanWithAssignments.assignments
                           ?.filter(a => a.weekNumber === selectedWeek)
                           .reduce((total, assignment) => {
                             const meals = getMealsByIds(assignment.mealIds as string[])
@@ -432,7 +460,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                   <div>
                     <div className="text-gray-600 dark:text-neutral-300">Completion</div>
                     <div className="text-xl font-bold text-orange-600">
-                      {Math.round(((mealPlan.assignments?.filter(a => a.weekNumber === selectedWeek).length || 0) / totalSlotsPerWeek) * 100)}%
+                      {Math.round(((mealPlanWithAssignments.assignments?.filter(a => a.weekNumber === selectedWeek).length || 0) / totalSlotsPerWeek) * 100)}%
                     </div>
                   </div>
                 </div>
@@ -545,7 +573,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                           className="flex-1 px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded text-sm hover:bg-blue-700 dark:hover:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                         >
                           {currentAssignment.selectedMeals.length > 0 &&
-                            mealPlan.assignments?.find(a => a.weekNumber === selectedWeek && a.dayOfWeek === selectedDay && a.mealTime === selectedMealTime)
+                            mealPlanWithAssignments.assignments?.find(a => a.weekNumber === selectedWeek && a.dayOfWeek === selectedDay && a.mealTime === selectedMealTime)
                             ? 'Update Assignment' : 'Save Assignment'}
                         </button>
                         <button
@@ -655,7 +683,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600 dark:text-neutral-300">
               Plan Status: {mealPlan.isPublished ? 'Published' : 'Draft'} |
-              Total Assignments: {mealPlan.assignments?.length} |
+              Total Assignments: {mealPlanWithAssignments.assignments?.length} |
               Current Price: {formatCurrency(mealPlan.totalPrice)}
             </div>
             <button
