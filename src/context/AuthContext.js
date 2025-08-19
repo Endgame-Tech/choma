@@ -99,9 +99,37 @@ export const AuthProvider = ({ children }) => {
         };
       } else {
         console.log('❌ Login failed:', response.error);
+        
+        // Create user-friendly error messages
+        let userMessage = 'Login failed';
+        
+        if (response.error) {
+          const errorMessage = response.error.toLowerCase();
+          
+          if (errorMessage.includes('invalid credentials') || errorMessage.includes('incorrect password') || errorMessage.includes('wrong password')) {
+            userMessage = 'Incorrect email or password. Please try again.';
+          } else if (errorMessage.includes('user not found') || errorMessage.includes('email not found')) {
+            userMessage = 'No account found with this email address. Please check your email or sign up.';
+          } else if (errorMessage.includes('account disabled') || errorMessage.includes('account suspended')) {
+            userMessage = 'Your account has been disabled. Please contact support.';
+          } else if (errorMessage.includes('email not verified')) {
+            userMessage = 'Please verify your email address before logging in.';
+          } else if (errorMessage.includes('too many attempts') || errorMessage.includes('rate limit')) {
+            userMessage = 'Too many login attempts. Please try again in a few minutes.';
+          } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+            userMessage = 'Connection error. Please check your internet and try again.';
+          } else if (response.status === 401) {
+            userMessage = 'Incorrect email or password. Please try again.';
+          } else if (response.status === 404) {
+            userMessage = 'No account found with this email address. Please check your email or sign up.';
+          } else if (response.status >= 500) {
+            userMessage = 'Server error. Please try again in a few minutes.';
+          }
+        }
+        
         return { 
           success: false, 
-          message: response.error || 'Invalid credentials'
+          message: userMessage
         };
       }
     } catch (error) {
@@ -142,9 +170,43 @@ export const AuthProvider = ({ children }) => {
         };
       } else {
         console.log('❌ Signup failed:', response.error);
+        
+        // Create user-friendly error messages
+        let userMessage = 'Registration failed';
+        
+        if (response.error) {
+          const errorMessage = response.error.toLowerCase();
+          
+          if (errorMessage.includes('email already exists') || errorMessage.includes('email is already registered') || errorMessage.includes('already in use')) {
+            userMessage = 'This email address is already registered. Please try signing in instead.';
+          } else if (errorMessage.includes('invalid email') || errorMessage.includes('email format')) {
+            userMessage = 'Please enter a valid email address.';
+          } else if (errorMessage.includes('password') && errorMessage.includes('weak')) {
+            userMessage = 'Password is too weak. Please use at least 6 characters with a mix of letters and numbers.';
+          } else if (errorMessage.includes('password') && errorMessage.includes('short')) {
+            userMessage = 'Password must be at least 6 characters long.';
+          } else if (errorMessage.includes('phone') && errorMessage.includes('invalid')) {
+            userMessage = 'Please enter a valid phone number.';
+          } else if (errorMessage.includes('phone') && errorMessage.includes('already')) {
+            userMessage = 'This phone number is already registered. Please use a different number.';
+          } else if (errorMessage.includes('name') && errorMessage.includes('required')) {
+            userMessage = 'Please enter your full name.';
+          } else if (errorMessage.includes('validation') || errorMessage.includes('invalid')) {
+            userMessage = 'Please check your information and try again.';
+          } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+            userMessage = 'Connection error. Please check your internet and try again.';
+          } else if (response.status === 409) {
+            userMessage = 'This email address is already registered. Please try signing in instead.';
+          } else if (response.status === 400) {
+            userMessage = 'Please check your information and try again.';
+          } else if (response.status >= 500) {
+            userMessage = 'Server error. Please try again in a few minutes.';
+          }
+        }
+        
         return { 
           success: false, 
-          message: response.error || 'Registration failed'
+          message: userMessage
         };
       }
     } catch (error) {

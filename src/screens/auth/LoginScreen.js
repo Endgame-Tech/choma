@@ -58,13 +58,13 @@ const LoginScreen = ({ navigation }) => {
       if (result.success) {
         // Store credentials for biometric login
         await storeBiometricCredentials({ email: email.trim(), password });
-        Alert.alert("Success", "Login successful!");
+        Alert.alert("Welcome back!", result.message || "You have successfully logged in to Choma!");
       } else {
-        Alert.alert("Login Failed", result.message || "Invalid credentials");
+        Alert.alert("Login Error", result.message || "Unable to log you in. Please check your credentials and try again.");
       }
     } catch (error) {
       console.error("Login error:", error);
-      Alert.alert("Error", "Login failed. Please try again.");
+      Alert.alert("Login Error", "Something went wrong. Please check your connection and try again.");
     } finally {
       setIsLoading(false);
     }

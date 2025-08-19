@@ -43,38 +43,26 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   // State to store meal plan with assignments
   const [mealPlanWithAssignments, setMealPlanWithAssignments] = useState<MealPlan>(mealPlan)
 
-  // Function to fetch meal plan assignments
   const fetchMealPlanAssignments = async () => {
     try {
-      const assignmentsResponse = await mealPlansApi.getMealPlanAssignments(mealPlan._id)
-      // The response could be either an array directly or wrapped in a data property
-      const assignments = Array.isArray(assignmentsResponse)
-        ? assignmentsResponse
-        : (assignmentsResponse as { data?: MealPlanAssignment[] })?.data || []
-
-      setMealPlanWithAssignments({
-        ...mealPlan,
-        assignments
-      })
+      const response = await mealPlansApi.getMealPlanAssignments(mealPlan._id) as { data: { assignments: MealPlanAssignment[] } }
+      const assignments = response.data?.assignments || []
+      setMealPlanWithAssignments({ ...mealPlan, assignments })
     } catch (error) {
       console.error('Failed to fetch meal plan assignments:', error)
-      setMealPlanWithAssignments({
-        ...mealPlan,
-        assignments: []
-      })
+      setMealPlanWithAssignments({ ...mealPlan, assignments: [] })
     }
   }
 
   useEffect(() => {
     if (isOpen) {
       fetchAvailableMeals()
-      fetchMealPlanAssignments() // Fetch assignments when modal opens
-      // Reset selected week if it exceeds current plan duration
+      fetchMealPlanAssignments()
       if (selectedWeek > mealPlan.durationWeeks) {
         setSelectedWeek(1)
       }
     }
-  }, [isOpen, mealPlan.durationWeeks, selectedWeek, mealPlan._id])
+  }, [isOpen, mealPlan, selectedWeek])
 
   // Effect to detect meal plan updates and restore week selection
   useEffect(() => {
@@ -280,7 +268,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     ))}
                   </select>
                   <div className="text-sm text-gray-500 dark:text-neutral-400">
-                    Total assignments: {mealPlanWithAssignments.assignments?.filter(a => a.weekNumber === selectedWeek).length}
+                    Total assignments: {Array.isArray(mealPlanWithAssignments.assignments) ? mealPlanWithAssignments.assignments.filter(a => a.weekNumber === selectedWeek).length : 0}
                   </div>
                 </div>
               </div>
@@ -428,19 +416,21 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                   <div>
                     <div className="text-gray-600 dark:text-neutral-300">Total Meals</div>
                     <div className="text-xl font-bold text-blue-600">
-                      {mealPlanWithAssignments.assignments?.filter(a => a.weekNumber === selectedWeek).length}
+                      {Array.isArray(mealPlanWithAssignments.assignments) ? mealPlanWithAssignments.assignments.filter(a => a.weekNumber === selectedWeek).length : 0}
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-600 dark:text-neutral-300">Estimated Cost</div>
                     <div className="text-xl font-bold text-green-600">
                       {formatCurrency(
-                        mealPlanWithAssignments.assignments
-                          ?.filter(a => a.weekNumber === selectedWeek)
-                          .reduce((total, assignment) => {
-                            const meals = getMealsByIds(assignment.mealIds as string[])
-                            return total + meals.reduce((sum, m) => sum + m.pricing.totalPrice, 0)
-                          }, 0) || 0
+                        Array.isArray(mealPlanWithAssignments.assignments)
+                          ? mealPlanWithAssignments.assignments
+                            .filter(a => a.weekNumber === selectedWeek)
+                            .reduce((total, assignment) => {
+                              const meals = getMealsByIds(assignment.mealIds as string[])
+                              return total + meals.reduce((sum, m) => sum + m.pricing.totalPrice, 0)
+                            }, 0)
+                          : 0
                       )}
                     </div>
                   </div>
@@ -448,19 +438,21 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     <div className="text-gray-600 dark:text-neutral-300">Avg Calories/Day</div>
                     <div className="text-xl font-bold text-purple-600">
                       {Math.round(
-                        (mealPlanWithAssignments.assignments
-                          ?.filter(a => a.weekNumber === selectedWeek)
-                          .reduce((total, assignment) => {
-                            const meals = getMealsByIds(assignment.mealIds as string[])
-                            return total + meals.reduce((sum, m) => sum + m.nutrition.calories, 0)
-                          }, 0) || 0) / 7
+                        (Array.isArray(mealPlanWithAssignments.assignments)
+                          ? mealPlanWithAssignments.assignments
+                            .filter(a => a.weekNumber === selectedWeek)
+                            .reduce((total, assignment) => {
+                              const meals = getMealsByIds(assignment.mealIds as string[])
+                              return total + meals.reduce((sum, m) => sum + m.nutrition.calories, 0)
+                            }, 0)
+                          : 0) / 7
                       )}
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-600 dark:text-neutral-300">Completion</div>
                     <div className="text-xl font-bold text-orange-600">
-                      {Math.round(((mealPlanWithAssignments.assignments?.filter(a => a.weekNumber === selectedWeek).length || 0) / totalSlotsPerWeek) * 100)}%
+                      {Math.round(((Array.isArray(mealPlanWithAssignments.assignments) ? mealPlanWithAssignments.assignments.filter(a => a.weekNumber === selectedWeek).length : 0) / totalSlotsPerWeek) * 100)}%
                     </div>
                   </div>
                 </div>
@@ -683,7 +675,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600 dark:text-neutral-300">
               Plan Status: {mealPlan.isPublished ? 'Published' : 'Draft'} |
-              Total Assignments: {mealPlanWithAssignments.assignments?.length} |
+              Total Assignments: {Array.isArray(mealPlanWithAssignments.assignments) ? mealPlanWithAssignments.assignments.length : 0} |
               Current Price: {formatCurrency(mealPlan.totalPrice)}
             </div>
             <button

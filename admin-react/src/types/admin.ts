@@ -117,7 +117,7 @@ export interface UpdateAdminRequest {
 // Predefined roles
 export const PREDEFINED_ROLES: AdminRole[] = [
   {
-    id: 'super-admin',
+    id: 'super_admin',
     name: 'Super Admin',
     description: 'Full access to all features and admin management',
     isDefault: true,
@@ -134,7 +134,7 @@ export const PREDEFINED_ROLES: AdminRole[] = [
     }
   },
   {
-    id: 'content-manager',
+    id: 'content_manager',
     name: 'Content Manager',
     description: 'Manage meals and meal plans, limited access to users',
     isDefault: true,
@@ -151,7 +151,7 @@ export const PREDEFINED_ROLES: AdminRole[] = [
     }
   },
   {
-    id: 'operations-staff',
+    id: 'operations_staff',
     name: 'Operations Staff',
     description: 'Handle orders and chef management, no admin access',
     isDefault: true,

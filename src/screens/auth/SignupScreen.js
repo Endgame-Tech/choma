@@ -269,13 +269,13 @@ const SignupScreen = ({ navigation }) => {
       const result = await signup(userData);
       
       if (result.success) {
-        Alert.alert('Success', result.message || 'Account created successfully!');
+        Alert.alert('Welcome to Choma!', result.message || 'Your account has been created successfully. You can now start exploring our meal plans!');
       } else {
-        Alert.alert('Registration Failed', result.message || 'Failed to create account');
+        Alert.alert('Registration Error', result.message || 'Unable to create your account. Please try again.');
       }
     } catch (error) {
       console.error('Signup error:', error);
-      Alert.alert('Error', 'Registration failed. Please try again.');
+      Alert.alert('Registration Error', 'Something went wrong. Please check your information and try again.');
     } finally {
       setIsLoading(false);
     }

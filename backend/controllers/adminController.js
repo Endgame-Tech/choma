@@ -3241,7 +3241,7 @@ exports.updateMeal = async (req, res) => {
     }
 
     // Update all meal plans that use this meal
-    const assignments = await MealPlanAssignment.find({ mealId: id }).populate(
+    const assignments = await MealPlanAssignment.find({ mealIds: id }).populate(
       "mealPlanId"
     );
     for (const assignment of assignments) {
@@ -3313,6 +3313,19 @@ exports.deleteMeal = async (req, res) => {
 
     // Now delete the meal
     await Meal.findByIdAndDelete(id);
+
+    // Recalculate the total price of the affected meal plans
+    if (force && assignmentCount > 0) {
+      const assignments = await MealPlanAssignment.find({ mealIds: id });
+      const mealPlanIds = [...new Set(assignments.map(a => a.mealPlanId.toString()))];
+
+      for (const mealPlanId of mealPlanIds) {
+        const mealPlan = await MealPlan.findById(mealPlanId);
+        if (mealPlan) {
+          await mealPlan.updateCalculatedFields();
+        }
+      }
+    }
 
     res.json({
       success: true,
@@ -3814,6 +3827,11 @@ exports.assignMealToPlan = async (req, res) => {
       });
     }
 
+    // Recalculate the total price of the meal plan
+    if (mealPlan) {
+      await mealPlan.updateCalculatedFields();
+    }
+
     res.json({
       success: true,
       message: existingAssignment
@@ -3879,6 +3897,12 @@ exports.updateMealAssignment = async (req, res) => {
       { new: true }
     ).populate("mealId");
 
+    // Recalculate the total price of the meal plan
+    const mealPlan = await MealPlan.findById(id);
+    if (mealPlan) {
+      await mealPlan.updateCalculatedFields();
+    }
+
     res.json({
       success: true,
       message: "Assignment updated successfully",
@@ -3915,6 +3939,12 @@ exports.removeMealAssignment = async (req, res) => {
     }
 
     await MealPlanAssignment.findByIdAndDelete(assignmentId);
+
+    // Recalculate the total price of the meal plan
+    const mealPlan = await MealPlan.findById(id);
+    if (mealPlan) {
+      await mealPlan.updateCalculatedFields();
+    }
 
     res.json({
       success: true,

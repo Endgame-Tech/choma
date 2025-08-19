@@ -3,16 +3,18 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon admin-server.js",
-    "admin": "nodemon admin/server.js",
-    "chef": "nodemon chef/server.js",
-    "backend": "nodemon backend/index.js",
-    "start": "expo start --clear",
-    "start-clean": "expo start --clear --reset-cache",
+    "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "clean": "expo install --fix"
+    "build:android": "eas build --platform android",
+    "build:ios": "eas build --platform ios",
+    "build:all": "eas build --platform all",
+    "submit:android": "eas submit --platform android",
+    "submit:ios": "eas submit --platform ios",
+    "update": "eas update",
+    "clean": "expo install --fix",
+    "backend": "nodemon backend/index.js"
   },
   "expo": {
     "doctor": {
@@ -27,8 +29,6 @@
     "@ptomasroos/react-native-multi-slider": "^2.2.2",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/netinfo": "^11.4.1",
-    "@react-native-firebase/app": "^23.0.1",
-    "@react-native-firebase/messaging": "^23.0.1",
     "@react-native-picker/picker": "^2.11.1",
     "@react-navigation/bottom-tabs": "^7.3.14",
     "@react-navigation/native": "^7.1.10",
@@ -75,7 +75,6 @@
     "@babel/core": "^7.20.0",
     "@types/axios": "^0.9.36",
     "@types/react": "~19.0.10",
-    "nodemon": "^3.1.0",
     "typescript": "~5.8.3"
   },
   "private": true

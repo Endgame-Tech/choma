@@ -31,6 +31,8 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# issues.txt
+
 # local env files
 .env*.local
 .env
@@ -68,6 +70,11 @@ Thumbs.db
 .vscode/
 
 claude/
+
+# Firebase configuration files (security)
+google-services.json
+GoogleService-Info.plist
+firebase-service-account.json
 
 #Ignore vscode AI rules
 .github\copilot-instructions.md

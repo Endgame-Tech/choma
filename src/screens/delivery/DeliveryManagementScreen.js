@@ -324,7 +324,7 @@ const DeliveryManagementScreen = ({ navigation }) => {
             {!searchQuery && selectedStatus === 'all' && (
               <TouchableOpacity 
                 style={styles(colors).orderButton}
-                onPress={() => navigation.navigate('Main', { screen: 'MealPlans' })}
+                onPress={() => navigation.navigate('Main', { screen: 'Home' })}
               >
                 <Text style={styles(colors).orderButtonText}>Order Your First Meal</Text>
               </TouchableOpacity>
