@@ -1,27 +1,22 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
 import { dashboardApi } from '../services/api';
-import type { DashboardStats } from '../types';
+import { useCachedApi } from '../hooks/useCachedApi';
+import { CACHE_DURATIONS } from '../services/cacheService';
 
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        const data = await dashboardApi.getStats();
-        setStats(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardStats();
-  }, []);
+  const { 
+    data: stats, 
+    loading, 
+    error, 
+    refetch 
+  } = useCachedApi(
+    () => dashboardApi.getStats(),
+    {
+      cacheKey: 'dashboard-stats',
+      cacheDuration: CACHE_DURATIONS.DASHBOARD_STATS,
+      immediate: true
+    }
+  );
 
   if (loading) {
     return (
@@ -36,6 +31,12 @@ const Dashboard: React.FC = () => {
       <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
         <h3 className="text-red-800 font-medium">Error loading dashboard</h3>
         <p className="text-red-600">{error}</p>
+        <button 
+          onClick={refetch}
+          className="mt-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded text-sm"
+        >
+          Retry
+        </button>
       </div>
     );
   }

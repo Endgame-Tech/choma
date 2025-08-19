@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { mealsApi, mealPlansApi, type Meal, type MealPlan, type MealPlanAssignment } from '../services/mealApi'
+import { mealsApi, mealPlansApi, type Meal, type MealPlan as BaseMealPlan, type MealPlanAssignment } from '../services/mealApi'
 import { XMarkIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+
+interface MealPlan extends BaseMealPlan {
+  assignments?: MealPlanAssignment[]
+}
 
 interface MealPlanSchedulerProps {
   isOpen: boolean
@@ -13,7 +17,6 @@ const ALL_MEAL_TIMES = ['breakfast', 'lunch', 'dinner'] as const
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, mealPlan, onUpdate }) => {
-  const [assignments, setAssignments] = useState<MealPlanAssignment[]>([])
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedWeek, setSelectedWeek] = useState(1)
@@ -34,44 +37,42 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
     customDescription: '',
     imageUrl: ''
   })
+  // Track the previous meal plan ID to detect updates
+  const [prevMealPlanId, setPrevMealPlanId] = useState(mealPlan._id)
+  const [weekBeforeUpdate, setWeekBeforeUpdate] = useState<number | null>(null)
 
   useEffect(() => {
     if (isOpen) {
-      fetchData()
+      fetchAvailableMeals()
       // Reset selected week if it exceeds current plan duration
       if (selectedWeek > mealPlan.durationWeeks) {
         setSelectedWeek(1)
       }
     }
-  }, [isOpen, mealPlan._id, mealPlan.durationWeeks, selectedWeek])
+  }, [isOpen, mealPlan.durationWeeks, selectedWeek])
 
-  const fetchData = async () => {
+  // Effect to detect meal plan updates and restore week selection
+  useEffect(() => {
+    // Check if the meal plan was updated (assignments changed) but it's the same plan
+    if (mealPlan._id === prevMealPlanId && weekBeforeUpdate !== null) {
+      // Restore the week selection
+      setSelectedWeek(weekBeforeUpdate)
+      setWeekBeforeUpdate(null)
+    }
+
+    // Update the tracked meal plan ID
+    if (mealPlan._id !== prevMealPlanId) {
+      setPrevMealPlanId(mealPlan._id)
+    }
+  }, [mealPlan, prevMealPlanId, weekBeforeUpdate])
+
+  const fetchAvailableMeals = async () => {
     try {
       setLoading(true)
-
-      const [assignmentsResponse, mealsResponse] = await Promise.all([
-        mealPlansApi.getMealPlanAssignments(mealPlan._id) as Promise<{ data: { assignments: MealPlanAssignment[] } }>,
-        mealsApi.getAllMeals({ limit: 1000, isAvailable: true }) as Promise<{ data: { meals: Meal[] } }>
-      ])
-
-      console.log('Fetched assignments:', assignmentsResponse.data.assignments) // Debug log
-      assignmentsResponse.data.assignments.forEach((assignment: MealPlanAssignment, index: number) => {
-        console.log(`Assignment ${index}:`, {
-          customTitle: assignment.customTitle,
-          imageUrl: assignment.imageUrl,
-          hasImageUrl: !!assignment.imageUrl,
-          imageUrlType: typeof assignment.imageUrl,
-          weekNumber: assignment.weekNumber,
-          dayOfWeek: assignment.dayOfWeek,
-          mealTime: assignment.mealTime
-        })
-      })
-      console.log('Fetched meals:', mealsResponse.data.meals) // Debug log
-      setAssignments(assignmentsResponse.data.assignments || [])
+      const mealsResponse = await mealsApi.getAllMeals({ limit: 1000, isAvailable: true }) as { data: { meals: Meal[] } }
       setAvailableMeals(mealsResponse.data.meals || [])
     } catch (error) {
-      console.error('Failed to fetch scheduler data:', error)
-      alert('Failed to load meal plan assignments')
+      console.error('Failed to fetch available meals:', error)
     } finally {
       setLoading(false)
     }
@@ -80,6 +81,9 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   const handleSaveAssignment = async () => {
     if (selectedDay && selectedMealTime && currentAssignment.selectedMeals.length > 0 && currentAssignment.customTitle.trim()) {
       try {
+        // Store the current week before triggering update
+        setWeekBeforeUpdate(selectedWeek)
+
         await mealPlansApi.assignMealToPlan(mealPlan._id, {
           mealIds: currentAssignment.selectedMeals,
           customTitle: currentAssignment.customTitle.trim(),
@@ -90,7 +94,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
           mealTime: selectedMealTime as 'breakfast' | 'lunch' | 'dinner'
         })
 
-        await fetchData()
+        // Update the meal plan data
         onUpdate()
 
         // Reset form
@@ -105,23 +109,30 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
       } catch (error) {
         console.error('Failed to assign meal:', error)
         alert('Failed to assign meal to plan')
+        // Reset the week tracking on error
+        setWeekBeforeUpdate(null)
       }
     }
   }
 
   const handleRemoveAssignment = async (assignmentId: string) => {
     try {
+      // Store the current week before triggering update
+      setWeekBeforeUpdate(selectedWeek)
+
       await mealPlansApi.removeAssignment(mealPlan._id, assignmentId)
-      await fetchData()
+      // Trigger update - week will be restored by useEffect
       onUpdate()
     } catch (error) {
       console.error('Failed to remove assignment:', error)
       alert('Failed to remove meal assignment')
+      // Reset the week tracking on error
+      setWeekBeforeUpdate(null)
     }
   }
 
   const getAssignmentForSlot = (week: number, dayOfWeek: number, mealTime: string) => {
-    return assignments.find(a =>
+    return mealPlan.assignments?.find(a =>
       a.weekNumber === week && a.dayOfWeek === dayOfWeek && a.mealTime === mealTime
     )
   }
@@ -241,7 +252,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     ))}
                   </select>
                   <div className="text-sm text-gray-500 dark:text-neutral-400">
-                    Total assignments: {assignments.filter(a => a.weekNumber === selectedWeek).length}
+                    Total assignments: {mealPlan.assignments?.filter(a => a.weekNumber === selectedWeek).length}
                   </div>
                 </div>
               </div>
@@ -355,7 +366,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      handleRemoveAssignment(assignment._id || assignment.assignmentId)
+                                      handleRemoveAssignment(assignment._id || (assignment as { assignmentId?: string }).assignmentId || '')
                                     }}
                                     className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
                                     title="Delete assignment"
@@ -389,19 +400,19 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                   <div>
                     <div className="text-gray-600 dark:text-neutral-300">Total Meals</div>
                     <div className="text-xl font-bold text-blue-600">
-                      {assignments.filter(a => a.weekNumber === selectedWeek).length}
+                      {mealPlan.assignments?.filter(a => a.weekNumber === selectedWeek).length}
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-600 dark:text-neutral-300">Estimated Cost</div>
                     <div className="text-xl font-bold text-green-600">
                       {formatCurrency(
-                        assignments
-                          .filter(a => a.weekNumber === selectedWeek)
+                        mealPlan.assignments
+                          ?.filter(a => a.weekNumber === selectedWeek)
                           .reduce((total, assignment) => {
                             const meals = getMealsByIds(assignment.mealIds as string[])
                             return total + meals.reduce((sum, m) => sum + m.pricing.totalPrice, 0)
-                          }, 0)
+                          }, 0) || 0
                       )}
                     </div>
                   </div>
@@ -409,19 +420,19 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                     <div className="text-gray-600 dark:text-neutral-300">Avg Calories/Day</div>
                     <div className="text-xl font-bold text-purple-600">
                       {Math.round(
-                        assignments
-                          .filter(a => a.weekNumber === selectedWeek)
+                        (mealPlan.assignments
+                          ?.filter(a => a.weekNumber === selectedWeek)
                           .reduce((total, assignment) => {
                             const meals = getMealsByIds(assignment.mealIds as string[])
                             return total + meals.reduce((sum, m) => sum + m.nutrition.calories, 0)
-                          }, 0) / 7
+                          }, 0) || 0) / 7
                       )}
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-600 dark:text-neutral-300">Completion</div>
                     <div className="text-xl font-bold text-orange-600">
-                      {Math.round((assignments.filter(a => a.weekNumber === selectedWeek).length / totalSlotsPerWeek) * 100)}%
+                      {Math.round(((mealPlan.assignments?.filter(a => a.weekNumber === selectedWeek).length || 0) / totalSlotsPerWeek) * 100)}%
                     </div>
                   </div>
                 </div>
@@ -431,191 +442,196 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
 
           {/* Enhanced Sidebar */}
           <div className="w-96 border-l border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-700 flex-shrink-0">
-            <div className="p-4 h-full flex flex-col max-h-[80vh]">
-              <h3 className="font-semibold text-gray-900 dark:text-neutral-100 mb-4">
-                {selectedDay && selectedMealTime
-                  ? `${currentAssignment.selectedMeals.length > 0 ? 'Edit' : 'Configure'} ${selectedMealTime} for ${DAYS_OF_WEEK[selectedDay - 1]} (Week ${selectedWeek})`
-                  : 'Select a time slot to configure'
-                }
-              </h3>
+            <div className="h-full flex flex-col">
+              {/* Fixed Header */}
+              <div className="p-4 border-b border-gray-200 dark:border-neutral-600 flex-shrink-0">
+                <h3 className="font-semibold text-gray-900 dark:text-neutral-100">
+                  {selectedDay && selectedMealTime
+                    ? `${currentAssignment.selectedMeals.length > 0 ? 'Edit' : 'Configure'} ${selectedMealTime} for ${DAYS_OF_WEEK[selectedDay - 1]} (Week ${selectedWeek})`
+                    : 'Select a time slot to configure'
+                  }
+                </h3>
+              </div>
 
               {selectedDay && selectedMealTime && availableMealTimes.includes(selectedMealTime) ? (
-                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                  {/* Meal Configuration Section */}
-                  <div className="mb-6 p-4 bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-600 flex-shrink-0">
-                    <h4 className="font-medium text-gray-900 dark:text-neutral-100 mb-3">Meal Details</h4>
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-4 space-y-6">
+                    {/* Meal Configuration Section */}
+                    <div className="p-4 bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-600">
+                      <h4 className="font-medium text-gray-900 dark:text-neutral-100 mb-3">Meal Details</h4>
 
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
-                          Meal Title *
-                        </label>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
+                            Meal Title *
+                          </label>
+                          <input
+                            type="text"
+                            value={currentAssignment.customTitle}
+                            onChange={(e) => setCurrentAssignment(prev => ({ ...prev, customTitle: e.target.value }))}
+                            placeholder="e.g., Traditional Nigerian Breakfast"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
+                            Image URL
+                          </label>
+                          <input
+                            type="url"
+                            value={currentAssignment.imageUrl}
+                            onChange={(e) => setCurrentAssignment(prev => ({ ...prev, imageUrl: e.target.value }))}
+                            placeholder="https://example.com/meal-image.jpg"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
+                            Description
+                          </label>
+                          <textarea
+                            value={currentAssignment.customDescription}
+                            onChange={(e) => setCurrentAssignment(prev => ({ ...prev, customDescription: e.target.value }))}
+                            placeholder="Describe this meal combination..."
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Current Selection Summary */}
+                      {currentAssignment.selectedMeals.length > 0 && (() => {
+                        console.log('Sidebar - Current selected meals (IDs):', currentAssignment.selectedMeals);
+                        return (
+                          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
+                            <div className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
+                              Selected Items ({currentAssignment.selectedMeals.length}):
+                            </div>
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {currentAssignment.selectedMeals.map(mealId => {
+                                const meal = getMealById(mealId)
+                                return meal ? (
+                                  <span key={mealId} className="px-2 py-1 bg-blue-200 dark:bg-blue-800/30 text-blue-800 dark:text-blue-300 rounded text-xs">
+                                    {meal.name}
+                                  </span>
+                                ) : (
+                                  <span key={mealId} className="px-2 py-1 bg-red-200 dark:bg-red-800/30 text-red-800 dark:text-red-300 rounded text-xs">
+                                    Missing: {mealId}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                            <div className="text-sm text-blue-700 dark:text-blue-300">
+                              Total: {formatCurrency(currentAssignment.selectedMeals.reduce((sum, id) => {
+                                const meal = getMealById(id)
+                                return sum + (meal?.pricing?.totalPrice || 0)
+                              }, 0))} |
+                              {Math.round(currentAssignment.selectedMeals.reduce((sum, id) => {
+                                const meal = getMealById(id)
+                                return sum + (meal?.nutrition?.calories || 0)
+                              }, 0))} cal
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Action Buttons */}
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          onClick={handleSaveAssignment}
+                          disabled={currentAssignment.selectedMeals.length === 0 || !currentAssignment.customTitle.trim()}
+                          className="flex-1 px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded text-sm hover:bg-blue-700 dark:hover:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {currentAssignment.selectedMeals.length > 0 &&
+                            mealPlan.assignments?.find(a => a.weekNumber === selectedWeek && a.dayOfWeek === selectedDay && a.mealTime === selectedMealTime)
+                            ? 'Update Assignment' : 'Save Assignment'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedDay(null)
+                            setSelectedMealTime(null)
+                            setCurrentAssignment({
+                              selectedMeals: [],
+                              customTitle: '',
+                              customDescription: '',
+                              imageUrl: ''
+                            })
+                          }}
+                          className="px-3 py-2 text-gray-600 dark:text-neutral-300 hover:text-gray-800 dark:hover:text-neutral-100 text-sm transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Food Selection Section */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-neutral-100 mb-3">Add Food Items</h4>
+
+                      {/* Search */}
+                      <div className="relative mb-3">
+                        <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-3 text-gray-400 dark:text-neutral-500" />
                         <input
                           type="text"
-                          value={currentAssignment.customTitle}
-                          onChange={(e) => setCurrentAssignment(prev => ({ ...prev, customTitle: e.target.value }))}
-                          placeholder="e.g., Traditional Nigerian Breakfast"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Search food items..."
+                          value={mealSearch}
+                          onChange={(e) => setMealSearch(e.target.value)}
+                          className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
-                          Image URL
-                        </label>
-                        <input
-                          type="url"
-                          value={currentAssignment.imageUrl}
-                          onChange={(e) => setCurrentAssignment(prev => ({ ...prev, imageUrl: e.target.value }))}
-                          placeholder="https://example.com/meal-image.jpg"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
-                          Description
-                        </label>
-                        <textarea
-                          value={currentAssignment.customDescription}
-                          onChange={(e) => setCurrentAssignment(prev => ({ ...prev, customDescription: e.target.value }))}
-                          placeholder="Describe this meal combination..."
-                          rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Current Selection Summary */}
-                    {currentAssignment.selectedMeals.length > 0 && (() => {
-                      console.log('Sidebar - Current selected meals (IDs):', currentAssignment.selectedMeals);
-                      return (
-                        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-                          <div className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
-                            Selected Items ({currentAssignment.selectedMeals.length}):
-                          </div>
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {currentAssignment.selectedMeals.map(mealId => {
-                              const meal = getMealById(mealId)
-                              return meal ? (
-                                <span key={mealId} className="px-2 py-1 bg-blue-200 dark:bg-blue-800/30 text-blue-800 dark:text-blue-300 rounded text-xs">
-                                  {meal.name}
-                                </span>
-                              ) : (
-                                <span key={mealId} className="px-2 py-1 bg-red-200 dark:bg-red-800/30 text-red-800 dark:text-red-300 rounded text-xs">
-                                  Missing: {mealId}
-                                </span>
-                              )
-                            })}
-                          </div>
-                          <div className="text-sm text-blue-700 dark:text-blue-300">
-                            Total: {formatCurrency(currentAssignment.selectedMeals.reduce((sum, id) => {
-                              const meal = getMealById(id)
-                              return sum + (meal?.pricing?.totalPrice || 0)
-                            }, 0))} |
-                            {Math.round(currentAssignment.selectedMeals.reduce((sum, id) => {
-                              const meal = getMealById(id)
-                              return sum + (meal?.nutrition?.calories || 0)
-                            }, 0))} cal
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Action Buttons */}
-                    <div className="mt-4 flex gap-2">
-                      <button
-                        onClick={handleSaveAssignment}
-                        disabled={currentAssignment.selectedMeals.length === 0 || !currentAssignment.customTitle.trim()}
-                        className="flex-1 px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded text-sm hover:bg-blue-700 dark:hover:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {currentAssignment.selectedMeals.length > 0 &&
-                          assignments.find(a => a.weekNumber === selectedWeek && a.dayOfWeek === selectedDay && a.mealTime === selectedMealTime)
-                          ? 'Update Assignment' : 'Save Assignment'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedDay(null)
-                          setSelectedMealTime(null)
-                          setCurrentAssignment({
-                            selectedMeals: [],
-                            customTitle: '',
-                            customDescription: '',
-                            imageUrl: ''
-                          })
-                        }}
-                        className="px-3 py-2 text-gray-600 dark:text-neutral-300 hover:text-gray-800 dark:hover:text-neutral-100 text-sm transition-colors"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Food Selection Section */}
-                  <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                    <h4 className="font-medium text-gray-900 dark:text-neutral-100 mb-3">Add Food Items</h4>
-
-                    {/* Search */}
-                    <div className="relative mb-3">
-                      <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-3 text-gray-400 dark:text-neutral-500" />
-                      <input
-                        type="text"
-                        placeholder="Search food items..."
-                        value={mealSearch}
-                        onChange={(e) => setMealSearch(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    {/* Food List */}
-                    <div className="flex-1 space-y-2 overflow-y-auto max-h-96 min-h-0">
-                      {filteredMeals.map((meal) => (
-                        <div
-                          key={meal._id}
-                          className={`p-3 border rounded cursor-pointer transition-colors ${currentAssignment.selectedMeals.includes(meal._id)
-                            ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-500'
-                            : 'bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700 border-gray-200 dark:border-neutral-600'
-                            }`}
-                          onClick={() => handleMealSelect(meal._id)}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div className="w-10 h-10 bg-gray-200 dark:bg-neutral-600 rounded flex-shrink-0 overflow-hidden">
-                              {meal.image ? (
-                                <img src={meal.image} alt={meal.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-neutral-500 text-sm">
-                                  🍽️
+                      {/* Food List - Now with better height for scrolling */}
+                      <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                        {filteredMeals.map((meal) => (
+                          <div
+                            key={meal._id}
+                            className={`p-3 border rounded cursor-pointer transition-colors ${currentAssignment.selectedMeals.includes(meal._id)
+                              ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-500'
+                              : 'bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700 border-gray-200 dark:border-neutral-600'
+                              }`}
+                            onClick={() => handleMealSelect(meal._id)}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div className="w-10 h-10 bg-gray-200 dark:bg-neutral-600 rounded flex-shrink-0 overflow-hidden">
+                                {meal.image ? (
+                                  <img src={meal.image} alt={meal.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-neutral-500 text-sm">
+                                    🍽️
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-900 dark:text-neutral-100 truncate">{meal.name}</div>
+                                <div className="text-xs text-gray-600 dark:text-neutral-400">{meal.category}</div>
+                                <div className="text-xs text-gray-600 dark:text-neutral-400">{formatCurrency(meal.pricing.totalPrice)}</div>
+                                <div className="text-xs text-gray-500 dark:text-neutral-500">{meal.nutrition.calories} cal</div>
+                              </div>
+                              {currentAssignment.selectedMeals.includes(meal._id) && (
+                                <div className="text-blue-600 dark:text-blue-400">
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
                                 </div>
                               )}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-gray-900 dark:text-neutral-100 truncate">{meal.name}</div>
-                              <div className="text-xs text-gray-600 dark:text-neutral-400">{meal.category}</div>
-                              <div className="text-xs text-gray-600 dark:text-neutral-400">{formatCurrency(meal.pricing.totalPrice)}</div>
-                              <div className="text-xs text-gray-500 dark:text-neutral-500">{meal.nutrition.calories} cal</div>
-                            </div>
-                            {currentAssignment.selectedMeals.includes(meal._id) && (
-                              <div className="text-blue-600 dark:text-blue-400">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      ))}
+                        ))}
 
-                      {filteredMeals.length === 0 && (
-                        <div className="text-center text-gray-500 dark:text-neutral-400 py-8">
-                          <div className="text-2xl mb-2">🔍</div>
-                          <p className="text-sm">No food items found</p>
-                        </div>
-                      )}
+                        {filteredMeals.length === 0 && (
+                          <div className="text-center text-gray-500 dark:text-neutral-400 py-8">
+                            <div className="text-2xl mb-2">🔍</div>
+                            <p className="text-sm">No food items found</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : selectedDay && selectedMealTime && !availableMealTimes.includes(selectedMealTime) ? (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex-1 flex items-center justify-center p-4">
                   <div className="text-center text-orange-600 dark:text-orange-400">
                     <div className="text-4xl mb-2">⚠️</div>
                     <p className="text-sm font-medium">&ldquo;{selectedMealTime}&rdquo; is not configured for this meal plan</p>
@@ -623,7 +639,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex-1 flex items-center justify-center p-4">
                   <div className="text-center text-gray-500 dark:text-neutral-400">
                     <div className="text-4xl mb-2">👆</div>
                     <p className="text-sm">Click on a time slot in the schedule to start configuring meals</p>
@@ -639,7 +655,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600 dark:text-neutral-300">
               Plan Status: {mealPlan.isPublished ? 'Published' : 'Draft'} |
-              Total Assignments: {assignments.length} |
+              Total Assignments: {mealPlan.assignments?.length} |
               Current Price: {formatCurrency(mealPlan.totalPrice)}
             </div>
             <button

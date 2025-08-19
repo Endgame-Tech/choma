@@ -484,8 +484,8 @@ const MealPlans: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <PermissionGate 
-                        module="mealPlans" 
+                      <PermissionGate
+                        module="mealPlans"
                         action="publish"
                         fallback={
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${plan.isPublished
@@ -630,7 +630,7 @@ const MealPlans: React.FC = () => {
               setSchedulerModalOpen(false)
               setSelectedMealPlan(null)
             }}
-            mealPlan={selectedMealPlan}
+            mealPlan={mealPlans.find(p => p._id === selectedMealPlan?._id) || selectedMealPlan!}
             onUpdate={fetchMealPlans}
           />
         </>

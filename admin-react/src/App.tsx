@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 // import 'flaticon-uicons/css/uicons-solid-rounded.css';
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { PermissionProvider } from './contexts/PermissionContext'
 import { NotificationProvider } from './contexts/NotificationContext'
+import { cacheService } from './services/cacheService'
 import Layout from './components/Layout'
 import ToastContainer from './components/ToastContainer'
 import Login from './pages/Login'
@@ -141,6 +142,21 @@ function AppRoutes() {
 }
 
 const App: React.FC = () => {
+  // Initialize cache cleanup service
+  useEffect(() => {
+    // Start periodic cache cleanup (every 5 minutes)
+    cacheService.startPeriodicCleanup(300000)
+    
+    // Log initial cache stats
+    console.log('📊 Cache Service initialized:', cacheService.getStats())
+    
+    // Cleanup on component unmount
+    return () => {
+      console.log('🧹 Final cache cleanup on app unmount')
+      cacheService.cleanup()
+    }
+  }, [])
+
   return (
     <ThemeProvider>
       <Router>

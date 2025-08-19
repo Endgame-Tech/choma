@@ -1,5 +1,5 @@
 import React from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -16,6 +16,8 @@ import {
 } from 'chart.js'
 import { analyticsApi } from '../services/analyticsApi'
 import { dashboardApi } from '../services/api'
+import { useCachedApi } from '../hooks/useCachedApi'
+import { CACHE_DURATIONS } from '../services/cacheService'
 // import AnalyticsCard from '../components/analytics/AnalyticsCard' // Replaced with Dashboard-style cards
 
 // Register Chart.js components
@@ -110,33 +112,33 @@ interface BusinessInsights {
 type DashboardPeriod = 'today' | 'week' | 'month' | 'quarter' | 'year'
 
 const AnalyticsDashboard: React.FC = () => {
-  const [kpiData, setKpiData] = useState<KPIData | null>(null)
   const [chartData, setChartData] = useState<ChartData | null>(null)
   const [insights, setInsights] = useState<BusinessInsights | null>(null)
   const [loading, setLoading] = useState(true)
-  const [kpiLoading, setKpiLoading] = useState(true)
-  const [chartsLoading, setChartsLoading] = useState(true)
-  const [insightsLoading, setInsightsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<DashboardPeriod>('month')
   const [refreshing, setRefreshing] = useState(false)
 
-  // Debug state
-  console.log('Analytics Dashboard State:', { loading, error, kpiData: !!kpiData, chartData: !!chartData, insights: !!insights })
+  // Get time range string for API calls
+  const getTimeRange = useCallback((period: DashboardPeriod) => {
+    return period === 'today' ? '1d' :
+      period === 'week' ? '7d' :
+        period === 'month' ? '30d' :
+          period === 'quarter' ? '90d' : '1y'
+  }, [])
 
-  // Fetch KPI data first (critical data)
-  const fetchKPIData = async (period: DashboardPeriod) => {
-    try {
-      setKpiLoading(true)
-      const timeRange = period === 'today' ? '1d' :
-        period === 'week' ? '7d' :
-          period === 'month' ? '30d' :
-            period === 'quarter' ? '90d' : '1y'
-
+  // Cached KPI data with fallback to dashboard stats
+  const { 
+    data: kpiData, 
+    loading: kpiLoading,
+    refetch: refetchKpiData 
+  } = useCachedApi(
+    async () => {
+      const timeRange = getTimeRange(selectedPeriod)
       try {
         const kpis = await analyticsApi.getKPIData(timeRange)
         if (kpis && kpis.overview) {
-          setKpiData(kpis)
+          return kpis
         } else {
           throw new Error('Invalid KPI data')
         }
@@ -160,97 +162,102 @@ const AnalyticsDashboard: React.FC = () => {
             growth: { revenueGrowth: 0, orderGrowth: 0, customerGrowth: 0, chefGrowth: 0 },
             realTime: { ordersInProgress: 0, pendingOrders: 0, activeDeliveries: 0, completedOrdersToday: 0 }
           }
-          setKpiData(basicKpiData)
+          return basicKpiData
         }
+        throw new Error('Failed to load analytics data')
       }
-    } catch (error) {
-      console.error('Failed to fetch KPI data:', error)
-    } finally {
-      setKpiLoading(false)
+    },
+    {
+      cacheKey: `analytics-kpi-${selectedPeriod}`,
+      cacheDuration: CACHE_DURATIONS.ANALYTICS,
+      immediate: true,
+      onError: (err) => setError(err instanceof Error ? err.message : 'Failed to load KPI data')
     }
-  }
+  )
 
-  // Fetch charts data (non-critical, can load after KPIs)
-  const fetchChartsData = async (period: DashboardPeriod) => {
-    try {
-      setChartsLoading(true)
-      const timeRange = period === 'today' ? '1d' :
-        period === 'week' ? '7d' :
-          period === 'month' ? '30d' :
-            period === 'quarter' ? '90d' : '1y'
+  // Debug state
+  console.log('Analytics Dashboard State:', { loading, error, kpiData: !!kpiData, chartData: !!chartData, insights: !!insights })
 
+  // Cached charts data
+  const {
+    loading: chartsLoading,
+    refetch: refetchChartData
+  } = useCachedApi(
+    async () => {
+      const timeRange = getTimeRange(selectedPeriod)
       try {
         const charts = await analyticsApi.getChartsData(timeRange)
         if (charts) {
-          setChartData(charts)
+          return charts
         } else {
           throw new Error('Invalid charts data')
         }
       } catch (error) {
         console.log('Charts data not available')
-        setChartData(null)
+        return null
       }
-    } catch (error) {
-      console.error('Failed to fetch charts data:', error)
-    } finally {
-      setChartsLoading(false)
+    },
+    {
+      cacheKey: `analytics-charts-${selectedPeriod}`,
+      cacheDuration: CACHE_DURATIONS.ANALYTICS,
+      immediate: true,
+      onSuccess: (data) => setChartData(data),
+      onError: () => setChartData(null)
     }
-  }
+  )
 
-  // Fetch insights data (least critical, loads last)
-  const fetchInsightsData = async (period: DashboardPeriod) => {
-    try {
-      setInsightsLoading(true)
-      const timeRange = period === 'today' ? '1d' :
-        period === 'week' ? '7d' :
-          period === 'month' ? '30d' :
-            period === 'quarter' ? '90d' : '1y'
-
+  // Cached insights data
+  const {
+    loading: insightsLoading,
+    refetch: refetchInsights
+  } = useCachedApi(
+    async () => {
+      const timeRange = getTimeRange(selectedPeriod)
       try {
         const businessInsights = await analyticsApi.getBusinessIntelligence(timeRange)
         if (businessInsights) {
-          setInsights(businessInsights)
+          return businessInsights
         } else {
           throw new Error('Invalid insights data')
         }
       } catch (error) {
         console.log('Insights data not available')
-        setInsights(null)
+        return null
       }
-    } catch (error) {
-      console.error('Failed to fetch insights data:', error)
-    } finally {
-      setInsightsLoading(false)
+    },
+    {
+      cacheKey: `analytics-insights-${selectedPeriod}`,
+      cacheDuration: CACHE_DURATIONS.ANALYTICS,
+      immediate: true,
+      onSuccess: (data) => setInsights(data),
+      onError: () => setInsights(null)
     }
-  }
+  )
 
-  // Main fetch function - loads critical data first, then others asynchronously
-  const fetchAnalyticsData = async (period: DashboardPeriod) => {
+  // Refresh function for manual refresh
+  const refreshAnalyticsData = useCallback(async () => {
+    setRefreshing(true)
+    setError(null)
+    
     try {
-      setRefreshing(true)
-      setError(null)
-
-      // Load KPIs first (most critical)
-      await fetchKPIData(period)
-
-      // Then load charts and insights in parallel (less critical)
-      Promise.all([
-        fetchChartsData(period),
-        fetchInsightsData(period)
+      // Force refresh all cached data
+      await Promise.all([
+        refetchKpiData(),
+        refetchChartData(),
+        refetchInsights()
       ])
-
     } catch (error) {
-      console.error('Failed to fetch analytics data:', error)
-      setError(error instanceof Error ? error.message : 'Failed to load analytics data')
+      console.error('Failed to refresh analytics data:', error)
+      setError(error instanceof Error ? error.message : 'Failed to refresh analytics data')
     } finally {
-      setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [refetchKpiData, refetchChartData, refetchInsights])
 
+  // Update loading state based on critical data
   useEffect(() => {
-    fetchAnalyticsData(selectedPeriod)
-  }, [selectedPeriod])
+    setLoading(kpiLoading)
+  }, [kpiLoading])
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -309,7 +316,7 @@ const AnalyticsDashboard: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={() => fetchAnalyticsData(selectedPeriod)}
+              onClick={refreshAnalyticsData}
               disabled={refreshing}
               className="inline-flex items-center space-x-1 text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
@@ -358,7 +365,7 @@ const AnalyticsDashboard: React.FC = () => {
 
           {/* Refresh Button */}
           <button
-            onClick={() => fetchAnalyticsData(selectedPeriod)}
+            onClick={refreshAnalyticsData}
             disabled={refreshing}
             className="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 min-w-[100px]"
           >

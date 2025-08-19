@@ -113,6 +113,7 @@ export interface MealPlan {
     avgMealsPerDay: number
   }
   assignmentCount?: number
+  assignments?: MealPlanAssignment[]
   createdDate: string
   lastModified: string
   createdAt: string

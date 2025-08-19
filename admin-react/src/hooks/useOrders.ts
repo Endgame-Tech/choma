@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { ordersApi } from '../services/api'
+import { useCachedApi } from './useCachedApi'
+import { CACHE_DURATIONS } from '../services/cacheService'
 import type { Order, OrderFilters, OrdersResponse, Pagination } from '../types'
 
 interface UseOrdersReturn {
@@ -18,34 +20,38 @@ export function useOrders(filters: OrderFilters = {}): UseOrdersReturn {
   const [orders, setOrders] = useState<Order[]>([])
   const [stats, setStats] = useState<OrdersResponse['stats'] | null>(null)
   const [pagination, setPagination] = useState<Pagination | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  // Memoize the actual API call function
-  const fetchOrders = useCallback(async (currentFilters: OrderFilters) => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const result = await ordersApi.getOrders(currentFilters)
-      
-      setOrders(Array.isArray(result.data.orders) ? result.data.orders : [])
-      setStats(result.data.stats || null)
-      setPagination(result.pagination || null)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch orders'
-      setError(errorMessage)
-      setOrders([]) // Set empty array on error
-      console.error('Error fetching orders:', err)
-    } finally {
-      setLoading(false)
+  // Generate cache key based on filters
+  const cacheKey = `orders-${JSON.stringify(filters)}`
+
+  // Use cached API for orders fetching
+  const {
+    loading,
+    error,
+    refetch
+  } = useCachedApi(
+    () => ordersApi.getOrders(filters),
+    {
+      cacheKey,
+      cacheDuration: CACHE_DURATIONS.ORDERS,
+      immediate: true,
+      onSuccess: (result) => {
+        setOrders(Array.isArray(result.data.orders) ? result.data.orders : [])
+        setStats(result.data.stats || null)
+        setPagination(result.pagination || null)
+      },
+      onError: () => {
+        setOrders([])
+        setStats(null)
+        setPagination(null)
+      }
     }
-  }, [])
+  )
 
-  // Wrapper function to use current filters
+  // Wrapper function for manual refresh
   const refreshOrders = useCallback(async () => {
-    await fetchOrders(filters)
-  }, [fetchOrders, filters])
+    await refetch()
+  }, [refetch])
 
   const updateOrderStatus = useCallback(async (orderId: string, status: string, reason?: string) => {
     try {
@@ -91,10 +97,6 @@ export function useOrders(filters: OrderFilters = {}): UseOrdersReturn {
     }
   }, [refreshOrders])
 
-  // Use effect that only runs when filters actually change
-  useEffect(() => {
-    fetchOrders(filters)
-  }, [fetchOrders, filters.page, filters.limit, filters.search, filters.orderStatus, filters.paymentStatus, filters.sortBy, filters.sortOrder])
 
   return {
     orders,
@@ -109,32 +111,23 @@ export function useOrders(filters: OrderFilters = {}): UseOrdersReturn {
   }
 }
 
-// Hook for single order
+// Hook for single order with caching
 export function useOrder(orderId: string) {
   const [order, setOrder] = useState<Order | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!orderId) return
-
-    const fetchOrder = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        const result = await ordersApi.getOrder(orderId)
-        setOrder(result)
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch order'
-        setError(errorMessage)
-      } finally {
-        setLoading(false)
-      }
+  const {
+    loading,
+    error
+  } = useCachedApi(
+    () => ordersApi.getOrder(orderId),
+    {
+      cacheKey: `order-${orderId}`,
+      cacheDuration: CACHE_DURATIONS.ORDERS,
+      immediate: !!orderId,
+      onSuccess: (result) => setOrder(result),
+      onError: () => setOrder(null)
     }
+  )
 
-    fetchOrder()
-  }, [orderId])
-
-  return { order, loading, error }
+  return { order, loading, error: error || null }
 }

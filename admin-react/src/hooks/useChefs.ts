@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { chefsApi } from '../services/api'
+import { useCachedApi } from './useCachedApi'
+import { CACHE_DURATIONS } from '../services/cacheService'
 import type { Chef } from '../types'
 
 interface UseChefsReturn {
@@ -15,63 +17,33 @@ interface ChefFilters {
 
 export function useChefs(filters: ChefFilters = {}): UseChefsReturn {
   const [chefs, setChefs] = useState<Chef[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const fetchChefs = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const result = await chefsApi.getChefs(filters)
-      setChefs(result)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch chefs'
-      setError(errorMessage)
-      console.error('Error fetching chefs:', err)
-    } finally {
-      setLoading(false)
+  // Generate cache key based on filters
+  const cacheKey = `chefs-${JSON.stringify(filters)}`
+
+  const {
+    loading,
+    error,
+    refetch
+  } = useCachedApi(
+    () => chefsApi.getChefs(filters),
+    {
+      cacheKey,
+      cacheDuration: CACHE_DURATIONS.CHEFS,
+      immediate: true,
+      onSuccess: (result) => setChefs(Array.isArray(result) ? result : []),
+      onError: () => setChefs([])
     }
-  }, [filters])
-
-  useEffect(() => {
-    fetchChefs()
-  }, [fetchChefs])
+  )
 
   return {
     chefs,
     loading,
-    error,
-    refreshChefs: fetchChefs
+    error: error || null,
+    refreshChefs: refetch
   }
 }
 
 export function useAvailableChefs() {
-  const [chefs, setChefs] = useState<Chef[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchAvailableChefs = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        const result = await chefsApi.getAvailableChefs()
-        // Ensure result is an array
-        setChefs(Array.isArray(result) ? result : [])
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch available chefs'
-        setError(errorMessage)
-        setChefs([]) // Set empty array on error
-        console.error('Error fetching available chefs:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchAvailableChefs()
-  }, [])
-
-  return { chefs, loading, error }
+  return useChefs({ available: true })
 }
