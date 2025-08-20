@@ -15,7 +15,16 @@ const categories = [
   'Dinner',
   'Snack',
   'Dessert',
-  'Beverage'
+  'Beverage',
+  'Protein',
+  'Swallow',
+  'Fruits',
+  'Soup',
+  'Grain',
+  'Cereal',
+  'Smoothie',
+  'Fruit juice',
+  'None'
 ]
 
 // Cooking cost calculation function

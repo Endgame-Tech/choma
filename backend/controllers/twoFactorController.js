@@ -52,9 +52,15 @@ class TwoFactorController {
 
   // Initialize 2FA setup
   static async initializeSetup(req, res) {
+    const startTime = Date.now();
+    console.log('🔐 Starting 2FA setup initialization for admin:', req.admin.adminId);
+    
     try {
       const adminId = req.admin.adminId;
+      console.log('⏱️ Looking up admin...');
+      const adminLookupStart = Date.now();
       const admin = await Admin.findById(adminId);
+      console.log(`✅ Admin lookup took ${Date.now() - adminLookupStart}ms`);
       
       if (!admin) {
         return res.status(404).json({
@@ -64,8 +70,14 @@ class TwoFactorController {
       }
 
       // Check if 2FA is already enabled
+      console.log('⏱️ Checking existing 2FA...');
+      const twoFactorLookupStart = Date.now();
       const existingTwoFactor = await TwoFactorAuth.findByAdminId(adminId);
+      console.log(`✅ 2FA lookup took ${Date.now() - twoFactorLookupStart}ms`);
+      
       if (existingTwoFactor && existingTwoFactor.isEnabled) {
+        console.log('❌ 2FA already enabled, returning 400');
+        console.log(`🕐 Total request time: ${Date.now() - startTime}ms`);
         return res.status(400).json({
           success: false,
           message: '2FA is already enabled for this account'
@@ -93,9 +105,14 @@ class TwoFactorController {
         twoFactor.secret = secret.base32;
       }
 
+      console.log('⏱️ Saving 2FA record...');
+      const saveStart = Date.now();
       await twoFactor.save();
+      console.log(`✅ 2FA save took ${Date.now() - saveStart}ms`);
 
       // Log setup initiation
+      console.log('⏱️ Creating audit log...');
+      const auditStart = Date.now();
       await TwoFactorAuditLog.create({
         adminId,
         action: 'setup',
@@ -103,19 +120,23 @@ class TwoFactorController {
         userAgent: req.get('User-Agent'),
         details: { step: 'initiated' }
       });
+      console.log(`✅ Audit log took ${Date.now() - auditStart}ms`);
 
+      console.log(`🎉 2FA setup initialization completed in ${Date.now() - startTime}ms`);
       res.json({
         success: true,
         data: {
           secret: secret.base32,
-          qrCode: qrCodeUrl,
+          qrCodeUrl: qrCodeUrl,
+          backupCodes: [], // Will be generated after verification
           manualEntryKey: secret.base32,
           issuer: 'Choma',
           accountName: `Choma Admin (${admin.email})`
         }
       });
     } catch (error) {
-      console.error('Initialize 2FA setup error:', error);
+      console.error('❌ Initialize 2FA setup error:', error);
+      console.log(`🕐 Failed request took ${Date.now() - startTime}ms`);
       res.status(500).json({
         success: false,
         message: 'Failed to initialize 2FA setup',

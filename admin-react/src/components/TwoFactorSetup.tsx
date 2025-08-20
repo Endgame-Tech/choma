@@ -30,6 +30,7 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentStatus, setCurrentStatus] = useState<TwoFactorStatus | null>(null);
+  const [slowLoadingWarning, setSlowLoadingWarning] = useState(false);
 
   const targetAdminId = adminId || currentAdmin?._id;
 
@@ -44,9 +45,11 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
     try {
       const status = await twoFactorApi.getTwoFactorStatus();
+      console.log('2FA Status loaded:', status);
       setCurrentStatus(status);
 
       if (status.isEnabled) {
+        console.log('2FA already enabled, going to complete step');
         setStep('complete');
       }
     } catch (error) {
@@ -59,6 +62,12 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
     setLoading(true);
     setError(null);
+    setSlowLoadingWarning(false);
+    
+    // Show warning if loading takes too long
+    const slowLoadingTimer = setTimeout(() => {
+      setSlowLoadingWarning(true);
+    }, 5000);
 
     try {
       const response: TwoFactorSetupResponse = await twoFactorApi.initiateTwoFactorSetup();
@@ -70,9 +79,25 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
         setError(response.message || 'Failed to initiate 2FA setup');
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to start setup');
+      console.error('2FA Setup Error Details:', error);
+      let errorMessage = 'Failed to start setup';
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        } else if (axiosError.response?.status === 400) {
+          errorMessage = '2FA setup failed. Please check your account status.';
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
+      clearTimeout(slowLoadingTimer);
       setLoading(false);
+      setSlowLoadingWarning(false);
     }
   };
 
@@ -195,6 +220,19 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
               <div className="flex items-center">
                 <ExclamationTriangleIcon className="w-5 h-5 text-red-500 mr-2" />
                 <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {slowLoadingWarning && (
+            <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+                  Setup is taking longer than expected. Please wait while we process your request...
+                </p>
               </div>
             </div>
           )}

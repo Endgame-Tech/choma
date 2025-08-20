@@ -28,7 +28,7 @@ const api = axios.create({
   baseURL: import.meta.env.PROD
     ? `${import.meta.env.VITE_API_BASE_URL}/api/admin/2fa`
     : '/api/admin/2fa',
-  timeout: 10000,
+  timeout: 60000, // Increased to 60 seconds to handle slow database operations
   headers: {
     'Content-Type': 'application/json',
   },

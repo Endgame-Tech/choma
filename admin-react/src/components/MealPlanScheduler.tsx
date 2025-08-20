@@ -35,6 +35,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
     customDescription: '',
     imageUrl: ''
   })
+  const [savingAssignment, setSavingAssignment] = useState(false)
   // Track the previous meal plan ID to detect updates
   const [prevMealPlanId, setPrevMealPlanId] = useState(mealPlan._id)
   const [weekBeforeUpdate, setWeekBeforeUpdate] = useState<number | null>(null)
@@ -100,6 +101,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
   const handleSaveAssignment = async () => {
     if (selectedDay && selectedMealTime && currentAssignment.selectedMeals.length > 0 && currentAssignment.customTitle.trim()) {
       try {
+        setSavingAssignment(true)
         // Store the current week before triggering update
         setWeekBeforeUpdate(selectedWeek)
 
@@ -112,9 +114,6 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
           dayOfWeek: selectedDay,
           mealTime: selectedMealTime as 'breakfast' | 'lunch' | 'dinner'
         })
-
-        // Update the meal plan data
-        onUpdate()
 
         // Refresh assignments to show new data
         await fetchMealPlanAssignments()
@@ -133,6 +132,8 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
         alert('Failed to assign meal to plan')
         // Reset the week tracking on error
         setWeekBeforeUpdate(null)
+      } finally {
+        setSavingAssignment(false)
       }
     }
   }
@@ -567,12 +568,19 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                       <div className="mt-4 flex gap-2">
                         <button
                           onClick={handleSaveAssignment}
-                          disabled={currentAssignment.selectedMeals.length === 0 || !currentAssignment.customTitle.trim()}
-                          className="flex-1 px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded text-sm hover:bg-blue-700 dark:hover:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                          disabled={currentAssignment.selectedMeals.length === 0 || !currentAssignment.customTitle.trim() || savingAssignment}
+                          className="flex-1 px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded text-sm hover:bg-blue-700 dark:hover:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                         >
-                          {currentAssignment.selectedMeals.length > 0 &&
+                          {savingAssignment ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                              Saving...
+                            </>
+                          ) : (
+                            currentAssignment.selectedMeals.length > 0 &&
                             mealPlanWithAssignments.assignments?.find(a => a.weekNumber === selectedWeek && a.dayOfWeek === selectedDay && a.mealTime === selectedMealTime)
-                            ? 'Update Assignment' : 'Save Assignment'}
+                            ? 'Update Assignment' : 'Save Assignment'
+                          )}
                         </button>
                         <button
                           onClick={() => {

@@ -12,7 +12,7 @@ export const APP_CONFIG = {
     ? Platform.OS === "android"
       ? "http://10.101.160.28:5001/api"
       : "http://localhost:5001/api"
-    : "https://your-render-backend-url.onrender.com/api",
+    : "https://choma.onrender.com/api",
 
   // Payment Configuration
   PAYSTACK_PUBLIC_KEY: __DEV__

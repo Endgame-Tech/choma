@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import TwoFactorModal from '../components/TwoFactorModal'
+import { twoFactorApi } from '../services/twoFactorApi'
+import { TwoFactorVerificationResponse } from '../types/twoFactor'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -8,12 +11,26 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // TODO: Re-enable 2FA functionality when backend supports it
-  // const [show2FAModal, setShow2FAModal] = useState(false)
-  // const [pendingLoginData, setPendingLoginData] = useState<{ adminId: string; tempToken: string } | null>(null)
+  const [show2FAModal, setShow2FAModal] = useState(false)
+  const [pendingLoginData, setPendingLoginData] = useState<{ adminId: string; tempToken: string } | null>(null)
 
   const { login } = useAuth()
   const navigate = useNavigate()
+
+  const handleTwoFactorVerified = (verified: boolean, data?: TwoFactorVerificationResponse['data']) => {
+    setShow2FAModal(false)
+    if (verified) {
+      navigate('/')
+    } else {
+      setError('2FA verification failed. Please try again.')
+    }
+  }
+
+  const handleTwoFactorClose = () => {
+    setShow2FAModal(false)
+    // Optionally log out the user or keep them on login page
+    setError('2FA verification is required to complete login.')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,7 +42,23 @@ const Login: React.FC = () => {
       const loginResult = await login(email, password)
 
       if (loginResult === true) {
-        // Login successful
+        // Check if user has 2FA enabled
+        try {
+          const twoFactorStatus = await twoFactorApi.getTwoFactorStatus()
+          const settings = await twoFactorApi.getSettings()
+          
+          if (twoFactorStatus.isEnabled && settings.requireForLogin) {
+            // 2FA is enabled and required for login - show 2FA modal
+            setShow2FAModal(true)
+            setLoading(false)
+            return
+          }
+        } catch (twoFactorError) {
+          console.warn('Could not check 2FA status:', twoFactorError)
+          // Continue with login if 2FA check fails
+        }
+        
+        // Login successful without 2FA or 2FA not required
         navigate('/')
       } else {
         setError('Invalid credentials. Access denied.')
@@ -163,6 +196,19 @@ const Login: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Two-Factor Authentication Modal */}
+      {show2FAModal && (
+        <TwoFactorModal
+          isOpen={show2FAModal}
+          onClose={handleTwoFactorClose}
+          onVerified={handleTwoFactorVerified}
+          title="Complete Login with 2FA"
+          description="Your account has two-factor authentication enabled. Please verify to complete login."
+          allowBackupCodes={true}
+          allowTrustDevice={true}
+        />
+      )}
     </div>
   )
 }
