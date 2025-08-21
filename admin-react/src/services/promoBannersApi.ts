@@ -11,6 +11,7 @@ export interface PromoBanner {
   ctaParams?: Record<string, unknown>
   externalUrl?: string
   isActive: boolean
+  isPublished: boolean
   priority: number
   startDate?: string
   endDate?: string
@@ -129,5 +130,12 @@ export const promoBannersApi = {
     if (targetAudience) params.append('targetAudience', targetAudience)
     
     return apiRequest(`/banners/active?${params.toString()}`)
+  },
+
+  // Toggle publish status
+  togglePublishBanner: async (bannerId: string): Promise<BannerResponse> => {
+    return apiRequest(`/banners/${bannerId}/publish`, {
+      method: 'PUT'
+    })
   }
 }

@@ -378,6 +378,23 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  // Track impression when banner is displayed
+  const [trackedImpressions, setTrackedImpressions] = useState(new Set());
+  
+  useEffect(() => {
+    if (banners && banners.length > 0 && banners[currentBannerIndex]) {
+      const banner = banners[currentBannerIndex];
+      if (banner._id && !trackedImpressions.has(banner._id)) {
+        // Track impression only once per session per banner
+        apiService.trackBannerImpression(banner._id).then(() => {
+          setTrackedImpressions(prev => new Set([...prev, banner._id]));
+        }).catch(err => {
+          console.log('Failed to track banner impression:', err);
+        });
+      }
+    }
+  }, [currentBannerIndex, banners, trackedImpressions]);
+
   // Auto-slide effect for banner
   useEffect(() => {
     if (!banners || banners.length <= 1) return;

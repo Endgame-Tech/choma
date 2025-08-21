@@ -48,6 +48,11 @@ const PromoBannerSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isPublished: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
   priority: {
     type: Number,
     default: 0,
@@ -148,6 +153,7 @@ PromoBannerSchema.statics.getActiveBanners = function(targetAudience = 'all') {
   
   const query = {
     isActive: true,
+    isPublished: true, // Only show published banners in mobile app
     $and: [
       {
         $or: [

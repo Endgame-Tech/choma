@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { PromoBanner, PromoBannerFilters, promoBannersApi, CreatePromoBannerData } from '../services/promoBannersApi'
 import CreateBannerModal from '../components/CreateBannerModal'
 import EditBannerModal from '../components/EditBannerModal'
+import BannerPreview from '../components/BannerPreview'
 import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
 
 const PromoBanners: React.FC = () => {
@@ -135,6 +136,20 @@ const PromoBanners: React.FC = () => {
     }
   }
 
+  const handlePublishToggle = async (bannerId: string) => {
+    try {
+      const response = await promoBannersApi.togglePublishBanner(bannerId)
+      if (response.success) {
+        await loadBanners()
+      } else {
+        throw new Error(response.error || 'Failed to toggle publish status')
+      }
+    } catch (err) {
+      console.error('Publish toggle error:', err)
+      alert(err instanceof Error ? err.message : 'Failed to toggle publish status')
+    }
+  }
+
   const handleBulkDelete = async () => {
     if (selectedBanners.length === 0) return
 
@@ -180,48 +195,80 @@ const PromoBanners: React.FC = () => {
     return 'Active'
   }
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-neutral-200">Loading promo banners...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-4">
+        <div className="flex items-center">
+          <div className="text-red-400 dark:text-red-300 mr-3"><i className="fi fi-sr-warning"></i></div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Promo Banners</h1>
-            <p className="text-gray-600 dark:text-gray-400">Manage promotional banners for the mobile app</p>
+            <h3 className="text-red-800 dark:text-red-300 font-medium">Error loading promo banners</h3>
+            <p className="text-red-600 dark:text-red-300">{error}</p>
+            <button
+              onClick={loadBanners}
+              className="mt-2 text-sm text-red-600 dark:text-red-300 hover:text-red-800 dark:hover:text-red-400 underline"
+            >
+              Try again
+            </button>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">Promo Banners Management</h1>
+          <p className="text-gray-600 dark:text-neutral-200">Create and manage promotional banners for the mobile app ({pagination.totalItems} banners)</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          {/* Create Button */}
           <PermissionGate module="banners" action="create">
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
             >
+              <i className="fi fi-sr-plus mr-2"></i>
               Create Banner
             </button>
           </PermissionGate>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+      {/* Filters and Search */}
+      <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Search
-            </label>
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search banners..."
-              className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Search</label>
+            <div className="relative">
+              <i className="fi fi-sr-search text-base absolute left-3 top-3 text-gray-400 dark:text-neutral-400"></i>
+              <input
+                type="text"
+                placeholder="Search banners..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
           </div>
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Status
-            </label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Status</label>
             <select
               value={filters.status || ''}
               onChange={(e) => setFilters(prev => ({
@@ -229,7 +276,9 @@ const PromoBanners: React.FC = () => {
                 status: (e.target.value as 'active' | 'inactive') || undefined,
                 page: 1
               }))}
-              className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              aria-label="Filter banners by status"
+              title="Filter banners by active or inactive status"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
@@ -239,9 +288,7 @@ const PromoBanners: React.FC = () => {
 
           {/* Target Audience Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Target Audience
-            </label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Target Audience</label>
             <select
               value={filters.targetAudience || ''}
               onChange={(e) => setFilters(prev => ({
@@ -249,7 +296,9 @@ const PromoBanners: React.FC = () => {
                 targetAudience: e.target.value || undefined,
                 page: 1
               }))}
-              className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              aria-label="Filter banners by target audience"
+              title="Filter banners by target audience"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Audiences</option>
               <option value="all">All Users</option>
@@ -260,328 +309,92 @@ const PromoBanners: React.FC = () => {
             </select>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-end gap-2">
-            <button
-              onClick={loadBanners}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+          {/* Results per page */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Per Page</label>
+            <select
+              value={filters.limit}
+              onChange={(e) => setFilters(prev => ({ ...prev, limit: parseInt(e.target.value), page: 1 }))}
+              aria-label="Number of banners per page"
+              title="Choose how many banners to show per page"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              Refresh
-            </button>
-            {selectedBanners.length > 0 && (
-              <PermissionGate module="banners" action="delete">
-                <button
-                  onClick={handleBulkDelete}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  Delete ({selectedBanners.length})
-                </button>
-              </PermissionGate>
-            )}
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-          <span className="ml-2 text-gray-600 dark:text-gray-400">Loading banners...</span>
+      {/* Banners Grid */}
+      {banners.length === 0 ? (
+        <div className="text-center py-12 bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
+          <div className="text-4xl mb-2"><i className="fi fi-sr-picture"></i></div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-2">No banners found</h3>
+          <p className="text-gray-500 dark:text-neutral-200 mb-4">
+            {filters.search || filters.status || filters.targetAudience
+              ? "No banners match your current filters."
+              : "Get started by creating your first promotional banner."}
+          </p>
+          <PermissionGate module="banners" action="create">
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800"
+            >
+              <i className="fi fi-sr-plus mr-2"></i>
+              Create Banner
+            </button>
+          </PermissionGate>
+        </div>
+      ) : (
+        /* Banners Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {banners.map((banner) => (
+            <BannerPreview
+              key={banner._id}
+              banner={banner}
+              onPublishToggle={handlePublishToggle}
+              onEdit={(banner) => {
+                setSelectedBanner(banner)
+                setEditModalOpen(true)
+              }}
+              onDelete={handleDeleteBanner}
+            />
+          ))}
         </div>
       )}
 
-      {/* Error State */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-700 dark:text-neutral-200">
+              Showing {((pagination.currentPage - 1) * (filters.limit || 10)) + 1} to{' '}
+              {Math.min(pagination.currentPage * (filters.limit || 10), pagination.totalItems)} of{' '}
+              {pagination.totalItems} banners
             </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error loading banners</h3>
-              <div className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
+                disabled={pagination.currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded hover:bg-gray-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
+                {pagination.currentPage} of {pagination.totalPages}
+              </span>
+              <button
+                onClick={() => setFilters(prev => ({ ...prev, page: Math.min(pagination.totalPages, (prev.page || 1) + 1) }))}
+                disabled={pagination.currentPage === pagination.totalPages}
+                className="px-3 py-1 text-sm border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded hover:bg-gray-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Banners List */}
-      {!loading && !error && (
-        <>
-          {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{pagination.totalItems}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total Banners</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-green-600">
-                {banners.filter(b => b.isActive).length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Active Banners</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-blue-600">
-                {banners.reduce((sum, b) => sum + (b.impressions || 0), 0).toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total Impressions</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-purple-600">
-                {banners.reduce((sum, b) => sum + (b.clicks || 0), 0).toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total Clicks</div>
-            </div>
-          </div>
-
-          {/* Banners Table */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      <input
-                        type="checkbox"
-                        checked={selectedBanners.length === banners.length && banners.length > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedBanners(banners.map(b => b._id))
-                          } else {
-                            setSelectedBanners([])
-                          }
-                        }}
-                        className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
-                      />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Banner
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Content
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Performance
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Schedule
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {banners.map((banner) => (
-                    <tr key={banner._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedBanners.includes(banner._id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedBanners(prev => [...prev, banner._id])
-                            } else {
-                              setSelectedBanners(prev => prev.filter(id => id !== banner._id))
-                            }
-                          }}
-                          className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <img
-                            src={banner.imageUrl}
-                            alt={banner.title}
-                            className="h-12 w-20 object-cover rounded-lg mr-3"
-                          />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                              {banner.bannerId}
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              Priority: {banner.priority}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="max-w-xs">
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                            {banner.title}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            {banner.subtitle}
-                          </div>
-                          <div className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
-                            CTA: {banner.ctaText} → {banner.ctaDestination}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(banner)}`}>
-                          {getStatusText(banner)}
-                        </span>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {banner.targetAudience.replace('_', ' ')}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                        <div className="space-y-1">
-                          <div>{banner.impressions?.toLocaleString() || 0} impressions</div>
-                          <div>{banner.clicks?.toLocaleString() || 0} clicks</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            CTR: {banner.ctr || 0}%
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        <div className="space-y-1">
-                          {banner.startDate && (
-                            <div>Start: {new Date(banner.startDate).toLocaleDateString()}</div>
-                          )}
-                          {banner.endDate && (
-                            <div>End: {new Date(banner.endDate).toLocaleDateString()}</div>
-                          )}
-                          {!banner.startDate && !banner.endDate && (
-                            <div>No schedule</div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <PermissionGate module="banners" action="edit">
-                            <button
-                              onClick={() => {
-                                setSelectedBanner(banner)
-                                setEditModalOpen(true)
-                              }}
-                              className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                            >
-                              Edit
-                            </button>
-                          </PermissionGate>
-                          <PermissionGate module="banners" action="edit">
-                            <button
-                              onClick={() => handleToggleActive(banner)}
-                              className={banner.isActive ? "text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" : "text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"}
-                            >
-                              {banner.isActive ? 'Deactivate' : 'Activate'}
-                            </button>
-                          </PermissionGate>
-                          <PermissionGate module="banners" action="delete">
-                            <button
-                              onClick={() => handleDeleteBanner(banner._id)}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                            >
-                              Delete
-                            </button>
-                          </PermissionGate>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Empty State */}
-            {banners.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No banners found</h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Get started by creating your first promotional banner.
-                </p>
-                <div className="mt-6">
-                  <PermissionGate module="banners" action="create">
-                    <button
-                      onClick={() => setCreateModalOpen(true)}
-                      className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-                    >
-                      Create Banner
-                    </button>
-                  </PermissionGate>
-                </div>
-              </div>
-            )}
-
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 flex justify-between sm:hidden">
-                    <button
-                      onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
-                      disabled={pagination.currentPage === 1}
-                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => setFilters(prev => ({ ...prev, page: Math.min(pagination.totalPages, (prev.page || 1) + 1) }))}
-                      disabled={pagination.currentPage === pagination.totalPages}
-                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  </div>
-                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
-                        Showing{' '}
-                        <span className="font-medium">
-                          {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}
-                        </span>{' '}
-                        to{' '}
-                        <span className="font-medium">
-                          {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
-                        </span>{' '}
-                        of{' '}
-                        <span className="font-medium">{pagination.totalItems}</span> banners
-                      </p>
-                    </div>
-                    <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                        <button
-                          onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
-                          disabled={pagination.currentPage === 1}
-                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Previous
-                        </button>
-                        <button
-                          onClick={() => setFilters(prev => ({ ...prev, page: Math.min(pagination.totalPages, (prev.page || 1) + 1) }))}
-                          disabled={pagination.currentPage === pagination.totalPages}
-                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Next
-                        </button>
-                      </nav>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </>
       )}
 
       {/* Modals */}

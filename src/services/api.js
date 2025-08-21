@@ -798,6 +798,12 @@ class ApiService {
     return this.request("/banners/active");
   }
 
+  async trackBannerImpression(bannerId) {
+    return this.request(`/banners/${bannerId}/impression`, {
+      method: "POST",
+    });
+  }
+
   async trackBannerClick(bannerId) {
     return this.request(`/banners/${bannerId}/click`, {
       method: "POST",

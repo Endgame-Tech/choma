@@ -19,14 +19,8 @@ router.get("/active", bannerRateLimit, async (req, res) => {
 
     const banners = await PromoBanner.getActiveBanners(targetAudience);
 
-    // Track impressions for active banners
-    const bannerIds = banners.map((b) => b._id);
-    if (bannerIds.length > 0) {
-      await PromoBanner.updateMany(
-        { _id: { $in: bannerIds } },
-        { $inc: { impressions: 1 } }
-      );
-    }
+    // Don't automatically track impressions on fetch
+    // Impressions should be tracked when banners are actually displayed to users
 
     res.json({
       success: true,
@@ -38,6 +32,37 @@ router.get("/active", bannerRateLimit, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch banners",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+});
+
+// POST /api/banners/:id/impression - Track banner impression (when actually displayed)
+router.post("/:id/impression", bannerRateLimit, async (req, res) => {
+  try {
+    const banner = await PromoBanner.findById(req.params.id);
+
+    if (!banner) {
+      return res.status(404).json({
+        success: false,
+        message: "Banner not found",
+      });
+    }
+
+    // Track impression only when banner is actually displayed
+    banner.impressions += 1;
+    await banner.save();
+
+    res.json({
+      success: true,
+      data: { impressions: banner.impressions },
+      message: "Impression tracked successfully",
+    });
+  } catch (err) {
+    console.error("Track banner impression error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to track impression",
       error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
@@ -107,6 +132,79 @@ router.get("/", authenticateAdmin, async (req, res) => {
       success: false,
       message: "Failed to fetch banners",
       error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+});
+
+// PUT /api/banners/:id/publish - Toggle publish status (admin) - MUST BE BEFORE /:id route
+router.put("/:id/publish", authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const banner = await PromoBanner.findById(id);
+    
+    if (!banner) {
+      return res.status(404).json({
+        success: false,
+        message: "Banner not found",
+      });
+    }
+
+    // Toggle publish status
+    banner.isPublished = !banner.isPublished;
+    banner.updatedAt = new Date();
+    await banner.save();
+
+    const populatedBanner = await PromoBanner.findById(banner._id).populate(
+      "createdBy",
+      "username email"
+    );
+
+    res.json({
+      success: true,
+      data: populatedBanner,
+      message: `Banner ${banner.isPublished ? 'published' : 'unpublished'} successfully`,
+    });
+  } catch (error) {
+    console.error("Banner publish toggle error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error toggling banner publish status",
+      error: error.message,
+    });
+  }
+});
+
+// GET /api/banners/:id/stats - Get banner statistics (admin) - MUST BE BEFORE /:id route
+router.get("/:id/stats", authenticateAdmin, async (req, res) => {
+  try {
+    const banner = await PromoBanner.findById(req.params.id);
+
+    if (!banner) {
+      return res.status(404).json({
+        success: false,
+        message: "Banner not found",
+      });
+    }
+
+    const stats = {
+      impressions: banner.impressions || 0,
+      clicks: banner.clicks || 0,
+      ctr: banner.ctr || 0,
+      isActive: banner.isActive,
+      isPublished: banner.isPublished,
+      createdAt: banner.createdAt,
+      updatedAt: banner.updatedAt,
+    };
+
+    res.json({
+      success: true,
+      data: stats,
+    });
+  } catch (err) {
+    console.error("Get banner stats error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch banner stats",
     });
   }
 });
@@ -228,6 +326,7 @@ router.post("/", authenticateAdmin, async (req, res) => {
     });
   }
 });
+
 
 // PUT /api/banners/:id - Update banner (admin)
 router.put("/:id", authenticateAdmin, async (req, res) => {
