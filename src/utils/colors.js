@@ -84,6 +84,7 @@ export const THEME = {
     medium: 12,
     large: 16,
     xl: 20,
+    xxl: 40,
   },
   spacing: {
     xs: 4,

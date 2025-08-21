@@ -1,1 +1,121 @@
-Look at how the dark mode is in other pages and mimic it, and create a card and table view for the page. so basically you create a simiar card design as the one in the on in the mobile app....
+🌐 API Request: POST /banners
+api.ts:106  POST http://localhost:3001/api/admin/banners 500 (Internal Server Error)
+dispatchXhrRequest @ axios.js?v=4fae820f:1672
+xhr @ axios.js?v=4fae820f:1552
+dispatchRequest @ axios.js?v=4fae820f:2027
+Promise.then
+_request @ axios.js?v=4fae820f:2230
+request @ axios.js?v=4fae820f:2139
+wrap @ axios.js?v=4fae820f:8
+apiRequest @ api.ts:106
+createBanner @ promoBannersApi.ts:99
+handleCreateBanner @ PromoBanners.tsx:72
+handleSubmit @ CreateBannerModal.tsx:60
+callCallback2 @ chunk-NUMECXU6.js?v=4ab82794:3674
+invokeGuardedCallbackDev @ chunk-NUMECXU6.js?v=4ab82794:3699
+invokeGuardedCallback @ chunk-NUMECXU6.js?v=4ab82794:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NUMECXU6.js?v=4ab82794:3736
+executeDispatch @ chunk-NUMECXU6.js?v=4ab82794:7014
+processDispatchQueueItemsInOrder @ chunk-NUMECXU6.js?v=4ab82794:7034
+processDispatchQueue @ chunk-NUMECXU6.js?v=4ab82794:7043
+dispatchEventsForPlugins @ chunk-NUMECXU6.js?v=4ab82794:7051
+(anonymous) @ chunk-NUMECXU6.js?v=4ab82794:7174
+batchedUpdates$1 @ chunk-NUMECXU6.js?v=4ab82794:18913
+batchedUpdates @ chunk-NUMECXU6.js?v=4ab82794:3579
+dispatchEventForPluginEventSystem @ chunk-NUMECXU6.js?v=4ab82794:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NUMECXU6.js?v=4ab82794:5478
+dispatchEvent @ chunk-NUMECXU6.js?v=4ab82794:5472
+dispatchDiscreteEvent @ chunk-NUMECXU6.js?v=4ab82794:5449Understand this error
+api.ts:53 ❌ API Error: POST /banners Request failed with status code 500
+overrideMethod @ hook.js:608
+(anonymous) @ api.ts:53
+Promise.then
+_request @ axios.js?v=4fae820f:2230
+request @ axios.js?v=4fae820f:2139
+wrap @ axios.js?v=4fae820f:8
+apiRequest @ api.ts:106
+createBanner @ promoBannersApi.ts:99
+handleCreateBanner @ PromoBanners.tsx:72
+handleSubmit @ CreateBannerModal.tsx:60
+callCallback2 @ chunk-NUMECXU6.js?v=4ab82794:3674
+invokeGuardedCallbackDev @ chunk-NUMECXU6.js?v=4ab82794:3699
+invokeGuardedCallback @ chunk-NUMECXU6.js?v=4ab82794:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NUMECXU6.js?v=4ab82794:3736
+executeDispatch @ chunk-NUMECXU6.js?v=4ab82794:7014
+processDispatchQueueItemsInOrder @ chunk-NUMECXU6.js?v=4ab82794:7034
+processDispatchQueue @ chunk-NUMECXU6.js?v=4ab82794:7043
+dispatchEventsForPlugins @ chunk-NUMECXU6.js?v=4ab82794:7051
+(anonymous) @ chunk-NUMECXU6.js?v=4ab82794:7174
+batchedUpdates$1 @ chunk-NUMECXU6.js?v=4ab82794:18913
+batchedUpdates @ chunk-NUMECXU6.js?v=4ab82794:3579
+dispatchEventForPluginEventSystem @ chunk-NUMECXU6.js?v=4ab82794:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NUMECXU6.js?v=4ab82794:5478
+dispatchEvent @ chunk-NUMECXU6.js?v=4ab82794:5472
+dispatchDiscreteEvent @ chunk-NUMECXU6.js?v=4ab82794:5449Understand this error
+PromoBanners.tsx:80 Create banner error: Error: PromoBanner validation failed: createdBy: Path `createdBy` is required.
+    at handleCreateBanner (PromoBanners.tsx:77:15)
+    at async handleSubmit (CreateBannerModal.tsx:60:7)
+
+
+	19:06:09 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "j045k2g7n",
+  "method": "POST",
+  "url": "/api/upload/banner-image",
+  "ip": "127.0.0.1",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+}
+✅ Banner image uploaded successfully to: https://res.cloudinary.com/dql0tbyes/image/upload/v1755799572/choma/banners/d9r7cvp33yrwfqmcrmui.ppng
+19:06:13 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "j045k2g7n",
+  "method": "POST",
+  "url": "/api/upload/banner-image",
+  "statusCode": 200,
+  "duration": "3813ms",
+  "contentLength": "225"
+}
+19:06:24 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "ptv3erjrv",
+  "method": "POST",
+  "url": "/api/admin/banners",
+  "ip": "127.0.0.1",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+}
+Create banner error: Error: PromoBanner validation failed: createdBy: Path `createdBy` is required.
+    at ValidationError.inspect (C:\dev\choma\backend\node_modules\mongoose\lib\error\validation.js:52:26)
+    at formatValue (node:internal/util/inspect:850:19)
+    at inspect (node:internal/util/inspect:387:10)
+    at formatWithOptionsInternal (node:internal/util/inspect:2366:40)
+    at formatWithOptions (node:internal/util/inspect:2228:10)
+    at console.value (node:internal/console/constructor:345:14)
+    at console.error (node:internal/console/constructor:412:61)
+    at C:\dev\choma\backend\routes\banners.js:199:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  errors: {
+    createdBy: ValidatorError: Path `createdBy` is required.
+        at validate (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1404:13)
+        at SchemaType.doValidate (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1388:7)
+        at C:\dev\choma\backend\node_modules\mongoose\lib\document.js:3105:18
+        at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {
+      properties: [Object],
+      kind: 'required',
+      path: 'createdBy',
+      value: undefined,
+      reason: undefined,
+      [Symbol(mongoose#validatorError)]: true
+    }
+  },
+  _message: 'PromoBanner validation failed'
+}
+19:06:24 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "ptv3erjrv",
+  "method": "POST",
+  "url": "/api/admin/banners",
+  "statusCode": 500,
+  "duration": "361ms",
+  "contentLength": "135"
+}
+

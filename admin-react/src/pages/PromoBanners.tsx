@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { PromoBanner, PromoBannerFilters, promoBannersApi, CreatePromoBannerData } from '../services/promoBannersApi'
 import CreateBannerModal from '../components/CreateBannerModal'
 import EditBannerModal from '../components/EditBannerModal'
-import { PermissionGate } from '../contexts/PermissionContext'
+import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
 
 const PromoBanners: React.FC = () => {
   const [banners, setBanners] = useState<PromoBanner[]>([])
@@ -67,9 +67,15 @@ const PromoBanners: React.FC = () => {
     return () => clearTimeout(timer)
   }, [searchInput])
 
-  const handleCreateBanner = async (bannerData: CreatePromoBannerData) => {
+  const { currentAdmin } = usePermissionCheck();
+
+  const handleCreateBanner = async (bannerData: Omit<CreatePromoBannerData, 'createdBy'>) => {
+    if (!currentAdmin) {
+      setError('You must be logged in to create a banner.');
+      return;
+    }
     try {
-      const response = await promoBannersApi.createBanner(bannerData)
+      const response = await promoBannersApi.createBanner({ ...bannerData, createdBy: currentAdmin._id });
       if (response.success) {
         setCreateModalOpen(false)
         await loadBanners()
@@ -82,7 +88,7 @@ const PromoBanners: React.FC = () => {
     }
   }
 
-  const handleEditBanner = async (bannerId: string, bannerData: Partial<PromoBanner>) => {
+  const handleEditBanner = async (bannerId: string, bannerData: Partial<CreatePromoBannerData>) => {
     try {
       const response = await promoBannersApi.updateBanner(bannerId, bannerData)
       if (response.success) {
@@ -593,7 +599,7 @@ const PromoBanners: React.FC = () => {
             setSelectedBanner(null)
           }}
           banner={selectedBanner}
-          onSubmit={(data: Partial<PromoBanner>) => handleEditBanner(selectedBanner._id, data)}
+          onSubmit={(data: Partial<CreatePromoBannerData>) => handleEditBanner(selectedBanner._id, data)}
         />
       )}
     </div>

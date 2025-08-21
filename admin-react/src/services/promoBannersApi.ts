@@ -36,18 +36,19 @@ export interface PromoBannerFilters {
 }
 
 export interface CreatePromoBannerData {
-  title: string
-  subtitle?: string
-  imageUrl: string
-  ctaText: string
-  ctaDestination: string
-  ctaParams?: Record<string, unknown>
-  externalUrl?: string
-  isActive?: boolean
-  priority?: number
-  startDate?: string
-  endDate?: string
-  targetAudience?: string
+  title: string;
+  subtitle?: string;
+  imageUrl: string;
+  ctaText: string;
+  ctaDestination: string;
+  ctaParams?: Record<string, unknown>;
+  externalUrl?: string;
+  isActive?: boolean;
+  priority?: number;
+  startDate?: string;
+  endDate?: string;
+  targetAudience?: string;
+  createdBy: string;
 }
 
 export interface BannersResponse {

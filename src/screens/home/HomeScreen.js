@@ -85,7 +85,9 @@ const HomeScreen = ({ navigation }) => {
         case "MealPlanDetail":
           if (banner.ctaParams?.planId) {
             // Find the meal plan by planId
-            const plan = mealPlans.find(p => p.planId === banner.ctaParams.planId);
+            const plan = mealPlans.find(
+              (p) => p.planId === banner.ctaParams.planId
+            );
             if (plan) {
               navigation.navigate("MealPlanDetail", { bundle: plan });
             } else {
@@ -159,7 +161,12 @@ const HomeScreen = ({ navigation }) => {
       console.log("🔍 Banner API result:", JSON.stringify(result, null, 2));
 
       if (result.success) {
-        const bannersData = Array.isArray(result.data) ? result.data : [];
+        // Handle nested response structure: result.data.data contains the actual banners array
+        const bannersData = Array.isArray(result.data?.data)
+          ? result.data.data
+          : Array.isArray(result.data)
+          ? result.data
+          : [];
         setBanners(bannersData);
         console.log(`✅ Loaded ${bannersData.length} banners`);
       } else {
@@ -379,7 +386,7 @@ const HomeScreen = ({ navigation }) => {
       setCurrentBannerIndex((prevIndex) => {
         const nextIndex = (prevIndex + 1) % banners.length;
         bannerScrollRef.current?.scrollTo({
-          x: nextIndex * (width - 40),
+          x: nextIndex * width,
           animated: true,
         });
         return nextIndex;
@@ -1060,9 +1067,19 @@ const HomeScreen = ({ navigation }) => {
     if (bannersLoading) {
       return (
         <View style={styles(colors).heroBannerContainer}>
-          <View style={[styles(colors).heroBanner, { justifyContent: 'center', alignItems: 'center' }]}>
+          <View
+            style={[
+              styles(colors).heroBanner,
+              { justifyContent: "center", alignItems: "center" },
+            ]}
+          >
             <ActivityIndicator size="large" color={colors.white} />
-            <Text style={[styles(colors).heroSubtitle, { marginTop: 10, textAlign: 'center' }]}>
+            <Text
+              style={[
+                styles(colors).heroSubtitle,
+                { marginTop: 10, textAlign: "center" },
+              ]}
+            >
               Loading promotions...
             </Text>
           </View>
@@ -1079,7 +1096,8 @@ const HomeScreen = ({ navigation }) => {
               <View style={styles(colors).heroTextSection}>
                 <Text style={styles(colors).heroTitle}>Welcome to Choma</Text>
                 <Text style={styles(colors).heroSubtitle}>
-                  Discover delicious and healthy meal plans crafted just for you!
+                  Discover delicious and healthy meal plans crafted just for
+                  you!
                 </Text>
                 <TouchableOpacity
                   style={styles(colors).heroButton}
@@ -1119,7 +1137,7 @@ const HomeScreen = ({ navigation }) => {
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={(event) => {
             const slideIndex = Math.round(
-              event.nativeEvent.contentOffset.x / (width - 40)
+              event.nativeEvent.contentOffset.x / width
             );
             setCurrentBannerIndex(slideIndex);
           }}
@@ -1131,36 +1149,39 @@ const HomeScreen = ({ navigation }) => {
               activeOpacity={0.8}
               onPress={() => handlePromoBannerPress(banner)}
             >
-              <View style={styles(colors).heroBanner}>
-                <View style={styles(colors).heroContent}>
-                  <View style={styles(colors).heroTextSection}>
-                    <Text style={styles(colors).heroTitle}>{banner.title}</Text>
-                    <Text style={styles(colors).heroSubtitle}>
-                      {banner.subtitle || 'Discover amazing deals and offers!'}
-                    </Text>
-                    <TouchableOpacity
-                      style={styles(colors).heroButton}
-                      activeOpacity={0.8}
-                      onPress={() => handlePromoBannerPress(banner)}
-                    >
-                      <Text style={styles(colors).heroButtonText}>
-                        {banner.ctaText}
-                      </Text>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={16}
-                        color="#000"
-                        style={styles(colors).heroButtonIcon}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles(colors).heroImageSection}>
-                    <Image
-                      source={{ uri: banner.imageUrl }}
-                      style={styles(colors).heroImage}
-                      defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
-                    />
-                  </View>
+              <View style={styles(colors).promoBannerContainer}>
+                {/* Full-size banner image */}
+                <Image
+                  source={{
+                    uri: banner.imageUrl,
+                    cache: "default",
+                  }}
+                  style={styles(colors).promoBannerImage}
+                  defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+                  onError={(error) => {
+                    console.log(
+                      "🖼️ Banner image error:",
+                      error.nativeEvent.error
+                    );
+                    console.log("🖼️ Image URL:", banner.imageUrl);
+                  }}
+                  onLoad={() => {
+                    console.log("🖼️ Banner image loaded successfully");
+                  }}
+                  resizeMode="cover"
+                />
+                
+                {/* CTA Button Overlay - Visual only, banner handles the press */}
+                <View style={styles(colors).promoBannerCTA}>
+                  <Text style={styles(colors).promoBannerCTAText}>
+                    {banner.ctaText}
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color="#000"
+                    style={styles(colors).promoBannerCTAIcon}
+                  />
                 </View>
               </View>
             </TouchableOpacity>
@@ -1175,7 +1196,8 @@ const HomeScreen = ({ navigation }) => {
                 key={index}
                 style={[
                   styles(colors).bannerIndicator,
-                  currentBannerIndex === index && styles(colors).bannerIndicatorActive
+                  currentBannerIndex === index &&
+                    styles(colors).bannerIndicatorActive,
                 ]}
               />
             ))}
@@ -1601,15 +1623,14 @@ const styles = (colors) =>
       padding: 4,
     },
     heroBannerContainer: {
-      paddingHorizontal: 20,
       marginBottom: 20,
     },
     heroBanner: {
       backgroundColor: colors.primary,
       borderRadius: THEME.borderRadius.large,
-      padding: 20,
       overflow: "hidden",
-      minHeight: 140,
+      minHeight: 120,
+      maxHeight: 130,
     },
     heroContent: {
       flexDirection: "row",
@@ -1618,7 +1639,8 @@ const styles = (colors) =>
     },
     heroTextSection: {
       flex: 1,
-      paddingRight: 16,
+      paddingHorizontal: 20,
+      // paddingTop: 5,
     },
     heroTitle: {
       fontSize: 20,
@@ -1634,16 +1656,16 @@ const styles = (colors) =>
     },
     heroButton: {
       backgroundColor: colors.black,
-      paddingHorizontal: 16,
-      paddingVertical: 15,
-      borderRadius: THEME.borderRadius.xl,
+      paddingHorizontal: 15,
+      paddingVertical: 7,
+      borderRadius: THEME.borderRadius.xxl,
       alignSelf: "flex-start",
       flexDirection: "row",
       alignItems: "center",
     },
     heroButtonText: {
       color: colors.primary,
-      fontSize: 14,
+      fontSize: 10,
       fontWeight: "600",
       marginRight: 4,
     },
@@ -1652,14 +1674,15 @@ const styles = (colors) =>
       color: colors.primary,
     },
     heroImageSection: {
-      width: 100,
-      height: 100,
-      borderRadius: THEME.borderRadius.medium,
+      width: 150,
+      height: 130,
+      paddingRight: 15,
+      // paddingLeft: 5,
       overflow: "hidden",
     },
     heroImage: {
       width: "100%",
-      height: "100%",
+      height: "150%",
       borderRadius: THEME.borderRadius.medium,
     },
     categoriesSection: {
@@ -2410,13 +2433,58 @@ const styles = (colors) =>
     },
     // Banner slide styles
     bannerSlide: {
-      width: width - 40,
-      marginHorizontal: 20,
+      width: width,
+      paddingHorizontal: 20,
+    },
+    promoBannerContainer: {
+      position: 'relative',
+      borderRadius: THEME.borderRadius.large,
+      overflow: 'hidden',
+      minHeight: 140,
+      maxHeight: 140,
+    },
+    promoBannerImage: {
+      width: '100%',
+      height: '100%',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+    },
+    promoBannerCTA: {
+      position: 'absolute',
+      bottom: 15,
+      right: 15,
+      backgroundColor: colors.white,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: THEME.borderRadius.xxl,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+      // Visual indicator - not interactive since whole banner is clickable
+      opacity: 0.95,
+    },
+    promoBannerCTAText: {
+      color: colors.black,
+      fontSize: 12,
+      fontWeight: '600',
+      marginRight: 4,
+    },
+    promoBannerCTAIcon: {
+      marginLeft: 4,
+      color: colors.black,
     },
     bannerIndicators: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
       marginTop: 15,
       gap: 8,
     },

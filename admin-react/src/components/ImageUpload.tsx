@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react'
-import { apiRequest } from '../services/api'
+import { uploadFile } from '../services/api'
 
 interface ImageUploadProps {
   currentImageUrl?: string
@@ -50,10 +50,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     reader.readAsDataURL(file)
 
     // Upload file
-    await uploadFile(file)
+    await handleUpload(file)
   }
 
-  const uploadFile = async (file: File) => {
+  const handleUpload = async (file: File) => {
     try {
       setUploading(true)
       setError(null)
@@ -61,17 +61,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const formData = new FormData()
       formData.append('image', file)
 
-      const response = await apiRequest('/upload/banner-image', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          // Don't set Content-Type, let the browser set it with boundary
-        }
-      })
+      const response = await uploadFile('/upload/banner-image', formData)
 
       if (response.success) {
-        onImageUpload(response.imageUrl)
-        setPreviewUrl(response.imageUrl)
+        onImageUpload(response.imageUrl || '')
+        setPreviewUrl(response.imageUrl || '')
       } else {
         throw new Error(response.message || 'Upload failed')
       }
@@ -113,8 +107,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         onClick={handleClick}
         className={`
           relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
-          ${disabled || uploading 
-            ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 cursor-not-allowed' 
+          ${disabled || uploading
+            ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 cursor-not-allowed'
             : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-gray-50 dark:hover:bg-gray-700'
           }
           ${error ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : ''}

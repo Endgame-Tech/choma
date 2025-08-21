@@ -3,6 +3,7 @@
 ## Production-Ready Database Models for choma App
 
 ### 1. Users Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -33,6 +34,7 @@
 ```
 
 ### 2. Meal Plans Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -88,6 +90,7 @@
 ```
 
 ### 3. Orders Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -158,6 +161,7 @@
 ```
 
 ### 4. Subscriptions Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -203,6 +207,7 @@
 ```
 
 ### 5. Notifications Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -225,6 +230,7 @@
 ```
 
 ### 6. Promotional Banners Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -250,6 +256,7 @@
 ```
 
 ### 7. User Statistics Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -284,6 +291,7 @@
 ```
 
 ### 8. Payment Transactions Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -310,6 +318,7 @@
 ```
 
 ### 9. Delivery Tracking Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -353,6 +362,7 @@
 ```
 
 ### 10. User Bookmarks Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -364,6 +374,7 @@
 ```
 
 ### 11. Reviews and Ratings Collection
+
 ```javascript
 {
   _id: ObjectId,
@@ -382,6 +393,7 @@
 ```
 
 ### 12. Support Tickets Collection
+
 ```javascript
 {
   _id: ObjectId,

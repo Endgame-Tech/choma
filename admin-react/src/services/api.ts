@@ -11,6 +11,14 @@ import type {
   BulkAssignmentData
 } from '../types'
 
+interface UploadResponse {
+  success: boolean
+  message: string
+  imageUrl?: string
+  publicId?: string
+  error?: string
+}
+
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: import.meta.env.PROD 
@@ -71,10 +79,25 @@ const handleResponse = <T>(response: { data: ApiResponse<T> }): T => {
 // Generic API request function
 export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   try {
+    let data;
+    if (options.body) {
+      if (typeof options.body === 'string') {
+        try {
+          data = JSON.parse(options.body);
+        } catch (e) {
+          // If it's not valid JSON, pass it as is
+          data = options.body;
+        }
+      } else {
+        // If it's not a string (e.g., FormData), pass it as is
+        data = options.body;
+      }
+    }
+
     const config = {
       url: endpoint,
       method: options.method || 'GET',
-      data: options.body ? JSON.parse(options.body as string) : undefined,
+      data,
       headers: {
         ...options.headers,
       }
@@ -86,6 +109,33 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
     if (error && typeof error === 'object' && 'response' in error) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (error as any).response?.data
+    }
+    throw error
+  }
+}
+
+// Upload function for file uploads (uses different base URL)
+export const uploadFile = async (endpoint: string, formData: FormData): Promise<UploadResponse> => {
+  try {
+    const baseURL = import.meta.env.PROD 
+      ? `${import.meta.env.VITE_API_BASE_URL}/api`
+      : '/api'
+    
+    const token = localStorage.getItem('choma-admin-token')
+    
+    const response = await axios.post(`${baseURL}${endpoint}`, formData, {
+      timeout: 30000,
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        // Don't set Content-Type, let axios set it with boundary for FormData
+      }
+    })
+    
+    return response.data as UploadResponse
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'response' in error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (error as any).response?.data as UploadResponse
     }
     throw error
   }

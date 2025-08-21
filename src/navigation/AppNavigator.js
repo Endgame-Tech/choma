@@ -13,6 +13,9 @@ import { THEME } from '../utils/colors';
 import HomeScreen from '../screens/home/HomeScreen';
 import WelcomeScreen from '../screens/home/WelcomeScreen';
 
+// Import swipeable wrapper
+import SwipeableTabNavigator from '../components/SwipeableTabNavigator';
+
 // Auth screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignupScreen from '../screens/auth/SignupScreen';
@@ -178,22 +181,34 @@ const TabNavigator = () => {
         </View>
       )}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen}
-      />
-      <Tab.Screen 
-        name="Search" 
-        component={SearchScreen}
-      />
-      <Tab.Screen 
-        name="Orders" 
-        component={OrdersScreen}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen}
-      />
+      <Tab.Screen name="Home">
+        {(props) => (
+          <SwipeableTabNavigator>
+            <HomeScreen {...props} />
+          </SwipeableTabNavigator>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Search">
+        {(props) => (
+          <SwipeableTabNavigator>
+            <SearchScreen {...props} />
+          </SwipeableTabNavigator>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Orders">
+        {(props) => (
+          <SwipeableTabNavigator>
+            <OrdersScreen {...props} />
+          </SwipeableTabNavigator>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Profile">
+        {(props) => (
+          <SwipeableTabNavigator>
+            <ProfileScreen {...props} />
+          </SwipeableTabNavigator>
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };

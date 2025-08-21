@@ -148,21 +148,29 @@ PromoBannerSchema.statics.getActiveBanners = function(targetAudience = 'all') {
   
   const query = {
     isActive: true,
-    $or: [
-      { startDate: { $lte: now } },
-      { startDate: null }
-    ],
-    $or: [
-      { endDate: { $gte: now } },
-      { endDate: null }
+    $and: [
+      {
+        $or: [
+          { startDate: { $lte: now } },
+          { startDate: null }
+        ]
+      },
+      {
+        $or: [
+          { endDate: { $gte: now } },
+          { endDate: null }
+        ]
+      }
     ]
   };
 
   if (targetAudience !== 'all') {
-    query.$or = [
-      { targetAudience: 'all' },
-      { targetAudience: targetAudience }
-    ];
+    query.$and.push({
+      $or: [
+        { targetAudience: 'all' },
+        { targetAudience: targetAudience }
+      ]
+    });
   }
 
   return this.find(query).sort({ priority: -1, createdAt: -1 });

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { PromoBanner } from '../services/promoBannersApi'
+import { PromoBanner, CreatePromoBannerData } from '../services/promoBannersApi'
 import ImageUpload from './ImageUpload'
 
 interface EditBannerModalProps {
   isOpen: boolean
   onClose: () => void
   banner: PromoBanner
-  onSubmit: (bannerData: Partial<PromoBanner>) => Promise<void>
+  onSubmit: (bannerData: Partial<CreatePromoBannerData>) => Promise<void>
 }
 
 const EditBannerModal: React.FC<EditBannerModalProps> = ({
@@ -83,7 +83,7 @@ const EditBannerModal: React.FC<EditBannerModalProps> = ({
       setLoading(true)
       setError(null)
 
-      const submitData: Partial<PromoBanner> = { ...formData }
+      const submitData: Partial<CreatePromoBannerData> = { ...formData }
 
       // Clean up empty fields
       if (!submitData.subtitle) delete submitData.subtitle
@@ -144,60 +144,57 @@ const EditBannerModal: React.FC<EditBannerModalProps> = ({
               </div>
             )}
 
-            {/* Title */}
+            {/* Banner Name (for admin reference only) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Title *
+                Banner Name (Admin Reference) *
               </label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Best Deal For Today"
+                placeholder="Summer Sale Banner, Black Friday Deal, etc."
                 maxLength={100}
                 required
               />
-            </div>
-
-            {/* Subtitle */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Subtitle
-              </label>
-              <input
-                type="text"
-                value={formData.subtitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
-                className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Grab our mouthwatering deal before it's gone!"
-                maxLength={200}
-              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                This is only for admin identification and won't be shown in the app
+              </p>
             </div>
 
             {/* Image Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Banner Image *
+                Banner Design (Image/GIF) *
               </label>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  📐 <strong>Design Guidelines:</strong><br/>
+                  • Upload a complete banner design (recommended: 375x140px)<br/>
+                  • This image will fill the entire banner space<br/>
+                  • The CTA button will overlay on the bottom-right corner<br/>
+                  • Supports static images (JPG, PNG) and animated GIFs
+                </p>
+              </div>
               <ImageUpload
                 currentImageUrl={formData.imageUrl}
                 onImageUpload={(imageUrl) => setFormData(prev => ({ ...prev, imageUrl }))}
-                maxSizeMB={5}
-                label="Upload Banner Image"
+                maxSizeMB={10}
+                label="Upload Banner Design"
               />
 
               {/* Manual URL input as alternative */}
               <div className="mt-3">
                 <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Or enter image URL manually
+                  Or enter image/GIF URL manually
                 </label>
                 <input
                   type="url"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="https://example.com/banner-image.jpg"
+                  placeholder="https://example.com/banner-design.jpg"
                 />
               </div>
             </div>
@@ -299,7 +296,7 @@ const EditBannerModal: React.FC<EditBannerModalProps> = ({
                   Target Audience
                 </label>
                 <select
-                                    value={formData.targetAudience}
+                  value={formData.targetAudience}
                   onChange={(e) => setFormData(prev => ({ ...prev, targetAudience: e.target.value as typeof formData.targetAudience }))}
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
