@@ -133,7 +133,7 @@ const CreateBannerModal: React.FC<CreateBannerModalProps> = ({
                 required
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                This is only for admin identification and won't be shown in the app
+                This is only for admin identification and won&apos;t be shown in the app
               </p>
             </div>
 

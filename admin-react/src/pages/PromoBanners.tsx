@@ -33,7 +33,7 @@ const PromoBanners: React.FC = () => {
   const [selectedBanner, setSelectedBanner] = useState<PromoBanner | null>(null)
 
   // Selected banners for bulk operations
-  const [selectedBanners, setSelectedBanners] = useState<string[]>([])
+  // const [selectedBanners, setSelectedBanners] = useState<string[]>([])
 
   // Load banners
   useEffect(() => {
@@ -123,19 +123,6 @@ const PromoBanners: React.FC = () => {
     }
   }
 
-  const handleToggleActive = async (banner: PromoBanner) => {
-    try {
-      const response = await promoBannersApi.updateBanner(banner._id, {
-        isActive: !banner.isActive
-      })
-      if (response.success) {
-        await loadBanners()
-      }
-    } catch (err) {
-      console.error('Toggle banner status error:', err)
-    }
-  }
-
   const handlePublishToggle = async (bannerId: string) => {
     try {
       const response = await promoBannersApi.togglePublishBanner(bannerId)
@@ -150,50 +137,50 @@ const PromoBanners: React.FC = () => {
     }
   }
 
-  const handleBulkDelete = async () => {
-    if (selectedBanners.length === 0) return
+  // const handleBulkDelete = async () => {
+  //   if (selectedBanners.length === 0) return
 
-    if (!window.confirm(`Are you sure you want to delete ${selectedBanners.length} banner(s)?`)) {
-      return
-    }
+  //   if (!window.confirm(`Are you sure you want to delete ${selectedBanners.length} banner(s)?`)) {
+  //     return
+  //   }
 
-    try {
-      await Promise.all(
-        selectedBanners.map(bannerId => promoBannersApi.deleteBanner(bannerId))
-      )
-      setSelectedBanners([])
-      await loadBanners()
-    } catch (err) {
-      console.error('Bulk delete error:', err)
-      alert('Failed to delete some banners')
-    }
-  }
+  //   try {
+  //     await Promise.all(
+  //       selectedBanners.map(bannerId => promoBannersApi.deleteBanner(bannerId))
+  //     )
+  //     setSelectedBanners([])
+  //     await loadBanners()
+  //   } catch (err) {
+  //     console.error('Bulk delete error:', err)
+  //     alert('Failed to delete some banners')
+  //   }
+  // }
 
-  const getStatusColor = (banner: PromoBanner) => {
-    if (!banner.isActive) return 'bg-gray-100 text-gray-800'
+  // const getStatusColor = (banner: PromoBanner) => {
+  //   if (!banner.isActive) return 'bg-gray-100 text-gray-800'
 
-    const now = new Date()
-    if (banner.startDate && now < new Date(banner.startDate)) {
-      return 'bg-yellow-100 text-yellow-800'
-    }
-    if (banner.endDate && now > new Date(banner.endDate)) {
-      return 'bg-red-100 text-red-800'
-    }
-    return 'bg-green-100 text-green-800'
-  }
+  //   const now = new Date()
+  //   if (banner.startDate && now < new Date(banner.startDate)) {
+  //     return 'bg-yellow-100 text-yellow-800'
+  //   }
+  //   if (banner.endDate && now > new Date(banner.endDate)) {
+  //     return 'bg-red-100 text-red-800'
+  //   }
+  //   return 'bg-green-100 text-green-800'
+  // }
 
-  const getStatusText = (banner: PromoBanner) => {
-    if (!banner.isActive) return 'Inactive'
+  // const getStatusText = (banner: PromoBanner) => {
+  //   if (!banner.isActive) return 'Inactive'
 
-    const now = new Date()
-    if (banner.startDate && now < new Date(banner.startDate)) {
-      return 'Scheduled'
-    }
-    if (banner.endDate && now > new Date(banner.endDate)) {
-      return 'Expired'
-    }
-    return 'Active'
-  }
+  //   const now = new Date()
+  //   if (banner.startDate && now < new Date(banner.startDate)) {
+  //     return 'Scheduled'
+  //   }
+  //   if (banner.endDate && now > new Date(banner.endDate)) {
+  //     return 'Expired'
+  //   }
+  //   return 'Active'
+  // }
 
   if (loading) {
     return (
