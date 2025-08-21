@@ -1,13 +1,1 @@
-[{
-	"resource": "/c:/Users/endga/OneDrive/Desktop/Web Dev Projects/Projects/choma/admin-react/src/components/MealPlanScheduler.tsx",
-	"owner": "typescript",
-	"code": "18046",
-	"severity": 8,
-	"message": "'response' is of type 'unknown'.",
-	"source": "ts",
-	"startLineNumber": 49,
-	"startColumn": 27,
-	"endLineNumber": 49,
-	"endColumn": 35,
-	"origin": "extHost2"
-}]
+Look at how the dark mode is in other pages and mimic it, and create a card and table view for the page. so basically you create a simiar card design as the one in the on in the mobile app....

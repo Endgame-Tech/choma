@@ -68,6 +68,29 @@ const handleResponse = <T>(response: { data: ApiResponse<T> }): T => {
   }
 }
 
+// Generic API request function
+export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+  try {
+    const config = {
+      url: endpoint,
+      method: options.method || 'GET',
+      data: options.body ? JSON.parse(options.body as string) : undefined,
+      headers: {
+        ...options.headers,
+      }
+    }
+
+    const response = await api(config)
+    return response.data
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'response' in error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (error as any).response?.data
+    }
+    throw error
+  }
+}
+
 // Orders API
 export const ordersApi = {
   // Get all orders with filters

@@ -223,4 +223,8 @@ router.use('/notifications', require('./adminNotifications'));
 // Import 2FA routes
 router.use('/2fa', require('./twoFactor'));
 
+// ============= PROMO BANNERS ROUTES =============
+// Import banner routes (admin endpoints)
+router.use('/banners', require('./banners'));
+
 module.exports = router;

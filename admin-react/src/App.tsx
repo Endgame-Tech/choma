@@ -18,6 +18,9 @@ import AdvancedCustomers from './pages/AdvancedCustomers'
 import Meals from './pages/Meals'
 import MealPlans from './pages/MealPlans'
 import AdminManagement from './pages/AdminManagement'
+import Profile from './pages/Profile'
+import SecuritySettings from './pages/SecuritySettings'
+import PromoBanners from './pages/PromoBanners'
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -132,6 +135,21 @@ function AppRoutes() {
       <Route path="/admin-management" element={
         <ProtectedRoute>
           <AdminManagement />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/security-settings" element={
+        <ProtectedRoute>
+          <SecuritySettings />
+        </ProtectedRoute>
+      } />
+      <Route path="/promo-banners" element={
+        <ProtectedRoute>
+          <PromoBanners />
         </ProtectedRoute>
       } />
 

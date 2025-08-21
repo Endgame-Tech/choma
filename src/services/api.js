@@ -1,6 +1,7 @@
 // src/services/api.js - Enhanced MongoDB Backend API Service
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { APP_CONFIG } from '../utils/constants';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { APP_CONFIG } from "../utils/constants";
+import rateLimitService from "./rateLimitService";
 
 // Base configuration
 const API_BASE_URL = APP_CONFIG.API_BASE_URL;
@@ -12,6 +13,33 @@ class ApiService {
     this.isOnline = true;
     this.retryAttempts = 3;
     this.timeout = 30000; // 30 seconds
+
+    // Rate limiting state
+    this.requestQueue = new Map(); // Track pending requests
+    this.lastRequestTime = 0;
+    this.minRequestInterval = 200; // Minimum 200ms between requests
+    this.backoffMultiplier = 1.5;
+    this.maxBackoffDelay = 10000; // 10 seconds max delay
+
+    // Request deduplication
+    this.pendingRequests = new Map();
+  }
+
+  // Get user ID for rate limiting (extract from token or use default)
+  getUserId() {
+    try {
+      if (this.token) {
+        // Simple extraction - in production you'd decode the JWT properly
+        const payload = this.token.split(".")[1];
+        if (payload) {
+          const decoded = JSON.parse(atob(payload));
+          return decoded.userId || decoded.id || "authenticated";
+        }
+      }
+      return "anonymous";
+    } catch (error) {
+      return "anonymous";
+    }
   }
 
   // Set authentication token
@@ -22,13 +50,13 @@ class ApiService {
   // Get stored token
   async getStoredToken() {
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await AsyncStorage.getItem("authToken");
       if (token) {
         this.token = token;
       }
       return token;
     } catch (error) {
-      console.error('Error getting stored token:', error);
+      console.error("Error getting stored token:", error);
       return null;
     }
   }
@@ -36,20 +64,20 @@ class ApiService {
   // Store token
   async storeToken(token) {
     try {
-      await AsyncStorage.setItem('authToken', token);
+      await AsyncStorage.setItem("authToken", token);
       this.token = token;
     } catch (error) {
-      console.error('Error storing token:', error);
+      console.error("Error storing token:", error);
     }
   }
 
   // Remove token
   async removeToken() {
     try {
-      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem("authToken");
       this.token = null;
     } catch (error) {
-      console.error('Error removing token:', error);
+      console.error("Error removing token:", error);
     }
   }
 
@@ -58,23 +86,26 @@ class ApiService {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const response = await fetch(`${this.baseURL.replace('/api', '')}/health`, {
-        signal: controller.signal,
-        method: 'GET',
-      });
-      
+
+      const response = await fetch(
+        `${this.baseURL.replace("/api", "")}/health`,
+        {
+          signal: controller.signal,
+          method: "GET",
+        }
+      );
+
       clearTimeout(timeoutId);
-      
+
       if (response.ok) {
         this.isOnline = true;
         return true;
       }
-      
+
       this.isOnline = false;
       return false;
     } catch (error) {
-      console.log('Backend health check failed:', error.message);
+      console.log("Backend health check failed:", error.message);
       this.isOnline = false;
       return false;
     }
@@ -83,22 +114,110 @@ class ApiService {
   // Generic API request method with retry and fallback
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     // Ensure we have the latest token
     if (!this.token) {
       await this.getStoredToken();
     }
-    
+
+    // Use request deduplication to prevent simultaneous identical requests
+    return await this.deduplicateRequest(url, options);
+  }
+
+  // Check if error is network-related
+  isNetworkError(error) {
+    return (
+      error.name === "AbortError" ||
+      error.message.includes("Network request failed") ||
+      error.message.includes("fetch")
+    );
+  }
+
+  // Rate limiting helper - enforce minimum delay between requests
+  async enforceRateLimit() {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      const delay = this.minRequestInterval - timeSinceLastRequest;
+      console.log(`⏱️ Rate limiting: waiting ${delay}ms before next request`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    this.lastRequestTime = Date.now();
+  }
+
+  // Calculate exponential backoff delay for 429 errors
+  calculateBackoffDelay(attempt, is429Error = false) {
+    if (is429Error) {
+      // For 429 errors, use longer delays
+      const baseDelay = 2000; // Start with 2 seconds
+      const delay = Math.min(
+        baseDelay * Math.pow(this.backoffMultiplier, attempt),
+        this.maxBackoffDelay
+      );
+      return delay + Math.random() * 1000; // Add jitter
+    } else {
+      // For other errors, use normal exponential backoff
+      return Math.min(1000 * Math.pow(2, attempt), 5000);
+    }
+  }
+
+  // Request deduplication - prevent duplicate simultaneous requests
+  async deduplicateRequest(url, options = {}) {
+    const requestKey = `${options.method || "GET"}:${url}:${JSON.stringify(
+      options.body || {}
+    )}`;
+
+    // If the same request is already pending, wait for it
+    if (this.pendingRequests.has(requestKey)) {
+      console.log(`🔄 Deduplicating request: ${requestKey}`);
+      return await this.pendingRequests.get(requestKey);
+    }
+
+    // Create and store the request promise
+    const requestPromise = this.executeRequest(url, options);
+    this.pendingRequests.set(requestKey, requestPromise);
+
+    try {
+      const result = await requestPromise;
+      return result;
+    } finally {
+      // Clean up the pending request
+      this.pendingRequests.delete(requestKey);
+    }
+  }
+
+  // Execute the actual request with rate limiting
+  async executeRequest(url, options = {}) {
+    // Extract endpoint for rate limiting
+    const endpoint = url.replace(this.baseURL, "");
+    const userId = this.getUserId(); // We'll implement this method
+
+    // Check rate limiting before making request
+    const rateLimitCheck = rateLimitService.shouldRateLimit(endpoint, userId);
+    if (rateLimitCheck.shouldLimit) {
+      console.log(`⏱️ Request rate limited: ${endpoint}`);
+      throw new Error(
+        `Rate limited: Please wait ${Math.ceil(
+          rateLimitCheck.remainingDelay / 1000
+        )} seconds before trying again`
+      );
+    }
+
+    // Enforce basic rate limiting
+    await this.enforceRateLimit();
+
     const config = {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
         ...options.headers,
       },
       ...options,
     };
 
-    if (config.body && typeof config.body === 'object') {
+    if (config.body && typeof config.body === "object") {
       config.body = JSON.stringify(config.body);
     }
 
@@ -109,68 +228,134 @@ class ApiService {
 
     for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
       try {
-        console.log(`API Request (Attempt ${attempt}): ${config.method || 'GET'} ${url}`);
-        
+        console.log(
+          `API Request (Attempt ${attempt}): ${config.method || "GET"} ${url}`
+        );
+
         const response = await fetch(url, config);
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+          console.error(`HTTP ${response.status} Error Response:`, errorData);
+
+          // Handle 429 (Too Many Requests) specifically
+          if (response.status === 429) {
+            const retryAfter = response.headers.get("Retry-After");
+            const delay = retryAfter
+              ? parseInt(retryAfter) * 1000
+              : this.calculateBackoffDelay(attempt, true);
+
+            console.warn(
+              `⏱️ Rate limited (429), waiting ${delay}ms before retry ${attempt}/${this.retryAttempts}`
+            );
+
+            if (attempt < this.retryAttempts) {
+              await new Promise((resolve) => setTimeout(resolve, delay));
+              continue; // Retry the request
+            }
+          }
+
+          // Create detailed error message
+          let errorMessage =
+            errorData.message ||
+            errorData.error ||
+            `HTTP ${response.status}: ${response.statusText}`;
+
+          // Add validation details if available
+          if (errorData.details || errorData.errors) {
+            const details = errorData.details || errorData.errors;
+            if (Array.isArray(details)) {
+              const errorMessages = details.map((detail) => {
+                if (typeof detail === "object" && detail.msg) {
+                  return detail.msg;
+                } else if (typeof detail === "string") {
+                  return detail;
+                } else {
+                  return JSON.stringify(detail);
+                }
+              });
+              errorMessage += ": " + errorMessages.join(", ");
+            } else if (typeof details === "object") {
+              errorMessage += ": " + Object.values(details).join(", ");
+            } else {
+              errorMessage += ": " + details;
+            }
+          }
+
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();
         this.isOnline = true;
-        return { success: true, data };
 
+        // Record successful request in rate limiting service
+        rateLimitService.recordRequest(endpoint, userId);
+
+        return { success: true, data };
       } catch (error) {
         clearTimeout(timeoutId);
         console.error(`API Error (Attempt ${attempt}):`, error.message);
-        
+
+        // Record failure in rate limiting service
+        const is429Error =
+          error.message.includes("HTTP 429") ||
+          error.message.includes("Too many");
+        if (is429Error || error.message.includes("Rate limited")) {
+          rateLimitService.recordFailure(endpoint, userId, is429Error);
+        }
+
         // Check if it's an HTTP error with a response (client/server error)
-        if (error.message.includes('HTTP 4') || error.message.includes('HTTP 5')) {
-          // For HTTP errors, return immediately without retrying
+        if (
+          error.message.includes("HTTP 4") ||
+          error.message.includes("HTTP 5")
+        ) {
+          // For 429 errors, retry with exponential backoff
+          if (is429Error && attempt < this.retryAttempts) {
+            const delay = this.calculateBackoffDelay(attempt, true);
+            console.warn(
+              `⏱️ Retrying after 429 error in ${delay}ms (attempt ${attempt}/${this.retryAttempts})`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            continue; // Retry the request
+          }
+
+          // For other HTTP errors, return immediately without retrying
           const statusMatch = error.message.match(/HTTP (\d+):/);
           const status = statusMatch ? parseInt(statusMatch[1]) : 500;
-          
-          return { 
-            success: false, 
+
+          return {
+            success: false,
             error: error.message,
             status: status,
-            offline: false 
+            offline: false,
           };
         }
-        
+
         // If it's the last attempt or not a network error, break
         if (attempt === this.retryAttempts || !this.isNetworkError(error)) {
           this.isOnline = false;
           break;
         }
-        
-        // Wait before retry (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+
+        // Wait before retry (exponential backoff for network errors)
+        const delay = this.calculateBackoffDelay(attempt, false);
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
     // If all retries failed, return error
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: `Unable to connect to server after ${this.retryAttempts} attempts`,
-      offline: true 
+      offline: true,
     };
-  }
-
-  // Check if error is network-related
-  isNetworkError(error) {
-    return error.name === 'AbortError' || 
-           error.message.includes('Network request failed') ||
-           error.message.includes('fetch');
   }
 
   // Authentication methods
   async signup(userData) {
-    const result = await this.request('/auth/signup', {
-      method: 'POST',
+    const result = await this.request("/auth/signup", {
+      method: "POST",
       body: userData,
     });
 
@@ -182,8 +367,8 @@ class ApiService {
   }
 
   async login(credentials) {
-    const result = await this.request('/auth/login', {
-      method: 'POST',
+    const result = await this.request("/auth/login", {
+      method: "POST",
       body: credentials,
     });
 
@@ -196,44 +381,44 @@ class ApiService {
 
   async logout() {
     // Try to logout from backend first
-    const result = await this.request('/auth/logout', { method: 'POST' });
-    
+    const result = await this.request("/auth/logout", { method: "POST" });
+
     // Always clear local data regardless of backend response
     await this.removeToken();
-    await AsyncStorage.removeItem('userData');
-    
+    await AsyncStorage.removeItem("userData");
+
     return { success: true };
   }
 
   async getProfile() {
     await this.getStoredToken();
-    return await this.request('/auth/profile');
+    return await this.request("/auth/profile");
   }
 
   async getUserStats() {
     await this.getStoredToken();
-    return await this.request('/auth/profile/stats');
+    return await this.request("/auth/profile/stats");
   }
 
   async getUserActivity() {
     await this.getStoredToken();
-    return await this.request('/auth/profile/activity');
+    return await this.request("/auth/profile/activity");
   }
 
   async getUserAchievements() {
     await this.getStoredToken();
-    return await this.request('/auth/profile/achievements');
+    return await this.request("/auth/profile/achievements");
   }
 
   async getNotificationPreferences() {
     await this.getStoredToken();
-    return await this.request('/auth/profile/notifications');
+    return await this.request("/auth/profile/notifications");
   }
 
   async updateNotificationPreferences(preferences) {
     await this.getStoredToken();
-    return await this.request('/auth/profile/notifications', {
-      method: 'PUT',
+    return await this.request("/auth/profile/notifications", {
+      method: "PUT",
       body: preferences,
     });
   }
@@ -241,56 +426,61 @@ class ApiService {
   // Profile methods
   async updateUserProfile(profileData) {
     await this.getStoredToken();
-    return this.request('/auth/profile', {
-      method: 'PUT',
+    return this.request("/auth/profile", {
+      method: "PUT",
       body: profileData,
     });
   }
 
   async deleteAccount() {
     await this.getStoredToken();
-    
-    const result = await this.request('/auth/account', {
-      method: 'DELETE',
+
+    const result = await this.request("/auth/account", {
+      method: "DELETE",
     });
-    
+
     if (result.success) {
       // Clear all local data after successful deletion
       await this.removeToken();
-      await AsyncStorage.removeItem('userData');
-      await AsyncStorage.removeItem('profileImage');
+      await AsyncStorage.removeItem("userData");
+      await AsyncStorage.removeItem("profileImage");
     }
-    
+
     return result;
   }
 
   // Dashboard methods
   async getUserDashboard() {
     await this.getStoredToken();
-    console.log('🔄 Fetching user dashboard data...');
-    const result = await this.request('/auth/dashboard');
-    
+    console.log("🔄 Fetching user dashboard data...");
+    const result = await this.request("/auth/dashboard");
+
     if (result.success) {
-      console.log('✅ Dashboard data loaded:', result.data?.hasActiveSubscription ? 'Subscribed User' : 'Discovery Mode');
+      console.log(
+        "✅ Dashboard data loaded:",
+        result.data?.hasActiveSubscription
+          ? "Subscribed User"
+          : "Discovery Mode"
+      );
     } else {
-      console.error('❌ Failed to load dashboard:', result.error);
+      console.error("❌ Failed to load dashboard:", result.error);
     }
-    
+
     return result;
   }
 
   async pauseSubscription(reason) {
     await this.getStoredToken();
-    return await this.request('/auth/subscription/pause', {
-      method: 'POST',
+    return await this.request("/auth/subscription/pause", {
+      method: "POST",
       body: { reason },
     });
   }
 
   async resumeSubscription() {
     await this.getStoredToken();
-    return await this.request('/auth/subscription/resume', {
-      method: 'POST',
+    return await this.request("/auth/subscription/resume", {
+      method: "POST",
     });
   }
 
@@ -301,60 +491,69 @@ class ApiService {
 
   // Meal plans methods - real data only
   async getMealPlans() {
-    console.log('🔄 Fetching meal plans from backend...');
-    console.log('🌐 API URL:', `${this.baseURL}/mealplans`);
-    
+    console.log("🔄 Fetching meal plans from backend...");
+    console.log("🌐 API URL:", `${this.baseURL}/mealplans`);
+
     // Test backend health first
     const isHealthy = await this.checkBackendHealth();
-    console.log('🏥 Backend health check:', isHealthy ? 'PASS' : 'FAIL');
-    
-    const result = await this.request('/mealplans');
-    
+    console.log("🏥 Backend health check:", isHealthy ? "PASS" : "FAIL");
+
+    const result = await this.request("/mealplans");
+
     if (result.success) {
       // Ensure result.data is the backend response and extract the data field
       const backendResponse = result.data;
-      const mealPlansData = Array.isArray(backendResponse?.data) ? backendResponse.data : [];
-      
+      const mealPlansData = Array.isArray(backendResponse?.data)
+        ? backendResponse.data
+        : [];
+
       console.log(`✅ Successfully loaded ${mealPlansData.length} meal plans`);
-      console.log('📋 Meal plan names:', mealPlansData.map(mp => mp.planName).join(', '));
-      
+      console.log(
+        "📋 Meal plan names:",
+        mealPlansData.map((mp) => mp.planName).join(", ")
+      );
+
       // Return in consistent format
       return {
         success: true,
         data: mealPlansData,
-        count: mealPlansData.length
+        count: mealPlansData.length,
       };
     } else {
-      console.error('❌ Failed to load meal plans:', result.error);
+      console.error("❌ Failed to load meal plans:", result.error);
       // Return empty array on error
       return {
         success: false,
         data: [],
-        error: result.error
+        error: result.error,
       };
     }
   }
 
   async getPopularMealPlans() {
-    console.log('🔄 Fetching popular meal plans from backend...');
-    const result = await this.request('/mealplans/popular');
-    
+    console.log("🔄 Fetching popular meal plans from backend...");
+    const result = await this.request("/mealplans/popular");
+
     if (result.success) {
       const backendResponse = result.data;
-      const popularPlansData = Array.isArray(backendResponse?.data) ? backendResponse.data : [];
+      const popularPlansData = Array.isArray(backendResponse?.data)
+        ? backendResponse.data
+        : [];
 
-      console.log(`✅ Successfully loaded ${popularPlansData.length} popular meal plans`);
+      console.log(
+        `✅ Successfully loaded ${popularPlansData.length} popular meal plans`
+      );
       return {
         success: true,
         data: popularPlansData,
-        count: popularPlansData.length
+        count: popularPlansData.length,
       };
     } else {
-      console.error('❌ Failed to load popular meal plans:', result.error);
+      console.error("❌ Failed to load popular meal plans:", result.error);
       return {
         success: false,
         data: [],
-        error: result.error
+        error: result.error,
       };
     }
   }
@@ -362,26 +561,30 @@ class ApiService {
   async getMealPlanById(id) {
     console.log(`🔍 Fetching meal plan details for ID: ${id}`);
     const result = await this.request(`/mealplans/${id}`);
-    
+
     if (result.success) {
       // Ensure result.data is the backend response and extract the data field
       const backendResponse = result.data;
       const mealPlanData = backendResponse?.data || backendResponse;
-      
-      console.log(`✅ Successfully loaded meal plan: ${mealPlanData?.planName || 'Unknown'}`);
-      console.log('📋 Meal plan data:', JSON.stringify(mealPlanData, null, 2));
-      
+
+      console.log(
+        `✅ Successfully loaded meal plan: ${
+          mealPlanData?.planName || "Unknown"
+        }`
+      );
+      console.log("📋 Meal plan data:", JSON.stringify(mealPlanData, null, 2));
+
       // Return in consistent format
       return {
         success: true,
-        data: mealPlanData
+        data: mealPlanData,
       };
     } else {
-      console.error('❌ Failed to load meal plan details:', result.error);
+      console.error("❌ Failed to load meal plan details:", result.error);
       return {
         success: false,
         data: null,
-        error: result.error
+        error: result.error,
       };
     }
   }
@@ -390,19 +593,19 @@ class ApiService {
   async getMealPlanDetails(id) {
     console.log(`🔍 Fetching detailed meal plan for ID: ${id}`);
     const result = await this.getMealPlanById(id);
-    
+
     // Match the expected return format in MealPlanDetailScreen
     if (result.success) {
       return {
         success: true,
         mealPlan: result.data,
-        message: 'Meal plan details retrieved successfully'
+        message: "Meal plan details retrieved successfully",
       };
     } else {
       return {
         success: false,
         mealPlan: null,
-        message: result.error || 'Failed to retrieve meal plan details'
+        message: result.error || "Failed to retrieve meal plan details",
       };
     }
   }
@@ -412,60 +615,75 @@ class ApiService {
     console.log(`🔧 Fetching meal customization for plan ID: ${mealPlanId}`);
     await this.getStoredToken();
     const result = await this.request(`/mealplans/${mealPlanId}/customization`);
-    
+
     if (result.success) {
-      console.log('✅ Successfully loaded meal customization options');
+      console.log("✅ Successfully loaded meal customization options");
       return result;
     } else {
-      console.error('❌ Failed to load meal customization:', result.error);
+      console.error("❌ Failed to load meal customization:", result.error);
       return {
         success: false,
         data: null,
-        error: result.error || 'Failed to retrieve meal customization options'
+        error: result.error || "Failed to retrieve meal customization options",
       };
     }
   }
 
   // Get available meals for customization
   async getAvailableMeals(filters = {}) {
-    console.log('🍽️ Fetching available meals with filters:', filters);
-    
+    console.log("🍽️ Fetching available meals with filters:", filters);
+
     const queryParams = new URLSearchParams();
-    if (filters.mealType) queryParams.append('mealType', filters.mealType);
-    if (filters.dietaryPreferences) queryParams.append('dietaryPreferences', filters.dietaryPreferences.join(','));
-    if (filters.excludeIngredients) queryParams.append('excludeIngredients', filters.excludeIngredients.join(','));
-    
-    const url = `/mealplans/meals/available${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    if (filters.mealType) queryParams.append("mealType", filters.mealType);
+    if (filters.dietaryPreferences)
+      queryParams.append(
+        "dietaryPreferences",
+        filters.dietaryPreferences.join(",")
+      );
+    if (filters.excludeIngredients)
+      queryParams.append(
+        "excludeIngredients",
+        filters.excludeIngredients.join(",")
+      );
+
+    const url = `/mealplans/meals/available${
+      queryParams.toString() ? "?" + queryParams.toString() : ""
+    }`;
     const result = await this.request(url);
-    
+
     if (result.success) {
-      console.log(`✅ Successfully loaded ${result.data?.length || 0} available meals`);
+      console.log(
+        `✅ Successfully loaded ${result.data?.length || 0} available meals`
+      );
     } else {
-      console.error('❌ Failed to load available meals:', result.error);
+      console.error("❌ Failed to load available meals:", result.error);
     }
-    
+
     return result;
   }
 
   // Orders methods
   async createOrder(orderData) {
     await this.getStoredToken();
-    return await this.request('/orders', {
-      method: 'POST',
+    return await this.request("/orders", {
+      method: "POST",
       body: orderData,
     });
   }
 
   async getUserOrders() {
     await this.getStoredToken();
-    const result = await this.request('/orders');
-    
+    const result = await this.request("/orders");
+
     // Add detailed logging for debugging
-    console.log('🔍 getUserOrders API Response:', JSON.stringify(result, null, 2));
-    console.log('📊 result.success:', result.success);
-    console.log('📦 result.data type:', typeof result.data);
-    console.log('📋 result.data:', result.data);
-    
+    console.log(
+      "🔍 getUserOrders API Response:",
+      JSON.stringify(result, null, 2)
+    );
+    console.log("📊 result.success:", result.success);
+    console.log("📦 result.data type:", typeof result.data);
+    console.log("📋 result.data:", result.data);
+
     return result;
   }
 
@@ -477,22 +695,22 @@ class ApiService {
   async cancelOrder(orderId) {
     await this.getStoredToken();
     return this.request(`/orders/${orderId}/cancel`, {
-      method: 'PUT',
+      method: "PUT",
     });
   }
 
   // Subscriptions methods
   async createSubscription(subscriptionData) {
     await this.getStoredToken();
-    return this.request('/subscriptions', {
-      method: 'POST',
+    return this.request("/subscriptions", {
+      method: "POST",
       body: subscriptionData,
     });
   }
 
   async getUserSubscriptions() {
     await this.getStoredToken();
-    return this.request('/subscriptions');
+    return this.request("/subscriptions");
   }
 
   async getSubscriptionById(id) {
@@ -501,10 +719,15 @@ class ApiService {
   }
 
   async updateSubscription(id, updates) {
-    console.log('API updateSubscription called with ID:', id, 'Updates:', updates);
+    console.log(
+      "API updateSubscription called with ID:",
+      id,
+      "Updates:",
+      updates
+    );
     await this.getStoredToken();
     return this.request(`/subscriptions/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: updates,
     });
   }
@@ -512,15 +735,15 @@ class ApiService {
   async cancelSubscription(id) {
     await this.getStoredToken();
     return this.request(`/subscriptions/${id}/cancel`, {
-      method: 'PUT',
+      method: "PUT",
     });
   }
 
   // Payment methods
   async initializePayment(paymentData) {
     await this.getStoredToken();
-    return this.request('/payments/initialize', {
-      method: 'POST',
+    return this.request("/payments/initialize", {
+      method: "POST",
       body: paymentData,
     });
   }
@@ -543,40 +766,46 @@ class ApiService {
 
   async registerPushToken(token, userId) {
     await this.getStoredToken();
-    return this.request('/auth/push-token', {
-      method: 'POST',
-      body: { token, userId, platform: 'expo' },
+    return this.request("/auth/push-token", {
+      method: "POST",
+      body: { token, userId, platform: "expo" },
     });
   }
 
   async markNotificationAsRead(notificationId) {
     await this.getStoredToken();
     return this.request(`/notifications/${notificationId}/read`, {
-      method: 'PUT',
+      method: "PUT",
     });
   }
 
   async markAllNotificationsAsRead() {
     await this.getStoredToken();
-    return this.request('/notifications/mark-all-read', {
-      method: 'PUT',
+    return this.request("/notifications/mark-all-read", {
+      method: "PUT",
     });
   }
 
   async deleteNotification(notificationId) {
     await this.getStoredToken();
     return this.request(`/notifications/${notificationId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   // Banners and promotions methods
   async getActiveBanners() {
-    return this.request('/banners/active');
+    return this.request("/banners/active");
+  }
+
+  async trackBannerClick(bannerId) {
+    return this.request(`/banners/${bannerId}/click`, {
+      method: "POST",
+    });
   }
 
   async getPromotions() {
-    return this.request('/promotions/active');
+    return this.request("/promotions/active");
   }
 
   // Delivery tracking methods
@@ -588,15 +817,15 @@ class ApiService {
   async updateDeliveryLocation(trackingId, location) {
     await this.getStoredToken();
     return this.request(`/delivery/tracking/${trackingId}/location`, {
-      method: 'PUT',
+      method: "PUT",
       body: location,
     });
   }
 
-  async rateDelivery(trackingId, rating, feedback = '') {
+  async rateDelivery(trackingId, rating, feedback = "") {
     await this.getStoredToken();
     return this.request(`/delivery/tracking/${trackingId}/rate`, {
-      method: 'POST',
+      method: "POST",
       body: { rating, feedback },
     });
   }
@@ -604,24 +833,24 @@ class ApiService {
   // User analytics and statistics
   async getUserAnalytics() {
     await this.getStoredToken();
-    return this.request('/users/analytics');
+    return this.request("/users/analytics");
   }
 
   async getUserOrderStats() {
     await this.getStoredToken();
-    return this.request('/users/stats/orders');
+    return this.request("/users/stats/orders");
   }
 
   async getUserNutritionScore() {
     await this.getStoredToken();
-    return this.request('/users/stats/nutrition');
+    return this.request("/users/stats/nutrition");
   }
 
   // Activity logging
   async logUserActivity(activityData) {
     await this.getStoredToken();
-    return this.request('/auth/activity/log', {
-      method: 'POST',
+    return this.request("/auth/activity/log", {
+      method: "POST",
       body: activityData,
     });
   }
@@ -629,172 +858,230 @@ class ApiService {
   // Achievement system
   async checkAchievements() {
     await this.getStoredToken();
-    return this.request('/users/achievements/check', {
-      method: 'POST',
+    return this.request("/users/achievements/check", {
+      method: "POST",
     });
   }
 
   async claimAchievement(achievementId) {
     await this.getStoredToken();
     return this.request(`/users/achievements/${achievementId}/claim`, {
-      method: 'POST',
+      method: "POST",
     });
   }
 
   async getAvailableAchievements() {
-    return this.request('/achievements/available');
+    return this.request("/achievements/available");
   }
 
   // ============= NEW FILTERING AND SEARCH METHODS =============
 
   // Get filtered meal plans with advanced filtering
   async getFilteredMealPlans(filters = {}) {
-    console.log('🔄 Fetching filtered meal plans...', filters);
-    
+    console.log("🔄 Fetching filtered meal plans...", filters);
+
     const queryParams = new URLSearchParams();
-    
+
     // Add audience filters
     if (filters.audiences && filters.audiences.length > 0) {
-      filters.audiences.forEach(audience => {
-        queryParams.append('audience', audience);
+      filters.audiences.forEach((audience) => {
+        queryParams.append("audience", audience);
       });
     }
-    
+
     // Add price range
-    if (filters.minPrice !== undefined) queryParams.append('minPrice', filters.minPrice);
-    if (filters.maxPrice !== undefined) queryParams.append('maxPrice', filters.maxPrice);
-    
+    if (filters.minPrice !== undefined)
+      queryParams.append("minPrice", filters.minPrice);
+    if (filters.maxPrice !== undefined)
+      queryParams.append("maxPrice", filters.maxPrice);
+
     // Add duration filter
-    if (filters.duration) queryParams.append('duration', filters.duration);
-    
+    if (filters.duration) queryParams.append("duration", filters.duration);
+
     // Add sorting
-    if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
-    
+    if (filters.sortBy) queryParams.append("sortBy", filters.sortBy);
+
     // Add pagination
-    if (filters.page) queryParams.append('page', filters.page);
-    if (filters.limit) queryParams.append('limit', filters.limit);
-    
-    const url = `/mealplans/filtered${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    if (filters.page) queryParams.append("page", filters.page);
+    if (filters.limit) queryParams.append("limit", filters.limit);
+
+    const url = `/mealplans/filtered${
+      queryParams.toString() ? "?" + queryParams.toString() : ""
+    }`;
     const result = await this.request(url);
-    
+
     if (result.success) {
       const backendResponse = result.data;
-      const mealPlansData = Array.isArray(backendResponse?.data) ? backendResponse.data : [];
-      
-      console.log(`✅ Successfully loaded ${mealPlansData.length} filtered meal plans`);
-      
+      const mealPlansData = Array.isArray(backendResponse?.data)
+        ? backendResponse.data
+        : [];
+
+      console.log(
+        `✅ Successfully loaded ${mealPlansData.length} filtered meal plans`
+      );
+
       return {
         success: true,
         data: mealPlansData,
         pagination: backendResponse?.pagination || {},
-        count: mealPlansData.length
+        count: mealPlansData.length,
       };
     } else {
-      console.error('❌ Failed to load filtered meal plans:', result.error);
+      console.error("❌ Failed to load filtered meal plans:", result.error);
       return {
         success: false,
         data: [],
-        error: result.error
+        error: result.error,
       };
     }
   }
 
   // Enhanced search with filtering
   async searchMealPlans(query, filters = {}) {
-    console.log('🔍 Searching meal plans...', { query, filters });
-    
+    console.log("🔍 Searching meal plans...", { query, filters });
+
     const queryParams = new URLSearchParams();
-    
+
     // Add search query
-    if (query && query.trim()) queryParams.append('query', query.trim());
-    
+    if (query && query.trim()) queryParams.append("query", query.trim());
+
     // Add audience filters
     if (filters.audiences && filters.audiences.length > 0) {
-      filters.audiences.forEach(audience => {
-        queryParams.append('audience', audience);
+      filters.audiences.forEach((audience) => {
+        queryParams.append("audience", audience);
       });
     }
-    
+
     // Add price range
-    if (filters.minPrice !== undefined) queryParams.append('minPrice', filters.minPrice);
-    if (filters.maxPrice !== undefined) queryParams.append('maxPrice', filters.maxPrice);
-    
+    if (filters.minPrice !== undefined)
+      queryParams.append("minPrice", filters.minPrice);
+    if (filters.maxPrice !== undefined)
+      queryParams.append("maxPrice", filters.maxPrice);
+
     // Add sorting
-    if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
-    
+    if (filters.sortBy) queryParams.append("sortBy", filters.sortBy);
+
     // Add pagination
-    if (filters.page) queryParams.append('page', filters.page);
-    if (filters.limit) queryParams.append('limit', filters.limit);
-    
-    const url = `/mealplans/search${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    if (filters.page) queryParams.append("page", filters.page);
+    if (filters.limit) queryParams.append("limit", filters.limit);
+
+    const url = `/mealplans/search${
+      queryParams.toString() ? "?" + queryParams.toString() : ""
+    }`;
     const result = await this.request(url);
-    
+
     if (result.success) {
       const backendResponse = result.data;
-      const searchResults = Array.isArray(backendResponse?.data) ? backendResponse.data : [];
-      
+      const searchResults = Array.isArray(backendResponse?.data)
+        ? backendResponse.data
+        : [];
+
       console.log(`✅ Search returned ${searchResults.length} results`);
-      
+
       return {
         success: true,
         data: searchResults,
         searchQuery: backendResponse?.searchQuery || query,
         pagination: backendResponse?.pagination || {},
-        count: searchResults.length
+        count: searchResults.length,
       };
     } else {
-      console.error('❌ Search failed:', result.error);
-      
+      console.error("❌ Search failed:", result.error);
+
       // Fallback to local filtering if available
       if (this.fallbackMealPlans && this.fallbackMealPlans.length > 0) {
-        console.log('🔄 Falling back to local search...');
+        console.log("🔄 Falling back to local search...");
         return this.searchMealPlansLocally(query, filters);
       }
-      
+
       return {
         success: false,
         data: [],
-        error: result.error
+        error: result.error,
       };
     }
   }
 
   // Get available target audiences
   async getTargetAudiences() {
-    console.log('🔄 Fetching target audiences...');
-    
-    const result = await this.request('/mealplans/audiences');
-    
+    console.log("🔄 Fetching target audiences...");
+
+    const result = await this.request("/mealplans/audiences");
+
     if (result.success) {
       const backendResponse = result.data;
-      const audiencesData = Array.isArray(backendResponse?.data) ? backendResponse.data : [];
-      
-      console.log(`✅ Successfully loaded ${audiencesData.length} target audiences`);
-      
+      const audiencesData = Array.isArray(backendResponse?.data)
+        ? backendResponse.data
+        : [];
+
+      console.log(
+        `✅ Successfully loaded ${audiencesData.length} target audiences`
+      );
+
       return {
         success: true,
         data: audiencesData,
-        count: audiencesData.length
+        count: audiencesData.length,
       };
     } else {
-      console.error('❌ Failed to load target audiences:', result.error);
-      
+      console.error("❌ Failed to load target audiences:", result.error);
+
       // Fallback to default audiences
       const defaultAudiences = [
-        { name: 'Fitness', count: 0, displayName: 'Fitness', description: 'High-protein meals for active lifestyles' },
-        { name: 'Family', count: 0, displayName: 'Family', description: 'Nutritious meals perfect for families' },
-        { name: 'Professional', count: 0, displayName: 'Professional', description: 'Quick, convenient meals for busy professionals' },
-        { name: 'Wellness', count: 0, displayName: 'Wellness', description: 'Balanced meals focused on overall health' },
-        { name: 'Weight Loss', count: 0, displayName: 'Weight Loss', description: 'Calorie-controlled meals for weight management' },
-        { name: 'Muscle Gain', count: 0, displayName: 'Muscle Gain', description: 'High-protein, high-calorie meals for muscle building' },
-        { name: 'Diabetic Friendly', count: 0, displayName: 'Diabetic Friendly', description: 'Low-sugar, diabetes-friendly meal options' },
-        { name: 'Heart Healthy', count: 0, displayName: 'Heart Healthy', description: 'Heart-healthy meals with reduced sodium' }
+        {
+          name: "Fitness",
+          count: 0,
+          displayName: "Fitness",
+          description: "High-protein meals for active lifestyles",
+        },
+        {
+          name: "Family",
+          count: 0,
+          displayName: "Family",
+          description: "Nutritious meals perfect for families",
+        },
+        {
+          name: "Professional",
+          count: 0,
+          displayName: "Professional",
+          description: "Quick, convenient meals for busy professionals",
+        },
+        {
+          name: "Wellness",
+          count: 0,
+          displayName: "Wellness",
+          description: "Balanced meals focused on overall health",
+        },
+        {
+          name: "Weight Loss",
+          count: 0,
+          displayName: "Weight Loss",
+          description: "Calorie-controlled meals for weight management",
+        },
+        {
+          name: "Muscle Gain",
+          count: 0,
+          displayName: "Muscle Gain",
+          description: "High-protein, high-calorie meals for muscle building",
+        },
+        {
+          name: "Diabetic Friendly",
+          count: 0,
+          displayName: "Diabetic Friendly",
+          description: "Low-sugar, diabetes-friendly meal options",
+        },
+        {
+          name: "Heart Healthy",
+          count: 0,
+          displayName: "Heart Healthy",
+          description: "Heart-healthy meals with reduced sodium",
+        },
       ];
-      
+
       return {
         success: true,
         data: defaultAudiences,
-        count: defaultAudiences.length
+        count: defaultAudiences.length,
       };
     }
   }
@@ -802,7 +1089,7 @@ class ApiService {
   // Local search fallback method
   searchMealPlansLocally(query, filters = {}) {
     if (!this.fallbackMealPlans) {
-      return { success: false, data: [], error: 'No local data available' };
+      return { success: false, data: [], error: "No local data available" };
     }
 
     let results = [...this.fallbackMealPlans];
@@ -810,49 +1097,67 @@ class ApiService {
     // Filter by search query
     if (query && query.trim()) {
       const searchTerm = query.toLowerCase();
-      results = results.filter(plan => 
-        plan.planName?.toLowerCase().includes(searchTerm) ||
-        plan.description?.toLowerCase().includes(searchTerm) ||
-        plan.targetAudience?.toLowerCase().includes(searchTerm) ||
-        (plan.planFeatures && plan.planFeatures.some(feature => 
-          feature.toLowerCase().includes(searchTerm)
-        ))
+      results = results.filter(
+        (plan) =>
+          plan.planName?.toLowerCase().includes(searchTerm) ||
+          plan.description?.toLowerCase().includes(searchTerm) ||
+          plan.targetAudience?.toLowerCase().includes(searchTerm) ||
+          (plan.planFeatures &&
+            plan.planFeatures.some((feature) =>
+              feature.toLowerCase().includes(searchTerm)
+            ))
       );
     }
 
     // Filter by audiences
     if (filters.audiences && filters.audiences.length > 0) {
-      results = results.filter(plan => 
+      results = results.filter((plan) =>
         filters.audiences.includes(plan.targetAudience)
       );
     }
 
     // Filter by price range
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      results = results.filter(plan => {
+      results = results.filter((plan) => {
         const price = plan.totalPrice || plan.basePrice || 0;
-        return (filters.minPrice === undefined || price >= filters.minPrice) &&
-               (filters.maxPrice === undefined || price <= filters.maxPrice);
+        return (
+          (filters.minPrice === undefined || price >= filters.minPrice) &&
+          (filters.maxPrice === undefined || price <= filters.maxPrice)
+        );
       });
     }
 
     // Sort results
     if (filters.sortBy) {
       switch (filters.sortBy) {
-        case 'price-low':
-          results.sort((a, b) => (a.totalPrice || a.basePrice || 0) - (b.totalPrice || b.basePrice || 0));
+        case "price-low":
+          results.sort(
+            (a, b) =>
+              (a.totalPrice || a.basePrice || 0) -
+              (b.totalPrice || b.basePrice || 0)
+          );
           break;
-        case 'price-high':
-          results.sort((a, b) => (b.totalPrice || b.basePrice || 0) - (a.totalPrice || a.basePrice || 0));
+        case "price-high":
+          results.sort(
+            (a, b) =>
+              (b.totalPrice || b.basePrice || 0) -
+              (a.totalPrice || a.basePrice || 0)
+          );
           break;
-        case 'newest':
-          results.sort((a, b) => new Date(b.createdDate || b.createdAt) - new Date(a.createdDate || a.createdAt));
+        case "newest":
+          results.sort(
+            (a, b) =>
+              new Date(b.createdDate || b.createdAt) -
+              new Date(a.createdDate || a.createdAt)
+          );
           break;
-        case 'rating':
+        case "rating":
           results.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
           break;
         default: // popularity
-          results.sort((a, b) => (b.totalSubscriptions || 0) - (a.totalSubscriptions || 0));
+          results.sort(
+            (a, b) => (b.totalSubscriptions || 0) - (a.totalSubscriptions || 0)
+          );
       }
     }
 
@@ -863,31 +1168,33 @@ class ApiService {
       data: results,
       searchQuery: query,
       count: results.length,
-      isLocalSearch: true
+      isLocalSearch: true,
     };
   }
 
   // Store meal plans for local fallback
   storeFallbackMealPlans(mealPlans) {
     this.fallbackMealPlans = mealPlans;
-    console.log(`💾 Stored ${mealPlans.length} meal plans for offline fallback`);
+    console.log(
+      `💾 Stored ${mealPlans.length} meal plans for offline fallback`
+    );
   }
 
   // Get popular search terms
   async getPopularSearches() {
-    return this.request('/search/popular');
+    return this.request("/search/popular");
   }
 
   // Bookmark/Favorites methods
   async getUserBookmarks() {
     await this.getStoredToken();
-    return this.request('/users/bookmarks');
+    return this.request("/users/bookmarks");
   }
 
-  async addBookmark(itemId, itemType = 'mealplan') {
+  async addBookmark(itemId, itemType = "mealplan") {
     await this.getStoredToken();
-    return this.request('/users/bookmarks', {
-      method: 'POST',
+    return this.request("/users/bookmarks", {
+      method: "POST",
       body: { itemId, itemType },
     });
   }
@@ -895,20 +1202,20 @@ class ApiService {
   async removeBookmark(itemId) {
     await this.getStoredToken();
     return this.request(`/users/bookmarks/${itemId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   // Settings and preferences
   async getUserSettings() {
     await this.getStoredToken();
-    return this.request('/users/settings');
+    return this.request("/users/settings");
   }
 
   async updateUserSettings(settings) {
     await this.getStoredToken();
-    return this.request('/users/settings', {
-      method: 'PUT',
+    return this.request("/users/settings", {
+      method: "PUT",
       body: settings,
     });
   }
@@ -916,29 +1223,29 @@ class ApiService {
   // Privacy and security settings
   async getPrivacySettings() {
     await this.getStoredToken();
-    return this.request('/users/privacy-settings');
+    return this.request("/users/privacy-settings");
   }
 
   async updatePrivacySettings(settings) {
     await this.getStoredToken();
-    return this.request('/users/privacy-settings', {
-      method: 'PUT',
+    return this.request("/users/privacy-settings", {
+      method: "PUT",
       body: settings,
     });
   }
 
   async requestDataExport() {
     await this.getStoredToken();
-    return this.request('/users/data-export', {
-      method: 'POST',
+    return this.request("/users/data-export", {
+      method: "POST",
     });
   }
 
   // Reviews and ratings
   async submitReview(itemId, itemType, rating, review) {
     await this.getStoredToken();
-    return this.request('/reviews', {
-      method: 'POST',
+    return this.request("/reviews", {
+      method: "POST",
       body: { itemId, itemType, rating, review },
     });
   }
@@ -948,340 +1255,369 @@ class ApiService {
   }
 
   // Support and help
-  async submitSupportTicket(subject, message, category = 'general') {
+  async submitSupportTicket(subject, message, category = "general") {
     await this.getStoredToken();
-    return this.request('/support/tickets', {
-      method: 'POST',
+    return this.request("/support/tickets", {
+      method: "POST",
       body: { subject, message, category },
     });
   }
 
   async getSupportTickets() {
     await this.getStoredToken();
-    return this.request('/support/tickets');
+    return this.request("/support/tickets");
   }
 
   async getFAQs() {
-    return this.request('/support/faqs');
+    return this.request("/support/faqs");
   }
 
   // Subscription options and plans
   async getSubscriptionOptions() {
-    return this.request('/subscription-plans');
+    return this.request("/subscription-plans");
   }
 
   async getSubscriptionPlans() {
-    return this.request('/subscription-plans/available');
+    return this.request("/subscription-plans/available");
   }
 
   // Notification API methods
   async getUserNotifications() {
-    console.log('🔔 Fetching user notifications');
+    console.log("🔔 Fetching user notifications");
     await this.getStoredToken();
-    
-    const result = await this.request('/notifications');
-    
+
+    const result = await this.request("/notifications");
+
     if (result.success) {
-      console.log('✅ Notifications fetched successfully');
+      console.log("✅ Notifications fetched successfully");
     } else {
-      console.error('❌ Failed to fetch notifications:', result.error);
+      console.error("❌ Failed to fetch notifications:", result.error);
     }
-    
+
     return result;
   }
 
   async registerPushToken(token, userId) {
-    console.log('📱 Registering push token for user:', userId);
+    console.log("📱 Registering push token for user:", userId);
     await this.getStoredToken();
-    
-    const result = await this.request('/notifications/register-token', {
-      method: 'POST',
+
+    const result = await this.request("/notifications/register-token", {
+      method: "POST",
       body: { token, userId },
     });
-    
+
     if (result.success) {
-      console.log('✅ Push token registered successfully');
+      console.log("✅ Push token registered successfully");
     } else {
-      console.error('❌ Failed to register push token:', result.error);
+      console.error("❌ Failed to register push token:", result.error);
     }
-    
+
     return result;
   }
 
   async markNotificationAsRead(notificationId) {
-    console.log('✅ Marking notification as read:', notificationId);
+    console.log("✅ Marking notification as read:", notificationId);
     await this.getStoredToken();
-    
+
     const result = await this.request(`/notifications/${notificationId}/read`, {
-      method: 'PUT',
+      method: "PUT",
     });
-    
+
     if (result.success) {
-      console.log('✅ Notification marked as read');
+      console.log("✅ Notification marked as read");
     } else {
-      console.error('❌ Failed to mark notification as read:', result.error);
+      console.error("❌ Failed to mark notification as read:", result.error);
     }
-    
+
     return result;
   }
 
   async markAllNotificationsAsRead() {
-    console.log('✅ Marking all notifications as read');
+    console.log("✅ Marking all notifications as read");
     await this.getStoredToken();
-    
-    const result = await this.request('/notifications/mark-all-read', {
-      method: 'PUT',
+
+    const result = await this.request("/notifications/mark-all-read", {
+      method: "PUT",
     });
-    
+
     if (result.success) {
-      console.log('✅ All notifications marked as read');
+      console.log("✅ All notifications marked as read");
     } else {
-      console.error('❌ Failed to mark all notifications as read:', result.error);
+      console.error(
+        "❌ Failed to mark all notifications as read:",
+        result.error
+      );
     }
-    
+
     return result;
   }
 
   async deleteNotification(notificationId) {
-    console.log('🗑️ Deleting notification:', notificationId);
+    console.log("🗑️ Deleting notification:", notificationId);
     await this.getStoredToken();
-    
+
     const result = await this.request(`/notifications/${notificationId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
-    
+
     if (result.success) {
-      console.log('✅ Notification deleted');
+      console.log("✅ Notification deleted");
     } else {
-      console.error('❌ Failed to delete notification:', result.error);
+      console.error("❌ Failed to delete notification:", result.error);
     }
-    
+
     return result;
   }
 
   async createNotification(notificationData) {
     await this.getStoredToken();
-    return this.request('/notifications', {
-      method: 'POST',
+    return this.request("/notifications", {
+      method: "POST",
       body: notificationData,
     });
   }
 
   async createAdminNotification(notificationData) {
     await this.getStoredToken();
-    return this.request('/admin/notifications', {
-      method: 'POST',
+    return this.request("/admin/notifications", {
+      method: "POST",
       body: notificationData,
     });
   }
 
   async createChefNotification(notificationData) {
     await this.getStoredToken();
-    return this.request('/chef/notifications', {
-      method: 'POST',
+    return this.request("/chef/notifications", {
+      method: "POST",
       body: notificationData,
     });
   }
 
   // Save meal customization
   async saveMealCustomization(customizationData) {
-    console.log('💾 Saving meal customization:', customizationData);
+    console.log("💾 Saving meal customization:", customizationData);
     await this.getStoredToken();
-    
-    const result = await this.request('/mealplans/customization', {
-      method: 'POST',
+
+    const result = await this.request("/mealplans/customization", {
+      method: "POST",
       body: customizationData,
     });
-    
+
     if (result.success) {
-      console.log('✅ Meal customization saved successfully');
+      console.log("✅ Meal customization saved successfully");
     } else {
-      console.error('❌ Failed to save meal customization:', result.error);
+      console.error("❌ Failed to save meal customization:", result.error);
     }
-    
+
     return result;
   }
 
   // Update user profile
   async updateProfile(profileData) {
-    console.log('👤 Updating user profile:', JSON.stringify(profileData, null, 2));
+    console.log(
+      "👤 Updating user profile:",
+      JSON.stringify(profileData, null, 2)
+    );
     await this.getStoredToken();
-    
+
     // Ensure we have the correct data structure that matches backend expectations
     const sanitizedData = {
       fullName: profileData.fullName,
-      phone: profileData.phone || '',
-      address: profileData.address || '',
-      city: profileData.city || '',
+      address: profileData.address || "",
+      city: profileData.city || "",
       dietaryPreferences: profileData.dietaryPreferences || [],
-      allergies: profileData.allergies || '',
-      ...(profileData.profileImage !== undefined && { profileImage: profileData.profileImage })
+      allergies: profileData.allergies || "",
+      ...(profileData.profileImage !== undefined && {
+        profileImage: profileData.profileImage,
+      }),
+      // Include IDs if provided (some backends require them)
+      ...(profileData.id && { id: profileData.id }),
+      ...(profileData.customerId && { customerId: profileData.customerId }),
     };
-    
-    console.log('📤 Sending sanitized profile data:', JSON.stringify(sanitizedData, null, 2));
-    
-    const result = await this.request('/auth/profile', {
-      method: 'PUT',
+
+    // Only include phone if it's a valid phone number (not empty string)
+    if (profileData.phone && profileData.phone.trim().length > 0) {
+      // Basic phone validation - must contain digits and be at least 10 characters
+      const phoneDigits = profileData.phone.replace(/\D/g, "");
+      if (phoneDigits.length >= 10) {
+        sanitizedData.phone = profileData.phone;
+      }
+    }
+
+    console.log(
+      "📤 Sending sanitized profile data:",
+      JSON.stringify(sanitizedData, null, 2)
+    );
+
+    const result = await this.request("/auth/profile", {
+      method: "PUT",
       body: sanitizedData,
     });
-    
+
     if (result.success) {
-      console.log('✅ Profile updated successfully');
+      console.log("✅ Profile updated successfully");
     } else {
-      console.error('❌ Failed to update profile:', result.error);
-      console.error('❌ Response details:', JSON.stringify(result, null, 2));
+      console.error("❌ Failed to update profile:", result.error);
+      console.error("❌ Response details:", JSON.stringify(result, null, 2));
+      console.error("❌ Full response status:", result.status);
+      console.error("❌ Full response data:", result.data);
     }
-    
+
     return result;
   }
 
   // Get user profile
   async getProfile() {
-    console.log('👤 Fetching user profile');
+    console.log("👤 Fetching user profile");
     await this.getStoredToken();
-    
-    const result = await this.request('/auth/profile');
-    
+
+    const result = await this.request("/auth/profile");
+
     if (result.success) {
-      console.log('✅ Profile fetched successfully');
+      console.log("✅ Profile fetched successfully");
     } else {
-      console.error('❌ Failed to fetch profile:', result.error);
+      console.error("❌ Failed to fetch profile:", result.error);
     }
-    
+
     return result;
   }
 
   // Get user stats
   async getUserStats() {
-    console.log('📊 Fetching user stats');
+    console.log("📊 Fetching user stats");
     await this.getStoredToken();
-    
-    const result = await this.request('/auth/profile/stats');
-    
+
+    const result = await this.request("/auth/profile/stats");
+
     if (result.success) {
-      console.log('✅ User stats fetched successfully');
+      console.log("✅ User stats fetched successfully");
     } else {
-      console.error('❌ Failed to fetch user stats:', result.error);
+      console.error("❌ Failed to fetch user stats:", result.error);
     }
-    
+
     return result;
   }
 
   // Get user activity
   async getUserActivity() {
-    console.log('📋 Fetching user activity');
+    console.log("📋 Fetching user activity");
     await this.getStoredToken();
-    
-    const result = await this.request('/auth/profile/activity');
-    
+
+    const result = await this.request("/auth/profile/activity");
+
     if (result.success) {
-      console.log('✅ User activity fetched successfully');
+      console.log("✅ User activity fetched successfully");
     } else {
-      console.error('❌ Failed to fetch user activity:', result.error);
+      console.error("❌ Failed to fetch user activity:", result.error);
     }
-    
+
     return result;
   }
 
   // Get user achievements
   async getUserAchievements() {
-    console.log('🏆 Fetching user achievements');
+    console.log("🏆 Fetching user achievements");
     await this.getStoredToken();
-    
-    const result = await this.request('/auth/profile/achievements');
-    
+
+    const result = await this.request("/auth/profile/achievements");
+
     if (result.success) {
-      console.log('✅ User achievements fetched successfully');
+      console.log("✅ User achievements fetched successfully");
     } else {
-      console.error('❌ Failed to fetch user achievements:', result.error);
+      console.error("❌ Failed to fetch user achievements:", result.error);
     }
-    
+
     return result;
   }
 
-  // Get user subscriptions  
+  // Get user subscriptions
   async getUserSubscriptions() {
-    console.log('📋 Fetching user subscriptions');
+    console.log("📋 Fetching user subscriptions");
     await this.getStoredToken();
-    
-    const result = await this.request('/auth/dashboard');
-    
+
+    const result = await this.request("/auth/dashboard");
+
     if (result.success) {
-      console.log('✅ User subscriptions fetched successfully');
+      console.log("✅ User subscriptions fetched successfully");
       // Extract subscriptions from dashboard data
       return {
         success: true,
-        data: result.data?.subscriptions || []
+        data: result.data?.subscriptions || [],
       };
     } else {
-      console.error('❌ Failed to fetch user subscriptions:', result.error);
+      console.error("❌ Failed to fetch user subscriptions:", result.error);
     }
-    
+
     return result;
   }
 
   // Get notification preferences
   async getNotificationPreferences() {
-    console.log('🔔 Fetching notification preferences');
+    console.log("🔔 Fetching notification preferences");
     await this.getStoredToken();
-    
-    const result = await this.request('/auth/profile/notifications');
-    
+
+    const result = await this.request("/auth/profile/notifications");
+
     if (result.success) {
-      console.log('✅ Notification preferences fetched successfully');
+      console.log("✅ Notification preferences fetched successfully");
     } else {
-      console.error('❌ Failed to fetch notification preferences:', result.error);
+      console.error(
+        "❌ Failed to fetch notification preferences:",
+        result.error
+      );
     }
-    
+
     return result;
   }
 
   // Update notification preferences
   async updateNotificationPreferences(preferences) {
-    console.log('🔔 Updating notification preferences');
+    console.log("🔔 Updating notification preferences");
     await this.getStoredToken();
-    
-    const result = await this.request('/auth/profile/notifications', {
-      method: 'PUT',
+
+    const result = await this.request("/auth/profile/notifications", {
+      method: "PUT",
       body: preferences,
     });
-    
+
     if (result.success) {
-      console.log('✅ Notification preferences updated successfully');
+      console.log("✅ Notification preferences updated successfully");
     } else {
-      console.error('❌ Failed to update notification preferences:', result.error);
+      console.error(
+        "❌ Failed to update notification preferences:",
+        result.error
+      );
     }
-    
+
     return result;
   }
 
   // Get popular searches
   async getPopularSearches() {
-    console.log('🔍 Fetching popular searches');
-    
-    const result = await this.request('/search/popular');
-    
+    console.log("🔍 Fetching popular searches");
+
+    const result = await this.request("/search/popular");
+
     if (result.success) {
-      console.log('✅ Popular searches fetched successfully');
+      console.log("✅ Popular searches fetched successfully");
     } else {
-      console.error('❌ Failed to fetch popular searches:', result.error);
+      console.error("❌ Failed to fetch popular searches:", result.error);
     }
-    
+
     return result;
   }
-
 
   // Sync pending data for offline functionality
   async syncPendingData() {
     try {
       // This is a placeholder for offline sync functionality
       // In a full implementation, this would sync any pending offline data
-      console.log('🔄 Syncing pending data...');
-      
+      console.log("🔄 Syncing pending data...");
+
       // For now, just return success
-      return { success: true, message: 'No pending data to sync' };
+      return { success: true, message: "No pending data to sync" };
     } catch (error) {
-      console.error('Sync pending data error:', error);
+      console.error("Sync pending data error:", error);
       return { success: false, error: error.message };
     }
   }
@@ -1289,30 +1625,30 @@ class ApiService {
   // Convenience HTTP methods
   async get(endpoint, options = {}) {
     await this.getStoredToken();
-    return this.request(endpoint, { ...options, method: 'GET' });
+    return this.request(endpoint, { ...options, method: "GET" });
   }
 
   async post(endpoint, data, options = {}) {
     await this.getStoredToken();
-    return this.request(endpoint, { 
-      ...options, 
-      method: 'POST', 
-      body: data 
+    return this.request(endpoint, {
+      ...options,
+      method: "POST",
+      body: data,
     });
   }
 
   async put(endpoint, data, options = {}) {
     await this.getStoredToken();
-    return this.request(endpoint, { 
-      ...options, 
-      method: 'PUT', 
-      body: data 
+    return this.request(endpoint, {
+      ...options,
+      method: "PUT",
+      body: data,
     });
   }
 
   async delete(endpoint, options = {}) {
     await this.getStoredToken();
-    return this.request(endpoint, { ...options, method: 'DELETE' });
+    return this.request(endpoint, { ...options, method: "DELETE" });
   }
 }
 

@@ -1,5 +1,5 @@
-// src/screens/dashboard/ProfileScreen.js - Enhanced with Dark Theme
-import React, { useState, useEffect } from "react";
+// src/screens/dashboard/ProfileScreen.js - Enhanced with Dark Theme and Rate Limiting
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -31,6 +31,9 @@ import ProfileHeader from "../../components/profile/ProfileHeader";
 import ProfileTabs from "../../components/profile/ProfileTabs";
 import ProfileStats from "../../components/profile/ProfileStats";
 import CloudStorageService from "../../services/cloudStorage";
+import { APP_CONFIG } from "../../utils/constants";
+import StatusMessage from "../../components/StatusMessage";
+import NetworkUtils from "../../utils/networkUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -51,6 +54,23 @@ const ProfileScreen = ({ navigation }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editableUser, setEditableUser] = useState({});
   const [refreshing, setRefreshing] = useState(false);
+
+  // Status message state for user feedback
+  const [statusMessage, setStatusMessage] = useState({
+    visible: false,
+    type: "info",
+    message: "",
+  });
+
+  // Show status message helper
+  const showStatusMessage = (type, message, duration = 3000) => {
+    setStatusMessage({ visible: true, type, message });
+    if (duration > 0) {
+      setTimeout(() => {
+        setStatusMessage({ visible: false, type: "info", message: "" });
+      }, duration);
+    }
+  };
   const [profileImage, setProfileImage] = useState(null);
   const [errors, setErrors] = useState({});
   const [saveAttempted, setSaveAttempted] = useState(false);
@@ -85,6 +105,19 @@ const ProfileScreen = ({ navigation }) => {
   });
   const [notificationsLoading, setNotificationsLoading] = useState(true);
 
+  // Debounce utility to prevent rapid successive calls
+  const debounce = useCallback((func, delay) => {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func.apply(null, args), delay);
+    };
+  }, []);
+
+  // Rate limiting state
+  const [lastDataLoad, setLastDataLoad] = useState(0);
+  const dataLoadCooldown = 10000; // 10 seconds minimum between full data loads
+
   useEffect(() => {
     if (user) {
       setEditableUser({
@@ -95,19 +128,71 @@ const ProfileScreen = ({ navigation }) => {
         dietaryPreferences: user.dietaryPreferences || [],
         allergies: user.allergies || "",
       });
-      fetchUserStats();
-      fetchUserSubscriptions();
-      fetchUserActivity();
-      fetchUserAchievements();
-      fetchNotificationPreferences();
+
+      // Rate limit the initial data loading
+      const now = Date.now();
+      if (now - lastDataLoad > dataLoadCooldown) {
+        console.log("📱 Loading initial profile data...");
+        setLastDataLoad(now);
+
+        // Load data in batches to prevent rate limiting
+        setTimeout(() => fetchUserStats(), 100);
+        setTimeout(() => fetchUserSubscriptions(), 300);
+        setTimeout(() => fetchUserActivity(), 500);
+        setTimeout(() => fetchUserAchievements(), 700);
+        setTimeout(() => fetchNotificationPreferences(), 900);
+      } else {
+        console.log(
+          "🚫 Profile data loading rate limited, using cached data..."
+        );
+      }
     }
     loadProfileImage();
-  }, [user]);
+
+    // Debounce the profile refresh to prevent multiple rapid calls
+    const debouncedRefresh = debounce(refreshUserProfile, 1000);
+    debouncedRefresh();
+  }, [user, debounce]);
+
+  // Function to refresh user profile from database
+  const refreshUserProfile = async () => {
+    try {
+      // Rate limiting check - don't refresh too frequently
+      const now = Date.now();
+      const lastUpdate = refreshUserProfile.lastUpdate || 0;
+      const cooldown = 3000; // 3 seconds minimum between profile refreshes
+
+      if (now - lastUpdate < cooldown) {
+        console.log("� User profile refresh rate limited, skipping...");
+        return;
+      }
+
+      refreshUserProfile.lastUpdate = now;
+
+      console.log("�🔄 Refreshing user profile from database...");
+      const result = await updateProfile();
+      if (result.success) {
+        console.log("✅ User profile refreshed successfully");
+      } else if (result.rateLimited) {
+        console.log("⏱️ Profile refresh rate limited by server");
+      } else {
+        console.log("❌ Failed to refresh user profile:", result.message);
+      }
+    } catch (error) {
+      console.error("❌ Error refreshing user profile:", error);
+    }
+  };
 
   const loadProfileImage = async () => {
     try {
+      console.log("🖼️ Loading profile image for user:", user?.email);
+      console.log("🖼️ User profile image:", user?.profileImage);
+      console.log("🖼️ Full user object:", JSON.stringify(user, null, 2));
+
       // First check if user has a profile image from registration
       if (user?.profileImage) {
+        console.log("✅ Found user profile image:", user.profileImage);
+        console.log("✅ Setting profile image without network test");
         setProfileImage(user.profileImage);
         return;
       }
@@ -115,17 +200,52 @@ const ProfileScreen = ({ navigation }) => {
       // Fall back to AsyncStorage for locally stored images
       const storedImage = await AsyncStorage.getItem("profileImage");
       if (storedImage) {
+        console.log("✅ Found stored profile image:", storedImage);
         setProfileImage(storedImage);
+      } else {
+        console.log("ℹ️ No profile image found, will show initials");
+        setProfileImage(null);
       }
     } catch (error) {
       console.error("Error loading profile image:", error);
+      setProfileImage(null);
+    }
+  };
+
+  // Function to force refresh profile image from database
+  const refreshProfileImage = async () => {
+    try {
+      // Rate limiting check - don't refresh too frequently
+      const now = Date.now();
+      const lastUpdate = refreshProfileImage.lastUpdate || 0;
+      const cooldown = 2000; // 2 seconds minimum between image refreshes
+
+      if (now - lastUpdate < cooldown) {
+        console.log("� Profile image refresh rate limited, skipping...");
+        return;
+      }
+
+      refreshProfileImage.lastUpdate = now;
+
+      console.log("�🔄 Force refreshing profile image from database...");
+      const result = await updateProfile();
+      if (result.success) {
+        console.log("✅ Profile refreshed, reloading image...");
+        await loadProfileImage();
+      } else if (result.rateLimited) {
+        console.log("⏱️ Profile image refresh rate limited by server");
+      } else {
+        console.log("❌ Failed to refresh profile:", result.message);
+      }
+    } catch (error) {
+      console.error("❌ Error refreshing profile image:", error);
     }
   };
 
   const fetchUserStats = async () => {
     try {
       setStatsLoading(true);
-      console.log("🔄 Fetching user stats...");
+      console.log("� Fetching user stats...");
       const response = await apiService.getUserStats();
 
       console.log("📊 Stats API response:", response);
@@ -157,6 +277,28 @@ const ProfileScreen = ({ navigation }) => {
         setUserStats(validStats);
         console.log("✅ User stats loaded and validated:", validStats);
       } else {
+        // Handle rate limiting specifically
+        if (response.status === 429 || response.error?.includes("Too many")) {
+          console.log(
+            "⏱️ Stats API rate limited, using cached data if available"
+          );
+          // Keep existing stats if we have them, or use fallback
+          if (!userStats || Object.keys(userStats).length === 0) {
+            const fallbackStats = {
+              ordersThisMonth: 0,
+              totalOrdersCompleted: 0,
+              favoriteCategory: "",
+              streakDays: 0,
+              nextDelivery: null,
+              activeSubscriptions: 0,
+              totalSaved: 0,
+              nutritionScore: 0,
+            };
+            setUserStats(fallbackStats);
+          }
+          return; // Don't overwrite with fallback data
+        }
+
         console.log(
           "❌ Stats API failed, using realistic data for active user"
         );
@@ -179,6 +321,14 @@ const ProfileScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error("❌ Error fetching user stats:", error);
+
+      // Show user-friendly error message
+      const parsedError = NetworkUtils.parseApiError(
+        error,
+        "/auth/profile/stats"
+      );
+      showStatusMessage(parsedError.type, parsedError.userMessage, 3000);
+
       // Fallback data for user without subscription
       setUserStats({
         ordersThisMonth: 0,
@@ -754,16 +904,39 @@ Your meal plan has been updated with fresh options.`;
   };
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await Promise.all([
-      updateProfile(),
-      fetchUserStats(),
-      fetchUserSubscriptions(),
-      fetchUserActivity(),
-      fetchUserAchievements(),
-      fetchNotificationPreferences(),
-    ]);
-    setRefreshing(false);
+    try {
+      setRefreshing(true);
+      showStatusMessage("loading", "Refreshing profile data...", 0);
+
+      // Reduce the number of concurrent API calls to prevent rate limiting
+      // Execute in smaller batches with delays
+
+      console.log("🔄 Starting profile refresh (batch 1)...");
+      await Promise.all([updateProfile(), fetchUserStats()]);
+
+      // Small delay between batches to prevent rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      console.log("🔄 Starting profile refresh (batch 2)...");
+      await Promise.all([fetchUserSubscriptions(), fetchUserActivity()]);
+
+      // Another small delay
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      console.log("🔄 Starting profile refresh (batch 3)...");
+      await Promise.all([
+        fetchUserAchievements(),
+        fetchNotificationPreferences(),
+      ]);
+
+      console.log("✅ Profile refresh completed");
+      showStatusMessage("success", "Profile data updated successfully", 2000);
+    } catch (error) {
+      console.error("❌ Profile refresh error:", error);
+      showStatusMessage("error", "Failed to refresh some profile data", 3000);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -822,7 +995,7 @@ Your meal plan has been updated with fresh options.`;
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -851,7 +1024,7 @@ Your meal plan has been updated with fresh options.`;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -874,43 +1047,79 @@ Your meal plan has been updated with fresh options.`;
       // Immediately show the image locally for better UX
       setProfileImage(imageUri);
 
-      // Upload to cloud storage via backend
-      console.log("Uploading profile image to cloud storage...");
+      console.log("Uploading profile image to production server...");
+      console.log(
+        "Upload URL will be:",
+        APP_CONFIG.API_BASE_URL.replace("/api", "") +
+          "/api/upload/profile-image"
+      );
+
+      // Upload to backend server
       const cloudImageUrl = await CloudStorageService.uploadToBackend(
         imageUri,
         user.email
       );
 
+      console.log("Image uploaded successfully to:", cloudImageUrl);
+
       // Update user profile with cloud URL
-      await updateUserProfile({ profileImage: cloudImageUrl });
+      console.log("📤 Updating profile with image URL:", cloudImageUrl);
+
+      // Include current user data to avoid validation errors
+      // Ensure fullName meets minimum requirements
+      const fullName = user?.fullName || "";
+      const validFullName = fullName.length >= 2 ? fullName : "User Name";
+
+      const profileUpdateData = {
+        fullName: validFullName,
+        phone: user?.phone || "",
+        address: user?.address || "",
+        city: user?.city || "",
+        dietaryPreferences: user?.dietaryPreferences || [],
+        allergies: user?.allergies || "",
+        profileImage: cloudImageUrl,
+        // Include user ID if available (some backends require it)
+        ...(user?.id && { id: user.id }),
+        ...(user?.customerId && { customerId: user.customerId }),
+      };
+
+      console.log("📤 Profile update data:", profileUpdateData);
+      const profileUpdateResult = await updateUserProfile(profileUpdateData);
+
+      console.log("📤 Profile update result:", profileUpdateResult);
+
+      if (!profileUpdateResult.success) {
+        throw new Error(
+          profileUpdateResult.message || "Failed to update profile"
+        );
+      }
 
       // Save cloud URL locally as well
       await AsyncStorage.setItem("profileImage", cloudImageUrl);
 
       console.log("Profile image updated successfully");
       Alert.alert("Success", "Profile picture updated successfully!");
+
+      // Refresh user profile to get updated data
+      await refreshProfileImage();
     } catch (error) {
       console.error("Error uploading profile image:", error);
-      Alert.alert(
-        "Upload Warning",
-        "Profile picture was set locally but failed to sync to server. It will sync when connection improves.",
-        [{ text: "OK" }]
-      );
 
-      // Fallback to local storage - keep the Cloudinary URL
-      try {
-        await AsyncStorage.setItem("profileImage", cloudImageUrl);
-        // Keep showing the uploaded image even if server sync failed
-        console.log("Profile image saved locally with Cloudinary URL");
-
-        // Reload the profile image from storage
-        await loadProfileImage();
-      } catch (storageError) {
-        console.error("Error saving profile image locally:", storageError);
-        Alert.alert("Error", "Failed to save profile picture");
-        // Revert the image
-        setProfileImage(user.profileImage || null);
+      // Show more specific error message
+      let errorMessage = "Failed to save profile picture";
+      if (error.message.includes("Network")) {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else if (error.message.includes("Upload failed")) {
+        errorMessage = "Upload failed. Please try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+
+      Alert.alert("Upload Error", errorMessage);
+
+      // Revert the image to original state
+      setProfileImage(user?.profileImage || null);
+      await loadProfileImage();
     } finally {
       setIsLoading(false);
     }
@@ -930,14 +1139,35 @@ Your meal plan has been updated with fresh options.`;
               setIsLoading(true);
               setProfileImage(null);
 
-              // Update user profile
-              await updateUserProfile({ profileImage: null });
+              // Update user profile - include all user data to avoid validation errors
+              // Ensure fullName meets minimum requirements
+              const fullName = user?.fullName || "";
+              const validFullName =
+                fullName.length >= 2 ? fullName : "User Name";
+
+              const profileUpdateData = {
+                fullName: validFullName,
+                phone: user?.phone || "",
+                address: user?.address || "",
+                city: user?.city || "",
+                dietaryPreferences: user?.dietaryPreferences || [],
+                allergies: user?.allergies || "",
+                profileImage: null,
+                // Include user ID if available (some backends require it)
+                ...(user?.id && { id: user.id }),
+                ...(user?.customerId && { customerId: user.customerId }),
+              };
+
+              await updateUserProfile(profileUpdateData);
 
               // Remove from local storage
               await AsyncStorage.removeItem("profileImage");
 
               console.log("Profile image removed successfully");
               Alert.alert("Success", "Profile picture removed successfully!");
+
+              // Refresh user profile to get updated data
+              await refreshProfileImage();
             } catch (error) {
               console.error("Error removing profile image:", error);
               Alert.alert("Error", "Failed to remove profile picture");
@@ -1081,7 +1311,11 @@ Your meal plan has been updated with fresh options.`;
                   ]}
                 >
                   <Ionicons
-                    name={achievement.icon}
+                    name={
+                      typeof achievement.icon === "string"
+                        ? achievement.icon
+                        : "trophy-outline"
+                    }
                     size={24}
                     color={
                       achievement.earned ? colors.primary : colors.textMuted
@@ -1292,7 +1526,11 @@ Your meal plan has been updated with fresh options.`;
                   ]}
                 >
                   <Ionicons
-                    name={activity.icon}
+                    name={
+                      typeof activity.icon === "string"
+                        ? activity.icon
+                        : "time-outline"
+                    }
                     size={20}
                     color={activity.color}
                   />
@@ -1472,22 +1710,64 @@ Your meal plan has been updated with fresh options.`;
 
   return (
     <SafeAreaView style={styles(colors).container}>
+      {/* Status Message for Rate Limiting and Connection Issues */}
+      <StatusMessage
+        type={statusMessage.type}
+        message={statusMessage.message}
+        visible={statusMessage.visible}
+      />
+
+      {/* Offline Status */}
+      {isOffline && (
+        <StatusMessage
+          type="offline"
+          message="You're offline. Some features may be limited."
+          visible={true}
+        />
+      )}
+
       {/* Fixed Background Image for Parallax */}
       <View style={styles(colors).fixedBackground}>
-        {profileImage || user?.profileImage ? (
+        {user?.profileImage ? (
           <Image
-            source={{ uri: profileImage || user?.profileImage }}
+            source={{ uri: user.profileImage }}
             style={styles(colors).parallaxImage}
+            onError={(error) => {
+              console.log("❌ Background image failed to load:", error);
+              console.log("❌ Image URL was:", user.profileImage);
+            }}
+            onLoad={() => {
+              console.log("✅ Background image loaded successfully");
+            }}
           />
         ) : (
           <View
             style={[
               styles(colors).parallaxImage,
-              { backgroundColor: colors.primary },
+              {
+                backgroundColor: colors.primary,
+                justifyContent: "center",
+                alignItems: "center",
+              },
             ]}
-          />
+          >
+            <UserAvatar
+              user={user}
+              size={120}
+              fontSize={48}
+              imageUri={profileImage || user?.profileImage}
+            />
+          </View>
         )}
-        <View style={styles(colors).backgroundOverlay} />
+        <View
+          style={[
+            styles(colors).backgroundOverlay,
+            // Reduce overlay opacity when profile image is present
+            user?.profileImage && {
+              backgroundColor: "rgba(0, 0, 0, 0.1)",
+            },
+          ]}
+        />
       </View>
 
       <ScrollView
@@ -2325,7 +2605,7 @@ const styles = (colors) =>
       borderRadius: 2,
     },
     emptyAchievementsContainer: {
-      backgroundColor:`${colors.cardBackground}20`,
+      backgroundColor: `${colors.cardBackground}20`,
       borderRadius: THEME.borderRadius.medium,
       padding: 30,
       alignItems: "center",

@@ -1,6 +1,7 @@
 // src/services/cloudStorage.js - Cloud Storage Service
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { APP_CONFIG } from '../utils/constants';
 
 class CloudStorageService {
   constructor() {
@@ -121,8 +122,8 @@ class CloudStorageService {
         name: `profile_${userId}_${Date.now()}.jpg`,
       });
       
-      // Get the API base URL (this should match your backend URL)
-      const API_BASE_URL = 'http://192.168.177.28:5001'; // Update this to match your backend IP
+      // Get the API base URL from constants - now points to production server
+      const API_BASE_URL = APP_CONFIG.API_BASE_URL.replace('/api', ''); // Remove /api suffix
       
       // Get auth token for authenticated request
       const token = await AsyncStorage.getItem('authToken');

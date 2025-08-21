@@ -79,4 +79,37 @@ router.post('/profile-image', auth, uploadToFolder('profiles').single('image'), 
   }
 });
 
+// Upload banner image endpoint (admin only)
+router.post('/banner-image', adminAuth.authenticateAdmin, uploadToFolder('banners').single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No banner image file provided'
+      });
+    }
+
+    // The file is already uploaded to Cloudinary by multer
+    const imageUrl = req.file.path;
+    const publicId = req.file.filename;
+    
+    console.log('✅ Banner image uploaded successfully to:', imageUrl);
+    
+    res.json({
+      success: true,
+      message: 'Banner image uploaded successfully',
+      imageUrl: imageUrl,
+      publicId: publicId
+    });
+    
+  } catch (error) {
+    console.error('Banner image upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload banner image',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 module.exports = router;

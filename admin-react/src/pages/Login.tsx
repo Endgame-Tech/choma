@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import TwoFactorModal from '../components/TwoFactorModal'
 import { twoFactorApi } from '../services/twoFactorApi'
-import { TwoFactorVerificationResponse } from '../types/twoFactor'
+// import { TwoFactorVerificationResponse } from '../types/twoFactor'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -12,12 +12,11 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [show2FAModal, setShow2FAModal] = useState(false)
-  const [pendingLoginData, setPendingLoginData] = useState<{ adminId: string; tempToken: string } | null>(null)
 
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleTwoFactorVerified = (verified: boolean, data?: TwoFactorVerificationResponse['data']) => {
+  const handleTwoFactorVerified = (verified: boolean) => {
     setShow2FAModal(false)
     if (verified) {
       navigate('/')

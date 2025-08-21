@@ -10,7 +10,7 @@ export const APP_CONFIG = {
   // For future backend integration
   API_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "http://10.101.160.28:5001/api"
+      ? "http://172.20.10.7:5001/api"
       : "http://localhost:5001/api"
     : "https://choma.onrender.com/api",
 

@@ -97,7 +97,11 @@ exports.signup = async (req, res) => {
         fullName: customer.fullName, 
         email: customer.email,
         phone: customer.phone,
-        city: customer.city
+        city: customer.city,
+        profileImage: customer.profileImage,
+        dietaryPreferences: customer.dietaryPreferences,
+        allergies: customer.allergies,
+        address: customer.address
       } 
     });
   } catch (err) {
@@ -183,7 +187,10 @@ exports.login = async (req, res) => {
         email: customer.email,
         phone: customer.phone,
         city: customer.city,
-        dietaryPreferences: customer.dietaryPreferences
+        profileImage: customer.profileImage,
+        dietaryPreferences: customer.dietaryPreferences,
+        allergies: customer.allergies,
+        address: customer.address
       } 
     });
   } catch (err) {

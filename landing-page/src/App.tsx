@@ -10,6 +10,7 @@ import FAQ from './pages/FAQ'
 import Blog from './pages/Blog'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
+import DeleteAccount from './pages/DeleteAccount'
 
 const App: React.FC = () => {
   return (
@@ -30,6 +31,7 @@ const App: React.FC = () => {
           <Route path="/blog" element={<Blog />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/delete-account" element={<DeleteAccount />} />
         </Routes>
         {/* <Footer /> */}
         </div>

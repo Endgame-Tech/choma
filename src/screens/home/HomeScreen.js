@@ -67,19 +67,55 @@ const HomeScreen = ({ navigation }) => {
   // ... (rest of the component logic remains the same)
 
   // Handle promo banner button press
-  const handlePromoBannerPress = (bannerId, buttonText) => {
-    switch (buttonText) {
-      case "Order Now":
-        navigation.navigate("Search");
-        break;
-      case "Explore Menu":
-        navigation.navigate("Search");
-        break;
-      case "View Menu":
-        navigation.navigate("Search");
-        break;
-      default:
-        navigation.navigate("Search");
+  const handlePromoBannerPress = async (banner) => {
+    try {
+      // Track banner click
+      if (banner._id) {
+        await apiService.trackBannerClick(banner._id);
+      }
+
+      // Navigate based on CTA destination
+      switch (banner.ctaDestination) {
+        case "Search":
+          navigation.navigate("Search");
+          break;
+        case "MealPlans":
+          navigation.navigate("Search");
+          break;
+        case "MealPlanDetail":
+          if (banner.ctaParams?.planId) {
+            // Find the meal plan by planId
+            const plan = mealPlans.find(p => p.planId === banner.ctaParams.planId);
+            if (plan) {
+              navigation.navigate("MealPlanDetail", { bundle: plan });
+            } else {
+              navigation.navigate("Search");
+            }
+          } else {
+            navigation.navigate("Search");
+          }
+          break;
+        case "Profile":
+          navigation.navigate("Profile");
+          break;
+        case "Orders":
+          navigation.navigate("OrderTracking");
+          break;
+        case "Support":
+          navigation.navigate("Support");
+          break;
+        case "External":
+          if (banner.externalUrl) {
+            await Linking.openURL(banner.externalUrl);
+          }
+          break;
+        default:
+          navigation.navigate("Search");
+      }
+    } catch (error) {
+      console.error("Error handling banner press:", error);
+      // Still navigate even if tracking fails
+      navigation.navigate("Search");
     }
   };
 
@@ -120,13 +156,14 @@ const HomeScreen = ({ navigation }) => {
       setBannersLoading(true);
       const result = await apiService.getActiveBanners();
 
+      console.log("🔍 Banner API result:", JSON.stringify(result, null, 2));
+
       if (result.success) {
-        const bannersData = result.data || [];
+        const bannersData = Array.isArray(result.data) ? result.data : [];
         setBanners(bannersData);
         console.log(`✅ Loaded ${bannersData.length} banners`);
       } else {
         console.error("❌ Failed to load banners:", result.error);
-        // Fallback to empty array
         setBanners([]);
       }
     } catch (error) {
@@ -336,19 +373,21 @@ const HomeScreen = ({ navigation }) => {
 
   // Auto-slide effect for banner
   useEffect(() => {
+    if (!banners || banners.length <= 1) return;
+
     const bannerInterval = setInterval(() => {
       setCurrentBannerIndex((prevIndex) => {
         const nextIndex = (prevIndex + 1) % banners.length;
         bannerScrollRef.current?.scrollTo({
-          x: nextIndex * (width - 20),
+          x: nextIndex * (width - 40),
           animated: true,
         });
         return nextIndex;
       });
-    }, 6000); // Auto-slide every 4 seconds
+    }, 6000);
 
     return () => clearInterval(bannerInterval);
-  }, [banners.length]);
+  }, [banners?.length]);
 
   // Subscription-focused UI components
   const renderTodaysMeals = () => {
@@ -935,8 +974,6 @@ const HomeScreen = ({ navigation }) => {
           </Text>
           <Text style={styles(colors).popularCardDescription} numberOfLines={2}>
             {plan.description ||
-              plan.subtitle ||
-              plan.shortDescription ||
               "Delicious and nutritious meal plan crafted for your healthy lifestyle"}
           </Text>
           <Text style={styles(colors).popularCardPrice}>
@@ -1008,8 +1045,6 @@ const HomeScreen = ({ navigation }) => {
             </Text>
             <Text style={styles(colors).mealplanDescription} numberOfLines={2}>
               {plan.description ||
-                plan.subtitle ||
-                plan.shortDescription ||
                 "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
             </Text>
             <Text style={styles(colors).mealplanPrice}>
@@ -1021,40 +1056,131 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  const renderHeroBanner = () => {
-    return (
-      <View style={styles(colors).heroBannerContainer}>
-        <View style={styles(colors).heroBanner}>
-          <View style={styles(colors).heroContent}>
-            <View style={styles(colors).heroTextSection}>
-              <Text style={styles(colors).heroTitle}>Best Deal For Today</Text>
-              <Text style={styles(colors).heroSubtitle}>
-                Grab our mouthwatering burger deal before it's gone!
-              </Text>
-              <TouchableOpacity
-                style={styles(colors).heroButton}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate("Search")}
-              >
-                <Text style={styles(colors).heroButtonText}>
-                  Get 20% Off 🎉
+  const renderPromoBanners = () => {
+    if (bannersLoading) {
+      return (
+        <View style={styles(colors).heroBannerContainer}>
+          <View style={[styles(colors).heroBanner, { justifyContent: 'center', alignItems: 'center' }]}>
+            <ActivityIndicator size="large" color={colors.white} />
+            <Text style={[styles(colors).heroSubtitle, { marginTop: 10, textAlign: 'center' }]}>
+              Loading promotions...
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (!banners || banners.length === 0) {
+      // Fallback to default banner when no banners are available
+      return (
+        <View style={styles(colors).heroBannerContainer}>
+          <View style={styles(colors).heroBanner}>
+            <View style={styles(colors).heroContent}>
+              <View style={styles(colors).heroTextSection}>
+                <Text style={styles(colors).heroTitle}>Welcome to Choma</Text>
+                <Text style={styles(colors).heroSubtitle}>
+                  Discover delicious and healthy meal plans crafted just for you!
                 </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color="#000"
-                  style={styles(colors).heroButtonIcon}
+                <TouchableOpacity
+                  style={styles(colors).heroButton}
+                  activeOpacity={0.8}
+                  onPress={() => navigation.navigate("Search")}
+                >
+                  <Text style={styles(colors).heroButtonText}>
+                    Explore Meals
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color="#000"
+                    style={styles(colors).heroButtonIcon}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles(colors).heroImageSection}>
+                <Image
+                  source={require("../../assets/images/meal-plans/fitfuel.jpg")}
+                  style={styles(colors).heroImage}
                 />
-              </TouchableOpacity>
-            </View>
-            <View style={styles(colors).heroImageSection}>
-              <Image
-                source={require("../../assets/images/meal-plans/fitfuel.jpg")}
-                style={styles(colors).heroImage}
-              />
+              </View>
             </View>
           </View>
         </View>
+      );
+    }
+
+    // Show dynamic banners
+    return (
+      <View style={styles(colors).heroBannerContainer}>
+        <ScrollView
+          ref={bannerScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(event) => {
+            const slideIndex = Math.round(
+              event.nativeEvent.contentOffset.x / (width - 40)
+            );
+            setCurrentBannerIndex(slideIndex);
+          }}
+        >
+          {banners.map((banner, index) => (
+            <TouchableOpacity
+              key={banner._id || index}
+              style={styles(colors).bannerSlide}
+              activeOpacity={0.8}
+              onPress={() => handlePromoBannerPress(banner)}
+            >
+              <View style={styles(colors).heroBanner}>
+                <View style={styles(colors).heroContent}>
+                  <View style={styles(colors).heroTextSection}>
+                    <Text style={styles(colors).heroTitle}>{banner.title}</Text>
+                    <Text style={styles(colors).heroSubtitle}>
+                      {banner.subtitle || 'Discover amazing deals and offers!'}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles(colors).heroButton}
+                      activeOpacity={0.8}
+                      onPress={() => handlePromoBannerPress(banner)}
+                    >
+                      <Text style={styles(colors).heroButtonText}>
+                        {banner.ctaText}
+                      </Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color="#000"
+                        style={styles(colors).heroButtonIcon}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles(colors).heroImageSection}>
+                    <Image
+                      source={{ uri: banner.imageUrl }}
+                      style={styles(colors).heroImage}
+                      defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+                    />
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Banner Indicators */}
+        {banners.length > 1 && (
+          <View style={styles(colors).bannerIndicators}>
+            {banners.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles(colors).bannerIndicator,
+                  currentBannerIndex === index && styles(colors).bannerIndicatorActive
+                ]}
+              />
+            ))}
+          </View>
+        )}
       </View>
     );
   };
@@ -1115,8 +1241,8 @@ const HomeScreen = ({ navigation }) => {
                 </View>
 
                 {/* Regular browsing UI */}
-                {/* Hero Banner */}
-                {renderHeroBanner()}
+                {/* Promo Banners */}
+                {renderPromoBanners()}
 
                 {/* Popular Food Section */}
                 <View style={styles(colors).section}>
@@ -1294,8 +1420,8 @@ const HomeScreen = ({ navigation }) => {
             return (
               // Regular browsing UI
               <>
-                {/* Hero Banner */}
-                {renderHeroBanner()}
+                {/* Promo Banners */}
+                {renderPromoBanners()}
 
                 {/* Popular Food Section */}
                 <View style={styles(colors).section}>
@@ -2281,6 +2407,29 @@ const styles = (colors) =>
       fontSize: 14,
       fontWeight: "600",
       marginLeft: 6,
+    },
+    // Banner slide styles
+    bannerSlide: {
+      width: width - 40,
+      marginHorizontal: 20,
+    },
+    bannerIndicators: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 15,
+      gap: 8,
+    },
+    bannerIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.textMuted,
+      opacity: 0.5,
+    },
+    bannerIndicatorActive: {
+      backgroundColor: colors.primary,
+      opacity: 1,
     },
   });
 

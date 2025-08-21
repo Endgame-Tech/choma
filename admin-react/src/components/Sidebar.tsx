@@ -9,7 +9,8 @@ import {
   BookOpenIcon,
   CubeIcon,
   CogIcon,
-  XMarkIcon
+  XMarkIcon,
+  MegaphoneIcon
 } from '@heroicons/react/24/outline'
 import { usePermissionCheck } from '../contexts/PermissionContext'
 import type { AdminPermissions } from '../types/admin'
@@ -23,6 +24,7 @@ const navigationItems = [
   { name: 'Customers', href: '/customers', icon: UsersIcon, permission: 'customers' as keyof AdminPermissions },
   { name: 'Meals', href: '/meals', icon: CubeIcon, permission: 'meals' as keyof AdminPermissions },
   { name: 'Meal Plans', href: '/meal-plans', icon: BookOpenIcon, permission: 'mealPlans' as keyof AdminPermissions },
+  { name: 'Promo Banners', href: '/promo-banners', icon: MegaphoneIcon, permission: 'banners' as keyof AdminPermissions },
   { name: 'Admin Management', href: '/admin-management', icon: CogIcon, permission: 'adminManagement' as keyof AdminPermissions },
 ]
 

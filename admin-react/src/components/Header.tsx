@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { ArrowRightOnRectangleIcon, Bars3Icon, UserCircleIcon, KeyIcon, Cog6ToothIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import ThemeToggle from './ThemeToggle'
 import TwoFactorSetup from './TwoFactorSetup'
@@ -19,6 +20,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [twoFactorStatus, setTwoFactorStatus] = useState<TwoFactorStatus | null>(null)
   const [loading2FA, setLoading2FA] = useState(false)
   const { logout, admin } = useAuth()
+  const navigate = useNavigate()
   const menuRef = useRef<HTMLDivElement>(null)
 
   const handleLogout = () => {
@@ -148,6 +150,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   {/* Profile Section */}
                   <div className="py-1">
                     <button
+                      onClick={() => {
+                        navigate('/profile')
+                        setShowUserMenu(false)
+                      }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                     >
                       <UserCircleIcon className="w-4 h-4" />
@@ -199,6 +205,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                     )}
 
                     <button
+                      onClick={() => {
+                        navigate('/security-settings')
+                        setShowUserMenu(false)
+                      }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                     >
                       <Cog6ToothIcon className="w-4 h-4" />

@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "C:\\dev\\choma\\backend\\logs\\.72c60393f44c5a370e6d38c60c03015bab6f4a82-audit.json",
+    "files": [
+        {
+            "date": 1755785123317,
+            "name": "C:\\dev\\choma\\backend\\logs\\access-2025-08-21.log",
+            "hash": "80e3c1d95e4074d3f26aec4144e04ed62d3adc3fc8138fb981d829d3fb29860f"
+        }
+    ],
+    "hashType": "sha256"
+}

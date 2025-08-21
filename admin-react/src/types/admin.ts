@@ -65,6 +65,14 @@ export interface AdminPermissions {
     schedule: boolean;
   };
   
+  // Banners permissions
+  banners: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+  };
+  
   // Admin Management permissions
   adminManagement: {
     view: boolean;
@@ -130,6 +138,7 @@ export const PREDEFINED_ROLES: AdminRole[] = [
       customers: { view: true, edit: true, delete: true, viewSensitiveInfo: true },
       meals: { view: true, create: true, edit: true, delete: true, bulkUpload: true, manageAvailability: true },
       mealPlans: { view: true, create: true, edit: true, delete: true, publish: true, schedule: true },
+      banners: { view: true, create: true, edit: true, delete: true },
       adminManagement: { view: true, create: true, edit: true, delete: true, managePermissions: true, view_activity_logs: true, manage_sessions: true }
     }
   },
@@ -147,6 +156,7 @@ export const PREDEFINED_ROLES: AdminRole[] = [
       customers: { view: true, edit: false, delete: false, viewSensitiveInfo: false },
       meals: { view: true, create: true, edit: true, delete: true, bulkUpload: true, manageAvailability: true },
       mealPlans: { view: true, create: true, edit: true, delete: true, publish: true, schedule: true },
+      banners: { view: true, create: true, edit: true, delete: true },
       adminManagement: { view: false, create: false, edit: false, delete: false, managePermissions: false, view_activity_logs: false, manage_sessions: false }
     }
   },
@@ -164,6 +174,7 @@ export const PREDEFINED_ROLES: AdminRole[] = [
       customers: { view: true, edit: true, delete: false, viewSensitiveInfo: false },
       meals: { view: true, create: false, edit: false, delete: false, bulkUpload: false, manageAvailability: true },
       mealPlans: { view: true, create: false, edit: false, delete: false, publish: false, schedule: false },
+      banners: { view: true, create: false, edit: false, delete: false },
       adminManagement: { view: false, create: false, edit: false, delete: false, managePermissions: false, view_activity_logs: false, manage_sessions: false }
     }
   },
@@ -181,6 +192,7 @@ export const PREDEFINED_ROLES: AdminRole[] = [
       customers: { view: true, edit: false, delete: false, viewSensitiveInfo: false },
       meals: { view: true, create: false, edit: false, delete: false, bulkUpload: false, manageAvailability: false },
       mealPlans: { view: true, create: false, edit: false, delete: false, publish: false, schedule: false },
+      banners: { view: true, create: false, edit: false, delete: false },
       adminManagement: { view: false, create: false, edit: false, delete: false, managePermissions: false, view_activity_logs: false, manage_sessions: false }
     }
   }

@@ -222,6 +222,27 @@ class NotificationService {
     });
   }
 
+  // Welcome notification for new users
+  static async notifyWelcome(userId, fullName) {
+    try {
+      return await this.createNotification({
+        userId,
+        title: "Welcome to Choma! 🎉",
+        message: `Hi ${fullName}! Welcome to our delicious food family. Browse our meal plans and start your healthy eating journey today!`,
+        type: "welcome",
+        data: {
+          isWelcome: true,
+          action: "explore_meal_plans"
+        },
+        priority: "high",
+      });
+    } catch (error) {
+      console.error('Welcome notification failed:', error);
+      // Don't throw error - welcome notification failure shouldn't break signup
+      return { success: false, error: error.message };
+    }
+  }
+
   // Order notifications
   static async notifyOrderConfirmed(userId, orderData) {
     return await this.createNotification({

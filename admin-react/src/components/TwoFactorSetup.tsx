@@ -83,7 +83,7 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
       let errorMessage = 'Failed to start setup';
       
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as any;
+        const axiosError = error as { response?: { data?: { message?: string }; status?: number } };
         if (axiosError.response?.data?.message) {
           errorMessage = axiosError.response.data.message;
         } else if (axiosError.response?.status === 400) {

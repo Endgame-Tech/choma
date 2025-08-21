@@ -7,7 +7,7 @@ export const lightColors = {
   primaryLight: '#FF9A3F',
   
   // Background Colors
-  background: '#FFF6E8',
+  background: '#FFFFFF',
   cardBackground: '#FFFFFF',
   modalBackground: '#FFFFFF',
   
