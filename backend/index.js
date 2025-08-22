@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const connectDB = require('./config/db');
+const { connectRedis } = require('./config/redis');
 
 // Import security middleware
 const {
@@ -56,6 +57,13 @@ retryDatabaseConnection(connectDB)
   .catch((error) => {
     logger.error('Failed to connect to database after retries:', error);
     process.exit(1);
+  });
+
+// Connect Redis (non-blocking - app should work without Redis)
+connectRedis()
+  .then(() => logger.info('Redis connected successfully'))
+  .catch((error) => {
+    logger.warn('Redis connection failed - app will continue without caching:', error.message);
   });
 
 // Apply security middleware first
@@ -114,11 +122,21 @@ app.get('/', (req, res) => {
 
 // Health check route
 app.get('/health', (req, res) => {
+  const keepAliveService = require('./services/keepAliveService');
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV,
+    keepAlive: keepAliveService.getStatus(),
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    redis: process.env.REDIS_URL ? 'configured' : 'not_configured'
   });
+});
+
+// Keep-alive ping endpoint (lightweight)
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
 });
 
 // Auth routes (with stricter rate limiting)
@@ -238,6 +256,10 @@ const server = createServer(app);
 // Initialize Socket.IO service
 const socketService = require('./services/socketService');
 socketService.initialize(server);
+
+// Initialize Keep-Alive service (prevents Render sleep)
+const keepAliveService = require('./services/keepAliveService');
+keepAliveService.start();
 
 server.listen(PORT, HOST, () => {
   // Get the local network IP address for easier mobile device connection

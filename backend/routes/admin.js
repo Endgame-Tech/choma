@@ -9,6 +9,7 @@ const adminManagementController = require('../controllers/adminManagementControl
 // Import auth middleware
 const { authenticateAdmin } = require('../middleware/adminAuth');
 const { validateApiKey } = require('../middleware/security');
+const { cacheMiddleware } = require('../middleware/cacheMiddleware');
 
 // ============= HEALTH CHECK ROUTE (NO AUTH REQUIRED) =============
 router.get('/health', (req, res) => {
@@ -25,7 +26,7 @@ router.get('/health', (req, res) => {
 router.use(authenticateAdmin);
 
 // ============= DASHBOARD ROUTES =============
-router.get('/dashboard/stats', (req, res, next) => {
+router.get('/dashboard/stats', cacheMiddleware.dashboardStats, (req, res, next) => {
   console.log('🎯 Dashboard stats route hit!');
   next();
 }, adminController.getDashboardStats);
@@ -35,17 +36,17 @@ router.get('/analytics/users/:id', adminController.getUserAnalytics);
 router.get('/analytics/engagement', adminController.getEngagementAnalytics);
 
 // ============= ADVANCED ANALYTICS ROUTES =============
-router.get('/analytics/kpis', advancedAnalyticsController.getKPIData);
-router.get('/analytics/charts', advancedAnalyticsController.getChartsData);
-router.get('/analytics/insights', advancedAnalyticsController.getInsightsData);
-router.get('/analytics/chart/:chartId', advancedAnalyticsController.getChartData);
+router.get('/analytics/kpis', cacheMiddleware.medium, advancedAnalyticsController.getKPIData);
+router.get('/analytics/charts', cacheMiddleware.medium, advancedAnalyticsController.getChartsData);
+router.get('/analytics/insights', cacheMiddleware.medium, advancedAnalyticsController.getInsightsData);
+router.get('/analytics/chart/:chartId', cacheMiddleware.medium, advancedAnalyticsController.getChartData);
 router.post('/analytics/export', advancedAnalyticsController.exportReport);
 router.get('/analytics/user-engagement', advancedAnalyticsController.getUserEngagementMetrics);
 router.get('/analytics/business-intelligence', advancedAnalyticsController.getBusinessIntelligence);
 
 // ============= USER MANAGEMENT ROUTES =============
-router.get('/users', adminController.getAllUsers);
-router.get('/users/stats', adminController.getUserStats);
+router.get('/users', cacheMiddleware.medium, adminController.getAllUsers);
+router.get('/users/stats', cacheMiddleware.medium, adminController.getUserStats);
 router.put('/users/:id/status', adminController.updateUserStatus);
 router.get('/export/users', adminController.exportUsers);
 

@@ -29,14 +29,19 @@ exports.getAllMealPlans = async (req, res) => {
           return meals;
         }, []).slice(0, 6); // Limit to 6 sample meals
         
+        // Use fallback pricing if totalPrice is 0 or undefined
+        const fallbackPrice = 25000; // Default price if no totalPrice set
+        const effectivePrice = (mealPlan.totalPrice && mealPlan.totalPrice > 0) ? mealPlan.totalPrice : fallbackPrice;
+        
         return {
           ...mealPlan.toObject(),
           id: mealPlan._id,
           name: mealPlan.planName,
           subtitle: mealPlan.targetAudience,
-          price: mealPlan.totalPrice || 0,
-          basePrice: mealPlan.totalPrice || 0,
-          originalPrice: (mealPlan.totalPrice || 0) * 1.25, // Add a dummy original price for UI
+          price: effectivePrice,
+          basePrice: effectivePrice,
+          totalPrice: effectivePrice, // Add this field explicitly
+          originalPrice: effectivePrice * 1.25, // Add a dummy original price for UI
           meals: `${mealPlan.stats.avgMealsPerDay || 0} meals/day`,
           duration: `${mealPlan.durationWeeks} week(s)`,
           image: mealPlan.coverImage,
@@ -147,12 +152,26 @@ exports.getMealPlanById = async (req, res) => {
       .sort({ weekNumber: 1, dayOfWeek: 1, mealTime: 1 });
 
     // Create frontend-compatible format
+    // Use fallback pricing if totalPrice is 0 or undefined
+    const fallbackPrice = 25000; // Default price if no totalPrice set
+    const effectivePrice = (mealPlan.totalPrice && mealPlan.totalPrice > 0) ? mealPlan.totalPrice : fallbackPrice;
+    
+    console.log('🍽️ Meal plan pricing debug:', {
+      planName: mealPlan.planName,
+      totalPrice: mealPlan.totalPrice,
+      effectivePrice,
+      durationWeeks: mealPlan.durationWeeks,
+      mealTypes: mealPlan.mealTypes,
+      assignmentCount: assignments.length
+    });
+    
     const formattedMealPlan = {
       ...mealPlan.toObject(),
       id: mealPlan._id,
       name: mealPlan.planName,
-      price: mealPlan.totalPrice || 0,
-      basePrice: mealPlan.totalPrice || 0,
+      price: effectivePrice,
+      basePrice: effectivePrice,
+      totalPrice: effectivePrice, // Add this field explicitly
       duration: `${mealPlan.durationWeeks} weeks`,
       planDuration: `${mealPlan.durationWeeks} weeks`,
       mealsPerWeek: mealPlan.stats.avgMealsPerDay ? mealPlan.stats.avgMealsPerDay * 7 : 0,

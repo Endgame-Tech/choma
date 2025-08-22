@@ -3,16 +3,23 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon admin-server.js",
-    "admin": "nodemon admin/server.js",
-    "chef": "nodemon chef/server.js",
-    "backend": "nodemon backend/index.js",
     "start": "expo start --clear",
     "start-clean": "expo start --clear --reset-cache",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "clean": "expo install --fix"
+    "clean": "expo install --fix",
+    
+    "production": "pm2 start ecosystem.config.js --env production",
+    "staging": "pm2 start ecosystem.config.js --env development",
+    "render:deploy": "git push origin main",
+    "render:build": "cd backend && npm run render-build",
+    "pm2:restart": "pm2 restart choma-backend",
+    "pm2:stop": "pm2 stop choma-backend",
+    "pm2:logs": "pm2 logs choma-backend",
+    "pm2:monitor": "pm2 monit",
+    "pm2:delete": "pm2 delete choma-backend",
+    "optimize-db": "cd backend && npm run optimize-db"
   },
   "expo": {
     "doctor": {

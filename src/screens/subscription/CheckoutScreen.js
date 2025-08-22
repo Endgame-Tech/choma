@@ -31,8 +31,8 @@ const CheckoutScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(!!mealPlanId && !initialMealPlan);
   const [mealPlan, setMealPlan] = useState(initialMealPlan || null);
   const [error, setError] = useState(null);
-  const [selectedFrequency, setSelectedFrequency] = useState('Daily');
-  const [selectedDuration, setSelectedDuration] = useState('Weekly');
+  const [selectedFrequency, setSelectedFrequency] = useState(null);
+  const [selectedDuration, setSelectedDuration] = useState(null);
   const [startDate, setStartDate] = useState(new Date());
   const [deliveryAddress, setDeliveryAddress] = useState(user?.address || '');
   const [specialInstructions, setSpecialInstructions] = useState('');
@@ -40,16 +40,61 @@ const CheckoutScreen = ({ route, navigation }) => {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [currentLocationAddress, setCurrentLocationAddress] = useState('');
 
-  const frequencies = [
-    { id: 'Daily', label: 'Once Daily', description: 'Perfect for lunch or dinner', multiplier: 1 },
-    { id: 'Twice Daily', label: 'Twice Daily', description: 'Lunch and dinner', multiplier: 2 },
-    { id: 'Thrice Daily', label: 'Thrice Daily', description: 'All meals covered', multiplier: 3 }
-  ];
+  // Generate frequency options based on meal plan's mealTypes
+  const getAvailableFrequencies = () => {
+    if (!mealPlan?.mealTypes || mealPlan.mealTypes.length === 0) {
+      return [{ id: 'all', label: 'All Meals', description: 'All meals in this plan', multiplier: 1 }];
+    }
 
-  const durations = [
-    { id: 'Weekly', label: '1 Week', description: '7 days of meals', multiplier: 1 },
-    { id: 'Monthly', label: '1 Month', description: '30 days of meals', multiplier: 4 }
-  ];
+    const mealTypeOptions = [];
+    
+    // Add option for each individual meal type
+    mealPlan.mealTypes.forEach(mealType => {
+      mealTypeOptions.push({
+        id: mealType,
+        label: mealType.charAt(0).toUpperCase() + mealType.slice(1),
+        description: `${mealType} meals only`,
+        multiplier: 1 / mealPlan.mealTypes.length // Proportional to number of meal types
+      });
+    });
+
+    // Add option for all meal types if more than one
+    if (mealPlan.mealTypes.length > 1) {
+      mealTypeOptions.push({
+        id: 'all',
+        label: 'All Meals',
+        description: `${mealPlan.mealTypes.join(', ')} meals`,
+        multiplier: 1
+      });
+    }
+
+    return mealTypeOptions;
+  };
+
+  // Generate duration options based on meal plan's durationWeeks
+  const getAvailableDurations = () => {
+    if (!mealPlan?.durationWeeks) {
+      return [{ id: 1, label: '1 Week', description: '7 days of meals', multiplier: 1 }];
+    }
+
+    const maxWeeks = mealPlan.durationWeeks;
+    const options = [];
+    
+    // Add weekly options up to the plan's duration
+    for (let weeks = 1; weeks <= maxWeeks; weeks++) {
+      options.push({
+        id: weeks,
+        label: weeks === 1 ? '1 Week' : `${weeks} Weeks`,
+        description: `${weeks * 7} days of meals`,
+        multiplier: weeks / maxWeeks // Proportional to full plan duration
+      });
+    }
+
+    return options;
+  };
+
+  const frequencies = getAvailableFrequencies();
+  const durations = getAvailableDurations();
 
   // Function to get current location
   const getCurrentLocation = async () => {
@@ -161,14 +206,61 @@ const CheckoutScreen = ({ route, navigation }) => {
     fetchMealPlanDetails();
   }, [mealPlanId, initialMealPlan]);
 
-  // Calculate pricing
-  const basePrice = mealPlan?.price || 0;
+  // Set default selections when meal plan is loaded
+  useEffect(() => {
+    if (mealPlan && !selectedFrequency && !selectedDuration) {
+      // Default to all meals if multiple meal types, or the single meal type
+      const defaultFrequency = mealPlan.mealTypes && mealPlan.mealTypes.length > 1 ? 'all' : mealPlan.mealTypes?.[0] || 'all';
+      setSelectedFrequency(defaultFrequency);
+      
+      // Default to full duration
+      setSelectedDuration(mealPlan.durationWeeks || 1);
+    }
+  }, [mealPlan, selectedFrequency, selectedDuration]);
+
+  // Calculate pricing based on meal plan's totalPrice and user selections
+  const basePlanPrice = mealPlan?.totalPrice || mealPlan?.price || 0; // Use totalPrice if available, fallback to price
   const frequencyMultiplier = frequencies.find(f => f.id === selectedFrequency)?.multiplier || 1;
   const durationMultiplier = durations.find(d => d.id === selectedDuration)?.multiplier || 1;
-  const subtotal = basePrice * frequencyMultiplier * durationMultiplier;
+  
+  // Debug logging for pricing calculation
+  console.log('💰 Pricing calculation debug:', {
+    mealPlan: mealPlan ? {
+      name: mealPlan.planName || mealPlan.name,
+      totalPrice: mealPlan.totalPrice,
+      price: mealPlan.price,
+      durationWeeks: mealPlan.durationWeeks,
+      mealTypes: mealPlan.mealTypes
+    } : null,
+    basePlanPrice,
+    selectedFrequency,
+    selectedDuration,
+    frequencyMultiplier,
+    durationMultiplier,
+    frequencies: frequencies.length,
+    durations: durations.length
+  });
+  
+  // Ensure all values are valid numbers
+  const validBasePlanPrice = isNaN(basePlanPrice) ? 0 : basePlanPrice;
+  const validFrequencyMultiplier = isNaN(frequencyMultiplier) ? 1 : frequencyMultiplier;
+  const validDurationMultiplier = isNaN(durationMultiplier) ? 1 : durationMultiplier;
+  
+  // Calculate subtotal: base plan price × frequency selection × duration selection
+  const subtotal = Math.round(validBasePlanPrice * validFrequencyMultiplier * validDurationMultiplier);
   const deliveryFee = 0; // Free delivery
   const tax = Math.round(subtotal * 0.1); // 10% tax
   const totalPrice = subtotal + deliveryFee + tax;
+  
+  // Log final calculation
+  console.log('💰 Final pricing:', {
+    validBasePlanPrice,
+    validFrequencyMultiplier, 
+    validDurationMultiplier,
+    subtotal,
+    tax,
+    totalPrice
+  });
 
   const handleProceedToPayment = () => {
     if (!deliveryAddress.trim()) {
@@ -181,15 +273,29 @@ const CheckoutScreen = ({ route, navigation }) => {
       return;
     }
 
+    // Validate that we have valid numbers before proceeding
+    if (isNaN(totalPrice) || totalPrice <= 0) {
+      Alert.alert('Pricing Error', 'Unable to calculate valid pricing. Please try again or contact support.');
+      return;
+    }
+
     const subscriptionData = {
-      mealPlan: mealPlan.id,
+      mealPlan: mealPlan.id || mealPlan._id,
+      selectedMealTypes: selectedFrequency === 'all' ? mealPlan.mealTypes : [selectedFrequency],
       frequency: selectedFrequency,
       duration: selectedDuration,
+      durationWeeks: selectedDuration, // Store the actual weeks selected
+      fullPlanDuration: mealPlan.durationWeeks, // Store the original plan duration for reference
       startDate: startDate.toISOString(),
       deliveryAddress: deliveryAddress.trim(),
       specialInstructions: specialInstructions.trim(),
-      totalPrice: totalPrice
+      totalPrice: Math.round(totalPrice), // Ensure it's a whole number
+      basePlanPrice: Math.round(validBasePlanPrice),
+      frequencyMultiplier: validFrequencyMultiplier,
+      durationMultiplier: validDurationMultiplier
     };
+    
+    console.log('🚀 Sending subscription data to payment:', JSON.stringify(subscriptionData, null, 2));
 
     navigation.navigate('Payment', {
       subscriptionData,
@@ -270,7 +376,7 @@ const CheckoutScreen = ({ route, navigation }) => {
     );
   }
 
-  // No meal plan selected
+  // No meal plan selected or invalid pricing
   if (!mealPlan) {
     return (
       <SafeAreaView style={styles(colors).container}>
@@ -281,6 +387,29 @@ const CheckoutScreen = ({ route, navigation }) => {
           <Text style={styles(colors).errorTitle}>Meal Plan Not Found</Text>
           <Text style={styles(colors).errorText}>
             No meal plan selected. Please go back and select a meal plan.
+          </Text>
+          <TouchableOpacity 
+            style={styles(colors).button}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles(colors).buttonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Check for pricing issues
+  if ((!mealPlan.totalPrice && !mealPlan.price) || (mealPlan.totalPrice === 0 && mealPlan.price === 0)) {
+    return (
+      <SafeAreaView style={styles(colors).container}>
+        <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+        
+        <View style={styles(colors).errorContainer}>
+          <Ionicons name="warning" size={80} color={colors.warning} />
+          <Text style={styles(colors).errorTitle}>Pricing Not Available</Text>
+          <Text style={styles(colors).errorText}>
+            This meal plan doesn't have pricing configured yet. Please contact support or try another meal plan.
           </Text>
           <TouchableOpacity 
             style={styles(colors).button}
@@ -311,11 +440,13 @@ const CheckoutScreen = ({ route, navigation }) => {
           <View style={styles(colors).mealPlanCard}>
             <Image 
               source={
-                mealPlan.image 
-                  ? (typeof mealPlan.image === 'string' ? { uri: mealPlan.image } : mealPlan.image)
+                mealPlan.coverImage 
+                  ? { uri: mealPlan.coverImage }
                   : mealPlan.planImageUrl 
                     ? { uri: mealPlan.planImageUrl }
-                    : require('../../assets/images/meal-plans/fitfuel.jpg')
+                    : mealPlan.image 
+                      ? (typeof mealPlan.image === 'string' ? { uri: mealPlan.image } : mealPlan.image)
+                      : require('../../assets/images/meal-plans/fitfuel.jpg')
               } 
               style={styles(colors).mealPlanImage}
               resizeMode="cover"
@@ -326,17 +457,19 @@ const CheckoutScreen = ({ route, navigation }) => {
               style={styles(colors).imageGradient}
             />
             <View style={styles(colors).mealPlanOverlay}>
-              <Text style={styles(colors).mealPlanName}>{mealPlan.name}</Text>
-              <Text style={styles(colors).mealPlanSubtitle}>{mealPlan.subtitle}</Text>
-              <Text style={styles(colors).mealPlanPrice}>₦{mealPlan.price.toLocaleString()}</Text>
+              <Text style={styles(colors).mealPlanName}>{mealPlan.planName || mealPlan.name}</Text>
+              <Text style={styles(colors).mealPlanSubtitle}>{mealPlan.description || mealPlan.subtitle}</Text>
+              <Text style={styles(colors).mealPlanPrice}>₦{(mealPlan.totalPrice || mealPlan.price).toLocaleString()}</Text>
             </View>
           </View>
         </View>
 
         {/* Frequency Selection */}
         <View style={styles(colors).section}>
-          <Text style={styles(colors).sectionTitle}>Meal Frequency</Text>
-          <Text style={styles(colors).sectionSubtitle}>How many meals per day?</Text>
+          <Text style={styles(colors).sectionTitle}>Meal Selection</Text>
+          <Text style={styles(colors).sectionSubtitle}>
+            Choose which meals from this plan (Plan includes: {mealPlan?.mealTypes?.join(', ') || 'all meals'})
+          </Text>
           
           <View style={styles(colors).optionsContainer}>
             {frequencies.map((frequency) => (
@@ -381,7 +514,9 @@ const CheckoutScreen = ({ route, navigation }) => {
         {/* Duration Selection */}
         <View style={styles(colors).section}>
           <Text style={styles(colors).sectionTitle}>Subscription Duration</Text>
-          <Text style={styles(colors).sectionSubtitle}>How long would you like this plan?</Text>
+          <Text style={styles(colors).sectionSubtitle}>
+            Choose duration (Plan is designed for {mealPlan?.durationWeeks} weeks)
+          </Text>
           
           <View style={styles(colors).optionsContainer}>
             {durations.map((duration) => (
@@ -562,15 +697,15 @@ const CheckoutScreen = ({ route, navigation }) => {
           
           <View style={styles(colors).summaryCard}>
             <View style={styles(colors).summaryRow}>
-              <Text style={styles(colors).summaryLabel}>Base Price</Text>
-              <Text style={styles(colors).summaryValue}>₦{basePrice.toLocaleString()}</Text>
+              <Text style={styles(colors).summaryLabel}>Plan Base Price ({mealPlan?.durationWeeks} weeks)</Text>
+              <Text style={styles(colors).summaryValue}>₦{basePlanPrice.toLocaleString()}</Text>
             </View>
             <View style={styles(colors).summaryRow}>
-              <Text style={styles(colors).summaryLabel}>Frequency</Text>
+              <Text style={styles(colors).summaryLabel}>Meal Selection Adjustment</Text>
               <Text style={styles(colors).summaryValue}>×{frequencyMultiplier}</Text>
             </View>
             <View style={styles(colors).summaryRow}>
-              <Text style={styles(colors).summaryLabel}>Duration</Text>
+              <Text style={styles(colors).summaryLabel}>Duration Adjustment</Text>
               <Text style={styles(colors).summaryValue}>×{durationMultiplier}</Text>
             </View>
             <View style={styles(colors).summaryRow}>

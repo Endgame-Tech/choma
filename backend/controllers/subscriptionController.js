@@ -60,20 +60,40 @@ exports.getSubscriptionById = async (req, res) => {
 // Create new subscription
 exports.createSubscription = async (req, res) => {
   try {
+    console.log('📋 Subscription creation request body:', JSON.stringify(req.body, null, 2));
+
     const {
       mealPlan,
+      selectedMealTypes,
       frequency,
       duration,
+      durationWeeks,
+      fullPlanDuration,
       startDate,
       deliveryAddress,
-      specialInstructions
+      specialInstructions,
+      totalPrice,
+      basePlanPrice,
+      frequencyMultiplier,
+      durationMultiplier,
+      subscriptionId,
+      paymentStatus,
+      paymentReference,
+      transactionId
     } = req.body;
 
     // Validation
-    if (!mealPlan || !frequency || !duration) {
+    if (!mealPlan) {
       return res.status(400).json({
         success: false,
-        message: 'Meal plan, frequency, and duration are required'
+        message: 'Meal plan is required'
+      });
+    }
+
+    if (!totalPrice || isNaN(totalPrice) || totalPrice <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid total price is required'
       });
     }
 
@@ -86,52 +106,76 @@ exports.createSubscription = async (req, res) => {
       });
     }
 
-    // Calculate total price based on frequency, duration, and meal plan price
-    const frequencyMultiplier = {
-      'Daily': 1,
-      'Twice Daily': 2,
-      'Thrice Daily': 3
-    };
-
-    const durationMultiplier = {
-      'Weekly': 1,
-      'Monthly': 4
-    };
-
-    const totalPrice = mealPlanDoc.basePrice * 
-      frequencyMultiplier[frequency] * 
-      durationMultiplier[duration];
-
-    // Calculate next delivery date
-    const nextDelivery = new Date(startDate || Date.now());
-    nextDelivery.setDate(nextDelivery.getDate() + 1); // Next day delivery
-
-    // Calculate end date
-    const endDate = new Date(startDate || Date.now());
-    if (duration === 'Weekly') {
-      endDate.setDate(endDate.getDate() + 7);
-    } else if (duration === 'Monthly') {
-      endDate.setMonth(endDate.getMonth() + 1);
-    }
-
-    const subscription = await Subscription.create({
-      subscriptionId: `SUB-${Date.now()}-${Math.floor(Math.random() * 10000)}`, // Generate a unique subscription ID
-      userId: req.user.id,
-      mealPlanId: mealPlan,
-      frequency,
-      duration,
-      startDate: startDate || new Date(),
-      nextDelivery,
-      endDate,
-      totalPrice,
-      price: totalPrice, // Add required price field
-      deliveryAddress,
-      specialInstructions,
-      paymentStatus: 'Pending',
-      transactionId: `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}` // Generate transaction ID
+    console.log('📊 Meal plan found:', {
+      planName: mealPlanDoc.planName,
+      totalPrice: mealPlanDoc.totalPrice,
+      durationWeeks: mealPlanDoc.durationWeeks,
+      mealTypes: mealPlanDoc.mealTypes
     });
 
+    // Use the calculated price from frontend, but validate it's reasonable
+    const finalPrice = Math.round(totalPrice);
+    
+    // Validate price is reasonable (not negative, not excessively high)
+    if (finalPrice < 100 || finalPrice > 10000000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid price calculation detected'
+      });
+    }
+
+    // Calculate next delivery date
+    const subscriptionStartDate = startDate ? new Date(startDate) : new Date();
+    const nextDelivery = new Date(subscriptionStartDate);
+    nextDelivery.setDate(nextDelivery.getDate() + 1); // Next day delivery
+
+    // Calculate end date based on selected duration
+    const endDate = new Date(subscriptionStartDate);
+    const weeksToAdd = durationWeeks || (duration === 'Monthly' ? 4 : 1);
+    endDate.setDate(endDate.getDate() + (weeksToAdd * 7));
+
+    console.log('📅 Date calculations:', {
+      startDate: subscriptionStartDate,
+      nextDelivery,
+      endDate,
+      weeksToAdd
+    });
+
+    const subscriptionData = {
+      subscriptionId: subscriptionId || `SUB-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      userId: req.user.id,
+      mealPlanId: mealPlan,
+      selectedMealTypes: selectedMealTypes || mealPlanDoc.mealTypes || ['lunch'],
+      frequency,
+      duration,
+      durationWeeks: weeksToAdd,
+      startDate: subscriptionStartDate,
+      nextDelivery,
+      endDate,
+      totalPrice: finalPrice,
+      price: finalPrice, // Required field for compatibility
+      basePlanPrice: basePlanPrice || mealPlanDoc.totalPrice || 0,
+      frequencyMultiplier: frequencyMultiplier || 1,
+      durationMultiplier: durationMultiplier || 1,
+      deliveryAddress,
+      specialInstructions,
+      paymentStatus: paymentStatus || 'Pending',
+      paymentReference,
+      transactionId: transactionId || `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+    };
+
+    console.log('💾 Creating subscription with data:', JSON.stringify(subscriptionData, null, 2));
+
+    const subscription = await Subscription.create(subscriptionData);
+
     await subscription.populate('mealPlanId');
+
+    console.log('✅ Subscription created successfully:', {
+      id: subscription._id,
+      subscriptionId: subscription.subscriptionId,
+      totalPrice: subscription.totalPrice,
+      price: subscription.price
+    });
 
     res.status(201).json({
       success: true,

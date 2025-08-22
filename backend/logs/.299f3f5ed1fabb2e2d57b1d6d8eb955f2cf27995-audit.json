@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/mnt/c/dev/choma/backend/logs/.299f3f5ed1fabb2e2d57b1d6d8eb955f2cf27995-audit.json",
+    "files": [
+        {
+            "date": 1755851307527,
+            "name": "/mnt/c/dev/choma/backend/logs/access-2025-08-22.log",
+            "hash": "b2f385e09581a02ac78d9ef54bb1ab2f939f80eb0d2413b3fbc40c60061d5ec0"
+        }
+    ],
+    "hashType": "sha256"
+}

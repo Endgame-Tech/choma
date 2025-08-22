@@ -1,49 +1,66 @@
 const rateLimit = require('express-rate-limit');
+const RedisStore = require('rate-limit-redis');
 const slowDown = require('express-slow-down');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const cors = require('cors');
+const { cacheService } = require('../config/redis');
 
-// Rate limiting configuration
-const createRateLimiter = (windowMs, max, message) => rateLimit({
-  windowMs,
-  max,
-  message: {
-    success: false,
-    message
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
+// Rate limiting configuration with Redis store for production scaling
+const createRateLimiter = (windowMs, max, message, keyPrefix = 'rl') => {
+  const config = {
+    windowMs,
+    max,
+    message: {
+      success: false,
+      message
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    // Use Redis store for distributed rate limiting in production
+    store: process.env.NODE_ENV === 'production' && cacheService.getClient() ? 
+      new RedisStore({
+        client: cacheService.getClient(),
+        prefix: keyPrefix + ':',
+        resetExpiryOnChange: false,
+      }) : undefined
+  };
+  
+  return rateLimit(config);
+};
 
 // General rate limiting
 const generalLimiter = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
   process.env.NODE_ENV === 'production' ? 1000 : 10000, // Increased from 100 to 1000 for dashboard apps
-  'Too many requests from this IP, please try again later.'
+  'Too many requests from this IP, please try again later.',
+  'general'
 );
 
 // Auth rate limiting (stricter)
 const authLimiter = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
   process.env.NODE_ENV === 'production' ? 5 : 500, // Much higher limit for development
-  'Too many authentication attempts, please try again later.'
+  'Too many authentication attempts, please try again later.',
+  'auth'
 );
 
 // Admin rate limiting (more permissive in development)
 const adminLimiter = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
   process.env.NODE_ENV === 'production' ? 500 : 10000, // Increased from 20 to 500 for admin dashboard
-  'Too many admin requests, please try again later.'
+  'Too many admin requests, please try again later.',
+  'admin'
 );
 
 // Payment rate limiting
 const paymentLimiter = createRateLimiter(
   5 * 60 * 1000, // 5 minutes
   10, // limit each IP to 10 payment requests per windowMs
-  'Too many payment requests, please try again later.'
+  'Too many payment requests, please try again later.',
+  'payment'
 );
 
 // Dashboard/Analytics rate limiting (very permissive for frequent polling)
@@ -64,7 +81,8 @@ const uploadLimiter = createRateLimiter(
 const twoFactorLimiter = createRateLimiter(
   15 * 60 * 1000, // 15 minutes
   process.env.NODE_ENV === 'production' ? 100 : 1000, // High limit for 2FA operations
-  'Too many 2FA requests, please try again later.'
+  'Too many 2FA requests, please try again later.',
+  '2fa'
 );
 
 // Slow down middleware for repeated requests

@@ -4,17 +4,27 @@
  * Adds indexes to frequently queried fields to improve query performance
  */
 
+// Load environment from parent directory
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 const mongoose = require('mongoose')
-const config = require('../config/db')
+
+// Database URIs with fallbacks
+const DEV_URI = process.env.MONGODB_URI || "mongodb+srv://legendetestimony:PnIzbbCUUa3B2zqi@chomacluster0.lat5jo1.mongodb.net/choma?retryWrites=true&w=majority&appName=chomaCluster0";
+const PROD_URI = process.env.PROD_MONGODB_URI || "mongodb+srv://getchoma:VQB2HRyxTTCis2RN@choma.tlmjami.mongodb.net/choma?retryWrites=true&w=majority&appName=Choma";
+
+console.log('🔍 Environment check:');
+console.log('DEV_URI defined:', !!DEV_URI);
+console.log('PROD_URI defined:', !!PROD_URI);
 
 // Connect to database
-async function connectDB() {
+async function connectDB(uri) {
   try {
-    await mongoose.connect(config.mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    await mongoose.connect(uri, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 10000,
     })
     console.log('📦 Connected to MongoDB')
+    console.log('🗄️ Database:', mongoose.connection.db.databaseName)
   } catch (error) {
     console.error('❌ Database connection error:', error)
     process.exit(1)
@@ -104,15 +114,50 @@ async function createPerformanceIndexes() {
     
     console.log('✅ Meals indexes created')
 
-    // MealPlans collection
+    // MealPlans collection - Critical for mobile app performance
     await db.collection('mealplans').createIndex({ planName: 1 })
-    await db.collection('mealplans').createIndex({ category: 1 })
+    await db.collection('mealplans').createIndex({ targetAudience: 1 })
     await db.collection('mealplans').createIndex({ isActive: 1 })
-    await db.collection('mealplans').createIndex({ price: 1 })
+    await db.collection('mealplans').createIndex({ isPublished: 1 })
+    await db.collection('mealplans').createIndex({ totalPrice: 1 })
+    await db.collection('mealplans').createIndex({ sortOrder: 1 })
     await db.collection('mealplans').createIndex({ createdDate: -1 })
-    await db.collection('mealplans').createIndex({ 'meals._id': 1 })
+    
+    // Compound indexes for most common queries
+    await db.collection('mealplans').createIndex({ isActive: 1, isPublished: 1 })
+    await db.collection('mealplans').createIndex({ isActive: 1, isPublished: 1, sortOrder: 1 })
+    await db.collection('mealplans').createIndex({ isActive: 1, isPublished: 1, createdDate: -1 })
+    
+    // Text search for meal plans
+    await db.collection('mealplans').createIndex({
+      planName: 'text',
+      description: 'text',
+      targetAudience: 'text'
+    })
     
     console.log('✅ MealPlans indexes created')
+
+    // MealPlan Assignments collection - Critical for meal plan details
+    await db.collection('mealplanassignments').createIndex({ mealPlanId: 1 })
+    await db.collection('mealplanassignments').createIndex({ 'mealIds': 1 })
+    await db.collection('mealplanassignments').createIndex({ dayOfWeek: 1 })
+    await db.collection('mealplanassignments').createIndex({ mealType: 1 })
+    
+    // Compound index for the most common assignment query
+    await db.collection('mealplanassignments').createIndex({ mealPlanId: 1, dayOfWeek: 1 })
+    
+    console.log('✅ MealPlan Assignments indexes created')
+
+    // DailyMeals collection
+    await db.collection('dailymeals').createIndex({ mealName: 1 })
+    await db.collection('dailymeals').createIndex({ mealType: 1 })
+    await db.collection('dailymeals').createIndex({ isActive: 1 })
+    await db.collection('dailymeals').createIndex({ createdAt: -1 })
+    
+    // Compound index for active meal queries
+    await db.collection('dailymeals').createIndex({ isActive: 1, mealType: 1 })
+    
+    console.log('✅ DailyMeals indexes created')
 
     // Subscriptions collection
     await db.collection('subscriptions').createIndex({ 'customer._id': 1 })
@@ -207,19 +252,58 @@ async function dropAllIndexes() {
 
 // Main function
 async function main() {
-  await connectDB()
-  
   const args = process.argv.slice(2)
   
-  if (args.includes('--drop')) {
-    await dropAllIndexes()
-  } else {
-    await createPerformanceIndexes()
+  // Determine which database to use
+  let uri = DEV_URI;
+  let dbName = 'Development';
+  
+  if (args.includes('--prod')) {
+    uri = PROD_URI;
+    dbName = 'Production';
+  } else if (args.includes('--both')) {
+    // Run on both databases
+    console.log('🚀 Optimizing both Development and Production databases...\n');
+    
+    // Development first (if available)
+    if (DEV_URI) {
+      console.log('📊 === DEVELOPMENT DATABASE ===');
+      await connectDB(DEV_URI);
+      if (args.includes('--drop')) {
+        await dropAllIndexes();
+      } else {
+        await createPerformanceIndexes();
+      }
+      await mongoose.connection.close();
+    } else {
+      console.log('⚠️ Development database URI not found, skipping...');
+    }
+    
+    console.log('\n📊 === PRODUCTION DATABASE ===');
+    await connectDB(PROD_URI);
+    if (args.includes('--drop')) {
+      await dropAllIndexes();
+    } else {
+      await createPerformanceIndexes();
+    }
+    await mongoose.connection.close();
+    
+    console.log('\n🎉 Database optimization completed!');
+    process.exit(0);
   }
   
-  await mongoose.connection.close()
-  console.log('👋 Database connection closed')
-  process.exit(0)
+  console.log(`🚀 Optimizing ${dbName} database...`);
+  await connectDB(uri);
+  
+  if (args.includes('--drop')) {
+    await dropAllIndexes();
+  } else {
+    await createPerformanceIndexes();
+  }
+  
+  await mongoose.connection.close();
+  console.log('👋 Database connection closed');
+  process.exit(0);
 }
 
 // Handle errors

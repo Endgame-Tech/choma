@@ -2,9 +2,33 @@ services:
   - type: web
     name: choma-backend
     env: node
+    plan: standard # Use standard plan for clustering support
     rootDir: backend
-    buildCommand: npm install
-    startCommand: node index.js
+    buildCommand: |
+      npm install &&
+      npm install -g pm2 &&
+      mkdir -p logs
+    startCommand: npm run production
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        value: mongodb+srv://getchoma:VQB2HRyxTTCis2RN@choma.tlmjami.mongodb.net/choma?retryWrites=true&w=majority&appName=Choma
+      - key: PROD_MONGODB_URI  
+        value: mongodb+srv://getchoma:VQB2HRyxTTCis2RN@choma.tlmjami.mongodb.net/choma?retryWrites=true&w=majority&appName=Choma
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: choma-redis
+          property: connectionString
+    healthCheckPath: /health
+    autoDeploy: true
+    
+  - type: redis
+    name: choma-redis
+    plan: starter # Redis for caching and sessions
+    maxmemoryPolicy: allkeys-lru

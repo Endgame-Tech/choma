@@ -4,8 +4,34 @@ const SubscriptionSchema = new mongoose.Schema({
   subscriptionId: { type: String, unique: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
   mealPlanId: { type: mongoose.Schema.Types.ObjectId, ref: 'MealPlan', required: true },
-  frequency: { type: String, enum: ['Daily', 'Twice Daily', 'Thrice Daily'] },
-  duration: { type: String, enum: ['Weekly', 'Monthly'] },
+  
+  // Meal selection details
+  selectedMealTypes: {
+    type: [String],
+    enum: ['breakfast', 'lunch', 'dinner', 'all'],
+    default: ['lunch']
+  },
+  frequency: { 
+    type: String, 
+    // Allow for flexible frequency options
+    default: 'lunch'
+  },
+  duration: { 
+    type: String, 
+    // Allow for flexible duration options
+  },
+  durationWeeks: {
+    type: Number,
+    min: 1,
+    max: 8,
+    default: 1
+  },
+  
+  // Pricing details
+  basePlanPrice: { type: Number, default: 0 },
+  frequencyMultiplier: { type: Number, default: 1 },
+  durationMultiplier: { type: Number, default: 1 },
+  
   status: { type: String, enum: ['active', 'paused', 'cancelled', 'expired'], default: 'active' },
   startDate: { type: Date, required: true },
   nextDelivery: Date,
@@ -13,6 +39,7 @@ const SubscriptionSchema = new mongoose.Schema({
   totalPrice: { type: Number, required: true },
   price: { type: Number, required: true }, // Monthly/weekly price
   paymentStatus: { type: String, enum: ['Paid', 'Pending', 'Failed'] },
+  paymentReference: String,
   deliveryAddress: String,
   specialInstructions: String,
   

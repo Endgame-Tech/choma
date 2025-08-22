@@ -2,15 +2,16 @@ const express = require('express');
 const router = express.Router();
 const subscriptionController = require('../controllers/subscriptionController');
 const auth = require('../middleware/auth');
+const { cacheMiddleware } = require('../middleware/cacheMiddleware');
 
 // All subscription routes require authentication
 router.use(auth);
 
-// GET /api/subscriptions - Get user's subscriptions
-router.get('/', subscriptionController.getUserSubscriptions);
+// GET /api/subscriptions - Get user's subscriptions (cached for 10 minutes)
+router.get('/', cacheMiddleware.userMedium, subscriptionController.getUserSubscriptions);
 
-// GET /api/subscriptions/:id - Get subscription by ID
-router.get('/:id', subscriptionController.getSubscriptionById);
+// GET /api/subscriptions/:id - Get subscription by ID (cached for 10 minutes)
+router.get('/:id', cacheMiddleware.userMedium, subscriptionController.getSubscriptionById);
 
 // POST /api/subscriptions - Create new subscription
 router.post('/', subscriptionController.createSubscription);
