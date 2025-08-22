@@ -18,6 +18,8 @@ if [ ! -z "$RENDER" ]; then
         echo "✅ Using PM2 clustering"
         # Use reduced instances for Render's memory constraints
         export WEB_CONCURRENCY=2
+        
+        echo "📁 Using local ecosystem config"
         pm2 start ecosystem.config.js --env production --no-daemon
     else
         echo "⚠️ PM2 not available, using Node.js directly"
