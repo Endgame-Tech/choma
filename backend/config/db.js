@@ -9,8 +9,7 @@ const connectDB = async () => {
       minPoolSize: 5,  // Minimum number of connections
       serverSelectionTimeoutMS: 10000, // 10 seconds
       socketTimeoutMS: 45000, // 45 seconds
-      bufferCommands: false, // Disable buffering to fail fast
-      bufferMaxEntries: 0, // Disable mongoose buffering
+      bufferCommands: false // Disable buffering to fail fast
       
       // Heartbeat settings for connection health
       heartbeatFrequencyMS: 10000, // 10 seconds

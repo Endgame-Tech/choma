@@ -53,10 +53,23 @@ handleUncaughtException();
 
 // Connect Database with retry mechanism
 retryDatabaseConnection(connectDB)
-  .then(() => logger.info('Database connected successfully'))
+  .then(() => {
+    logger.info('Database connected successfully');
+    
+    // Initialize Socket.IO service only after DB is connected
+    const socketService = require('./services/socketService');
+    socketService.initialize(server);
+    
+    // Initialize Keep-Alive service only after DB is connected
+    const keepAliveService = require('./services/keepAliveService');
+    keepAliveService.start();
+  })
   .catch((error) => {
     logger.error('Failed to connect to database after retries:', error);
-    process.exit(1);
+    // Don't exit in production, let PM2 handle restart
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    }
   });
 
 // Connect Redis (non-blocking - app should work without Redis)
@@ -253,13 +266,7 @@ const HOST = '0.0.0.0'; // Listen on all interfaces
 const { createServer } = require('http');
 const server = createServer(app);
 
-// Initialize Socket.IO service
-const socketService = require('./services/socketService');
-socketService.initialize(server);
-
-// Initialize Keep-Alive service (prevents Render sleep)
-const keepAliveService = require('./services/keepAliveService');
-keepAliveService.start();
+// Socket.IO and Keep-Alive services are initialized after DB connection (see above)
 
 server.listen(PORT, HOST, () => {
   // Get the local network IP address for easier mobile device connection

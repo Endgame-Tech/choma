@@ -36,6 +36,13 @@ class SocketService {
           return next(new Error('Authentication error: No token provided'));
         }
 
+        // Check if database is connected
+        const mongoose = require('mongoose');
+        if (mongoose.connection.readyState !== 1) {
+          console.log('Socket connection rejected: Database not connected');
+          return next(new Error('Authentication error: Database not available'));
+        }
+
         // Verify JWT token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
