@@ -981,7 +981,7 @@ const styles = (colors) =>
     mealplanPrice: {
       fontSize: 20,
       fontWeight: "700",
-      color: colors.primaryDark2,
+      color: colors.text,
     },
     scrollContent: {
       paddingBottom: 120, // Extra padding for floating tab bar

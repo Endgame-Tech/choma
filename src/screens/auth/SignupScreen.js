@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import ChomaLogo from "../../components/ui/ChomaLogo";
 import CustomDatePicker from "../../components/ui/CustomDatePicker";
+import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -47,6 +48,7 @@ const SignupScreen = ({ navigation }) => {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
+  const [addressCoordinates, setAddressCoordinates] = useState(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   
   // Profile image
@@ -93,6 +95,16 @@ const SignupScreen = ({ navigation }) => {
 
   const handleDateCancel = () => {
     setShowDatePicker(false);
+  };
+
+  // Handle address selection from autocomplete
+  const handleAddressSelect = (addressInfo) => {
+    setDeliveryAddress(addressInfo.formattedAddress);
+    setCity(addressInfo.locality || addressInfo.adminArea || '');
+    setState(addressInfo.adminArea || 'Lagos'); // Default to Lagos if not found
+    setAddressCoordinates(addressInfo.coordinates);
+    
+    showSuccess('Address Selected', 'Delivery address has been set successfully');
   };
 
   const validateStep1 = () => {
@@ -527,15 +539,11 @@ const SignupScreen = ({ navigation }) => {
         {isGettingLocation && <ActivityIndicator size="small" color={colors.primary} />}
       </TouchableOpacity>
 
-      <View style={styles(colors).inputContainer}>
-        <Ionicons name="home-outline" size={20} color={colors.textMuted} style={styles(colors).inputIcon} />
-        <TextInput
-          style={styles(colors).input}
-          placeholder="Delivery Address *"
-          placeholderTextColor={colors.textMuted}
-          value={deliveryAddress}
-          onChangeText={setDeliveryAddress}
-          multiline
+      <View style={styles(colors).autocompleteContainer}>
+        <AddressAutocomplete
+          placeholder="Search for delivery address *"
+          onAddressSelect={handleAddressSelect}
+          defaultValue={deliveryAddress}
         />
       </View>
 
@@ -1095,6 +1103,13 @@ const styles = (colors) => StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  
+  // Address autocomplete styles
+  autocompleteContainer: {
+    marginBottom: 16,
+    zIndex: 1000,
+    minHeight: 50,
   },
 });
 
