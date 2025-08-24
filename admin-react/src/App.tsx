@@ -21,6 +21,8 @@ import AdminManagement from './pages/AdminManagement'
 import Profile from './pages/Profile'
 import SecuritySettings from './pages/SecuritySettings'
 import PromoBanners from './pages/PromoBanners'
+import DeliveryPricePage from './pages/DeliveryPricePage'
+import Discounts from './pages/Discounts'
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -152,6 +154,16 @@ function AppRoutes() {
           <PromoBanners />
         </ProtectedRoute>
       } />
+      <Route path="/delivery-prices" element={
+        <ProtectedRoute>
+          <DeliveryPricePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/discounts" element={
+        <ProtectedRoute>
+          <Discounts />
+        </ProtectedRoute>
+      } />
 
       {/* Catch all route */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -164,10 +176,10 @@ const App: React.FC = () => {
   useEffect(() => {
     // Start periodic cache cleanup (every 5 minutes)
     cacheService.startPeriodicCleanup(300000)
-    
+
     // Log initial cache stats
     console.log('📊 Cache Service initialized:', cacheService.getStats())
-    
+
     // Cleanup on component unmount
     return () => {
       console.log('🧹 Final cache cleanup on app unmount')

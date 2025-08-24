@@ -17,15 +17,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMealPlans } from '../../hooks/useMealPlans';
 import { useTheme } from '../../styles/theme';
+import { useAuth } from '../../hooks/useAuth';
 import { THEME } from '../../utils/colors';
 import FilterModal from '../../components/meal-plans/FilterModal';
 import { api } from '../../services/api';
+import discountService from '../../services/discountService';
 
 const { width } = Dimensions.get('window');
 
 const MealPlansScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [discountData, setDiscountData] = useState({});
+  const [discountLoading, setDiscountLoading] = useState(true);
   const { mealPlans: allMealPlans, loading: initialLoading, error: initialError, refreshing, refreshMealPlans } = useMealPlans();
   
   // Filter state management
@@ -41,6 +46,55 @@ const MealPlansScreen = ({ navigation }) => {
       setFilteredMealPlans(allMealPlans);
     }
   }, [allMealPlans]);
+
+  // Fetch discount data for all meal plans
+  useEffect(() => {
+    const fetchDiscountData = async () => {
+      if (!user || !allMealPlans || allMealPlans.length === 0) {
+        setDiscountLoading(false);
+        return;
+      }
+
+      try {
+        setDiscountLoading(true);
+        console.log("💰 Fetching discount data for all meal plans");
+        
+        const discounts = {};
+        
+        // Fetch discount for each meal plan
+        for (const plan of allMealPlans) {
+          try {
+            const discount = await discountService.calculateDiscount(user, plan);
+            discounts[plan.id || plan._id] = discount;
+          } catch (error) {
+            console.error(`Error calculating discount for plan ${plan.id}:`, error);
+            // Set default no discount for this plan
+            discounts[plan.id || plan._id] = { 
+              discountPercent: 0, 
+              discountAmount: 0, 
+              reason: 'No discount available' 
+            };
+          }
+        }
+        
+        console.log("💰 All discount data fetched:", discounts);
+        setDiscountData(discounts);
+      } catch (error) {
+        console.error("Error fetching discount data:", error);
+        setDiscountData({});
+      } finally {
+        setDiscountLoading(false);
+      }
+    };
+
+    fetchDiscountData();
+  }, [user, allMealPlans]);
+
+  // Combined refresh function
+  const handleRefresh = async () => {
+    await refreshMealPlans();
+    // Discount data will be refetched automatically when allMealPlans updates
+  };
   
   const hasActiveFilters = Object.keys(activeFilters).some(key => {
     const value = activeFilters[key];
@@ -56,6 +110,12 @@ const MealPlansScreen = ({ navigation }) => {
     const imageSource = plan.image 
       ? (typeof plan.image === 'string' ? { uri: plan.image } : plan.image)
       : require('../../assets/images/meal-plans/fitfuel.jpg'); // Use existing image as default
+
+    // Get discount information for this plan
+    const planDiscount = discountData[plan.id || plan._id];
+    const originalPrice = plan.basePrice || plan.price || 25000;
+    const hasDiscount = planDiscount && planDiscount.discountPercent > 0;
+    const discountedPrice = hasDiscount ? planDiscount.discountedPrice || (originalPrice - planDiscount.discountAmount) : originalPrice;
 
     return (
       <TouchableOpacity
@@ -74,8 +134,13 @@ const MealPlansScreen = ({ navigation }) => {
         activeOpacity={0.9}
       >
         <View style={styles(colors).cardContainer}>
-          {/* Tag Badge */}
-          {plan.tag && (
+          {/* Discount Pill - Priority over tag badge */}
+          {hasDiscount ? (
+            <View style={[styles(colors).discountPill]}>
+              <Ionicons name="gift-outline" size={16} color="#333" />
+              <Text style={styles(colors).discountPillText}>Up to {planDiscount.discountPercent}% Off</Text>
+            </View>
+          ) : plan.tag && (
             <View style={[styles(colors).tagBadge, { backgroundColor: plan.gradient[0] }]}>
               <Text style={styles(colors).tagText}>{plan.tag}</Text>
             </View>
@@ -124,13 +189,36 @@ const MealPlansScreen = ({ navigation }) => {
             {/* Pricing */}
             <View style={styles(colors).pricingContainer}>
               <View style={styles(colors).priceInfo}>
-                <Text style={styles(colors).currentPrice}>₦{plan.price.toLocaleString()}</Text>
-                <Text style={styles(colors).originalPrice}>₦{plan.originalPrice.toLocaleString()}</Text>
-                <View style={styles(colors).savingsBadge}>
-                  <Text style={styles(colors).savingsText}>
-                    Save ₦{(plan.originalPrice - plan.price).toLocaleString()}
-                  </Text>
-                </View>
+                {discountLoading ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <>
+                    <Text style={styles(colors).currentPrice}>
+                      ₦{discountedPrice.toLocaleString()}
+                    </Text>
+                    {hasDiscount ? (
+                      <>
+                        <Text style={styles(colors).originalPrice}>
+                          ₦{originalPrice.toLocaleString()}
+                        </Text>
+                        <View style={styles(colors).savingsBadge}>
+                          <Text style={styles(colors).savingsText}>
+                            {planDiscount.discountPercent}% OFF
+                          </Text>
+                        </View>
+                        {planDiscount.reason && (
+                          <Text style={styles(colors).discountReason} numberOfLines={1}>
+                            🎉 {planDiscount.reason}
+                          </Text>
+                        )}
+                      </>
+                    ) : (
+                      <Text style={styles(colors).originalPrice}>
+                        ₦{originalPrice.toLocaleString()}
+                      </Text>
+                    )}
+                  </>
+                )}
               </View>
               
               <TouchableOpacity 
@@ -209,7 +297,7 @@ const MealPlansScreen = ({ navigation }) => {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={refreshMealPlans}
+            onRefresh={handleRefresh}
             colors={[colors.primary]}
             tintColor={colors.primary}
           />
@@ -231,7 +319,7 @@ const MealPlansScreen = ({ navigation }) => {
             <Ionicons name="alert-circle" size={48} color={colors.error} />
             <Text style={styles(colors).errorTitle}>Oops! Something went wrong</Text>
             <Text style={styles(colors).errorText}>{error || initialError}</Text>
-            <TouchableOpacity style={styles(colors).retryButton} onPress={refreshMealPlans}>
+            <TouchableOpacity style={styles(colors).retryButton} onPress={handleRefresh}>
               <Text style={styles(colors).retryButtonText}>Try Again</Text>
             </TouchableOpacity>
           </View>
@@ -564,6 +652,52 @@ const styles = (colors) => StyleSheet.create({
     fontWeight: 'bold',
     color: colors.white,
   },
+  // New Discount Pill Design (matching provided image)
+  discountPill: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F4F0', // Light cream background like in the image
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20, // Fully rounded pill shape
+    zIndex: 10,
+    elevation: 3,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  discountPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 4,
+  },
+  // Keep old discountBadge for backward compatibility
+  discountBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: colors.error, // Use red/orange for urgency
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 10,
+    elevation: 3,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  discountBadgeText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   imageContainer: {
     position: 'relative',
     height: 160,
@@ -661,6 +795,13 @@ const styles = (colors) => StyleSheet.create({
     fontSize: 11,
     color: colors.primary,
     fontWeight: '600',
+  },
+  discountReason: {
+    fontSize: 10,
+    color: colors.primary,
+    fontWeight: '500',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   selectButton: {
     flexDirection: 'row',

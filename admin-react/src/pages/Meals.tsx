@@ -755,18 +755,15 @@ const Meals: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {(() => {
-                          // Calculate proper pricing like in MealCard
-                          const ingredients = meal.pricing?.ingredients || 0;
-                          const cookingCosts = meal.pricing?.cookingCosts || 0;
-                          const packaging = meal.pricing?.packaging || 0;
-                          const delivery = meal.pricing?.delivery || 0;
-                          const platformFee = meal.pricing?.platformFee || 0;
-
-                          const totalCosts = ingredients + cookingCosts + packaging + delivery;
-                          const profit = totalCosts * 0.4;
-                          const totalPrice = totalCosts + profit + platformFee;
-                          const chefEarnings = ingredients + cookingCosts + (profit * 0.5);
-                          const chomaEarnings = packaging + delivery + (profit * 0.5) + platformFee;
+                          const {
+                            ingredients = 0,
+                            cookingCosts = 0,
+                            totalCosts = 0,
+                            profit = 0,
+                            totalPrice = 0,
+                            chefEarnings = 0,
+                            chomaEarnings = 0
+                          } = meal.pricing || {};
 
                           return (
                             <div className="text-sm text-gray-900 dark:text-neutral-100">

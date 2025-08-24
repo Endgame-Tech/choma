@@ -7,14 +7,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../styles/theme';
-import { THEME } from '../utils/colors';
+// import { THEME } from '../utils/colors';
 
 // Import all screen components
 import HomeScreen from '../screens/home/HomeScreen';
 import WelcomeScreen from '../screens/home/WelcomeScreen';
 
-// Import swipeable wrapper
-import SwipeableTabNavigator from '../components/SwipeableTabNavigator';
+// Removed SwipeableTabNavigator - using default navigation
 
 // Auth screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -181,34 +180,10 @@ const TabNavigator = () => {
         </View>
       )}
     >
-      <Tab.Screen name="Home">
-        {(props) => (
-          <SwipeableTabNavigator>
-            <HomeScreen {...props} />
-          </SwipeableTabNavigator>
-        )}
-      </Tab.Screen>
-      <Tab.Screen name="Search">
-        {(props) => (
-          <SwipeableTabNavigator>
-            <SearchScreen {...props} />
-          </SwipeableTabNavigator>
-        )}
-      </Tab.Screen>
-      <Tab.Screen name="Orders">
-        {(props) => (
-          <SwipeableTabNavigator>
-            <OrdersScreen {...props} />
-          </SwipeableTabNavigator>
-        )}
-      </Tab.Screen>
-      <Tab.Screen name="Profile">
-        {(props) => (
-          <SwipeableTabNavigator>
-            <ProfileScreen {...props} />
-          </SwipeableTabNavigator>
-        )}
-      </Tab.Screen>
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Orders" component={OrdersScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };

@@ -184,7 +184,7 @@ const PaymentHistoryScreen = ({ navigation }) => {
       </Text>
       <TouchableOpacity 
         style={styles(colors).exploreButton}
-        onPress={() => navigation.navigate('MealPlans')}
+        onPress={() => navigation.navigate('Search')}
       >
         <Text style={styles(colors).exploreButtonText}>Explore Meal Plans</Text>
       </TouchableOpacity>

@@ -2,13 +2,14 @@ import React from 'react';
 import { dashboardApi } from '../services/api';
 import { useCachedApi } from '../hooks/useCachedApi';
 import { CACHE_DURATIONS } from '../services/cacheService';
+import UserActivityDashboard from '../components/UserActivityDashboard';
 
 const Dashboard: React.FC = () => {
-  const { 
-    data: stats, 
-    loading, 
-    error, 
-    refetch 
+  const {
+    data: stats,
+    loading,
+    error,
+    refetch
   } = useCachedApi(
     () => dashboardApi.getStats(),
     {
@@ -31,7 +32,7 @@ const Dashboard: React.FC = () => {
       <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
         <h3 className="text-red-800 font-medium">Error loading dashboard</h3>
         <p className="text-red-600">{error}</p>
-        <button 
+        <button
           onClick={refetch}
           className="mt-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded text-sm"
         >
@@ -132,15 +133,14 @@ const Dashboard: React.FC = () => {
                       {formatCurrency(order.totalAmount)}
                     </p>
                     <span
-                      className={`inline-block px-2 py-1 text-xs rounded ${
-                        order.orderStatus === 'Completed' || order.orderStatus === 'Delivered'
-                          ? 'bg-green-100 text-green-800'
-                          : order.orderStatus === 'Confirmed'
+                      className={`inline-block px-2 py-1 text-xs rounded ${order.orderStatus === 'Completed' || order.orderStatus === 'Delivered'
+                        ? 'bg-green-100 text-green-800'
+                        : order.orderStatus === 'Confirmed'
                           ? 'bg-blue-100 text-blue-800'
                           : order.orderStatus === 'Cancelled'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
                     >
                       {order.orderStatus}
                     </span>
@@ -152,7 +152,12 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2">
+          <UserActivityDashboard />
+        </div>
         <div className="bg-white/90 dark:bg-neutral-800/90 p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">Quick Actions</h3>
           <div className="space-y-3">

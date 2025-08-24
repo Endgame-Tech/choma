@@ -255,6 +255,16 @@ export interface BulkAssignmentData {
   notes?: string
 }
 
+// Delivery Price
+export interface DeliveryPrice {
+  _id: string;
+  location: string;
+  price: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Chef Performance Data
 export interface ChefPerformanceData {
   _id: string

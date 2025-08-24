@@ -1,5 +1,9 @@
 # choma Admin Dashboard - React
 
+## Delivery Prices Permission
+
+Admin roles now include a `deliveryPrices` permission for controlling access to the Delivery Prices management page in the sidebar. Update your roles in `AdminPermissions` and `PREDEFINED_ROLES` as needed.
+
 A modern admin dashboard built with React, TypeScript, and Tailwind CSS.
 
 ## Features
@@ -15,11 +19,13 @@ A modern admin dashboard built with React, TypeScript, and Tailwind CSS.
 ## Getting Started
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
 
 2. Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -28,7 +34,7 @@ A modern admin dashboard built with React, TypeScript, and Tailwind CSS.
 
 ## Project Structure
 
-```
+```bash
 src/
 ├── components/          # Reusable UI components
 │   ├── Layout.tsx      # Main layout wrapper
@@ -62,4 +68,5 @@ The app is configured to proxy API requests to `http://localhost:5001`. Make sur
 - **Tailwind CSS** - Utility-first CSS
 - **Vite** - Build tool
 - **React Router** - Client-side routing
+
 - **Heroicons** - Icon library

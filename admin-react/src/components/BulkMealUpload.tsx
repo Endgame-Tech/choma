@@ -15,7 +15,6 @@ interface ExcelMealData {
   description?: string
   ingredients: number // Ingredients cost - user inputs this
   packaging: number
-  delivery: number
   platformFee: number
   category?: string
   calories?: number
@@ -49,7 +48,6 @@ interface ProcessedMealData {
     ingredients: number
     cookingCosts: number
     packaging: number
-    delivery: number
     platformFee: number
     totalCosts: number
     profit: number
@@ -118,10 +116,9 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
         'Description': 'Traditional Nigerian rice dish cooked with tomatoes, peppers, and spices, served with grilled chicken',
         'Ingredients (₦)': 800,
         'Packaging (₦)': 150,
-        'Delivery (₦)': 200,
         'Platform Fee (₦)': 300,
 
-        // Optional Fields (columns F-U)
+        // Optional Fields (columns F-T)
         'Category': 'Lunch',
         'Calories': 450,
         'Protein (g)': 25,
@@ -144,7 +141,6 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
         'Description': 'Rich Nigerian soup made with ground egusi seeds, leafy vegetables, meat and fish, served with smooth pounded yam',
         'Ingredients (₦)': 1000,
         'Packaging (₦)': 200,
-        'Delivery (₦)': 250,
         'Platform Fee (₦)': 350,
         'Category': 'Dinner',
         'Calories': 520,
@@ -168,7 +164,6 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
         'Description': 'Fresh mix of seasonal tropical fruits with a light honey dressing and mint leaves',
         'Ingredients (₦)': 400,
         'Packaging (₦)': 100,
-        'Delivery (₦)': 150,
         'Platform Fee (₦)': 200,
         'Category': 'Dessert',
         'Calories': 180,
@@ -194,10 +189,10 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
     XLSX.utils.book_append_sheet(wb, ws, 'Meals Template')
 
     // Ensure data types are preserved
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:U4')
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:T4')
     for (let R = range.s.r + 1; R <= range.e.r; ++R) {
       // Set numeric columns as numbers
-      for (let C = 2; C <= 5; ++C) { // Ingredients, Packaging, Delivery, Platform Fee columns (columns C, D, E, F)
+      for (let C = 2; C <= 5; ++C) { // Ingredients, Packaging, Platform Fee columns (columns C, D, F)
         const cell_address = XLSX.utils.encode_cell({ c: C, r: R })
         if (!ws[cell_address]) continue
         ws[cell_address].t = 'n' // Force number type
@@ -210,7 +205,6 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
       { wch: 40 }, // Description
       { wch: 12 }, // Ingredients
       { wch: 12 }, // Packaging
-      { wch: 12 }, // Delivery
       { wch: 12 }, // Platform Fee
       { wch: 12 }, // Category
       { wch: 10 }, // Calories
@@ -251,10 +245,6 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
 
       if (!meal.packaging || isNaN(meal.packaging) || meal.packaging <= 0) {
         errors.push({ row: rowNum, field: 'Packaging', message: 'Valid packaging cost is required (must be > 0)', value: meal.packaging })
-      }
-
-      if (!meal.delivery || isNaN(meal.delivery) || meal.delivery <= 0) {
-        errors.push({ row: rowNum, field: 'Delivery', message: 'Valid delivery cost is required (must be > 0)', value: meal.delivery })
       }
 
       if (!meal.platformFee || isNaN(meal.platformFee) || meal.platformFee < 0) {
@@ -302,7 +292,6 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
     return excelData.map(meal => {
       const ingredients = Number(meal.ingredients) || 0
       const packaging = Number(meal.packaging) || 0
-      const delivery = Number(meal.delivery) || 0
       const platformFee = Number(meal.platformFee) || 0
       const preparationTime = Number(meal.preparationTime) || 0
 
@@ -314,13 +303,13 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
       const cookingCosts = calculateCookingCost(preparationTime, complexityLevel)
 
       // Calculate total costs and pricing
-      const totalCosts = ingredients + cookingCosts + packaging + delivery
+      const totalCosts = ingredients + cookingCosts + packaging
       const profit = totalCosts * 0.4 // 40% profit
       const totalPrice = totalCosts + profit + platformFee
 
       // Calculate revenue splits
       const chefEarnings = ingredients + cookingCosts + (profit * 0.5) // Chef gets ingredients + cooking + 50% of profit
-      const chomaEarnings = packaging + delivery + (profit * 0.5) + platformFee // Choma gets packaging + delivery + 50% of profit + platform fee
+      const chomaEarnings = packaging + (profit * 0.5) + platformFee // Choma gets packaging + 50% of profit + platform fee
 
       return {
         name: meal.name?.trim() || '',
@@ -329,7 +318,6 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
           ingredients,
           cookingCosts,
           packaging,
-          delivery,
           platformFee,
           totalCosts,
           profit,
@@ -403,7 +391,6 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
             'Description': 'description',
             'Ingredients (₦)': 'ingredients',
             'Packaging (₦)': 'packaging',
-            'Delivery (₦)': 'delivery',
             'Platform Fee (₦)': 'platformFee',
             'Category': 'category',
             'Calories': 'calories',
@@ -431,7 +418,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
 
               if (fieldName && row[index] !== undefined && row[index] !== '') {
                 // Convert numeric fields
-                if (['ingredients', 'packaging', 'delivery', 'platformFee', 'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'weight', 'preparationTime'].includes(fieldName)) {
+                if (['ingredients', 'packaging', 'platformFee', 'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'weight', 'preparationTime'].includes(fieldName)) {
                   const numValue = Number(row[index])
                     ; (meal as Record<keyof ExcelMealData, unknown>)[fieldName] = numValue
                 } else {
@@ -673,7 +660,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
                 <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
                   <li>Download the Excel template below</li>
                   <li>Fill in your meal data following the column headers exactly</li>
-                  <li>Required columns: Meal Name, Ingredients, Packaging, Delivery, Platform Fee, Preparation Time</li>
+                  <li>Required columns: Meal Name, Ingredients, Packaging, Platform Fee, Preparation Time</li>
                   <li>Optional columns: Description, nutrition, ingredient, and metadata fields</li>
                   <li>Use TRUE/FALSE for Available column</li>
                   <li>Cooking costs are automatically calculated based on preparation time and complexity level</li>

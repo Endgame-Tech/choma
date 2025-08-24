@@ -4,12 +4,12 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import biometricAuth from '../../services/biometricAuth';
 import { useAuth } from '../../context/AuthContext';
+import { useAlert } from '../../contexts/AlertContext';
 
 const BiometricLogin = ({ onSuccess, onError, style }) => {
   const [isAvailable, setIsAvailable] = useState(false);
@@ -19,6 +19,7 @@ const BiometricLogin = ({ onSuccess, onError, style }) => {
   const [authenticating, setAuthenticating] = useState(false);
   
   const { loginWithBiometric } = useAuth();
+  const { showError } = useAlert();
 
   useEffect(() => {
     checkBiometricAvailability();
@@ -62,10 +63,9 @@ const BiometricLogin = ({ onSuccess, onError, style }) => {
             onSuccess && onSuccess();
           } else {
             onError && onError(loginResult.error || 'Login failed');
-            Alert.alert(
+            showError(
               'Login Failed',
-              loginResult.error || 'Failed to log in with biometric authentication.',
-              [{ text: 'OK' }]
+              loginResult.error || 'Failed to log in with biometric authentication.'
             );
           }
         } else {
@@ -76,20 +76,18 @@ const BiometricLogin = ({ onSuccess, onError, style }) => {
         onError && onError(result.error);
         
         if (result.errorCode !== 'user_cancel') {
-          Alert.alert(
+          showError(
             'Authentication Failed',
-            result.error || 'Biometric authentication failed. Please try again.',
-            [{ text: 'OK' }]
+            result.error || 'Biometric authentication failed. Please try again.'
           );
         }
       }
     } catch (error) {
       console.error('Error during biometric login:', error);
       onError && onError(error.message);
-      Alert.alert(
+      showError(
         'Error',
-        'An error occurred during biometric authentication. Please try again.',
-        [{ text: 'OK' }]
+        'An error occurred during biometric authentication. Please try again.'
       );
     } finally {
       setAuthenticating(false);

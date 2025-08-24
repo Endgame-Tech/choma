@@ -11,7 +11,8 @@ const StandardHeader = ({
   rightIcon = "help-circle-outline", 
   onRightPress,
   showRightIcon = true,
-  navigation 
+  navigation,
+  rightComponent
 }) => {
   const { colors } = useTheme();
   
@@ -28,16 +29,20 @@ const StandardHeader = ({
         <Text style={styles(colors).headerTitle}>{title}</Text>
       </View>
 
-        <View style={styles(colors).notificationContainer}>
-          <NotificationIcon navigation={navigation} />
-        </View>
+        {navigation && (
+          <View style={styles(colors).notificationContainer}>
+            <NotificationIcon navigation={navigation} />
+          </View>
+        )}
 
 
       
       {showRightIcon && (
-        <TouchableOpacity style={styles(colors).rightButton} onPress={onRightPress}>
-          <Ionicons name={rightIcon} size={24} color={colors.textSecondary} />
-        </TouchableOpacity>
+        rightComponent ? rightComponent : (
+          <TouchableOpacity style={styles(colors).rightButton} onPress={onRightPress}>
+            <Ionicons name={rightIcon} size={24} color={colors.textSecondary} />
+          </TouchableOpacity>
+        )
       )}
     </View>
   );
@@ -52,14 +57,19 @@ const styles = (colors) => StyleSheet.create({
     backgroundColor: colors.background,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
+    position: 'relative',
   },
   backButton: {
     padding: 8,
     marginRight: 12,
+    zIndex: 1,
   },
   headerContent: {
-    flex: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
     alignItems: 'center',
+    zIndex: 0,
   },
   headerTitle: {
     fontSize: 18,
@@ -69,9 +79,10 @@ const styles = (colors) => StyleSheet.create({
   rightButton: {
     padding: 8,
     marginLeft: 12,
+    zIndex: 1,
   },
   notificationContainer: {
-    // Added for consistency
+    zIndex: 1,
   },
 });
 

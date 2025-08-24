@@ -24,6 +24,8 @@ import { useMealPlans } from "../../hooks/useMealPlans";
 import { useTheme } from "../../styles/theme";
 import { COLORS, THEME } from "../../utils/colors";
 import apiService from "../../services/api";
+import discountService from "../../services/discountService";
+import { useAuth } from "../../hooks/useAuth";
 import MealCardSkeleton from "../../components/meal-plans/MealCardSkeleton";
 import Tutorial from "../../components/tutorial/Tutorial";
 import { homeScreenTutorialSteps } from "../../utils/tutorialSteps";
@@ -34,7 +36,12 @@ const { width } = Dimensions.get("window");
 
 const HomeScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("All Plans");
+
+  // Discount state
+  const [discountData, setDiscountData] = useState({});
+  const [discountLoading, setDiscountLoading] = useState(true);
   const [currentPopularIndex, setCurrentPopularIndex] = useState(0);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const popularScrollRef = useRef(null);
@@ -129,6 +136,19 @@ const HomeScreen = ({ navigation }) => {
     { id: "Wellness", label: "Wellness" },
   ];
 
+  // Prefer the most complete description field available for cards
+  const getPlanDescription = (plan) => {
+    if (!plan) return "";
+    return (
+      plan.longDescription ||
+      plan.fullDescription ||
+      plan.description ||
+      plan.summary ||
+      plan.shortDescription ||
+      ""
+    );
+  };
+
   // Sort mealPlans so that newest appear first and determine which are "new"
   const displayPlans = React.useMemo(() => {
     const sortedPlans = [...mealPlans].sort((a, b) => {
@@ -152,6 +172,55 @@ const HomeScreen = ({ navigation }) => {
     loadBanners();
     loadActiveSubscription();
   }, []);
+
+  // Fetch discount data for meal plans
+  useEffect(() => {
+    const fetchDiscountData = async () => {
+      if (!user || !mealPlans || mealPlans.length === 0) {
+        setDiscountLoading(false);
+        return;
+      }
+
+      try {
+        setDiscountLoading(true);
+        console.log("💰 HomeScreen: Fetching discount data for meal plans");
+
+        const discounts = {};
+
+        // Fetch discount for each meal plan
+        for (const plan of mealPlans) {
+          try {
+            const discount = await discountService.calculateDiscount(
+              user,
+              plan
+            );
+            discounts[plan.id || plan._id] = discount;
+          } catch (error) {
+            console.error(
+              `Error calculating discount for plan ${plan.id}:`,
+              error
+            );
+            // Set default no discount for this plan
+            discounts[plan.id || plan._id] = {
+              discountPercent: 0,
+              discountAmount: 0,
+              reason: "No discount available",
+            };
+          }
+        }
+
+        console.log("💰 HomeScreen: All discount data fetched:", discounts);
+        setDiscountData(discounts);
+      } catch (error) {
+        console.error("Error fetching discount data:", error);
+        setDiscountData({});
+      } finally {
+        setDiscountLoading(false);
+      }
+    };
+
+    fetchDiscountData();
+  }, [user, mealPlans]);
 
   const loadBanners = async () => {
     try {
@@ -282,7 +351,7 @@ const HomeScreen = ({ navigation }) => {
       subtitle: "Update delivery address",
       onPress: () => {
         setShowSubscriptionMenu(false);
-        navigation.navigate("Profile", { tab: "address" });
+        navigation.navigate("Profile", { tab: "profile", editAddress: true });
       },
     },
     {
@@ -380,17 +449,20 @@ const HomeScreen = ({ navigation }) => {
 
   // Track impression when banner is displayed
   const [trackedImpressions, setTrackedImpressions] = useState(new Set());
-  
+
   useEffect(() => {
     if (banners && banners.length > 0 && banners[currentBannerIndex]) {
       const banner = banners[currentBannerIndex];
       if (banner._id && !trackedImpressions.has(banner._id)) {
         // Track impression only once per session per banner
-        apiService.trackBannerImpression(banner._id).then(() => {
-          setTrackedImpressions(prev => new Set([...prev, banner._id]));
-        }).catch(err => {
-          console.log('Failed to track banner impression:', err);
-        });
+        apiService
+          .trackBannerImpression(banner._id)
+          .then(() => {
+            setTrackedImpressions((prev) => new Set([...prev, banner._id]));
+          })
+          .catch((err) => {
+            console.log("Failed to track banner impression:", err);
+          });
       }
     }
   }, [currentBannerIndex, banners, trackedImpressions]);
@@ -968,6 +1040,20 @@ const HomeScreen = ({ navigation }) => {
             style={styles(colors).popularCardImage}
             defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
           />
+          {/* Discount Pill */}
+          {(() => {
+            const planDiscount = discountData[plan.id || plan._id];
+            const hasDiscount =
+              planDiscount && planDiscount.discountPercent > 0;
+            return hasDiscount ? (
+              <View style={styles(colors).homeDiscountPill}>
+                <Ionicons name="gift-outline" size={14} color="#333" />
+                <Text style={styles(colors).homeDiscountPillText}>
+                  Up to {planDiscount.discountPercent}% Off
+                </Text>
+              </View>
+            ) : null;
+          })()}
         </View>
 
         {/* Content Overlay with Gradient */}
@@ -988,7 +1074,7 @@ const HomeScreen = ({ navigation }) => {
               }
               size={20}
               color={
-                isBookmarked(plan.id || plan._id) ? colors.error : colors.black
+                isBookmarked(plan.id || plan._id) ? colors.error : "#FF9A3F"
               }
             />
           </TouchableOpacity>
@@ -997,7 +1083,7 @@ const HomeScreen = ({ navigation }) => {
             {plan.name}
           </Text>
           <Text style={styles(colors).popularCardDescription} numberOfLines={2}>
-            {plan.description ||
+            {getPlanDescription(plan) ||
               "Delicious and nutritious meal plan crafted for your healthy lifestyle"}
           </Text>
           <Text style={styles(colors).popularCardPrice}>
@@ -1022,7 +1108,7 @@ const HomeScreen = ({ navigation }) => {
         onPress={() => navigation.navigate("MealPlanDetail", { bundle: plan })}
         activeOpacity={0.8}
       >
-        {/* Large Image Container */}
+        {/* Image Container */}
         <View style={styles(colors).mealplanImageContainer}>
           <Image
             source={imageSource}
@@ -1042,7 +1128,7 @@ const HomeScreen = ({ navigation }) => {
               }
               size={20}
               color={
-                isBookmarked(plan.id || plan._id) ? colors.error : colors.black
+                isBookmarked(plan.id || plan._id) ? colors.error : "#FF9A3F"
               }
             />
           </TouchableOpacity>
@@ -1054,27 +1140,34 @@ const HomeScreen = ({ navigation }) => {
             </View>
           )}
 
-          {/* Content Overlay with Gradient */}
-          <LinearGradient
-            colors={[
-              "rgba(0, 0, 0, 0)",
-              "rgba(0, 0, 0, 0)",
-              "rgba(0, 0, 0, 0.9)",
-            ]}
-            locations={[0, 0.4, 1]} // Example: stays fully transparent up to 60% of the gradient's height/width
-            style={styles(colors).popularCardContent}
-          >
-            <Text style={styles(colors).mealplanTitle} numberOfLines={1}>
-              {plan.name}
-            </Text>
-            <Text style={styles(colors).mealplanDescription} numberOfLines={2}>
-              {plan.description ||
-                "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
-            </Text>
-            <Text style={styles(colors).mealplanPrice}>
-              ₦{plan.price?.toLocaleString()}
-            </Text>
-          </LinearGradient>
+          {/* Discount Pill - Bottom Right */}
+          {(() => {
+            const planDiscount = discountData[plan.id || plan._id];
+            const hasDiscount =
+              planDiscount && planDiscount.discountPercent > 0;
+            return hasDiscount ? (
+              <View style={styles(colors).homeDiscountPill}>
+                <Ionicons name="gift-outline" size={14} color="#333" />
+                <Text style={styles(colors).homeDiscountPillText}>
+                  Up to {planDiscount.discountPercent}% Off
+                </Text>
+              </View>
+            ) : null;
+          })()}
+        </View>
+
+        {/* Text Content Below Image */}
+        <View style={styles(colors).mealplanTextContent}>
+          <Text style={styles(colors).mealplanTitle} numberOfLines={1}>
+            {plan.name}
+          </Text>
+          <Text style={styles(colors).mealplanDescription} numberOfLines={2}>
+            {getPlanDescription(plan) ||
+              "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
+          </Text>
+          <Text style={styles(colors).mealplanPrice}>
+            ₦{plan.price?.toLocaleString()}
+          </Text>
         </View>
       </TouchableOpacity>
     );
@@ -1187,7 +1280,7 @@ const HomeScreen = ({ navigation }) => {
                   }}
                   resizeMode="cover"
                 />
-                
+
                 {/* CTA Button Overlay - Visual only, banner handles the press */}
                 <View style={styles(colors).promoBannerCTA}>
                   <Text style={styles(colors).promoBannerCTAText}>
@@ -1233,7 +1326,27 @@ const HomeScreen = ({ navigation }) => {
 
       {/* Header */}
       <View style={styles(colors).header}>
-        <Text style={styles(colors).headerTitle}>Choma</Text>
+        <TouchableOpacity
+          style={styles(colors).locationContainer}
+          onPress={() =>
+            navigation.navigate("Profile", {
+              tab: "profile",
+              editAddress: true,
+            })
+          }
+          activeOpacity={0.7}
+        >
+          <Ionicons name="location" size={16} color={colors.primary} />
+          <Text style={styles(colors).locationText} numberOfLines={1}>
+            {user?.address || "Set delivery address"}
+          </Text>
+          <Ionicons
+            name="chevron-down"
+            size={14}
+            color={colors.textMuted}
+            style={styles(colors).chevronIcon}
+          />
+        </TouchableOpacity>
 
         <View style={styles(colors).notificationContainer}>
           <NotificationIcon navigation={navigation} />
@@ -1600,12 +1713,10 @@ const styles = (colors) =>
       color: colors.textSecondary,
       marginLeft: 4,
       fontWeight: "500",
+      flex: 1,
     },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: "bold",
-      color: colors.text,
-      textAlign: "center",
+    chevronIcon: {
+      marginLeft: 4,
     },
     notificationContainer: {
       flex: 1,
@@ -1718,7 +1829,7 @@ const styles = (colors) =>
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: "600",
+      fontWeight: "350",
       marginBottom: 15,
       opacity: 0.7,
       color: colors.text,
@@ -1811,10 +1922,10 @@ const styles = (colors) =>
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: "rgba(0, 0, 0, 1)",
+      backgroundColor: "#1b1b1b",
       justifyContent: "center",
       alignItems: "center",
-      ...THEME.shadows.light,
+      // ...THEME.shadows.light,
     },
     popularFoodInfo: {
       position: "absolute",
@@ -1918,11 +2029,32 @@ const styles = (colors) =>
       height: "100%",
       resizeMode: "cover",
     },
+    // Home Screen Discount Pill
+    homeDiscountPill: {
+      position: "absolute",
+      bottom: 8,
+      right: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#F3E9DF",
+      paddingHorizontal: 8,
+      paddingVertical: 7,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: "#1b1b1b",
+      zIndex: 10,
+    },
+    homeDiscountPillText: {
+      fontSize: 15,
+      fontWeight: "450",
+      color: "#333",
+      marginLeft: 3,
+    },
     popularHeartButton: {
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: "rgba(255, 255, 255, 0.51)",
+      backgroundColor: colors.black,
       justifyContent: "center",
       alignItems: "center",
       alignSelf: "flex-start",
@@ -1963,27 +2095,22 @@ const styles = (colors) =>
     },
     mealplanCard: {
       width: "100%",
-      backgroundColor: colors.cardBackground,
       borderRadius: 20,
       overflow: "hidden",
       marginBottom: 0, // Remove margin as gap handles spacing
-      borderWidth: 1,
-      borderColor: colors.border,
-      elevation: 3,
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 4,
     },
     mealplanImageContainer: {
       position: "relative",
-      height: 200, // Much larger image height
+      height: 150, // Much larger image height
       width: "100%",
+      borderRadius: 20,
+      overflow: "hidden",
     },
     mealplanImage: {
       width: "100%",
       height: "100%",
       resizeMode: "cover",
+      borderRadius: 15,
     },
     mealplanHeartButton: {
       position: "absolute",
@@ -1992,14 +2119,11 @@ const styles = (colors) =>
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "rgba(255, 255, 255, 1)",
+      backgroundColor: colors.black,
       justifyContent: "center",
       alignItems: "center",
-      elevation: 2,
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
-      shadowRadius: 2,
+      borderWidth: 1,
+      borderColor: "#1b1b1b",
     },
     newBadge: {
       position: "absolute",
@@ -2015,31 +2139,25 @@ const styles = (colors) =>
       fontSize: 12,
       fontWeight: "bold",
     },
-    mealplanContentOverlay: {
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      padding: 20,
-      paddingTop: 90, // Extra padding for gradient effect
+    mealplanTextContent: {
+      padding: 16,
     },
     mealplanTitle: {
-      fontSize: 20,
-      fontWeight: "bold",
-      color: colors.white,
+      fontSize: 18,
+      fontWeight: 450,
+      color: colors.text,
       marginBottom: 6,
     },
     mealplanDescription: {
       fontSize: 14,
-      color: colors.white,
-      opacity: 0.9,
+      color: colors.textSecondary,
       marginBottom: 8,
       lineHeight: 20,
     },
     mealplanPrice: {
       fontSize: 20,
       fontWeight: "bold",
-      color: colors.primary,
+      color: colors.primaryDark,
     },
     // Subscription-focused UI Styles
     todaysMealsSection: {
@@ -2454,30 +2572,30 @@ const styles = (colors) =>
       paddingHorizontal: 20,
     },
     promoBannerContainer: {
-      position: 'relative',
+      position: "relative",
       borderRadius: THEME.borderRadius.large,
-      overflow: 'hidden',
+      overflow: "hidden",
       minHeight: 140,
       maxHeight: 140,
     },
     promoBannerImage: {
-      width: '100%',
-      height: '100%',
-      position: 'absolute',
+      width: "100%",
+      height: "100%",
+      position: "absolute",
       top: 0,
       left: 0,
     },
     promoBannerCTA: {
-      position: 'absolute',
+      position: "absolute",
       bottom: 15,
       right: 15,
       backgroundColor: colors.white,
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: THEME.borderRadius.xxl,
-      flexDirection: 'row',
-      alignItems: 'center',
-      shadowColor: '#000',
+      flexDirection: "row",
+      alignItems: "center",
+      shadowColor: "#000",
       shadowOffset: {
         width: 0,
         height: 2,
@@ -2491,7 +2609,7 @@ const styles = (colors) =>
     promoBannerCTAText: {
       color: colors.black,
       fontSize: 12,
-      fontWeight: '600',
+      fontWeight: "600",
       marginRight: 4,
     },
     promoBannerCTAIcon: {

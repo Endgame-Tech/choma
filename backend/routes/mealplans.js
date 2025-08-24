@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mealplanController = require('../controllers/mealplanController');
+const discountController = require('../controllers/discountController');
 const auth = require('../middleware/auth');
 const { cacheMiddleware } = require('../middleware/cacheMiddleware');
 
@@ -39,5 +40,8 @@ router.put('/:id', auth, mealplanController.updateMealPlan);
 
 // DELETE /api/mealplans/:id - Delete meal plan (protected route)
 router.delete('/:id', auth, mealplanController.deleteMealPlan);
+
+// GET /api/mealplans/:id/discount-rules - Get discount rules for a meal plan
+router.get('/:id/discount-rules', discountController.getDiscountRulesForMealPlan);
 
 module.exports = router;

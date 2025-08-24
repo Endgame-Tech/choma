@@ -33,6 +33,7 @@ import { NotificationProvider } from './src/context/NotificationContext';
 import { BookmarkProvider } from './src/context/BookmarkContext';
 import { OfflineProvider } from './src/context/OfflineContext';
 import { ThemeProvider } from './src/styles/theme';
+import { AlertProvider } from './src/contexts/AlertContext';
 
 // Navigation
 import AppNavigator from './src/navigation/AppNavigator';
@@ -179,10 +180,12 @@ export default function App() {
                   <NotificationProvider>
                     <BookmarkProvider>
                       <ThemeProvider>
-                        <NavigationContainer ref={navigationRef}>
-                          <StatusBar style="auto" />
-                          <AppNavigator isFirstLaunch={isFirstLaunch} onOnboardingComplete={() => setIsFirstLaunch(false)} />
-                        </NavigationContainer>
+                        <AlertProvider>
+                          <NavigationContainer ref={navigationRef}>
+                            <StatusBar style="auto" />
+                            <AppNavigator isFirstLaunch={isFirstLaunch} onOnboardingComplete={() => setIsFirstLaunch(false)} />
+                          </NavigationContainer>
+                        </AlertProvider>
                       </ThemeProvider>
                     </BookmarkProvider>
                   </NotificationProvider>

@@ -1,5 +1,6 @@
 import React from 'react'
 import { PromoBanner } from '../services/promoBannersApi'
+import { PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, ChartBarIcon } from '@heroicons/react/24/outline'
 
 interface BannerPreviewProps {
   banner: PromoBanner
@@ -60,7 +61,7 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({
             <div className="flex items-center gap-2">
               <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                 banner.isPublished 
-                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
                   : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
               }`}>
                 {banner.isPublished ? 'Published' : 'Draft'}
@@ -92,11 +93,11 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({
             
             {/* CTA Button Overlay - Positioned like mobile app */}
             <div className="absolute bottom-3 right-3">
-              <div className="bg-white rounded-full px-4 py-2 shadow-lg flex items-center gap-2">
-                <span className="text-black text-xs font-semibold">
+              <div className="bg-orange-500 rounded-full px-4 py-2 shadow-lg flex items-center gap-2">
+                <span className="text-white text-xs font-semibold">
                   {banner.ctaText}
                 </span>
-                <i className="fi fi-sr-angle-right text-black text-sm"></i>
+                <i className="fi fi-sr-angle-right text-white text-sm"></i>
               </div>
             </div>
           </div>
@@ -104,7 +105,11 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({
       </div>
 
       {/* Analytics and Details */}
-      <div className="p-4 bg-gray-50/90 dark:bg-neutral-900/90 border-t border-gray-200 dark:border-neutral-700">
+      <div className="p-4 bg-orange-50/50 dark:bg-orange-900/10 border-t border-gray-200 dark:border-neutral-700">
+        <div className="flex items-center gap-2 mb-3">
+          <ChartBarIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          <span className="text-xs font-medium text-orange-800 dark:text-orange-300 uppercase tracking-wider">Analytics</span>
+        </div>
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
@@ -119,7 +124,7 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({
             <div className="text-xs text-gray-500 dark:text-neutral-400">Clicks</div>
           </div>
           <div>
-            <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+            <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
               {banner.ctr || 0}%
             </div>
             <div className="text-xs text-gray-500 dark:text-neutral-400">CTR</div>
@@ -130,35 +135,43 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({
       {/* Action Buttons */}
       <div className="p-4 border-t border-gray-200 dark:border-neutral-700">
         <div className="flex justify-between items-center">
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
               onClick={() => onEdit(banner)}
-              className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+              className="inline-flex items-center p-2 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
               title="Edit banner details"
             >
-              <i className="fi fi-sr-pencil mr-1"></i>
-              Edit
+              <PencilIcon className="h-4 w-4" />
             </button>
             <button
               onClick={() => onDelete(banner._id)}
-              className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+              className="inline-flex items-center p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
               title="Delete banner permanently"
             >
-              <i className="fi fi-sr-trash mr-1"></i>
-              Delete
+              <TrashIcon className="h-4 w-4" />
             </button>
           </div>
           
           <button
             onClick={() => onPublishToggle(banner._id)}
-            className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               banner.isPublished
                 ? 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:hover:bg-gray-900/50'
-                : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800'
+                : 'bg-orange-600 text-white hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800'
             }`}
             title={banner.isPublished ? 'Click to unpublish' : 'Click to publish'}
           >
-            {banner.isPublished ? 'Unpublish' : 'Publish'}
+            {banner.isPublished ? (
+              <>
+                <EyeSlashIcon className="h-4 w-4" />
+                Unpublish
+              </>
+            ) : (
+              <>
+                <EyeIcon className="h-4 w-4" />
+                Publish
+              </>
+            )}
           </button>
         </div>
       </div>

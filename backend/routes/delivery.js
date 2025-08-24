@@ -17,6 +17,9 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
+// Public route - Get delivery price by location
+router.get('/price', deliveryController.getDeliveryPriceByLocation);
+
 // Public route - Get delivery tracking (no auth required for customer convenience)
 router.get('/tracking/:trackingId', deliveryController.getDeliveryTracking);
 

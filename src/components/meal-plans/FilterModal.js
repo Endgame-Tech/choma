@@ -504,7 +504,7 @@ const styles = (colors) => StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 12,
     backgroundColor: colors.cardBackground,
-    borderRadius: 12,
+    borderRadius: 30,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: colors.border,
@@ -540,7 +540,7 @@ const styles = (colors) => StyleSheet.create({
     color: colors.textSecondary,
   },
   applyButton: {
-    borderRadius: 12,
+    borderRadius: 30,
     overflow: 'hidden',
   },
   applyButtonGradient: {

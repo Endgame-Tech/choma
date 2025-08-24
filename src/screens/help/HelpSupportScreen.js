@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   StatusBar,
   ActivityIndicator,
   TextInput,
@@ -17,9 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../styles/theme';
 import StandardHeader from '../../components/layout/Header';
 import apiService from '../../services/api';
+import { useAlert } from '../../contexts/AlertContext';
 
 const HelpSupportScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const { showError, showSuccess, showConfirm, showInfo } = useAlert();
   const [selectedTab, setSelectedTab] = useState('faq');
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -111,7 +112,7 @@ const HelpSupportScreen = ({ navigation }) => {
 
   const submitContactForm = async () => {
     if (!contactForm.subject.trim() || !contactForm.message.trim()) {
-      Alert.alert('Missing Information', 'Please fill in both subject and message fields.');
+      showError('Missing Information', 'Please fill in both subject and message fields.');
       return;
     }
 
@@ -147,11 +148,11 @@ const HelpSupportScreen = ({ navigation }) => {
           }}]
         );
       } else {
-        Alert.alert('Submission Failed', result.error || 'Unable to submit your ticket. Please try again.');
+        showError('Submission Failed', result.error || 'Unable to submit your ticket. Please try again.');
       }
     } catch (error) {
       console.error('Support ticket submission error:', error);
-      Alert.alert('Error', 'Failed to submit support ticket. Please try again.');
+      showError('Error', 'Failed to submit support ticket. Please try again.');
     } finally {
       setSubmitting(false);
     }

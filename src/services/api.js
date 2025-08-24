@@ -489,6 +489,11 @@ class ApiService {
     return await this.request(`/auth/delivery/track/${orderId}`);
   }
 
+  async getDeliveryPrice(address) {
+    await this.getStoredToken();
+    return await this.request(`/delivery/price?address=${encodeURIComponent(address)}`);
+  }
+
   // Meal plans methods - real data only
   async getMealPlans() {
     console.log("🔄 Fetching meal plans from backend...");
@@ -1628,6 +1633,172 @@ class ApiService {
     }
   }
 
+  // ==================== DISCOUNT SYSTEM METHODS ====================
+
+  // Get discount rules for a specific meal plan
+  async getMealPlanDiscountRules(mealPlanId) {
+    console.log("💰 Fetching meal plan discount rules for:", mealPlanId);
+    await this.getStoredToken();
+
+    const result = await this.request(`/meal-plans/${mealPlanId}/discount-rules`);
+
+    if (result.success) {
+      console.log("✅ Meal plan discount rules fetched successfully");
+    } else {
+      console.error("❌ Failed to fetch meal plan discount rules:", result.error);
+    }
+
+    return result;
+  }
+
+  // Get global discount rules
+  async getGlobalDiscountRules() {
+    console.log("💰 Fetching global discount rules");
+    await this.getStoredToken();
+
+    const result = await this.request("/discount-rules/global");
+
+    if (result.success) {
+      console.log("✅ Global discount rules fetched successfully");
+    } else {
+      console.error("❌ Failed to fetch global discount rules:", result.error);
+    }
+
+    return result;
+  }
+
+  // Get user activity data for discount calculation
+  async getUserActivity(userId) {
+    console.log("📊 Fetching user activity for discount calculation:", userId);
+    await this.getStoredToken();
+
+    const result = await this.request(`/users/${userId}/activity`);
+
+    if (result.success) {
+      console.log("✅ User activity fetched successfully");
+      
+      // Enhance the activity data with calculated fields
+      const activityData = result.data;
+      const now = new Date();
+      
+      if (activityData.lastOrderDate) {
+        const lastOrder = new Date(activityData.lastOrderDate);
+        const daysDiff = Math.floor((now - lastOrder) / (1000 * 60 * 60 * 24));
+        activityData.daysSinceLastOrder = daysDiff;
+        activityData.monthsSinceLastOrder = Math.floor(daysDiff / 30);
+      }
+
+      if (activityData.registrationDate) {
+        const registration = new Date(activityData.registrationDate);
+        const daysDiff = Math.floor((now - registration) / (1000 * 60 * 60 * 24));
+        activityData.daysSinceRegistration = daysDiff;
+      }
+
+      // Determine if user is consistent (has ordered at least once every 2 months)
+      activityData.isConsistentUser = activityData.totalOrders >= 3 && 
+                                      activityData.monthsSinceLastOrder <= 2;
+
+      result.data = activityData;
+    } else {
+      console.error("❌ Failed to fetch user activity:", result.error);
+    }
+
+    return result;
+  }
+
+  // Calculate discount for user and meal plan
+  async calculateUserDiscount(userId, mealPlanId) {
+    console.log("🧮 Calculating discount for user:", userId, "meal plan:", mealPlanId);
+    await this.getStoredToken();
+
+    const result = await this.request("/discounts/calculate", {
+      method: "POST",
+      body: { userId, mealPlanId }
+    });
+
+    if (result.success) {
+      console.log("✅ Discount calculated successfully:", result.data);
+    } else {
+      console.error("❌ Failed to calculate discount:", result.error);
+    }
+
+    return result;
+  }
+
+  // ==================== ADMIN DISCOUNT MANAGEMENT ====================
+
+  // Create discount rule (Admin only)
+  async createDiscountRule(discountRuleData) {
+    console.log("➕ Creating discount rule");
+    await this.getStoredToken();
+
+    const result = await this.request("/admin/discount-rules", {
+      method: "POST",
+      body: discountRuleData
+    });
+
+    if (result.success) {
+      console.log("✅ Discount rule created successfully");
+    } else {
+      console.error("❌ Failed to create discount rule:", result.error);
+    }
+
+    return result;
+  }
+
+  // Update discount rule (Admin only)
+  async updateDiscountRule(ruleId, discountRuleData) {
+    console.log("📝 Updating discount rule:", ruleId);
+    await this.getStoredToken();
+
+    const result = await this.request(`/admin/discount-rules/${ruleId}`, {
+      method: "PUT",
+      body: discountRuleData
+    });
+
+    if (result.success) {
+      console.log("✅ Discount rule updated successfully");
+    } else {
+      console.error("❌ Failed to update discount rule:", result.error);
+    }
+
+    return result;
+  }
+
+  // Get all discount rules (Admin only)
+  async getAllDiscountRules() {
+    console.log("📋 Fetching all discount rules");
+    await this.getStoredToken();
+
+    const result = await this.request("/admin/discount-rules");
+
+    if (result.success) {
+      console.log("✅ All discount rules fetched successfully");
+    } else {
+      console.error("❌ Failed to fetch discount rules:", result.error);
+    }
+
+    return result;
+  }
+
+  // Delete discount rule (Admin only)
+  async deleteDiscountRule(ruleId) {
+    console.log("🗑️ Deleting discount rule:", ruleId);
+    await this.getStoredToken();
+
+    const result = await this.request(`/admin/discount-rules/${ruleId}`, {
+      method: "DELETE"
+    });
+
+    if (result.success) {
+      console.log("✅ Discount rule deleted successfully");
+    } else {
+      console.error("❌ Failed to delete discount rule:", result.error);
+    }
+
+    return result;
+  }
+
   // Convenience HTTP methods
   async get(endpoint, options = {}) {
     await this.getStoredToken();
@@ -1655,6 +1826,38 @@ class ApiService {
   async delete(endpoint, options = {}) {
     await this.getStoredToken();
     return this.request(endpoint, { ...options, method: "DELETE" });
+  }
+
+  // Get all meal plans for admin discount configuration
+  async getAllMealPlansForAdmin() {
+    console.log("📋 Fetching all meal plans for admin");
+    await this.getStoredToken();
+
+    const result = await this.request("/admin/meal-plans/list");
+
+    if (result.success) {
+      console.log("✅ All meal plans fetched successfully");
+    } else {
+      console.error("❌ Failed to fetch meal plans:", result.error);
+    }
+
+    return result;
+  }
+
+  // Get meal plan categories for filtering
+  async getMealPlanCategories() {
+    console.log("📂 Fetching meal plan categories");
+    await this.getStoredToken();
+
+    const result = await this.request("/meal-plans/categories");
+
+    if (result.success) {
+      console.log("✅ Meal plan categories fetched successfully");
+    } else {
+      console.error("❌ Failed to fetch categories:", result.error);
+    }
+
+    return result;
   }
 }
 

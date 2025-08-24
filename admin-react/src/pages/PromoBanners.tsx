@@ -4,6 +4,7 @@ import CreateBannerModal from '../components/CreateBannerModal'
 import EditBannerModal from '../components/EditBannerModal'
 import BannerPreview from '../components/BannerPreview'
 import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
+import { MegaphoneIcon, PlusIcon, PhotoIcon } from '@heroicons/react/24/outline'
 
 const PromoBanners: React.FC = () => {
   const [banners, setBanners] = useState<PromoBanner[]>([])
@@ -186,7 +187,7 @@ const PromoBanners: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-neutral-200">Loading promo banners...</p>
         </div>
       </div>
@@ -217,18 +218,37 @@ const PromoBanners: React.FC = () => {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">Promo Banners Management</h1>
-          <p className="text-gray-600 dark:text-neutral-200">Create and manage promotional banners for the mobile app ({pagination.totalItems} banners)</p>
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+            <MegaphoneIcon className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-neutral-100">Promo Banners</h1>
+            <p className="text-gray-600 dark:text-neutral-400 mt-1">Create and manage promotional banners for the mobile app ({pagination.totalItems} banners)</p>
+          </div>
         </div>
-        <div className="flex items-center space-x-3">
+        
+        {/* Quick Stats and Actions */}
+        <div className="flex items-center gap-4">
+          {/* Quick Stats */}
+          <div className="hidden lg:flex items-center gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{banners.filter(b => b.isPublished).length}</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">Published</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{banners.filter(b => b.isActive).length}</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">Active</div>
+            </div>
+          </div>
+          
           {/* Create Button */}
           <PermissionGate module="banners" action="create">
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors shadow-sm"
             >
-              <i className="fi fi-sr-plus mr-2"></i>
+              <PlusIcon className="h-5 w-5" />
               Create Banner
             </button>
           </PermissionGate>
@@ -248,7 +268,7 @@ const PromoBanners: React.FC = () => {
                 placeholder="Search banners..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
           </div>
@@ -265,7 +285,7 @@ const PromoBanners: React.FC = () => {
               }))}
               aria-label="Filter banners by status"
               title="Filter banners by active or inactive status"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
@@ -285,7 +305,7 @@ const PromoBanners: React.FC = () => {
               }))}
               aria-label="Filter banners by target audience"
               title="Filter banners by target audience"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             >
               <option value="">All Audiences</option>
               <option value="all">All Users</option>
@@ -304,7 +324,7 @@ const PromoBanners: React.FC = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, limit: parseInt(e.target.value), page: 1 }))}
               aria-label="Number of banners per page"
               title="Choose how many banners to show per page"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -317,19 +337,25 @@ const PromoBanners: React.FC = () => {
       {/* Banners Grid */}
       {banners.length === 0 ? (
         <div className="text-center py-12 bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
-          <div className="text-4xl mb-2"><i className="fi fi-sr-picture"></i></div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-2">No banners found</h3>
-          <p className="text-gray-500 dark:text-neutral-200 mb-4">
-            {filters.search || filters.status || filters.targetAudience
-              ? "No banners match your current filters."
-              : "Get started by creating your first promotional banner."}
-          </p>
+          <div className="flex flex-col items-center gap-3">
+            <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+              <PhotoIcon className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-2">No banners found</h3>
+              <p className="text-gray-500 dark:text-neutral-400 mb-6">
+                {filters.search || filters.status || filters.targetAudience
+                  ? "No banners match your current filters."
+                  : "Get started by creating your first promotional banner."}
+              </p>
+            </div>
+          </div>
           <PermissionGate module="banners" action="create">
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors"
             >
-              <i className="fi fi-sr-plus mr-2"></i>
+              <PlusIcon className="h-5 w-5" />
               Create Banner
             </button>
           </PermissionGate>
@@ -369,7 +395,7 @@ const PromoBanners: React.FC = () => {
               >
                 Previous
               </button>
-              <span className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
+              <span className="px-3 py-1 text-sm bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded">
                 {pagination.currentPage} of {pagination.totalPages}
               </span>
               <button

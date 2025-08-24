@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   Switch,
   Image,
   Modal,
@@ -22,9 +21,11 @@ import StandardHeader from '../../components/layout/Header';
 import { DIETARY_PREFERENCES } from '../../utils/profileConstants';
 import { useTheme } from '../../styles/theme';
 import { THEME } from '../../utils/colors';
+import { useAlert } from '../../contexts/AlertContext';
 
 const CustomizeScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
+  const { showError, showSuccess } = useAlert();
   const { bundle } = route.params || {};
   const { user, updateUserProfile } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -257,7 +258,7 @@ const CustomizeScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('Error loading meal plan customization:', error);
-      Alert.alert('Loading Error', 'Could not load meal customization options. Using default settings instead.');
+      showError('Loading Error', 'Could not load meal customization options. Using default settings instead.');
     }
   };
 
@@ -331,7 +332,7 @@ const CustomizeScreen = ({ route, navigation }) => {
       const result = await ApiService.saveMealCustomization(customizationData);
       
       if (result.success) {
-        Alert.alert(
+        showSuccess(
           'Customization Saved! 🎉',
           'Your meal preferences have been updated successfully.',
           [
@@ -343,7 +344,7 @@ const CustomizeScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('Error saving customizations:', error);
-      Alert.alert('Error', 'Failed to save customizations. Please try again.');
+      showError('Error', 'Failed to save customizations. Please try again.');
     } finally {
       setSaving(false);
     }

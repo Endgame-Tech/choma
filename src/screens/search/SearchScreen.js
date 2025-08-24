@@ -20,12 +20,19 @@ import { THEME } from "../../utils/colors";
 import StandardHeader from "../../components/layout/Header";
 import { useMealPlans } from "../../hooks/useMealPlans";
 import { useBookmarks } from "../../context/BookmarkContext";
+import { useAuth } from "../../hooks/useAuth";
 import FilterModal from "../../components/meal-plans/FilterModal";
 import apiService from "../../services/api";
+import discountService from "../../services/discountService";
 
 const SearchScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Discount state
+  const [discountData, setDiscountData] = useState({});
+  const [discountLoading, setDiscountLoading] = useState(true);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
@@ -54,6 +61,81 @@ const SearchScreen = ({ navigation }) => {
     loadSearchData();
     loadTargetAudiences();
   }, []);
+
+  // Fetch discount data for search results and popular plans
+  useEffect(() => {
+    const fetchDiscountData = async () => {
+      if (!user) {
+        setDiscountLoading(false);
+        return;
+      }
+
+      try {
+        setDiscountLoading(true);
+        console.log("💰 Fetching discount data for search/popular plans");
+
+        const discounts = {};
+
+        // Fetch discount for search results
+        if (searchResults && searchResults.length > 0) {
+          for (const plan of searchResults) {
+            try {
+              const discount = await discountService.calculateDiscount(
+                user,
+                plan
+              );
+              discounts[plan.id || plan._id] = discount;
+            } catch (error) {
+              console.error(
+                `Error calculating discount for search result plan ${plan.id}:`,
+                error
+              );
+              discounts[plan.id || plan._id] = {
+                discountPercent: 0,
+                discountAmount: 0,
+                reason: "No discount available",
+              };
+            }
+          }
+        }
+
+        // Fetch discount for popular plans (shown when no search)
+        if (mealPlans && mealPlans.length > 0) {
+          for (const plan of mealPlans.slice(0, 6)) {
+            try {
+              const discount = await discountService.calculateDiscount(
+                user,
+                plan
+              );
+              discounts[plan._id || plan.id] = discount;
+            } catch (error) {
+              console.error(
+                `Error calculating discount for popular plan ${
+                  plan._id || plan.id
+                }:`,
+                error
+              );
+              discounts[plan._id || plan.id] = {
+                discountPercent: 0,
+                discountAmount: 0,
+                reason: "No discount available",
+              };
+            }
+          }
+        }
+
+        console.log("💰 Search discount data fetched:", discounts);
+        setDiscountData(discounts);
+      } catch (error) {
+        console.error("Error fetching discount data for search:", error);
+        setDiscountData({});
+      } finally {
+        setDiscountLoading(false);
+      }
+    };
+
+    fetchDiscountData();
+  }, [user, searchResults, mealPlans]);
 
   const loadSearchData = async () => {
     try {
@@ -172,6 +254,19 @@ const SearchScreen = ({ navigation }) => {
     }
   };
 
+  // Prefer the most complete description field available for cards
+  const getPlanDescription = (plan) => {
+    if (!plan) return "";
+    return (
+      plan.longDescription ||
+      plan.fullDescription ||
+      plan.description ||
+      plan.summary ||
+      plan.shortDescription ||
+      ""
+    );
+  };
+
   const performLocalSearch = (query, filters) => {
     let results = [...mealPlans];
 
@@ -282,30 +377,8 @@ const SearchScreen = ({ navigation }) => {
       <StandardHeader
         title="Search"
         onBackPress={() => navigation.goBack()}
-        showRightIcon={true}
-        rightIcon={
-          <TouchableOpacity
-            style={[
-              styles(colors).filterButton,
-              hasActiveFilters && styles(colors).filterButtonActive,
-            ]}
-            onPress={() => setShowFilterModal(true)}
-          >
-            <Ionicons
-              name="options"
-              size={24}
-              color={hasActiveFilters ? colors.primary : colors.text}
-            />
-            {hasActiveFilters && (
-              <View style={styles(colors).filterBadge}>
-                <Text style={styles(colors).filterBadgeText}>
-                  {getActiveFiltersCount()}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        }
-        navigation={navigation}
+        showRightIcon={false}
+        navigation={null}
       />
 
       {/* Search Input */}
@@ -337,6 +410,26 @@ const SearchScreen = ({ navigation }) => {
               />
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={[
+              styles(colors).filterButton,
+              hasActiveFilters && styles(colors).filterButtonActive,
+            ]}
+            onPress={() => setShowFilterModal(true)}
+          >
+            <Ionicons
+              name="options"
+              size={20}
+              color={hasActiveFilters ? colors.primary : colors.textMuted}
+            />
+            {hasActiveFilters && (
+              <View style={styles(colors).filterBadge}>
+                <Text style={styles(colors).filterBadgeText}>
+                  {getActiveFiltersCount()}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -468,40 +561,53 @@ const SearchScreen = ({ navigation }) => {
                           </View>
                         )}
 
-                        {/* Content Overlay with Gradient */}
-                        <LinearGradient
-                          colors={[
-                            "rgba(0, 0, 0, 0)",
-                            "rgba(0, 0, 0, 0)",
-                            "rgba(0, 0, 0, 0.9)",
-                          ]}
-                          locations={[0, 0.4, 1]}
-                          style={styles(colors).mealplanContentOverlay}
+                        {/* Discount Pill - Bottom Right */}
+                        {(() => {
+                          const planDiscount =
+                            discountData[plan.id || plan._id];
+                          const hasDiscount =
+                            planDiscount && planDiscount.discountPercent > 0;
+                          return hasDiscount ? (
+                            <View style={styles(colors).searchDiscountPill}>
+                              <Ionicons
+                                name="gift-outline"
+                                size={14}
+                                color="#333"
+                              />
+                              <Text
+                                style={styles(colors).searchDiscountPillText}
+                              >
+                                Up to {planDiscount.discountPercent}% Off
+                              </Text>
+                            </View>
+                          ) : null;
+                        })()}
+                      </View>
+
+                      {/* Text Content Below Image */}
+                      <View style={styles(colors).mealplanTextContent}>
+                        <Text
+                          style={styles(colors).mealplanTitle}
+                          numberOfLines={1}
                         >
-                          <Text
-                            style={styles(colors).mealplanTitle}
-                            numberOfLines={1}
-                          >
-                            {plan.planName || plan.name}
-                          </Text>
-                          <Text
-                            style={styles(colors).mealplanDescription}
-                            numberOfLines={2}
-                          >
-                            {plan.description ||
-                              plan.shortDescription ||
-                              "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
-                          </Text>
-                          <Text style={styles(colors).mealplanPrice}>
-                            ₦
-                            {(
-                              plan.totalPrice ||
-                              plan.basePrice ||
-                              plan.price ||
-                              0
-                            ).toLocaleString()}
-                          </Text>
-                        </LinearGradient>
+                          {plan.planName || plan.name}
+                        </Text>
+                        <Text
+                          style={styles(colors).mealplanDescription}
+                          numberOfLines={2}
+                        >
+                          {getPlanDescription(plan) ||
+                            "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
+                        </Text>
+                        <Text style={styles(colors).mealplanPrice}>
+                          ₦
+                          {(
+                            plan.totalPrice ||
+                            plan.basePrice ||
+                            plan.price ||
+                            0
+                          ).toLocaleString()}
+                        </Text>
                       </View>
                     </TouchableOpacity>
                   );
@@ -566,7 +672,7 @@ const SearchScreen = ({ navigation }) => {
                         </Text>
                         <Ionicons
                           name="arrow-up-outline"
-                          size={16} 
+                          size={16}
                           color={colors.textSecondary}
                         />
                       </TouchableOpacity>
@@ -668,40 +774,56 @@ const SearchScreen = ({ navigation }) => {
                               </View>
                             )}
 
-                            {/* Content Overlay with Gradient */}
-                            <LinearGradient
-                              colors={[
-                                "rgba(0, 0, 0, 0)",
-                                "rgba(0, 0, 0, 0)",
-                                "rgba(0, 0, 0, 0.9)",
-                              ]}
-                              locations={[0, 0.4, 1]}
-                              style={styles(colors).mealplanContentOverlay}
+                            {/* Discount Pill - Bottom Right */}
+                            {(() => {
+                              const planDiscount =
+                                discountData[plan._id || plan.id];
+                              const hasDiscount =
+                                planDiscount &&
+                                planDiscount.discountPercent > 0;
+                              return hasDiscount ? (
+                                <View style={styles(colors).searchDiscountPill}>
+                                  <Ionicons
+                                    name="gift-outline"
+                                    size={14}
+                                    color="#333"
+                                  />
+                                  <Text
+                                    style={
+                                      styles(colors).searchDiscountPillText
+                                    }
+                                  >
+                                    Up to {planDiscount.discountPercent}% Off
+                                  </Text>
+                                </View>
+                              ) : null;
+                            })()}
+                          </View>
+
+                          {/* Text Content Below Image */}
+                          <View style={styles(colors).mealplanTextContent}>
+                            <Text
+                              style={styles(colors).mealplanTitle}
+                              numberOfLines={1}
                             >
-                              <Text
-                                style={styles(colors).mealplanTitle}
-                                numberOfLines={1}
-                              >
-                                {plan.planName || plan.name}
-                              </Text>
-                              <Text
-                                style={styles(colors).mealplanDescription}
-                                numberOfLines={2}
-                              >
-                                {plan.description ||
-                                  plan.shortDescription ||
-                                  "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
-                              </Text>
-                              <Text style={styles(colors).mealplanPrice}>
-                                ₦
-                                {(
-                                  plan.totalPrice ||
-                                  plan.basePrice ||
-                                  plan.price ||
-                                  0
-                                ).toLocaleString()}
-                              </Text>
-                            </LinearGradient>
+                              {plan.planName || plan.name}
+                            </Text>
+                            <Text
+                              style={styles(colors).mealplanDescription}
+                              numberOfLines={2}
+                            >
+                              {getPlanDescription(plan) ||
+                                "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
+                            </Text>
+                            <Text style={styles(colors).mealplanPrice}>
+                              ₦
+                              {(
+                                plan.totalPrice ||
+                                plan.basePrice ||
+                                plan.price ||
+                                0
+                              ).toLocaleString()}
+                            </Text>
                           </View>
                         </TouchableOpacity>
                       );
@@ -739,7 +861,7 @@ const styles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.large,
+      borderRadius: THEME.borderRadius.xxl,
       paddingHorizontal: 15,
       paddingVertical: 12,
       borderWidth: 1,
@@ -798,43 +920,33 @@ const styles = (colors) =>
     // Mealplan Card Styles (matching HomeScreen)
     mealplanCard: {
       width: "100%",
-      backgroundColor: colors.cardBackground,
       borderRadius: 20,
-      marginBottom: 0,
       overflow: "hidden",
-      borderWidth: 1,
-      borderColor: colors.border,
-      elevation: 3,
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 4,
+      marginBottom: 0,
     },
     mealplanImageContainer: {
       position: "relative",
+      height: 150,
       width: "100%",
-      height: 200,
+      borderRadius: 20,
+      overflow: "hidden",
     },
     mealplanImage: {
       width: "100%",
       height: "100%",
       resizeMode: "cover",
+      borderRadius: 20,
     },
     mealplanHeartButton: {
       position: "absolute",
-      top: 16,
-      right: 16,
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: "rgba(255, 255, 255, 1)",
+      top: 12,
+      right: 12,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
       justifyContent: "center",
       alignItems: "center",
-      elevation: 2,
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
-      shadowRadius: 2,
     },
     newBadge: {
       position: "absolute",
@@ -850,30 +962,25 @@ const styles = (colors) =>
       fontSize: 12,
       fontWeight: "bold",
     },
-    mealplanContentOverlay: {
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      padding: 20,
-      paddingTop: 90, // Extra padding for gradient effect
+    mealplanTextContent: {
+      padding: 16,
+      paddingTop: 12,
     },
     mealplanTitle: {
-      fontSize: 20,
-      fontWeight: "bold",
-      color: colors.white,
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
       marginBottom: 6,
     },
     mealplanDescription: {
       fontSize: 14,
-      color: colors.white,
-      opacity: 0.9,
+      color: colors.textSecondary,
       marginBottom: 8,
       lineHeight: 20,
     },
     mealplanPrice: {
-      fontSize: 20,
-      fontWeight: "bold",
+      fontSize: 16,
+      fontWeight: "700",
       color: colors.primary,
     },
     scrollContent: {
@@ -900,7 +1007,7 @@ const styles = (colors) =>
       paddingVertical: 15,
       paddingHorizontal: 16,
       backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.medium,
+      borderRadius: THEME.borderRadius.xxl,
       marginBottom: 10,
       borderWidth: 0.5,
       borderColor: colors.border,
@@ -994,6 +1101,26 @@ const styles = (colors) =>
       color: colors.text,
       marginBottom: 15,
       paddingTop: 10,
+    },
+    // Search Discount Pill Styles (matching Home Screen)
+    searchDiscountPill: {
+      position: "absolute",
+      bottom: 8,
+      right: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#F3E9DF", // Cream background matching the image
+      paddingHorizontal: 8,
+      paddingVertical: 7,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: "#1b1b1b",
+    },
+    searchDiscountPillText: {
+      fontSize: 15,
+      fontWeight: "450",
+      color: "#333",
+      marginLeft: 3,
     },
   });
 

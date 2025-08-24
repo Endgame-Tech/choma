@@ -1,16 +1,18 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { 
-  HomeIcon, 
+import {
+  HomeIcon,
   ChartBarIcon,
-  ClipboardDocumentListIcon, 
-  UserGroupIcon, 
+  ClipboardDocumentListIcon,
+  UserGroupIcon,
   UsersIcon,
   BookOpenIcon,
   CubeIcon,
   CogIcon,
   XMarkIcon,
-  MegaphoneIcon
+  MegaphoneIcon,
+  TruckIcon,
+  ReceiptPercentIcon
 } from '@heroicons/react/24/outline'
 import { usePermissionCheck } from '../contexts/PermissionContext'
 import type { AdminPermissions } from '../types/admin'
@@ -25,6 +27,9 @@ const navigationItems = [
   { name: 'Meals', href: '/meals', icon: CubeIcon, permission: 'meals' as keyof AdminPermissions },
   { name: 'Meal Plans', href: '/meal-plans', icon: BookOpenIcon, permission: 'mealPlans' as keyof AdminPermissions },
   { name: 'Promo Banners', href: '/promo-banners', icon: MegaphoneIcon, permission: 'banners' as keyof AdminPermissions },
+  { name: 'Discounts', href: '/discounts', icon: ReceiptPercentIcon, permission: 'banners' as keyof AdminPermissions },
+  // Delivery Prices: permission key is 'deliveryPrices' (see AdminPermissions)
+  { name: 'Delivery Prices', href: '/delivery-prices', icon: TruckIcon, permission: 'deliveryPrices' as keyof AdminPermissions },
   { name: 'Admin Management', href: '/admin-management', icon: CogIcon, permission: 'adminManagement' as keyof AdminPermissions },
 ]
 
@@ -37,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { hasAnyPermission, currentAdmin } = usePermissionCheck();
 
   // Filter navigation items based on permissions
-  const allowedNavigation = navigationItems.filter(item => 
+  const allowedNavigation = navigationItems.filter(item =>
     hasAnyPermission(item.permission)
   );
 
@@ -50,17 +55,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <span className="text-choma-orange">choma</span> Admin
           </h1>
         </div>
-        
+
         <nav className="flex-1 px-4 py-6 space-y-2">
           {allowedNavigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
               className={({ isActive }) =>
-                `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                  isActive
-                    ? 'bg-choma-orange text-choma-brown shadow-lg transform scale-105'
-                    : 'text-choma-white/80 hover:bg-choma-white/10 hover:text-choma-white hover:transform hover:scale-105'
+                `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${isActive
+                  ? 'bg-choma-orange text-choma-brown shadow-lg transform scale-105'
+                  : 'text-choma-white/80 hover:bg-choma-white/10 hover:text-choma-white hover:transform hover:scale-105'
                 }`
               }
             >
@@ -69,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </NavLink>
           ))}
         </nav>
-        
+
         {/* Footer */}
         <div className="px-6 py-4 border-t border-choma-orange/20">
           {currentAdmin && (
@@ -107,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
-        
+
         <nav className="flex-1 px-4 py-6 space-y-2">
           {allowedNavigation.map((item) => (
             <NavLink
@@ -115,10 +119,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               to={item.href}
               onClick={onClose}
               className={({ isActive }) =>
-                `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                  isActive
-                    ? 'bg-choma-orange text-choma-brown shadow-lg'
-                    : 'text-choma-white/80 hover:bg-choma-white/10 hover:text-choma-white'
+                `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${isActive
+                  ? 'bg-choma-orange text-choma-brown shadow-lg'
+                  : 'text-choma-white/80 hover:bg-choma-white/10 hover:text-choma-white'
                 }`
               }
             >
@@ -127,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </NavLink>
           ))}
         </nav>
-        
+
         {/* Footer */}
         <div className="px-6 py-4 border-t border-choma-orange/20">
           {currentAdmin && (

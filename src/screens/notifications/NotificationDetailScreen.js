@@ -182,10 +182,10 @@ const NotificationDetailScreen = ({ navigation, route }) => {
         }
         break;
       case 'promotion':
-        navigation.navigate('MealPlans');
+        navigation.navigate('Search');
         break;
       case 'menu':
-        navigation.navigate('MealPlans');
+        navigation.navigate('Search');
         break;
       default:
         navigation.goBack();

@@ -4229,3 +4229,84 @@ exports.unpublishMealPlan = async (req, res) => {
     });
   }
 };
+
+// Get user activity for the admin dashboard
+exports.getUserActivityForDashboard = async (req, res) => {
+  try {
+    const limit = 10;
+
+    const recentRegistrations = await Customer.find({ status: { $ne: 'Deleted' } })
+      .sort({ registrationDate: -1 })
+      .limit(limit)
+      .select('fullName email registrationDate');
+
+    const recentOrders = await Order.find({ orderStatus: 'Delivered' })
+      .sort({ actualDelivery: -1 })
+      .limit(limit)
+      .populate('customer', 'fullName')
+      .select('orderNumber totalAmount actualDelivery customer');
+
+    const recentSubscriptions = await Subscription.find()
+      .sort({ startDate: -1 })
+      .limit(limit)
+      .populate('userId', 'fullName')
+      .populate('mealPlanId', 'planName')
+      .select('userId mealPlanId startDate status');
+
+    const activityFeed = [
+      ...recentRegistrations.map(u => ({ type: 'new_user', data: u, timestamp: u.registrationDate })),
+      ...recentOrders.map(o => ({ type: 'new_order', data: o, timestamp: o.actualDelivery })),
+      ...recentSubscriptions.map(s => ({ type: 'new_subscription', data: s, timestamp: s.startDate })),
+    ];
+
+    activityFeed.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({
+      success: true,
+      data: activityFeed.slice(0, 15), // Return the top 15 most recent activities
+    });
+  } catch (err) {
+    console.error('Get user activity for dashboard error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user activity for dashboard',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
+};
+
+// Get a simplified list of meal plans for admin UI
+exports.getMealPlanListForAdmin = async (req, res) => {
+  try {
+    const mealPlans = await MealPlan.find({ isActive: true }).select('_id planName name').lean();
+    res.json({
+      success: true,
+      data: mealPlans,
+    });
+  } catch (err) {
+    console.error('Get meal plan list for admin error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch meal plan list',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
+};
+
+// Get all unique meal plan categories
+exports.getMealPlanCategories = async (req, res) => {
+  try {
+    const categories = await MealPlan.distinct('category');
+    res.json({
+      success: true,
+      data: categories.filter(c => c), // Filter out null/empty categories
+    });
+  } catch (err) {
+    console.error('Get meal plan categories error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch meal plan categories',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
+};

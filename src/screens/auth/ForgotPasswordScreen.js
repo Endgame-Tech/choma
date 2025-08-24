@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   ScrollView,
@@ -18,9 +17,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, THEME } from '../../utils/colors';
 import { useTheme } from '../../styles/theme';
 import { APP_CONFIG } from '../../utils/constants';
+import { useAlert } from '../../contexts/AlertContext';
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const { showError, showSuccess } = useAlert();
   const [step, setStep] = useState(1); // 1: Enter email, 2: Enter code, 3: New password
   const [email, setEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
@@ -32,12 +33,12 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const handleSendCode = async () => {
     if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email address');
+      showError('Error', 'Please enter your email address');
       return;
     }
 
     if (!email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      showError('Error', 'Please enter a valid email address');
       return;
     }
 
@@ -56,13 +57,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
       if (data.success) {
         setStep(2);
-        Alert.alert('Success', 'Reset code sent to your email address');
+        showSuccess('Success', 'Reset code sent to your email address');
       } else {
-        Alert.alert('Error', data.message || 'Failed to send reset code');
+        showError('Error', data.message || 'Failed to send reset code');
       }
     } catch (error) {
       console.error('Send code error:', error);
-      Alert.alert('Error', 'Network error. Please try again.');
+      showError('Error', 'Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -70,12 +71,12 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const handleVerifyCode = () => {
     if (!resetCode.trim()) {
-      Alert.alert('Error', 'Please enter the reset code');
+      showError('Error', 'Please enter the reset code');
       return;
     }
 
     if (resetCode.length !== 6) {
-      Alert.alert('Error', 'Reset code must be 6 digits');
+      showError('Error', 'Reset code must be 6 digits');
       return;
     }
 
@@ -84,17 +85,17 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const handleResetPassword = async () => {
     if (!newPassword.trim() || !confirmPassword.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Error', 'Please fill in all fields');
       return;
     }
 
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      showError('Error', 'Password must be at least 6 characters long');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showError('Error', 'Passwords do not match');
       return;
     }
 
@@ -116,7 +117,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
       const data = await response.json();
 
       if (data.success) {
-        Alert.alert(
+        showSuccess(
           'Success',
           'Password reset successfully. You can now login with your new password.',
           [
@@ -127,11 +128,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
           ]
         );
       } else {
-        Alert.alert('Error', data.message || 'Failed to reset password');
+        showError('Error', data.message || 'Failed to reset password');
       }
     } catch (error) {
       console.error('Reset password error:', error);
-      Alert.alert('Error', 'Network error. Please try again.');
+      showError('Error', 'Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }

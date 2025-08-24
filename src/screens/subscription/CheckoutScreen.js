@@ -1,5 +1,6 @@
 // src/screens/subscription/CheckoutScreen.js - Modern Dark Theme Update
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { debounce } from 'lodash';
 import {
   View,
   Text,
@@ -7,7 +8,6 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Alert,
   Image,
   StatusBar,
   ActivityIndicator,
@@ -22,9 +22,11 @@ import { useTheme } from '../../styles/theme';
 import { THEME } from '../../utils/colors';
 import api from '../../services/api';
 import StandardHeader from '../../components/layout/Header';
+import { useAlert } from '../../contexts/AlertContext';
 
 const CheckoutScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
+  const { showError, showInfo, showSuccess } = useAlert();
   const { mealPlanId, mealPlan: initialMealPlan } = route.params || {};
   const { user } = useAuth();
   
@@ -39,6 +41,37 @@ const CheckoutScreen = ({ route, navigation }) => {
   const [addressSource, setAddressSource] = useState(user?.address ? 'saved' : 'manual'); // 'saved', 'current', 'manual'
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [currentLocationAddress, setCurrentLocationAddress] = useState('');
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [loadingDeliveryFee, setLoadingDeliveryFee] = useState(false);
+
+  // Debounced function to fetch delivery price
+  const debouncedFetchDeliveryPrice = useCallback(
+    debounce(async (address) => {
+      if (address && address.trim().length > 2) {
+        setLoadingDeliveryFee(true);
+        try {
+          const result = await api.getDeliveryPrice(address);
+          if (result.success && result.data) {
+            setDeliveryFee(result.data.price);
+          } else {
+            setDeliveryFee(0);
+          }
+        } catch (err) {
+          setDeliveryFee(0);
+          console.error('Failed to fetch delivery price:', err);
+        } finally {
+          setLoadingDeliveryFee(false);
+        }
+      } else {
+        setDeliveryFee(0);
+      }
+    }, 1000),
+    []
+  );
+
+  useEffect(() => {
+    debouncedFetchDeliveryPrice(deliveryAddress);
+  }, [deliveryAddress, debouncedFetchDeliveryPrice]);
 
   // Generate frequency options based on meal plan's mealTypes
   const getAvailableFrequencies = () => {
@@ -104,10 +137,9 @@ const CheckoutScreen = ({ route, navigation }) => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert(
+        showError(
           'Permission Required',
-          'Please grant location permission to use current location as delivery address.',
-          [{ text: 'OK' }]
+          'Please grant location permission to use current location as delivery address.'
         );
         return;
       }
@@ -138,17 +170,16 @@ const CheckoutScreen = ({ route, navigation }) => {
         setDeliveryAddress(formattedAddress);
         setAddressSource('current');
         
-        Alert.alert(
+        showSuccess(
           'Location Found',
-          `Current location set as delivery address: ${formattedAddress}`,
-          [{ text: 'OK' }]
+          `Current location set as delivery address: ${formattedAddress}`
         );
       } else {
-        Alert.alert('Error', 'Unable to get address from current location. Please enter manually.');
+        showError('Error', 'Unable to get address from current location. Please enter manually.');
       }
     } catch (error) {
       console.error('Error getting location:', error);
-      Alert.alert(
+      showError(
         'Location Error', 
         'Unable to get current location. Please check your GPS and try again or enter address manually.'
       );
@@ -248,7 +279,6 @@ const CheckoutScreen = ({ route, navigation }) => {
   
   // Calculate subtotal: base plan price × frequency selection × duration selection
   const subtotal = Math.round(validBasePlanPrice * validFrequencyMultiplier * validDurationMultiplier);
-  const deliveryFee = 0; // Free delivery
   const tax = Math.round(subtotal * 0.1); // 10% tax
   const totalPrice = subtotal + deliveryFee + tax;
   
@@ -264,18 +294,18 @@ const CheckoutScreen = ({ route, navigation }) => {
 
   const handleProceedToPayment = () => {
     if (!deliveryAddress.trim()) {
-      Alert.alert('Required Field', 'Please enter your delivery address');
+      showError('Required Field', 'Please enter your delivery address');
       return;
     }
 
     if (!mealPlan || !mealPlan.id) {
-      Alert.alert('Error', 'Invalid meal plan data. Please try again.');
+      showError('Error', 'Invalid meal plan data. Please try again.');
       return;
     }
 
     // Validate that we have valid numbers before proceeding
     if (isNaN(totalPrice) || totalPrice <= 0) {
-      Alert.alert('Pricing Error', 'Unable to calculate valid pricing. Please try again or contact support.');
+      showError('Pricing Error', 'Unable to calculate valid pricing. Please try again or contact support.');
       return;
     }
 
@@ -292,7 +322,8 @@ const CheckoutScreen = ({ route, navigation }) => {
       totalPrice: Math.round(totalPrice), // Ensure it's a whole number
       basePlanPrice: Math.round(validBasePlanPrice),
       frequencyMultiplier: validFrequencyMultiplier,
-      durationMultiplier: validDurationMultiplier
+      durationMultiplier: validDurationMultiplier,
+      deliveryFee: deliveryFee
     };
     
     console.log('🚀 Sending subscription data to payment:', JSON.stringify(subscriptionData, null, 2));
@@ -438,25 +469,23 @@ const CheckoutScreen = ({ route, navigation }) => {
           <Text style={styles(colors).sectionTitle}>Selected Meal Plan</Text>
           
           <View style={styles(colors).mealPlanCard}>
-            <Image 
-              source={
-                mealPlan.coverImage 
-                  ? { uri: mealPlan.coverImage }
-                  : mealPlan.planImageUrl 
-                    ? { uri: mealPlan.planImageUrl }
-                    : mealPlan.image 
-                      ? (typeof mealPlan.image === 'string' ? { uri: mealPlan.image } : mealPlan.image)
-                      : require('../../assets/images/meal-plans/fitfuel.jpg')
-              } 
-              style={styles(colors).mealPlanImage}
-              resizeMode="cover"
-              defaultSource={require('../../assets/images/meal-plans/fitfuel.jpg')}
-            />
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.6)']}
-              style={styles(colors).imageGradient}
-            />
-            <View style={styles(colors).mealPlanOverlay}>
+            <View style={styles(colors).mealPlanImageContainer}>
+              <Image 
+                source={
+                  mealPlan.coverImage 
+                    ? { uri: mealPlan.coverImage }
+                    : mealPlan.planImageUrl 
+                      ? { uri: mealPlan.planImageUrl }
+                      : mealPlan.image 
+                        ? (typeof mealPlan.image === 'string' ? { uri: mealPlan.image } : mealPlan.image)
+                        : require('../../assets/images/meal-plans/fitfuel.jpg')
+                } 
+                style={styles(colors).mealPlanImage}
+                resizeMode="cover"
+                defaultSource={require('../../assets/images/meal-plans/fitfuel.jpg')}
+              />
+            </View>
+            <View style={styles(colors).mealPlanTextContent}>
               <Text style={styles(colors).mealPlanName}>{mealPlan.planName || mealPlan.name}</Text>
               <Text style={styles(colors).mealPlanSubtitle}>{mealPlan.description || mealPlan.subtitle}</Text>
               <Text style={styles(colors).mealPlanPrice}>₦{(mealPlan.totalPrice || mealPlan.price).toLocaleString()}</Text>
@@ -714,7 +743,13 @@ const CheckoutScreen = ({ route, navigation }) => {
             </View>
             <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).summaryLabel}>Delivery Fee</Text>
-              <Text style={[styles(colors).summaryValue, styles(colors).freeText]}>Free</Text>
+              {loadingDeliveryFee ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Text style={[styles(colors).summaryValue, deliveryFee === 0 && styles(colors).freeText]}>
+                  {deliveryFee > 0 ? `₦${deliveryFee.toLocaleString()}` : 'Free'}
+                </Text>
+              )}
             </View>
             <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).summaryLabel}>Tax (10%)</Text>
@@ -804,44 +839,41 @@ const styles = (colors) => StyleSheet.create({
     lineHeight: 20,
   },
   mealPlanCard: {
-    position: 'relative',
     borderRadius: THEME.borderRadius.large,
     overflow: 'hidden',
-    height: 180,
+  },
+  mealPlanImageContainer: {
+    position: 'relative',
+    height: 150,
+    width: '100%',
+    borderRadius: THEME.borderRadius.large,
+    overflow: 'hidden',
   },
   mealPlanImage: {
     width: '100%',
     height: '100%',
+    borderRadius: THEME.borderRadius.large,
   },
-  imageGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '70%',
-  },
-  mealPlanOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
+  mealPlanTextContent: {
+    padding: 16,
+    paddingTop: 12,
   },
   mealPlanName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.white,
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 6,
   },
   mealPlanSubtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
+    color: colors.textSecondary,
     marginBottom: 8,
+    lineHeight: 20,
   },
   mealPlanPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.primary,
   },
   optionsContainer: {
     gap: 12,
@@ -974,7 +1006,7 @@ const styles = (colors) => StyleSheet.create({
     color: colors.text,
   },
   proceedButton: {
-    borderRadius: THEME.borderRadius.large,
+    borderRadius: THEME.borderRadius.xxl,
     overflow: 'hidden',
   },
   proceedGradient: {

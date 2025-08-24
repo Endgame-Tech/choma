@@ -58,7 +58,6 @@ export interface Meal {
     ingredients: number
     cookingCosts: number
     packaging: number
-    delivery: number
     platformFee: number
     totalCosts: number
     profit: number

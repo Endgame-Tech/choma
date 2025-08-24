@@ -63,6 +63,34 @@ retryDatabaseConnection(connectDB)
     // Initialize Keep-Alive service only after DB is connected
     const keepAliveService = require('./services/keepAliveService');
     keepAliveService.start();
+
+    server.listen(PORT, HOST, () => {
+      // Get the local network IP address for easier mobile device connection
+      const { networkInterfaces } = require('os');
+      const nets = networkInterfaces();
+      let localIp = 'unknown';
+        // Find the local IP address
+      for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+          // Skip over non-IPv4 and internal (loopback) addresses
+          if (net.family === 'IPv4' && !net.internal) {
+            localIp = net.address;
+            break; // Use the first non-internal IPv4 address we find
+          }
+        }
+        if (localIp !== 'unknown') break; // Stop once we've found an IP
+      }
+      
+      console.log(`🚀 Server started on port ${PORT}`);
+      console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
+      console.log(`🔗 Network API URL: http://${localIp}:${PORT}/api`);
+      console.log(`🔌 WebSocket URL: ws://localhost:${PORT}/socket.io`);
+      console.log(`🔌 Network WebSocket URL: ws://${localIp}:${PORT}/socket.io`);
+      console.log(`✅ Server is listening on all interfaces (${HOST})`);
+      console.log(`💻 For mobile devices, use: http://${localIp}:${PORT}/api`);
+      console.log(`📱 Mobile connection test: http://${localIp}:${PORT}/health`);
+    });
   })
   .catch((error) => {
     logger.error('Failed to connect to database after retries:', error);
@@ -159,6 +187,7 @@ app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/admin/auth', adminLimiter, require('./routes/adminAuth'));
 
 // API routes (with general rate limiting)
+app.use('/api/meal-plans', require('./routes/mealplans'));
 app.use('/api/mealplans', require('./routes/mealplans'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
@@ -174,6 +203,22 @@ app.use('/api/admin/2fa', twoFactorLimiter, require('./routes/twoFactor'));
 
 // Admin notification routes (with admin-specific rate limiting)
 app.use('/api/admin/notifications', adminLimiter, require('./routes/adminNotifications'));
+
+// Admin delivery price routes (with admin-specific rate limiting)
+app.use('/api/admin/delivery-prices', adminLimiter, require('./routes/adminDeliveryPrice'));
+
+// Admin discount rule routes
+app.use('/api/admin/discount-rules', adminLimiter, require('./routes/discountRoutes'));
+
+// Public discount routes
+app.use('/api/discount-rules', require('./routes/discounts'));
+app.use('/api/discounts', require('./routes/discounts'));
+
+// User routes
+app.use('/api/users', require('./routes/users'));
+
+// User delivery routes (with general rate limiting)
+app.use('/api/delivery', require('./routes/delivery'));
 
 // Chef routes (with general rate limiting)
 app.use('/api/chef', require('./routes/chef'));
@@ -268,30 +313,4 @@ const server = createServer(app);
 
 // Socket.IO and Keep-Alive services are initialized after DB connection (see above)
 
-server.listen(PORT, HOST, () => {
-  // Get the local network IP address for easier mobile device connection
-  const { networkInterfaces } = require('os');
-  const nets = networkInterfaces();
-  let localIp = 'unknown';
-    // Find the local IP address
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      // Skip over non-IPv4 and internal (loopback) addresses
-      if (net.family === 'IPv4' && !net.internal) {
-        localIp = net.address;
-        break; // Use the first non-internal IPv4 address we find
-      }
-    }
-    if (localIp !== 'unknown') break; // Stop once we've found an IP
-  }
-  
-  console.log(`🚀 Server started on port ${PORT}`);
-  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
-  console.log(`🔗 Network API URL: http://${localIp}:${PORT}/api`);
-  console.log(`🔌 WebSocket URL: ws://localhost:${PORT}/socket.io`);
-  console.log(`🔌 Network WebSocket URL: ws://${localIp}:${PORT}/socket.io`);
-  console.log(`✅ Server is listening on all interfaces (${HOST})`);
-  console.log(`💻 For mobile devices, use: http://${localIp}:${PORT}/api`);
-  console.log(`📱 Mobile connection test: http://${localIp}:${PORT}/health`);
-});
+

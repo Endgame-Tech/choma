@@ -2,6 +2,90 @@ const DeliveryTracking = require('../models/DeliveryTracking');
 const Driver = require('../models/Driver');
 const Order = require('../models/Order');
 const Customer = require('../models/Customer');
+const DeliveryPrice = require('../models/DeliveryPrice');
+const { Client } = require('@googlemaps/google-maps-services-js');
+
+const googleMapsClient = new Client({});
+
+// Helper function to calculate distance between two coordinates (Haversine formula)
+const getDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+const deg2rad = (deg) => {
+  return deg * (Math.PI / 180);
+}
+
+// Get delivery price by location
+exports.getDeliveryPriceByLocation = async (req, res) => {
+  try {
+    const { address } = req.query;
+
+    if (!address) {
+      return res.status(400).json({
+        success: false,
+        message: 'Address is required'
+      });
+    }
+
+    const geocodeResponse = await googleMapsClient.geocode({
+      params: {
+        address: address,
+        key: process.env.GOOGLE_MAPS_API_KEY
+      }
+    });
+
+    if (geocodeResponse.data.status !== 'OK') {
+      return res.status(400).json({
+        success: false,
+        message: 'Could not geocode the address. Please provide a more specific address.',
+        error: geocodeResponse.data.status
+      });
+    }
+
+    const { lat, lng } = geocodeResponse.data.results[0].geometry.location;
+
+    const deliveryZones = await DeliveryPrice.find({ isActive: true });
+
+    let matchingZone = null;
+
+    for (const zone of deliveryZones) {
+      const distance = getDistance(lat, lng, zone.latitude, zone.longitude);
+      if (distance <= zone.radius) {
+        matchingZone = zone;
+        break; // Stop at the first matching zone
+      }
+    }
+
+    if (!matchingZone) {
+      return res.status(404).json({
+        success: false,
+        message: 'No delivery zone found for this address'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: matchingZone
+    });
+  } catch (err) {
+    console.error('Get delivery price error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch delivery price',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
 
 // Create delivery tracking for new order
 exports.createDeliveryTracking = async (req, res) => {
@@ -464,6 +548,7 @@ exports.getDeliveryAnalytics = async (req, res) => {
 };
 
 module.exports = {
+  getDeliveryPriceByLocation: exports.getDeliveryPriceByLocation,
   createDeliveryTracking: exports.createDeliveryTracking,
   getDeliveryTracking: exports.getDeliveryTracking,
   getCustomerDeliveries: exports.getCustomerDeliveries,

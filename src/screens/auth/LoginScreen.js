@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   ScrollView,
@@ -21,9 +20,11 @@ import { COLORS, THEME } from "../../utils/colors";
 import { useTheme } from "../../styles/theme";
 import BiometricLogin from "../../components/auth/BiometricLogin";
 import ChomaLogo from "../../components/ui/ChomaLogo";
+import { useAlert } from "../../contexts/AlertContext";
 
 const LoginScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const { showError, showSuccess } = useAlert();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,12 +40,12 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Please fill in all fields");
+      showError("Error", "Please fill in all fields");
       return;
     }
 
     if (!email.includes("@")) {
-      Alert.alert("Error", "Please enter a valid email address");
+      showError("Error", "Please enter a valid email address");
       return;
     }
 
@@ -58,13 +59,12 @@ const LoginScreen = ({ navigation }) => {
       if (result.success) {
         // Store credentials for biometric login
         await storeBiometricCredentials({ email: email.trim(), password });
-        Alert.alert("Welcome back!", result.message || "You have successfully logged in to Choma!");
       } else {
-        Alert.alert("Login Error", result.message || "Unable to log you in. Please check your credentials and try again.");
+        showError("Login Error", result.message || "Unable to log you in. Please check your credentials and try again.");
       }
     } catch (error) {
       console.error("Login error:", error);
-      Alert.alert("Login Error", "Something went wrong. Please check your connection and try again.");
+      showError("Login Error", "Something went wrong. Please check your connection and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -75,15 +75,7 @@ const LoginScreen = ({ navigation }) => {
 
     setTimeout(() => {
       setIsLoading(false);
-      Alert.alert("Demo Login", "Successfully logged in as demo user!", [
-        {
-          text: "OK",
-          onPress: () => {
-            // The AppNavigator will automatically switch to Main when authenticated
-            // No need to manually navigate
-          },
-        },
-      ]);
+      showSuccess("Demo Login", "Successfully logged in as demo user!");
     }, 1000);
   };
 

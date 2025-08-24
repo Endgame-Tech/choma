@@ -8,7 +8,9 @@ import type {
   DashboardStats,
   Chef,
   ChefAssignmentData,
-  BulkAssignmentData
+  BulkAssignmentData,
+  DeliveryPrice,
+  MealPlan
 } from '../types'
 
 interface UploadResponse {
@@ -330,6 +332,12 @@ export const dashboardApi = {
       console.log('🐛 Dashboard Response Message:', response.data.message)
     }
     return handleResponse(response)
+  },
+
+  // Get user activity for dashboard
+  async getUserActivityForDashboard(): Promise<unknown[]> {
+    const response = await api.get<ApiResponse<unknown[]>>('/activity');
+    return handleResponse(response);
   }
 }
 
@@ -500,3 +508,143 @@ export const adminManagementApi = {
     }
   }
 }
+
+// Delivery Prices API
+export const deliveryPricesApi = {
+  // Get all delivery prices
+  async getDeliveryPrices(): Promise<DeliveryPrice[]> {
+    const response = await api.get<ApiResponse<DeliveryPrice[]>>('/delivery-prices');
+    return handleResponse(response);
+  },
+
+  // Create new delivery price
+  async createDeliveryPrice(data: { location: string; price: number; }): Promise<DeliveryPrice> {
+    const response = await api.post<ApiResponse<DeliveryPrice>>('/delivery-prices', data);
+    return handleResponse(response);
+  },
+
+  // Update delivery price
+  async updateDeliveryPrice(id: string, data: { price?: number; isActive?: boolean }): Promise<DeliveryPrice> {
+    const response = await api.put<ApiResponse<DeliveryPrice>>(`/delivery-prices/${id}`, data);
+    return handleResponse(response);
+  },
+
+  // Delete delivery price
+  async deleteDeliveryPrice(id: string): Promise<void> {
+    const response = await api.delete<ApiResponse<void>>(`/delivery-prices/${id}`);
+    return handleResponse(response);
+  },
+};
+
+// Discount Management API
+
+// Define DiscountRule type (replace with actual fields as needed)
+export type DiscountRule = {
+  id: string;
+  name: string;
+  description?: string;
+  // Add other fields relevant to your discount rules
+};
+
+export const discountApi = {
+  // Get all discount rules
+  async getAllDiscountRules(): Promise<{ success: boolean; data?: DiscountRule[]; error?: string }> {
+    try {
+      const response = await api.get<ApiResponse<DiscountRule[]>>('/discount-rules');
+      return {
+        success: response.data.success,
+        data: response.data.data || [],
+      };
+    } catch (error) {
+      console.error('Error fetching discount rules:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch discount rules'
+      };
+    }
+  },
+
+  // Create discount rule
+  async createDiscountRule(ruleData: DiscountRule): Promise<{ success: boolean; data?: DiscountRule; error?: string }> {
+    try {
+      const response = await api.post<ApiResponse<DiscountRule>>('/discount-rules', ruleData);
+      return {
+        success: response.data.success,
+        data: response.data.data,
+      };
+    } catch (error) {
+      console.error('Error creating discount rule:', error);
+      return {
+        success: false,
+        error: 'Failed to create discount rule'
+      };
+    }
+  },
+
+  // Update discount rule
+  async updateDiscountRule(ruleId: string, ruleData: DiscountRule): Promise<{ success: boolean; data?: DiscountRule; error?: string }> {
+    try {
+      const response = await api.put<ApiResponse<DiscountRule>>(`/discount-rules/${ruleId}`, ruleData);
+      return {
+        success: response.data.success,
+        data: response.data.data,
+      };
+    } catch (error) {
+      console.error('Error updating discount rule:', error);
+      return {
+        success: false,
+        error: 'Failed to update discount rule'
+      };
+    }
+  },
+
+  // Delete discount rule
+  async deleteDiscountRule(ruleId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await api.delete<ApiResponse<void>>(`/discount-rules/${ruleId}`);
+      return {
+        success: response.data.success,
+      };
+    } catch (error) {
+      console.error('Error deleting discount rule:', error);
+      return {
+        success: false,
+        error: 'Failed to delete discount rule'
+      };
+    }
+  },
+
+  // Get meal plans for admin (for discount configuration)
+  async getAllMealPlansForAdmin(): Promise<{ success: boolean; data?: MealPlan[]; error?: string }> {
+    try {
+      const response = await api.get<ApiResponse<MealPlan[]>>('/meal-plans/list');
+      return {
+        success: response.data.success,
+        data: response.data.data || [],
+      };
+    } catch (error) {
+      console.error('Error fetching meal plans:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch meal plans'
+      };
+    }
+  },
+
+  // Get meal plan categories
+  async getMealPlanCategories(): Promise<{ success: boolean; data?: string[]; error?: string }> {
+    try {
+      const response = await api.get<ApiResponse<string[]>>('/meal-plans/categories');
+      return {
+        success: response.data.success,
+        data: response.data.data || [],
+      };
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch categories'
+      };
+    }
+  },
+};

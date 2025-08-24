@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
   TextInput,
   Platform,
   Image,
@@ -34,14 +33,16 @@ import CloudStorageService from "../../services/cloudStorage";
 import { APP_CONFIG } from "../../utils/constants";
 import StatusMessage from "../../components/StatusMessage";
 import NetworkUtils from "../../utils/networkUtils";
+import { useAlert } from "../../contexts/AlertContext";
 
 const { width } = Dimensions.get("window");
 
 // Constants
 const HEADER_HEIGHT = 400; // Background image height
 
-const ProfileScreen = ({ navigation }) => {
+const ProfileScreen = ({ navigation, route }) => {
   const { isDark, colors } = useTheme();
+  const { showError, showSuccess, showConfirm, showInfo } = useAlert();
   const {
     user,
     isOffline,
@@ -75,6 +76,16 @@ const ProfileScreen = ({ navigation }) => {
   const [errors, setErrors] = useState({});
   const [saveAttempted, setSaveAttempted] = useState(false);
   const [selectedTab, setSelectedTab] = useState("overview");
+
+  // Handle navigation parameters
+  useEffect(() => {
+    if (route?.params?.tab) {
+      setSelectedTab(route.params.tab);
+    }
+    if (route?.params?.editAddress && route?.params?.tab === "profile") {
+      setIsEditing(true);
+    }
+  }, [route?.params]);
 
   // Real user stats data
   const [userStats, setUserStats] = useState({
@@ -492,13 +503,13 @@ const ProfileScreen = ({ navigation }) => {
       if (!response.success) {
         // Revert on failure
         setNotificationPreferences(notificationPreferences);
-        Alert.alert("Error", "Failed to update notification preferences");
+        showError("Error", "Failed to update notification preferences");
       }
     } catch (error) {
       // Revert on error
       setNotificationPreferences(notificationPreferences);
       console.error("Error updating notification preferences:", error);
-      Alert.alert("Error", "Failed to update notification preferences");
+      showError("Error", "Failed to update notification preferences");
     }
   };
 
@@ -537,12 +548,12 @@ const ProfileScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error("Error sharing:", error);
-      Alert.alert("Error", "Unable to share at the moment");
+      showError("Error", "Unable to share at the moment");
     }
   };
 
   const handleSupport = () => {
-    Alert.alert("Support", "How can we help you?", [
+    showInfo("Support", "How can we help you?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Call Support",
@@ -561,7 +572,7 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleRateApp = () => {
-    Alert.alert(
+    showInfo(
       "Rate choma",
       "Loving the app? Please take a moment to rate us on the app store!",
       [
@@ -576,7 +587,7 @@ const ProfileScreen = ({ navigation }) => {
                 : "https://play.google.com/store/apps/details?id=com.choma";
 
             Linking.openURL(appStoreUrl).catch(() => {
-              Alert.alert("Error", "Unable to open app store");
+              showError("Error", "Unable to open app store");
             });
           },
         },
@@ -590,7 +601,7 @@ const ProfileScreen = ({ navigation }) => {
     const rewardsEarned = Math.floor(totalSaved * 0.1);
     const referralBonus = Math.floor(totalSaved * 0.05);
 
-    Alert.alert(
+    showInfo(
       "💰 Your Savings",
       `Total Saved: ₦${totalSaved.toLocaleString()}\n\n` +
         `This Month: ₦${thisMonth.toLocaleString()}\n` +
@@ -639,7 +650,7 @@ const ProfileScreen = ({ navigation }) => {
           `• Include more protein sources\n` +
           `• Choose whole grain options`;
 
-    Alert.alert("🥗 Nutrition Score", message, [
+    showInfo("🥗 Nutrition Score", message, [
       { text: "Got it!", style: "default" },
       ...(nutritionScore > 0
         ? [
@@ -669,7 +680,7 @@ Congratulations on your achievement!`;
 Your meal plan has been updated with fresh options.`;
     }
 
-    Alert.alert("Activity Details", message, [
+    showInfo("Activity Details", message, [
       { text: "Close", style: "cancel" },
       ...(activity.type === "delivery"
         ? [
@@ -731,7 +742,7 @@ Your meal plan has been updated with fresh options.`;
     setSaveAttempted(true);
 
     if (!validateForm()) {
-      Alert.alert(
+      showError(
         "Validation Error",
         "Please fix the errors in the form before saving."
       );
@@ -757,49 +768,42 @@ Your meal plan has been updated with fresh options.`;
       if (result.success) {
         setIsEditing(false);
         setSaveAttempted(false);
-        Alert.alert("Success", "Your profile has been updated successfully!");
+        showSuccess("Success", "Your profile has been updated successfully!");
 
         // Refresh profile data
         await updateProfile();
       } else {
-        Alert.alert(
+        showError(
           "Update Failed",
           result.message || "Unable to update profile. Please try again."
         );
       }
     } catch (error) {
       console.error("Profile update error:", error);
-      Alert.alert("Error", "Unable to update profile. Please try again.");
+      showError("Error", "Unable to update profile. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancelEdit = () => {
-    Alert.alert(
+    showConfirm(
       "Discard Changes",
       "Are you sure you want to discard your changes?",
-      [
-        { text: "Keep Editing", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () => {
-            // Reset to original user data
-            setEditableUser({
-              fullName: user.fullName,
-              phone: user.phone || "",
-              address: user.address || "",
-              city: user.city || "",
-              dietaryPreferences: user.dietaryPreferences || [],
-              allergies: user.allergies || "",
-            });
-            setIsEditing(false);
-            setSaveAttempted(false);
-            setErrors({});
-          },
-        },
-      ]
+      () => {
+        // Reset to original user data
+        setEditableUser({
+          fullName: user.fullName,
+          phone: user.phone || "",
+          address: user.address || "",
+          city: user.city || "",
+          dietaryPreferences: user.dietaryPreferences || [],
+          allergies: user.allergies || "",
+        });
+        setIsEditing(false);
+        setSaveAttempted(false);
+        setErrors({});
+      }
     );
   };
 
@@ -819,7 +823,7 @@ Your meal plan has been updated with fresh options.`;
         const result = await apiService.claimAchievement(achievement.id);
 
         if (result.success) {
-          Alert.alert(
+          showSuccess(
             "🎉 Achievement Claimed!",
             `Congratulations! You've claimed "${
               achievement.title
@@ -839,18 +843,18 @@ Your meal plan has been updated with fresh options.`;
             },
           });
         } else {
-          Alert.alert(
+          showError(
             "Claim Failed",
             "Unable to claim this achievement. Please try again."
           );
         }
       } catch (error) {
         console.error("Achievement claim error:", error);
-        Alert.alert("Error", "Failed to claim achievement.");
+        showError("Error", "Failed to claim achievement.");
       }
     } else if (!achievement.earned) {
       // Show achievement details and progress
-      Alert.alert(
+      showInfo(
         achievement.title,
         `${achievement.description}\n\nProgress: ${achievement.progress || 0}/${
           achievement.target || 100
@@ -859,7 +863,7 @@ Your meal plan has been updated with fresh options.`;
       );
     } else {
       // Already claimed - show details
-      Alert.alert(
+      showInfo(
         `🏆 ${achievement.title}`,
         `${achievement.description}\n\nClaimed on: ${new Date(
           achievement.claimedAt
@@ -883,7 +887,7 @@ Your meal plan has been updated with fresh options.`;
         const newAchievements = result.data.newAchievements;
 
         // Show achievement notification
-        Alert.alert(
+        showSuccess(
           "🎉 New Achievement Unlocked!",
           `You've unlocked ${newAchievements.length} new achievement${
             newAchievements.length > 1 ? "s" : ""
@@ -940,22 +944,19 @@ Your meal plan has been updated with fresh options.`;
   };
 
   const handleLogout = async () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          setIsLoading(true);
-          await logout();
-          setIsLoading(false);
-        },
-      },
-    ]);
+    showConfirm(
+      "Logout",
+      "Are you sure you want to logout?",
+      async () => {
+        setIsLoading(true);
+        await logout();
+        setIsLoading(false);
+      }
+    );
   };
 
   const pickImage = async () => {
-    Alert.alert(
+    showInfo(
       "Update Profile Picture",
       "Choose how you want to update your profile picture",
       [
@@ -987,7 +988,7 @@ Your meal plan has been updated with fresh options.`;
         await ImagePicker.requestCameraPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert(
+        showError(
           "Permission Required",
           "You need to grant permission to access your camera"
         );
@@ -1006,7 +1007,7 @@ Your meal plan has been updated with fresh options.`;
       }
     } catch (error) {
       console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo");
+      showError("Error", "Failed to take photo");
     }
   };
 
@@ -1016,7 +1017,7 @@ Your meal plan has been updated with fresh options.`;
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert(
+        showError(
           "Permission Required",
           "You need to grant permission to access your photos"
         );
@@ -1035,7 +1036,7 @@ Your meal plan has been updated with fresh options.`;
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to select image");
+      showError("Error", "Failed to select image");
     }
   };
 
@@ -1098,7 +1099,7 @@ Your meal plan has been updated with fresh options.`;
       await AsyncStorage.setItem("profileImage", cloudImageUrl);
 
       console.log("Profile image updated successfully");
-      Alert.alert("Success", "Profile picture updated successfully!");
+      showSuccess("Success", "Profile picture updated successfully!");
 
       // Refresh user profile to get updated data
       await refreshProfileImage();
@@ -1115,7 +1116,7 @@ Your meal plan has been updated with fresh options.`;
         errorMessage = error.message;
       }
 
-      Alert.alert("Upload Error", errorMessage);
+      showError("Upload Error", errorMessage);
 
       // Revert the image to original state
       setProfileImage(user?.profileImage || null);
@@ -1126,59 +1127,52 @@ Your meal plan has been updated with fresh options.`;
   };
 
   const removeProfilePicture = async () => {
-    Alert.alert(
+    showConfirm(
       "Remove Profile Picture",
       "Are you sure you want to remove your profile picture?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setIsLoading(true);
-              setProfileImage(null);
+      async () => {
+        try {
+          setIsLoading(true);
+          setProfileImage(null);
 
-              // Update user profile - include all user data to avoid validation errors
-              // Ensure fullName meets minimum requirements
-              const fullName = user?.fullName || "";
-              const validFullName =
-                fullName.length >= 2 ? fullName : "User Name";
+          // Update user profile - include all user data to avoid validation errors
+          // Ensure fullName meets minimum requirements
+          const fullName = user?.fullName || "";
+          const validFullName =
+            fullName.length >= 2 ? fullName : "User Name";
 
-              const profileUpdateData = {
-                fullName: validFullName,
-                phone: user?.phone || "",
-                address: user?.address || "",
-                city: user?.city || "",
-                dietaryPreferences: user?.dietaryPreferences || [],
-                allergies: user?.allergies || "",
-                profileImage: null,
-                // Include user ID if available (some backends require it)
-                ...(user?.id && { id: user.id }),
-                ...(user?.customerId && { customerId: user.customerId }),
-              };
+          const profileUpdateData = {
+            fullName: validFullName,
+            phone: user?.phone || "",
+            address: user?.address || "",
+            city: user?.city || "",
+            dietaryPreferences: user?.dietaryPreferences || [],
+            allergies: user?.allergies || "",
+            profileImage: null,
+            // Include user ID if available (some backends require it)
+            ...(user?.id && { id: user.id }),
+            ...(user?.customerId && { customerId: user.customerId }),
+          };
 
-              await updateUserProfile(profileUpdateData);
+          await updateUserProfile(profileUpdateData);
 
-              // Remove from local storage
-              await AsyncStorage.removeItem("profileImage");
+          // Remove from local storage
+          await AsyncStorage.removeItem("profileImage");
 
-              console.log("Profile image removed successfully");
-              Alert.alert("Success", "Profile picture removed successfully!");
+          console.log("Profile image removed successfully");
+          showSuccess("Success", "Profile picture removed successfully!");
 
-              // Refresh user profile to get updated data
-              await refreshProfileImage();
-            } catch (error) {
-              console.error("Error removing profile image:", error);
-              Alert.alert("Error", "Failed to remove profile picture");
-              // Revert
-              setProfileImage(user.profileImage || null);
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]
+          // Refresh user profile to get updated data
+          await refreshProfileImage();
+        } catch (error) {
+          console.error("Error removing profile image:", error);
+          showError("Error", "Failed to remove profile picture");
+          // Revert
+          setProfileImage(user.profileImage || null);
+        } finally {
+          setIsLoading(false);
+        }
+      }
     );
   };
 
@@ -2785,7 +2779,7 @@ const styles = (colors) =>
     },
     editPreferenceTagActive: {
       backgroundColor: `${colors.primary}20`,
-      borderColor: colors.primary,
+      borderColor: `${colors.primary}20`,
     },
     editPreferenceTagText: {
       color: colors.textSecondary,

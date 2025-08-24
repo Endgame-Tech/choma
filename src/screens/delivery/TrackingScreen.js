@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   RefreshControl,
   Linking,
   ActivityIndicator,
@@ -20,9 +19,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import ApiService from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { useAlert } from "../../contexts/AlertContext";
 
 export const TrackingScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
+  const { showError, showInfo, showSuccess } = useAlert();
   const { trackingId, orderId } = route.params || {};
   const [tracking, setTracking] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,11 +54,11 @@ export const TrackingScreen = ({ route, navigation }) => {
       if (result.success) {
         setTracking(result.data);
       } else {
-        Alert.alert("Error", "Failed to load tracking information");
+        showError("Error", "Failed to load tracking information");
       }
     } catch (error) {
       console.error("Error loading tracking:", error);
-      Alert.alert("Error", "Failed to load tracking information");
+      showError("Error", "Failed to load tracking information");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -73,13 +74,13 @@ export const TrackingScreen = ({ route, navigation }) => {
     if (tracking?.driver?.phone) {
       Linking.openURL(`tel:${tracking.driver.phone}`);
     } else {
-      Alert.alert("Info", "Driver contact not available");
+      showInfo("Info", "Driver contact not available");
     }
   };
 
   const submitRating = async () => {
     if (rating === 0) {
-      Alert.alert(
+      showError(
         "Rating Required",
         "Please select a rating before submitting"
       );
@@ -96,16 +97,16 @@ export const TrackingScreen = ({ route, navigation }) => {
       if (result.success) {
         setShowRatingModal(false);
         setTracking(result.data);
-        Alert.alert(
+        showSuccess(
           "Thank you!",
           "Your rating has been submitted successfully"
         );
       } else {
-        Alert.alert("Error", "Failed to submit rating");
+        showError("Error", "Failed to submit rating");
       }
     } catch (error) {
       console.error("Error submitting rating:", error);
-      Alert.alert("Error", "Failed to submit rating");
+      showError("Error", "Failed to submit rating");
     }
   };
 

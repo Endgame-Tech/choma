@@ -93,6 +93,10 @@ router.post('/mealplans', adminController.createMealPlan);
 router.put('/mealplans/:id', adminController.updateMealPlan);
 router.delete('/mealplans/:id', adminController.deleteMealPlan);
 
+// Discount management related routes
+router.get('/meal-plans/list', adminController.getMealPlanListForAdmin);
+router.get('/meal-plans/categories', adminController.getMealPlanCategories);
+
 // ============= DAILY MEAL MANAGEMENT ROUTES =============
 router.get('/dailymeals', adminController.getAllDailyMeals);
 router.get('/mealplans/:id/dailymeals', adminController.getDailyMealsForPlan);
@@ -211,6 +215,9 @@ router.get('/roles/predefined', adminManagementController.getPredefinedRoles);
 
 // ============= ACTIVITY LOGGING ROUTES =============
 router.get('/activity-logs', adminManagementController.getActivityLogs);
+
+// Get user activity for dashboard
+router.get('/activity', adminController.getUserActivityForDashboard);
 
 // ============= SECURITY ALERTS ROUTES =============
 router.get('/security-alerts', adminManagementController.getSecurityAlerts);

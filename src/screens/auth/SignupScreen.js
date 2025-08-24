@@ -6,7 +6,6 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   TextInput, 
-  Alert, 
   ActivityIndicator,
   KeyboardAvoidingView,
   ScrollView,
@@ -27,12 +26,16 @@ import { useTheme } from '../../styles/theme';
 import { THEME } from '../../utils/colors';
 import { TERMS_AND_CONDITIONS, PRIVACY_POLICY_SUMMARY } from '../../utils/termsAndConditions';
 import CloudStorageService from '../../services/cloudStorage';
+import { useAlert } from '../../contexts/AlertContext';
 
 const SignupScreen = ({ navigation }) => {
   const { colors, isDark } = useTheme();
+  const { showError, showSuccess, showInfo, showConfirm, showAlert } = useAlert();
   
   // Basic info
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -61,18 +64,36 @@ const SignupScreen = ({ navigation }) => {
   const { signup } = useAuth();
 
   const validateStep1 = () => {
-    if (!fullName.trim() || !email.trim() || !phoneNumber.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    if (!firstName.trim() || !lastName.trim() || !dateOfBirth.trim() || !email.trim() || !phoneNumber.trim()) {
+      showError('Error', 'Please fill in all required fields');
       return false;
     }
     
     if (!email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      showError('Error', 'Please enter a valid email address');
       return false;
     }
     
     if (phoneNumber.length < 10) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+      showError('Error', 'Please enter a valid phone number');
+      return false;
+    }
+    
+    // Basic date validation (YYYY-MM-DD format)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateOfBirth)) {
+      showError('Error', 'Please enter a valid date of birth (YYYY-MM-DD)');
+      return false;
+    }
+    
+    // Check if user is at least 13 years old
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (age < 13 || (age === 13 && monthDiff < 0) || (age === 13 && monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      showError('Error', 'You must be at least 13 years old to create an account');
       return false;
     }
     
@@ -81,17 +102,17 @@ const SignupScreen = ({ navigation }) => {
 
   const validateStep2 = () => {
     if (!password.trim()) {
-      Alert.alert('Error', 'Please enter a password');
+      showError('Error', 'Please enter a password');
       return false;
     }
     
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      showError('Error', 'Password must be at least 6 characters long');
       return false;
     }
     
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showError('Error', 'Passwords do not match');
       return false;
     }
     
@@ -100,12 +121,12 @@ const SignupScreen = ({ navigation }) => {
 
   const validateStep3 = () => {
     if (!deliveryAddress.trim() || !city.trim() || !state.trim()) {
-      Alert.alert('Error', 'Please fill in all address fields');
+      showError('Error', 'Please fill in all address fields');
       return false;
     }
     
     if (!acceptedTerms) {
-      Alert.alert('Error', 'Please accept the terms and conditions');
+      showError('Error', 'Please accept the terms and conditions');
       return false;
     }
     
@@ -119,10 +140,9 @@ const SignupScreen = ({ navigation }) => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert(
+        showError(
           'Permission Required',
-          'Please grant location permission to use current location.',
-          [{ text: 'OK' }]
+          'Please grant location permission to use current location.'
         );
         return;
       }
@@ -148,13 +168,13 @@ const SignupScreen = ({ navigation }) => {
         setCity(address.city || '');
         setState(address.region || '');
         
-        Alert.alert('Location Found', 'Current location set as delivery address');
+        showSuccess('Location Found', 'Current location set as delivery address');
       } else {
-        Alert.alert('Error', 'Unable to get address from current location');
+        showError('Error', 'Unable to get address from current location');
       }
     } catch (error) {
       console.error('Error getting location:', error);
-      Alert.alert('Location Error', 'Unable to get current location');
+      showError('Location Error', 'Unable to get current location');
     } finally {
       setIsGettingLocation(false);
     }
@@ -169,7 +189,7 @@ const SignupScreen = ({ navigation }) => {
       if (source === 'camera') {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permission Required', 'Please grant camera permission');
+          showError('Permission Required', 'Please grant camera permission');
           return;
         }
 
@@ -181,7 +201,7 @@ const SignupScreen = ({ navigation }) => {
       } else {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permission Required', 'Please grant photo library permission');
+          showError('Permission Required', 'Please grant photo library permission');
           return;
         }
 
@@ -197,22 +217,25 @@ const SignupScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      Alert.alert('Error', 'Failed to upload image');
+      showError('Error', 'Failed to upload image');
     } finally {
       setImageUploading(false);
     }
   };
 
   const showImagePicker = () => {
-    Alert.alert(
-      'Select Profile Image',
-      'Choose how you would like to add your profile picture',
-      [
-        { text: 'Camera', onPress: () => handleImageUpload('camera') },
-        { text: 'Photo Library', onPress: () => handleImageUpload('gallery') },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    const buttons = [
+      { text: 'Camera', onPress: () => handleImageUpload('camera') },
+      { text: 'Photo Library', onPress: () => handleImageUpload('gallery') },
+      { text: 'Cancel', style: 'cancel', onPress: () => {} }
+    ];
+    
+    showAlert({
+      title: 'Select Profile Image',
+      message: 'Choose how you would like to add your profile picture',
+      buttons,
+      type: 'info'
+    });
   };
 
   const handleNextStep = () => {
@@ -247,16 +270,18 @@ const SignupScreen = ({ navigation }) => {
           console.log('Profile image uploaded successfully:', cloudImageUrl);
         } catch (uploadError) {
           console.error('Image upload failed:', uploadError);
-          Alert.alert(
+          showError(
             'Image Upload Failed',
-            'Failed to upload profile image, but account creation will continue without it.',
-            [{ text: 'Continue', onPress: () => {} }]
+            'Failed to upload profile image, but account creation will continue without it.'
           );
         }
       }
       
       const userData = {
-        fullName: fullName.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        fullName: `${firstName.trim()} ${lastName.trim()}`,
+        dateOfBirth: dateOfBirth.trim(),
         email: email.trim(),
         password,
         phoneNumber: phoneNumber.trim(),
@@ -269,13 +294,13 @@ const SignupScreen = ({ navigation }) => {
       const result = await signup(userData);
       
       if (result.success) {
-        Alert.alert('Welcome to Choma!', result.message || 'Your account has been created successfully. You can now start exploring our meal plans!');
+        // Account created successfully
       } else {
-        Alert.alert('Registration Error', result.message || 'Unable to create your account. Please try again.');
+        showError('Registration Error', result.message || 'Unable to create your account. Please try again.');
       }
     } catch (error) {
       console.error('Signup error:', error);
-      Alert.alert('Registration Error', 'Something went wrong. Please check your information and try again.');
+      showError('Registration Error', 'Something went wrong. Please check your information and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -336,15 +361,41 @@ const SignupScreen = ({ navigation }) => {
         </Text>
       </View>
 
+      <View style={styles(colors).nameRow}>
+        <View style={[styles(colors).inputContainer, styles(colors).halfWidth]}>
+          <Ionicons name="person-outline" size={20} color={colors.textMuted} style={styles(colors).inputIcon} />
+          <TextInput
+            style={styles(colors).input}
+            placeholder="First Name *"
+            placeholderTextColor={colors.textMuted}
+            value={firstName}
+            onChangeText={setFirstName}
+            autoCapitalize="words"
+          />
+        </View>
+
+        <View style={[styles(colors).inputContainer, styles(colors).halfWidth]}>
+          <Ionicons name="person-outline" size={20} color={colors.textMuted} style={styles(colors).inputIcon} />
+          <TextInput
+            style={styles(colors).input}
+            placeholder="Last Name *"
+            placeholderTextColor={colors.textMuted}
+            value={lastName}
+            onChangeText={setLastName}
+            autoCapitalize="words"
+          />
+        </View>
+      </View>
+
       <View style={styles(colors).inputContainer}>
-        <Ionicons name="person-outline" size={20} color={colors.textMuted} style={styles(colors).inputIcon} />
+        <Ionicons name="calendar-outline" size={20} color={colors.textMuted} style={styles(colors).inputIcon} />
         <TextInput
           style={styles(colors).input}
-          placeholder="Full Name *"
+          placeholder="Date of Birth * (YYYY-MM-DD)"
           placeholderTextColor={colors.textMuted}
-          value={fullName}
-          onChangeText={setFullName}
-          autoCapitalize="words"
+          value={dateOfBirth}
+          onChangeText={setDateOfBirth}
+          keyboardType="numeric"
         />
       </View>
 
@@ -801,6 +852,11 @@ const styles = (colors) => StyleSheet.create({
   
   // Address fields
   addressRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 10,

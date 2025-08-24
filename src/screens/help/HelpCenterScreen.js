@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
+import { THEME } from "../../utils/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HelpCenterScreen = ({ navigation }) => {

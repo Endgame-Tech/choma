@@ -203,7 +203,7 @@ const ReorderScreen = ({ navigation }) => {
             </Text>
             <TouchableOpacity 
               style={styles(colors).browseMealsButton}
-              onPress={() => navigation.navigate('MealPlans')}
+              onPress={() => navigation.navigate('Search')}
             >
               <Text style={styles(colors).browseMealsButtonText}>Browse Meal Plans</Text>
             </TouchableOpacity>

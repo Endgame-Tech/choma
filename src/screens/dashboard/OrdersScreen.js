@@ -10,7 +10,6 @@ import {
   Dimensions,
   StatusBar,
   Modal,
-  Alert,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
@@ -24,11 +23,13 @@ import { useAuth } from '../../hooks/useAuth';
 import NotificationIcon from '../../components/ui/NotificationIcon';
 import OrderCardSkeleton from '../../components/dashboard/OrderCardSkeleton';
 import { useNotification } from '../../context/NotificationContext';
+import { useAlert } from '../../contexts/AlertContext';
 
 const { width } = Dimensions.get('window');
 
 const OrdersScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
+  const { showError, showSuccess } = useAlert();
   const [selectedTab, setSelectedTab] = useState('active');
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -153,14 +154,14 @@ const OrdersScreen = ({ navigation }) => {
       const result = await apiService.cancelOrder(selectedOrder._id || selectedOrder.orderId);
       
       if (result.success) {
-        Alert.alert('Order Cancelled', 'Your order has been cancelled successfully');
+        showSuccess('Order Cancelled', 'Your order has been cancelled successfully');
         // Refresh orders list
         await loadOrders();
       } else {
-        Alert.alert('Cancellation Failed', result.error || 'Unable to cancel order at this time');
+        showError('Cancellation Failed', result.error || 'Unable to cancel order at this time');
       }
     } catch (error) {
-      Alert.alert('Error', 'Unable to cancel order. Please try again.');
+      showError('Error', 'Unable to cancel order. Please try again.');
       console.error('Cancel order error:', error);
     }
     
@@ -350,7 +351,7 @@ const OrdersScreen = ({ navigation }) => {
             </Text>
             <TouchableOpacity 
               style={styles(colors).emptyStateButton}
-              onPress={() => navigation.navigate('MealPlans')}
+              onPress={() => navigation.navigate('Search')}
             >
               <Text style={styles(colors).emptyStateButtonText}>Browse Meal Plans</Text>
             </TouchableOpacity>

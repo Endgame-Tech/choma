@@ -1,121 +1,522 @@
-🌐 API Request: POST /banners
-api.ts:106  POST http://localhost:3001/api/admin/banners 500 (Internal Server Error)
-dispatchXhrRequest @ axios.js?v=4fae820f:1672
-xhr @ axios.js?v=4fae820f:1552
-dispatchRequest @ axios.js?v=4fae820f:2027
-Promise.then
-_request @ axios.js?v=4fae820f:2230
-request @ axios.js?v=4fae820f:2139
-wrap @ axios.js?v=4fae820f:8
-apiRequest @ api.ts:106
-createBanner @ promoBannersApi.ts:99
-handleCreateBanner @ PromoBanners.tsx:72
-handleSubmit @ CreateBannerModal.tsx:60
-callCallback2 @ chunk-NUMECXU6.js?v=4ab82794:3674
-invokeGuardedCallbackDev @ chunk-NUMECXU6.js?v=4ab82794:3699
-invokeGuardedCallback @ chunk-NUMECXU6.js?v=4ab82794:3733
-invokeGuardedCallbackAndCatchFirstError @ chunk-NUMECXU6.js?v=4ab82794:3736
-executeDispatch @ chunk-NUMECXU6.js?v=4ab82794:7014
-processDispatchQueueItemsInOrder @ chunk-NUMECXU6.js?v=4ab82794:7034
-processDispatchQueue @ chunk-NUMECXU6.js?v=4ab82794:7043
-dispatchEventsForPlugins @ chunk-NUMECXU6.js?v=4ab82794:7051
-(anonymous) @ chunk-NUMECXU6.js?v=4ab82794:7174
-batchedUpdates$1 @ chunk-NUMECXU6.js?v=4ab82794:18913
-batchedUpdates @ chunk-NUMECXU6.js?v=4ab82794:3579
-dispatchEventForPluginEventSystem @ chunk-NUMECXU6.js?v=4ab82794:7173
-dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NUMECXU6.js?v=4ab82794:5478
-dispatchEvent @ chunk-NUMECXU6.js?v=4ab82794:5472
-dispatchDiscreteEvent @ chunk-NUMECXU6.js?v=4ab82794:5449Understand this error
-api.ts:53 ❌ API Error: POST /banners Request failed with status code 500
-overrideMethod @ hook.js:608
-(anonymous) @ api.ts:53
-Promise.then
-_request @ axios.js?v=4fae820f:2230
-request @ axios.js?v=4fae820f:2139
-wrap @ axios.js?v=4fae820f:8
-apiRequest @ api.ts:106
-createBanner @ promoBannersApi.ts:99
-handleCreateBanner @ PromoBanners.tsx:72
-handleSubmit @ CreateBannerModal.tsx:60
-callCallback2 @ chunk-NUMECXU6.js?v=4ab82794:3674
-invokeGuardedCallbackDev @ chunk-NUMECXU6.js?v=4ab82794:3699
-invokeGuardedCallback @ chunk-NUMECXU6.js?v=4ab82794:3733
-invokeGuardedCallbackAndCatchFirstError @ chunk-NUMECXU6.js?v=4ab82794:3736
-executeDispatch @ chunk-NUMECXU6.js?v=4ab82794:7014
-processDispatchQueueItemsInOrder @ chunk-NUMECXU6.js?v=4ab82794:7034
-processDispatchQueue @ chunk-NUMECXU6.js?v=4ab82794:7043
-dispatchEventsForPlugins @ chunk-NUMECXU6.js?v=4ab82794:7051
-(anonymous) @ chunk-NUMECXU6.js?v=4ab82794:7174
-batchedUpdates$1 @ chunk-NUMECXU6.js?v=4ab82794:18913
-batchedUpdates @ chunk-NUMECXU6.js?v=4ab82794:3579
-dispatchEventForPluginEventSystem @ chunk-NUMECXU6.js?v=4ab82794:7173
-dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NUMECXU6.js?v=4ab82794:5478
-dispatchEvent @ chunk-NUMECXU6.js?v=4ab82794:5472
-dispatchDiscreteEvent @ chunk-NUMECXU6.js?v=4ab82794:5449Understand this error
-PromoBanners.tsx:80 Create banner error: Error: PromoBanner validation failed: createdBy: Path `createdBy` is required.
-    at handleCreateBanner (PromoBanners.tsx:77:15)
-    at async handleSubmit (CreateBannerModal.tsx:60:7)
+OG  ✅ User stats loaded and validated: {"activeSubscriptions": 0, "favoriteCategory": "", "nextDelivery": null, "nutritionScore": 0, "orrdersThisMonth": 0, "streakDays": 0, "totalOrdersCompleted": 0, "totalSaved": 0}
+ LOG  📊 Request recorded for /auth/profile/achievements: 1/60
+ LOG  ✅ User achievements fetched successfully
+ LOG  🏆 Achievements API response: {"data": {"data": [[Object], [Object], [Object], [Object], [Object], [Object]], "success": true}, "success": true}
+ LOG  ❌ No achievements data found, showing empty state
+ LOG  🔄 No achievements to display
+ LOG  �🔄 Refreshing user profile from database...
+ LOG  � Profile update rate limited, skipping...
+ LOG  ✅ User profile refreshed successfully
+ LOG  API Request (Attempt 2): GET http://10.115.150.28:5001/api/users/undefined/activity
+ ERROR  HTTP 500 Error Response: {"error": "Cast to ObjectId failed for value \"undefined\" (type string) at path \"_id\" for model \"Customer\"", "message": "Failed to fetch user activity for discount", "success": false}
+ ERROR  API Error (Attempt 2): Failed to fetch user activity for discount
+ LOG  API Request (Attempt 3): GET http://10.115.150.28:5001/api/users/undefined/activity
+ ERROR  HTTP 500 Error Response: {"error": "Cast to ObjectId failed for value \"undefined\" (type string) at path \"_id\" for model \"Customer\"", "message": "Failed to fetch user activity for discount", "success": false}
+ ERROR  API Error (Attempt 3): Failed to fetch user activity for discount
+ ERROR  ❌ Failed to fetch user activity: Unable to connect to server after 3 attempts
+ LOG  📋 Activity API response: {"error": "Unable to connect to server after 3 attempts", "offline": true, "success": false}
+ LOG  ❌ No activity data found, showing empty state
+ LOG  🔄 No recent activity to display
+ LOG  ✅ Background image loaded successfully
+ LOG  API Request (Attempt 1): PUT http://10.115.150.28:5001/api/users/privacy-settings
+ ERROR  HTTP 404 Error Response: {}
+ ERROR  API Error (Attempt 1): HTTP 404:
+ LOG  ✅ Privacy settings updated locally
+ LOG  ✅ Setting saved: DATA_COLLECTION = true
+ LOG  API Request (Attempt 1): POST http://10.115.150.28:5001/api/user/privacy-log
+ ERROR  HTTP 404 Error Response: {}
+ ERROR  API Error (Attempt 1): HTTP 404:
+ LOG  ✅ Privacy action logged: data_collection_enabled
 
-
-	19:06:09 [http]: Incoming Request {
-  "service": "choma-backend",
-  "id": "j045k2g7n",
-  "method": "POST",
-  "url": "/api/upload/banner-image",
-  "ip": "127.0.0.1",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
 }
-✅ Banner image uploaded successfully to: https://res.cloudinary.com/dql0tbyes/image/upload/v1755799572/choma/banners/d9r7cvp33yrwfqmcrmui.ppng
-19:06:13 [http]: Request Completed {
+14:49:16 [http]: Incoming Request {
   "service": "choma-backend",
-  "id": "j045k2g7n",
+  "id": "rewc7y1t1",
   "method": "POST",
-  "url": "/api/upload/banner-image",
+  "url": "/api/banners/68a76f2de4bfa802d8834c1d/impression",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+14:49:16 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "5zn8wn0g0",
+  "method": "GET",
+  "url": "/api/auth/dashboard",
   "statusCode": 200,
-  "duration": "3813ms",
-  "contentLength": "225"
+  "duration": "605ms",
+  "contentLength": "78"
 }
-19:06:24 [http]: Incoming Request {
+14:49:17 [http]: Request Completed {
   "service": "choma-backend",
-  "id": "ptv3erjrv",
+  "id": "rewc7y1t1",
   "method": "POST",
-  "url": "/api/admin/banners",
-  "ip": "127.0.0.1",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+  "url": "/api/banners/68a76f2de4bfa802d8834c1d/impression",
+  "statusCode": 200,
+  "duration": "411ms",
+  "contentLength": "87"
 }
-Create banner error: Error: PromoBanner validation failed: createdBy: Path `createdBy` is required.
-    at ValidationError.inspect (C:\dev\choma\backend\node_modules\mongoose\lib\error\validation.js:52:26)
-    at formatValue (node:internal/util/inspect:850:19)
-    at inspect (node:internal/util/inspect:387:10)
-    at formatWithOptionsInternal (node:internal/util/inspect:2366:40)
-    at formatWithOptions (node:internal/util/inspect:2228:10)
-    at console.value (node:internal/console/constructor:345:14)
-    at console.error (node:internal/console/constructor:412:61)
-    at C:\dev\choma\backend\routes\banners.js:199:13
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
-  errors: {
-    createdBy: ValidatorError: Path `createdBy` is required.
-        at validate (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1404:13)
-        at SchemaType.doValidate (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1388:7)
-        at C:\dev\choma\backend\node_modules\mongoose\lib\document.js:3105:18
-        at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {
-      properties: [Object],
-      kind: 'required',
-      path: 'createdBy',
-      value: undefined,
-      reason: undefined,
-      [Symbol(mongoose#validatorError)]: true
-    }
-  },
-  _message: 'PromoBanner validation failed'
-}
-19:06:24 [http]: Request Completed {
+14:49:52 [http]: Incoming Request {
   "service": "choma-backend",
-  "id": "ptv3erjrv",
-  "method": "POST",
-  "url": "/api/admin/banners",
-  "statusCode": 500,
-  "duration": "361ms",
+  "id": "ttiku3lrq",
+  "method": "GET",
+  "url": "/api/mealplans/popular",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🎯 Cache HIT: public:/api/mealplans/popular:{}
+14:49:52 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "ttiku3lrq",
+  "method": "GET",
+  "url": "/api/mealplans/popular",
+  "statusCode": 304,
+  "duration": "2ms",
+  "contentLength": 0
+}
+14:49:52 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "dewrc9mb5",
+  "method": "GET",
+  "url": "/api/search/popular",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+14:49:52 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "6t694g0qa",
+  "method": "GET",
+  "url": "/api/mealplans/audiences",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+⭕ Cache MISS: public:/api/mealplans/audiences:{}
+14:49:52 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "dewrc9mb5",
+  "method": "GET",
+  "url": "/api/search/popular",
+  "statusCode": 200,
+  "duration": "223ms",
+  "contentLength": "306"
+}
+💾 Cached response: public:/api/mealplans/audiences:{}
+14:49:52 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "6t694g0qa",
+  "method": "GET",
+  "url": "/api/mealplans/audiences",
+  "statusCode": 200,
+  "duration": "332ms",
   "contentLength": "135"
+}
+14:50:07 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "tuja0wxeu",
+  "method": "GET",
+  "url": "/api/orders",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/'
+}
+⭕ Cache MISS: user-orders:68a72a40e2362a0a6fded709:1:20:
+📋 Found 0 orders for user 68a72a40e2362a0a6fded709
+💾 Cached response: user-orders:68a72a40e2362a0a6fded709:1:20:
+14:50:07 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "tuja0wxeu",
+  "method": "GET",
+  "url": "/api/orders",
+  "statusCode": 200,
+  "duration": "375ms",
+  "contentLength": "36"
+}
+14:50:09 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "18w0sul5a",
+  "method": "GET",
+  "url": "/api/auth/profile/stats",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/profile/stats'
+}
+14:50:09 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "r64x6yna0",
+  "method": "GET",
+  "url": "/api/users/undefined/activity",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/undefined/activity'
+}
+14:50:09 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "1murkxb3d",
+  "method": "GET",
+  "url": "/api/auth/dashboard",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/dashboard'
+}
+Get user activity for discount error: CastError: Cast to ObjectId failed for value "undefined" (type string) at path "_id" for model "Customer"
+    at SchemaObjectId.cast (C:\dev\choma\backend\node_modules\mongoose\lib\schema\objectId.js:251:11)
+    at SchemaType.applySetters (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1255:12)
+    at SchemaType.castForQuery (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1673:17)
+    at cast (C:\dev\choma\backend\node_modules\mongoose\lib\cast.js:390:32)
+    at Query.cast (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:5055:12)
+    at Query._castConditions (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2351:10)
+    at model.Query._findOne (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2674:8)
+    at model.Query.exec (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:4604:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async exports.getUserActivityForDiscount (C:\dev\choma\backend\controllers\authController.js:1207:22) {
+  stringValue: '"undefined"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: 'undefined',
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (C:\dev\choma\backend\node_modules\bson\lib\bson.cjs:2538:23)
+      at castObjectId (C:\dev\choma\backend\node_modules\mongoose\lib\cast\objectid.js:25:12)
+      at SchemaObjectId.cast (C:\dev\choma\backend\node_modules\mongoose\lib\schema\objectId.js:249:12)
+      at SchemaType.applySetters (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1255:12)
+      at SchemaType.castForQuery (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1673:17)
+      at cast (C:\dev\choma\backend\node_modules\mongoose\lib\cast.js:390:32)
+      at Query.cast (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:5055:12)
+      at Query._castConditions (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2351:10)
+      at model.Query._findOne (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2674:8)
+      at model.Query.exec (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:4604:80),
+  valueType: 'string'
+}
+14:50:10 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "r64x6yna0",
+  "method": "GET",
+  "url": "/api/users/undefined/activity",
+  "statusCode": 500,
+  "duration": "192ms",
+  "contentLength": "183"
+}
+14:50:10 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "6szkav4yr",
+  "method": "GET",
+  "url": "/api/auth/profile/achievements",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/profile/achievements'
+}
+14:50:10 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "m62iw3pp3",
+  "method": "GET",
+  "url": "/api/auth/profile/notifications",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/profile/notifications'
+}
+14:50:10 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "1murkxb3d",
+  "method": "GET",
+  "url": "/api/auth/dashboard",
+  "statusCode": 304,
+  "duration": "603ms",
+  "contentLength": 0
+}
+14:50:10 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "0607bal7q",
+  "method": "GET",
+  "url": "/api/auth/profile",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/profile'
+}
+14:50:10 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "m62iw3pp3",
+  "method": "GET",
+  "url": "/api/auth/profile/notifications",
+  "statusCode": 200,
+  "duration": "347ms",
+  "contentLength": "154"
+}
+14:50:10 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "0607bal7q",
+  "method": "GET",
+  "url": "/api/auth/profile",
+  "statusCode": 200,
+  "duration": "333ms",
+  "contentLength": "419"
+}
+14:50:11 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "18w0sul5a",
+  "method": "GET",
+  "url": "/api/auth/profile/stats",
+  "statusCode": 200,
+  "duration": "1435ms",
+  "contentLength": "193"
+}
+14:50:11 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "6szkav4yr",
+  "method": "GET",
+  "url": "/api/auth/profile/achievements",
+  "statusCode": 200,
+  "duration": "1149ms",
+  "contentLength": "872"
+}
+14:50:12 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "9s2q7igya",
+  "method": "GET",
+  "url": "/api/users/undefined/activity",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/undefined/activity'
+}
+Get user activity for discount error: CastError: Cast to ObjectId failed for value "undefined" (type string) at path "_id" for model "Customer"
+    at SchemaObjectId.cast (C:\dev\choma\backend\node_modules\mongoose\lib\schema\objectId.js:251:11)
+    at SchemaType.applySetters (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1255:12)
+    at SchemaType.castForQuery (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1673:17)
+    at cast (C:\dev\choma\backend\node_modules\mongoose\lib\cast.js:390:32)
+    at Query.cast (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:5055:12)
+    at Query._castConditions (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2351:10)
+    at model.Query._findOne (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2674:8)
+    at model.Query.exec (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:4604:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async exports.getUserActivityForDiscount (C:\dev\choma\backend\controllers\authController.js:1207:22) {
+  stringValue: '"undefined"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: 'undefined',
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (C:\dev\choma\backend\node_modules\bson\lib\bson.cjs:2538:23)
+      at castObjectId (C:\dev\choma\backend\node_modules\mongoose\lib\cast\objectid.js:25:12)
+      at SchemaObjectId.cast (C:\dev\choma\backend\node_modules\mongoose\lib\schema\objectId.js:249:12)
+      at SchemaType.applySetters (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1255:12)
+      at SchemaType.castForQuery (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1673:17)
+      at cast (C:\dev\choma\backend\node_modules\mongoose\lib\cast.js:390:32)
+      at Query.cast (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:5055:12)
+      at Query._castConditions (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2351:10)
+      at model.Query._findOne (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2674:8)
+      at model.Query.exec (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:4604:80),
+  valueType: 'string'
+}
+14:50:12 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "9s2q7igya",
+  "method": "GET",
+  "url": "/api/users/undefined/activity",
+  "statusCode": 500,
+  "duration": "207ms",
+  "contentLength": "183"
+}
+14:50:16 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "uzs0vu6ny",
+  "method": "GET",
+  "url": "/api/users/undefined/activity",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/undefined/activity'
+}
+Get user activity for discount error: CastError: Cast to ObjectId failed for value "undefined" (type string) at path "_id" for model "Customer"
+    at SchemaObjectId.cast (C:\dev\choma\backend\node_modules\mongoose\lib\schema\objectId.js:251:11)
+    at SchemaType.applySetters (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1255:12)
+    at SchemaType.castForQuery (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1673:17)
+    at cast (C:\dev\choma\backend\node_modules\mongoose\lib\cast.js:390:32)
+    at Query.cast (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:5055:12)
+    at Query._castConditions (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2351:10)
+    at model.Query._findOne (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2674:8)
+    at model.Query.exec (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:4604:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async exports.getUserActivityForDiscount (C:\dev\choma\backend\controllers\authController.js:1207:22) {
+  stringValue: '"undefined"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: 'undefined',
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (C:\dev\choma\backend\node_modules\bson\lib\bson.cjs:2538:23)
+      at castObjectId (C:\dev\choma\backend\node_modules\mongoose\lib\cast\objectid.js:25:12)
+      at SchemaObjectId.cast (C:\dev\choma\backend\node_modules\mongoose\lib\schema\objectId.js:249:12)
+      at SchemaType.applySetters (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1255:12)
+      at SchemaType.castForQuery (C:\dev\choma\backend\node_modules\mongoose\lib\schemaType.js:1673:17)
+      at cast (C:\dev\choma\backend\node_modules\mongoose\lib\cast.js:390:32)
+      at Query.cast (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:5055:12)
+      at Query._castConditions (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2351:10)
+      at model.Query._findOne (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:2674:8)
+      at model.Query.exec (C:\dev\choma\backend\node_modules\mongoose\lib\query.js:4604:80),
+  valueType: 'string'
+}
+14:50:16 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "uzs0vu6ny",
+  "method": "GET",
+  "url": "/api/users/undefined/activity",
+  "statusCode": 500,
+  "duration": "204ms",
+  "contentLength": "183"
+}
+14:50:37 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "yawa5zpjp",
+  "method": "PUT",
+  "url": "/api/users/privacy-settings",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+14:50:37 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "yawa5zpjp",
+  "method": "PUT",
+  "url": "/api/users/privacy-settings",
+  "statusCode": 404,
+  "duration": "3ms",
+  "contentLength": 1223
+}
+Error: Route /api/users/privacy-settings not found
+    at notFoundHandler (C:\dev\choma\backend\middleware\errorHandler.js:338:17)
+    at Layer.handle [as handle_request] (C:\dev\choma\backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\dev\choma\backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\dev\choma\backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\dev\choma\backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\dev\choma\backend\node_modules\express\lib\router\index.js:280:10)
+    at Layer.handle [as handle_request] (C:\dev\choma\backend\node_modules\express\lib\router\layer.js:91:12)
+    at trim_prefix (C:\dev\choma\backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\dev\choma\backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\dev\choma\backend\node_modules\express\lib\router\index.js:346:12)
+14:50:37 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "6kdeb9g2f",
+  "method": "POST",
+  "url": "/api/user/privacy-log",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+14:50:37 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "6kdeb9g2f",
+  "method": "POST",
+  "url": "/api/user/privacy-log",
+  "statusCode": 404,
+  "duration": "1ms",
+  "contentLength": 1217
+}
+Error: Route /api/user/privacy-log not found
+    at notFoundHandler (C:\dev\choma\backend\middleware\errorHandler.js:338:17)
+    at Layer.handle [as handle_request] (C:\dev\choma\backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\dev\choma\backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\dev\choma\backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\dev\choma\backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\dev\choma\backend\node_modules\express\lib\router\index.js:280:10)
+    at Layer.handle [as handle_request] (C:\dev\choma\backend\node_modules\express\lib\router\layer.js:91:12)
+    at trim_prefix (C:\dev\choma\backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\dev\choma\backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\dev\choma\backend\node_modules\express\lib\router\index.js:346:12)
+14:51:12 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "g3swngssv",
+  "method": "GET",
+  "url": "/api/mealplans/MP001",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+⭕ Cache MISS: public:/api/mealplans/MP001:{}
+🍽️ Meal plan pricing debug: {
+  planName: 'FitFam Fuel ',
+  totalPrice: 6790,
+  effectivePrice: 6790,
+  durationWeeks: 4,
+  mealTypes: [ 'lunch', 'breakfast', 'dinner' ],
+  assignmentCount: 5
+}
+💾 Cached response: public:/api/mealplans/MP001:{}
+14:51:12 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "g3swngssv",
+  "method": "GET",
+  "url": "/api/mealplans/MP001",
+  "statusCode": 200,
+  "duration": "524ms",
+  "contentLength": "3894"
+}
+14:51:13 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "j5al4jvmz",
+  "method": "GET",
+  "url": "/api/meal-plans/6881078993e841c791aebfc9/discount-rules",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+14:51:13 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "j5al4jvmz",
+  "method": "GET",
+  "url": "/api/meal-plans/6881078993e841c791aebfc9/discount-rules",
+  "statusCode": 200,
+  "duration": "168ms",
+  "contentLength": "352"
+}
+14:51:13 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "xcu4wzczj",
+  "method": "GET",
+  "url": "/api/users/68a72a40e2362a0a6fded709/activity",
+  "ip": "10.115.150.232",
+  "userAgent": "okhttp/4.9.2"
+}
+🔐 Auth middleware - decoded token: {
+  id: '68a72a40e2362a0a6fded709',
+  email: 'eberetesti12@gmail.com',
+  endpoint: '/68a72a40e2362a0a6fded709/activity'
+}
+14:51:13 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "xcu4wzczj",
+  "method": "GET",
+  "url": "/api/users/68a72a40e2362a0a6fded709/activity",
+  "statusCode": 200,
+  "duration": "512ms",
+  "contentLength": "270"
 }
 

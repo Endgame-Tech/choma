@@ -30,6 +30,11 @@ const NotificationScreen = ({ navigation }) => {
   } = useNotification();
   const [refreshing, setRefreshing] = React.useState(false);
 
+  // Load notifications when screen mounts
+  useEffect(() => {
+    refreshNotifications();
+  }, []);
+
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
@@ -262,6 +267,8 @@ const NotificationScreen = ({ navigation }) => {
       <StandardHeader 
         title="Notifications" 
         onBackPress={() => navigation.goBack()}
+        showRightIcon={false}
+        navigation={null}
         rightComponent={unreadCount > 0 && (
           <TouchableOpacity
             style={styles(colors).markAllButton}

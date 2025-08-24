@@ -5,7 +5,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   ScrollView,
   Image,
@@ -25,9 +24,11 @@ import { useTheme } from '../../styles/theme';
 import { APP_CONFIG } from '../../utils/constants';
 import { THEME } from '../../utils/colors';
 import StandardHeader from '../../components/layout/Header';
+import { useAlert } from '../../contexts/AlertContext';
 
 const PaymentScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
+  const { showError, showInfo, showSuccess } = useAlert();
   const { subscriptionData, mealPlan } = route.params || {};
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +44,7 @@ const PaymentScreen = ({ route, navigation }) => {
 
   const initializePayment = async () => {
     if (!subscriptionData || !user) {
-      Alert.alert('Error', 'Missing payment information');
+      showError('Error', 'Missing payment information');
       return;
     }
 
@@ -143,7 +144,7 @@ const PaymentScreen = ({ route, navigation }) => {
         errorMessage = error.message || 'Failed to initialize payment';
       }
         
-      Alert.alert('Payment Error', errorMessage);
+      showError('Payment Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -155,7 +156,7 @@ const PaymentScreen = ({ route, navigation }) => {
     
     if (!subscriptionId) {
       console.error('ERROR: No subscription ID provided to handlePaymentSuccess');
-      Alert.alert('Error', 'Missing subscription information for update');
+      showError('Error', 'Missing subscription information for update');
       setIsLoading(false);
       return;
     }
@@ -189,11 +190,11 @@ const PaymentScreen = ({ route, navigation }) => {
           mealPlan: mealPlan
         });
       } else {
-        Alert.alert('Verification Error', 'Payment successful but verification failed');
+        showError('Verification Error', 'Payment successful but verification failed');
       }
     } catch (error) {
       console.error('Payment verification error:', error);
-      Alert.alert('Verification Error', 'Payment completed but verification failed');
+      showError('Verification Error', 'Payment completed but verification failed');
     } finally {
       setIsLoading(false);
     }
@@ -201,7 +202,7 @@ const PaymentScreen = ({ route, navigation }) => {
 
   const handlePaymentCancel = () => {
     console.log('Payment cancelled');
-    Alert.alert('Payment Cancelled', 'Your payment was cancelled');
+    showInfo('Payment Cancelled', 'Your payment was cancelled');
   };
 
   // Enhanced error handler for all payment errors
@@ -233,7 +234,7 @@ const PaymentScreen = ({ route, navigation }) => {
     }
     
     setPaymentStatus('Failed');
-    Alert.alert('Payment Failed', errorMessage);
+    showError('Payment Failed', errorMessage);
   };
 
   if (!subscriptionData || !mealPlan) {

@@ -21,6 +21,7 @@
   "type": "commonjs",
   "dependencies": {
     "@colors/colors": "^1.6.0",
+    "@googlemaps/google-maps-services-js": "^3.4.2",
     "@sentry/node": "^9.39.0",
     "@sentry/tracing": "^7.120.3",
     "axios": "^1.10.0",

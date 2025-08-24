@@ -3,7 +3,7 @@
 export const lightColors = {
   // Primary Colors
   primary: '#F7AE1A',
-  primaryDark: '#D96800',
+  primaryDark: '#1b1b1b',
   primaryLight: '#FF9A3F',
   
   // Background Colors
@@ -33,13 +33,13 @@ export const lightColors = {
 
   // Common
   white: '#FFFFFF',
-  black: '#000000',
+  black: '#1b1b1b',
 };
 
 export const darkColors = {
   // Primary Colors
   primary: '#F7AE1A', // Orange accent color from the image
-  primaryDark: '#b6c530ff',
+  primaryDark: '#FFF',
   primaryLight: '#f0fb8ee0',
   
   // Background Colors
@@ -69,7 +69,7 @@ export const darkColors = {
   
   // Common
   white: '#FFFFFF',
-  black: '#000000',
+  black: '#1b1b1b',
 };
 
 

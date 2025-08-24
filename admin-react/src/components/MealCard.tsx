@@ -33,18 +33,17 @@ const MealCard: React.FC<MealCardProps> = ({
         const ingredients = meal.pricing?.ingredients || 0;
         const cookingCosts = meal.pricing?.cookingCosts || 0;
         const packaging = meal.pricing?.packaging || 0;
-        const delivery = meal.pricing?.delivery || 0;
         const platformFee = meal.pricing?.platformFee || 0;
 
-        const totalCosts = ingredients + cookingCosts + packaging + delivery;
+        const totalCosts = ingredients + cookingCosts + packaging;
         const profit = totalCosts * 0.4; // 40% profit
         const totalPrice = totalCosts + profit + platformFee; // Recalculated total price including platform fee
 
         // Chef gets: Ingredients + Cooking + 50% of profit
         const chefEarnings = ingredients + cookingCosts + (profit * 0.5);
 
-        // Choma gets: Packaging + Delivery + 50% of profit + Platform Fee
-        const chomaEarnings = packaging + delivery + (profit * 0.5) + platformFee;
+        // Choma gets: Packaging + 50% of profit + Platform Fee
+        const chomaEarnings = packaging + (profit * 0.5) + platformFee;
 
         return {
             chefEarnings,
@@ -129,8 +128,8 @@ const MealCard: React.FC<MealCardProps> = ({
                             onToggleAvailability?.(meal._id);
                         }}
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${meal.isAvailable
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
                             }`}
                     >
                         {meal.isAvailable ? 'Available' : 'Unavailable'}

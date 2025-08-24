@@ -85,7 +85,6 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
     image: '',
     ingredientsCost: '',
     packaging: '',
-    delivery: '',
     platformFee: '',
     calories: '',
     protein: '',
@@ -114,7 +113,6 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
         image: meal.image || '',
         ingredientsCost: meal.pricing?.ingredients?.toString() || '',
         packaging: meal.pricing?.packaging?.toString() || '',
-        delivery: meal.pricing?.delivery?.toString() || '',
         platformFee: meal.pricing?.platformFee?.toString() || '',
         calories: meal.nutrition?.calories?.toString() || '',
         protein: meal.nutrition?.protein?.toString() || '',
@@ -154,7 +152,6 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
   const calculatePricing = () => {
     const ingredients = parseFloat(formData.ingredientsCost) || 0
     const packaging = parseFloat(formData.packaging) || 0
-    const delivery = parseFloat(formData.delivery) || 0
     const platformFee = parseFloat(formData.platformFee) || 0
     const preparationTime = parseFloat(formData.preparationTime) || 0
 
@@ -164,11 +161,11 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
     // Auto-calculate cooking costs (return 0 if prep time is not set)
     const cookingCosts = preparationTime > 0 ? calculateCookingCost(preparationTime, ingredients, complexityLevel) : 0
 
-    const totalCosts = ingredients + cookingCosts + packaging + delivery
+    const totalCosts = ingredients + cookingCosts + packaging
     const profit = totalCosts * 0.4
     const totalPrice = totalCosts + profit + platformFee
     const chefEarnings = ingredients + cookingCosts + (profit * 0.5)
-    const chomaEarnings = packaging + delivery + (profit * 0.5) + platformFee
+    const chomaEarnings = packaging + (profit * 0.5) + platformFee
 
     return {
       totalCosts,
@@ -198,7 +195,6 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
     // Description removed - not in backend model
     if (!formData.ingredientsCost) emptyFields.push('Ingredients Cost')
     if (!formData.packaging) emptyFields.push('Packaging')
-    if (!formData.delivery) emptyFields.push('Delivery')
     if (!formData.platformFee) emptyFields.push('Platform Fee')
     if (!formData.preparationTime) emptyFields.push('Preparation Time')
 
@@ -220,7 +216,6 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
           ingredients: parseFloat(formData.ingredients),
           cookingCosts: pricing.cookingCosts, // Auto-calculated
           packaging: parseFloat(formData.packaging),
-          delivery: parseFloat(formData.delivery),
           platformFee: parseFloat(formData.platformFee),
           totalCosts: pricing.totalCosts,
           profit: pricing.profit,
@@ -423,23 +418,6 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
-                    Delivery (₦) *
-                  </label>
-                  <input
-                    type="number"
-                    name="delivery"
-                    value={formData.delivery}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="200"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-white/70 mb-2">
                     Platform Fee (₦) *
                   </label>
                   <input
@@ -520,7 +498,7 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
                     <div className="text-sm font-medium text-blue-700 dark:text-blue-300">Choma Earnings</div>
                     <div className="text-lg font-semibold text-blue-800 dark:text-blue-200">{formatCurrency(calculatePricing().chomaEarnings)}</div>
-                    <div className="text-xs text-blue-600 dark:text-blue-400">Packaging + Delivery + 50% Profit + Platform Fee</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400">Packaging + 50% Profit + Platform Fee</div>
                   </div>
                 </div>
 

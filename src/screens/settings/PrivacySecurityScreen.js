@@ -7,7 +7,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Switch,
-  Alert,
   StatusBar,
   ActivityIndicator,
 } from 'react-native';
@@ -17,9 +16,13 @@ import { COLORS, THEME } from '../../utils/colors';
 import StandardHeader from '../../components/layout/Header';
 import apiService from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
+import { useAlert } from '../../contexts/AlertContext';
+import { useTheme } from '../../styles/theme';
 
 const PrivacySecurityScreen = ({ navigation }) => {
   const { user, deleteAccount } = useAuth();
+  const { colors } = useTheme();
+  const { showError, showInfo, showConfirm } = useAlert();
   const [loading, setLoading] = useState(true);
   const [privacySettings, setPrivacySettings] = useState({
     profileVisibility: 'private', // 'public', 'friends', 'private'
@@ -77,26 +80,22 @@ const PrivacySecurityScreen = ({ navigation }) => {
       if (!result?.success) {
         // Revert on failure
         setPrivacySettings(prev => ({ ...prev, [key]: !value }));
-        Alert.alert('Error', 'Failed to update privacy setting');
+        showError('Error', 'Failed to update privacy setting');
       }
     } catch (error) {
       // Revert on error
       setPrivacySettings(prev => ({ ...prev, [key]: !value }));
       console.error('Privacy setting update error:', error);
-      Alert.alert('Error', 'Failed to update privacy setting');
+      showError('Error', 'Failed to update privacy setting');
     }
   };
 
   const handleDataExport = async () => {
     try {
-      Alert.alert(
+      showConfirm(
         'Export Data',
         'We will prepare your data export and send it to your email address. This may take up to 24 hours.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Export',
-            onPress: async () => {
+        async () => {
               try {
                 setSaveLoading(true);
                 
@@ -110,60 +109,41 @@ const PrivacySecurityScreen = ({ navigation }) => {
                 const result = await apiService.requestDataExport?.();
                 
                 if (result?.success) {
-                  Alert.alert('Export Requested', 'Your data export has been requested. You will receive an email when it\'s ready.');
+                  showInfo('Export Requested', 'Your data export has been requested. You will receive an email when it\'s ready.');
                 } else {
-                  Alert.alert('Export Failed', 'Unable to process data export request. Please try again.');
+                  showError('Export Failed', 'Unable to process data export request. Please try again.');
                 }
               } catch (error) {
-                Alert.alert('Error', 'Failed to request data export');
+                showError('Error', 'Failed to request data export');
               } finally {
                 setSaveLoading(false);
               }
-            }
-          }
-        ]
-      );
+        }
     } catch (error) {
       console.error('Data export error:', error);
     }
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
+    showConfirm(
       'Delete Account',
       'This action cannot be undone. All your data will be permanently deleted.\n\nAre you sure you want to delete your account?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
+      () => {
+            showConfirm(
               'Final Confirmation',
               'Type "DELETE" to confirm account deletion',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Confirm',
-                  style: 'destructive',
-                  onPress: async () => {
+              async () => {
                     try {
                       setSaveLoading(true);
                       await deleteAccount();
                     } catch (error) {
-                      Alert.alert('Error', 'Failed to delete account. Please contact support.');
+                      showError('Error', 'Failed to delete account. Please contact support.');
                     } finally {
                       setSaveLoading(false);
                     }
-                  }
-                }
-              ],
-              { cancelable: true }
+              }
             );
           }
-        }
-      ]
-    );
   };
 
   const renderSettingRow = (title, subtitle, value, onToggle, type = 'switch') => (
@@ -219,7 +199,7 @@ const PrivacySecurityScreen = ({ navigation }) => {
               'Control who can see your profile information',
               privacySettings.profileVisibility,
               () => {
-                Alert.alert(
+                showInfo(
                   'Profile Visibility',
                   'Choose who can see your profile',
                   [

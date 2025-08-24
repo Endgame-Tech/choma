@@ -4,12 +4,12 @@ import {
   Text,
   Switch,
   StyleSheet,
-  Alert,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import biometricAuth from '../../services/biometricAuth';
+import { useAlert } from '../../contexts/AlertContext';
 
 const BiometricToggle = ({ style }) => {
   const [isEnabled, setIsEnabled] = useState(false);
@@ -17,6 +17,7 @@ const BiometricToggle = ({ style }) => {
   const [biometricType, setBiometricType] = useState('Biometric');
   const [loading, setLoading] = useState(true);
   const [securityLevel, setSecurityLevel] = useState('NONE');
+  const { showError, showSuccess, showConfirm } = useAlert();
 
   useEffect(() => {
     initializeBiometric();
@@ -55,49 +56,38 @@ const BiometricToggle = ({ style }) => {
         const success = await biometricAuth.setBiometricEnabled(true);
         if (success) {
           setIsEnabled(true);
-          Alert.alert(
+          showSuccess(
             'Success',
-            `${biometricType} authentication has been enabled for choma.`,
-            [{ text: 'OK' }]
+            `${biometricType} authentication has been enabled for choma.`
           );
         } else {
-          Alert.alert(
+          showError(
             'Error',
-            'Failed to enable biometric authentication. Please try again.',
-            [{ text: 'OK' }]
+            'Failed to enable biometric authentication. Please try again.'
           );
         }
       } else {
-        Alert.alert(
+        showError(
           'Authentication Failed',
-          result.error || 'Biometric authentication failed. Please try again.',
-          [{ text: 'OK' }]
+          result.error || 'Biometric authentication failed. Please try again.'
         );
       }
     } else {
       // Disable biometric authentication
-      Alert.alert(
+      showConfirm(
         'Disable Biometric Authentication',
         `Are you sure you want to disable ${biometricType} authentication?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Disable',
-            style: 'destructive',
-            onPress: async () => {
+        async () => {
               const success = await biometricAuth.setBiometricEnabled(false);
               if (success) {
                 setIsEnabled(false);
               } else {
-                Alert.alert(
+                showError(
                   'Error',
-                  'Failed to disable biometric authentication. Please try again.',
-                  [{ text: 'OK' }]
+                  'Failed to disable biometric authentication. Please try again.'
                 );
               }
-            },
-          },
-        ]
+        }
       );
     }
   };

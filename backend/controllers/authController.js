@@ -1198,3 +1198,162 @@ exports.logout = async (req, res) => {
     });
   }
 };
+
+// Get user activity for discount calculation
+exports.getUserActivityForDiscount = async (req, res) => {
+  try {
+    const customerId = req.params.id;
+
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const orders = await Order.find({ customer: customerId, orderStatus: 'Delivered' }).sort({ actualDelivery: -1 });
+
+    const totalOrders = orders.length;
+    const totalSpent = orders.reduce((acc, order) => acc + order.totalAmount, 0);
+    const isFirstTime = totalOrders === 0;
+    const lastOrderDate = totalOrders > 0 ? orders[0].actualDelivery : null;
+
+    let daysSinceLastOrder = null;
+    let monthsSinceLastOrder = null;
+    if (lastOrderDate) {
+      const now = new Date();
+      const diffInMs = now.getTime() - new Date(lastOrderDate).getTime();
+      daysSinceLastOrder = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      monthsSinceLastOrder = Math.floor(daysSinceLastOrder / 30);
+    }
+
+    const registrationDate = customer.registrationDate;
+    let daysSinceRegistration = 0;
+    if (registrationDate) {
+        const now = new Date();
+        const diffInMs = now.getTime() - new Date(registrationDate).getTime();
+        daysSinceRegistration = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    }
+
+    // For now, subscriptionStreak and isConsistentUser are placeholders
+    const subscriptionStreak = 0;
+    const isConsistentUser = false;
+
+    res.json({
+      success: true,
+      data: {
+        isFirstTime,
+        lastOrderDate,
+        totalOrders,
+        totalSpent,
+        subscriptionStreak,
+        daysSinceLastOrder,
+        monthsSinceLastOrder,
+        isConsistentUser,
+        registrationDate,
+        daysSinceRegistration,
+      },
+    });
+  } catch (err) {
+    console.error('Get user activity for discount error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user activity for discount',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
+};
+
+exports.updatePrivacySettings = async (req, res) => {
+    try {
+        const customerId = req.user.id;
+        const { dataCollection } = req.body;
+
+        const customer = await Customer.findById(customerId);
+        if (!customer) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        customer.privacySettings = {
+            ...customer.privacySettings,
+            dataCollection: dataCollection,
+            updatedAt: new Date()
+        };
+
+        await customer.save();
+
+        res.json({ success: true, message: 'Privacy settings updated' });
+    } catch (err) {
+        console.error('Update privacy settings error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update privacy settings',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+        });
+    }
+};
+
+exports.logPrivacyAction = async (req, res) => {
+    try {
+        const customerId = req.user.id;
+        const { action } = req.body;
+
+        // In a real application, you would save this to a dedicated audit log
+        console.log(`Privacy action logged for user ${customerId}: ${action}`);
+
+        res.json({ success: true, message: 'Privacy action logged' });
+    } catch (err) {
+        console.error('Log privacy action error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to log privacy action',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+        });
+    }
+};
+
+exports.updatePrivacySettings = async (req, res) => {
+    try {
+        const customerId = req.user.id;
+        const { dataCollection } = req.body;
+
+        const customer = await Customer.findById(customerId);
+        if (!customer) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        customer.privacySettings = {
+            ...customer.privacySettings,
+            dataCollection: dataCollection,
+            updatedAt: new Date()
+        };
+
+        await customer.save();
+
+        res.json({ success: true, message: 'Privacy settings updated' });
+    } catch (err) {
+        console.error('Update privacy settings error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update privacy settings',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+        });
+    }
+};
+
+exports.logPrivacyAction = async (req, res) => {
+    try {
+        const customerId = req.user.id;
+        const { action } = req.body;
+
+        // In a real application, you would save this to a dedicated audit log
+        console.log(`Privacy action logged for user ${customerId}: ${action}`);
+
+        res.json({ success: true, message: 'Privacy action logged' });
+    } catch (err) {
+        console.error('Log privacy action error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to log privacy action',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+        });
+    }
+};
