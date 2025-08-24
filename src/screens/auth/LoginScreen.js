@@ -60,23 +60,21 @@ const LoginScreen = ({ navigation }) => {
         // Store credentials for biometric login
         await storeBiometricCredentials({ email: email.trim(), password });
       } else {
-        showError("Login Error", result.message || "Unable to log you in. Please check your credentials and try again.");
+        showError(
+          "Login Error",
+          result.message ||
+            "Unable to log you in. Please check your credentials and try again."
+        );
       }
     } catch (error) {
       console.error("Login error:", error);
-      showError("Login Error", "Something went wrong. Please check your connection and try again.");
+      showError(
+        "Login Error",
+        "Something went wrong. Please check your connection and try again."
+      );
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleDemoLogin = async () => {
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      showSuccess("Demo Login", "Successfully logged in as demo user!");
-    }, 1000);
   };
 
   return (
@@ -102,23 +100,13 @@ const LoginScreen = ({ navigation }) => {
           <View style={styles(colors).content}>
             <View style={styles(colors).logoContainer}>
               <View style={styles(colors).logoBackground}>
-                <ChomaLogo width={60} height={33} />
+                <ChomaLogo width={100} height={60} />
               </View>
               <Text style={styles(colors).title}>Welcome Back</Text>
               <Text style={styles(colors).subtitle}>
                 Sign in to your Choma account
               </Text>
             </View>
-
-            <BiometricLogin
-              onSuccess={() => {
-                // Biometric login successful
-                console.log("Biometric login successful");
-              }}
-              onError={(error) => {
-                console.error("Biometric login error:", error);
-              }}
-            />
 
             <View style={styles(colors).form}>
               <View style={styles(colors).inputContainer}>
@@ -179,7 +167,7 @@ const LoginScreen = ({ navigation }) => {
                   colors={
                     isLoading
                       ? [colors.textMuted, colors.textMuted]
-                      : [colors.primary, colors.primaryDark]
+                      : ["#652815", "#652815"]
                   }
                   style={styles(colors).buttonGradient}
                 >
@@ -192,9 +180,9 @@ const LoginScreen = ({ navigation }) => {
               </TouchableOpacity>
 
               <View style={styles(colors).optionsRow}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles(colors).forgotPassword}
-                  onPress={() => navigation.navigate('ForgotPassword')}
+                  onPress={() => navigation.navigate("ForgotPassword")}
                 >
                   <Text style={styles(colors).forgotPasswordText}>
                     Forgot Password?
@@ -211,6 +199,16 @@ const LoginScreen = ({ navigation }) => {
                 <Text style={styles(colors).signupLink}>Sign Up</Text>
               </TouchableOpacity>
             </View>
+
+            <BiometricLogin
+              onSuccess={() => {
+                // Biometric login successful
+                console.log("Biometric login successful");
+              }}
+              onError={(error) => {
+                console.error("Biometric login error:", error);
+              }}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -305,24 +303,9 @@ const styles = (colors) =>
       opacity: 0.6,
     },
     loginButtonText: {
-      color: colors.black,
+      color: colors.text2,
       fontSize: 16,
       fontWeight: "600",
-    },
-    demoButton: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.medium,
-      height: 45,
-      justifyContent: "center",
-      alignItems: "center",
-      marginTop: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    demoButtonText: {
-      color: colors.textSecondary,
-      fontSize: 14,
-      fontWeight: "500",
     },
     optionsRow: {
       flexDirection: "row",

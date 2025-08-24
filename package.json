@@ -9,7 +9,6 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "clean": "expo install --fix",
-    
     "production": "pm2 start ecosystem.config.js --env production",
     "staging": "pm2 start ecosystem.config.js --env development",
     "render:deploy": "git push origin main",
@@ -33,6 +32,7 @@
     "@flaticon/flaticon-uicons": "^3.3.1",
     "@ptomasroos/react-native-multi-slider": "^2.2.2",
     "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-community/datetimepicker": "^8.4.4",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-native-firebase/app": "^23.0.1",
     "@react-native-firebase/messaging": "^23.0.1",
@@ -50,6 +50,7 @@
     "expo-constants": "~17.1.7",
     "expo-dev-client": "~5.2.4",
     "expo-device": "~7.1.4",
+    "expo-haptics": "~14.1.4",
     "expo-image-picker": "~16.1.4",
     "expo-linear-gradient": "~14.1.5",
     "expo-linking": "^7.1.7",
@@ -76,8 +77,7 @@
     "react-native-screens": "~4.11.1",
     "react-native-svg": "^15.12.1",
     "react-native-web": "^0.20.0",
-    "react-native-webview": "13.13.5",
-    "expo-haptics": "~14.1.4"
+    "react-native-webview": "13.13.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

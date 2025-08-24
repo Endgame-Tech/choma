@@ -16,6 +16,8 @@ import {
   Dimensions,
   Switch
 } from 'react-native';
+import ChomaLogo from "../../components/ui/ChomaLogo";
+import CustomDatePicker from "../../components/ui/CustomDatePicker";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -60,8 +62,38 @@ const SignupScreen = ({ navigation }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1); // Multi-step form
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   
   const { signup } = useAuth();
+
+  // Format date for display and storage
+  const formatDateForDisplay = (date) => {
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
+  };
+
+  const formatDateForStorage = (date) => {
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+  };
+
+  // Handle date picker
+  const openDatePicker = () => {
+    setShowDatePicker(true);
+  };
+
+  const handleDateConfirm = (date) => {
+    setSelectedDate(date);
+    setDateOfBirth(formatDateForStorage(date));
+    setShowDatePicker(false);
+  };
+
+  const handleDateCancel = () => {
+    setShowDatePicker(false);
+  };
 
   const validateStep1 = () => {
     if (!firstName.trim() || !lastName.trim() || !dateOfBirth.trim() || !email.trim() || !phoneNumber.trim()) {
@@ -76,13 +108,6 @@ const SignupScreen = ({ navigation }) => {
     
     if (phoneNumber.length < 10) {
       showError('Error', 'Please enter a valid phone number');
-      return false;
-    }
-    
-    // Basic date validation (YYYY-MM-DD format)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(dateOfBirth)) {
-      showError('Error', 'Please enter a valid date of birth (YYYY-MM-DD)');
       return false;
     }
     
@@ -387,17 +412,20 @@ const SignupScreen = ({ navigation }) => {
         </View>
       </View>
 
-      <View style={styles(colors).inputContainer}>
+      <TouchableOpacity 
+        style={styles(colors).inputContainer}
+        onPress={openDatePicker}
+      >
         <Ionicons name="calendar-outline" size={20} color={colors.textMuted} style={styles(colors).inputIcon} />
-        <TextInput
-          style={styles(colors).input}
-          placeholder="Date of Birth * (YYYY-MM-DD)"
-          placeholderTextColor={colors.textMuted}
-          value={dateOfBirth}
-          onChangeText={setDateOfBirth}
-          keyboardType="numeric"
-        />
-      </View>
+        <Text style={[
+          styles(colors).input,
+          styles(colors).dateText,
+          !dateOfBirth && styles(colors).placeholderText
+        ]}>
+          {dateOfBirth ? formatDateForDisplay(selectedDate) : 'Date of Birth *'}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
+      </TouchableOpacity>
 
       <View style={styles(colors).inputContainer}>
         <Ionicons name="mail-outline" size={20} color={colors.textMuted} style={styles(colors).inputIcon} />
@@ -639,19 +667,16 @@ const SignupScreen = ({ navigation }) => {
             <View style={styles(colors).headerSpacer} />
           </View>
 
-          {renderStepIndicator()}
-
           <View style={styles(colors).content}>
             <View style={styles(colors).logoContainer}>
-              <LinearGradient
-                colors={[colors.primary, colors.primaryDark]}
-                style={styles(colors).logoBackground}
-              >
-                <Ionicons name="person-add" size={40} color={colors.white} />
-              </LinearGradient>
+              <View style={styles(colors).logoBackground}>
+                <ChomaLogo width={100} height={60} />
+              </View>
               <Text style={styles(colors).title}>Create Account</Text>
               <Text style={styles(colors).subtitle}>Start your healthy journey with choma</Text>
             </View>
+
+            {renderStepIndicator()}
 
             <View style={styles(colors).form}>
               {currentStep === 1 && renderStep1()}
@@ -665,7 +690,7 @@ const SignupScreen = ({ navigation }) => {
                     onPress={handleNextStep}
                   >
                     <LinearGradient
-                      colors={[colors.primary, colors.primaryDark]}
+                      colors={['#652815', '#652815']}
                       style={styles(colors).buttonGradient}
                     >
                       <Text style={styles(colors).nextButtonText}>Next</Text>
@@ -704,6 +729,15 @@ const SignupScreen = ({ navigation }) => {
       </KeyboardAvoidingView>
 
       {renderTermsModal()}
+
+      <CustomDatePicker
+        visible={showDatePicker}
+        onConfirm={handleDateConfirm}
+        onCancel={handleDateCancel}
+        initialDate={selectedDate}
+        minimumAge={13}
+        title="Select Date of Birth"
+      />
     </SafeAreaView>
   );
 };
@@ -754,13 +788,13 @@ const styles = (colors) => StyleSheet.create({
   stepCircle: {
     width: 30,
     height: 30,
-    borderRadius: 15,
+    borderRadius: 20,
     backgroundColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   stepCircleActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#652815',
   },
   stepText: {
     fontSize: 14,
@@ -848,6 +882,15 @@ const styles = (colors) => StyleSheet.create({
   },
   eyeIcon: {
     padding: 4,
+  },
+  
+  // Date picker styles
+  dateText: {
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  placeholderText: {
+    color: colors.textMuted,
   },
   
   // Address fields

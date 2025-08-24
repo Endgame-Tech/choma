@@ -2157,7 +2157,7 @@ const styles = (colors) =>
     mealplanPrice: {
       fontSize: 20,
       fontWeight: "bold",
-      color: colors.primaryDark,
+      color: colors.primaryDark2,
     },
     // Subscription-focused UI Styles
     todaysMealsSection: {

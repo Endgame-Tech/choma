@@ -760,7 +760,7 @@ const SearchScreen = ({ navigation }) => {
                                 color={
                                   isBookmarked(plan._id || plan.id)
                                     ? colors.error
-                                    : colors.white
+                                    : colors.primary
                                 }
                               />
                             </TouchableOpacity>
@@ -944,7 +944,7 @@ const styles = (colors) =>
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: colors.black,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -979,9 +979,9 @@ const styles = (colors) =>
       lineHeight: 20,
     },
     mealplanPrice: {
-      fontSize: 16,
+      fontSize: 20,
       fontWeight: "700",
-      color: colors.primary,
+      color: colors.primaryDark2,
     },
     scrollContent: {
       paddingBottom: 120, // Extra padding for floating tab bar

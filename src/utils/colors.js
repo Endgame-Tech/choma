@@ -3,7 +3,7 @@
 export const lightColors = {
   // Primary Colors
   primary: '#F7AE1A',
-  primaryDark: '#1b1b1b',
+  primaryDark: '#D96800',
   primaryLight: '#FF9A3F',
   
   // Background Colors
@@ -13,6 +13,7 @@ export const lightColors = {
   
   // Text Colors
   text: '#1A1A1A',
+  text2: '#FFFFFF',
   textSecondary: '#666666',
   textMuted: '#999999',
   
@@ -39,7 +40,8 @@ export const lightColors = {
 export const darkColors = {
   // Primary Colors
   primary: '#F7AE1A', // Orange accent color from the image
-  primaryDark: '#FFF',
+  primaryDark: '#b6c530ff',
+  primaryDark2: '#1b1b1b',
   primaryLight: '#f0fb8ee0',
   
   // Background Colors
@@ -48,7 +50,8 @@ export const darkColors = {
   modalBackground: '#333333',
   
   // Text Colors
-  text: '#FFFFFF', // Primary white text
+  text: '#FFFFFF',
+  text2: '#FFFFFF',
   textSecondary: '#B0B0B0', // Secondary gray text
   textMuted: '#808080', // Muted text
   

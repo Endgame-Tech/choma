@@ -21,7 +21,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Signup controller
 exports.signup = async (req, res) => {
   try {
-    const { fullName, email, password, phone, address, city, dietaryPreferences, allergies } = req.body;
+    const { fullName, firstName, lastName, dateOfBirth, email, password, phone, address, city, dietaryPreferences, allergies, profileImage } = req.body;
     
     // Validation
     if (!fullName || !email || !password) {
@@ -60,13 +60,17 @@ exports.signup = async (req, res) => {
     // Create customer
     const customer = await Customer.create({
       fullName,
+      firstName,
+      lastName,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
       email,
       password: hashedPassword,
       phone,
       address,
       city,
       dietaryPreferences,
-      allergies
+      allergies,
+      profileImage
     });
 
     // Generate JWT token
@@ -94,7 +98,10 @@ exports.signup = async (req, res) => {
       customer: { 
         id: customer._id,
         customerId: customer.customerId,
-        fullName: customer.fullName, 
+        fullName: customer.fullName,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        dateOfBirth: customer.dateOfBirth,
         email: customer.email,
         phone: customer.phone,
         city: customer.city,
@@ -183,7 +190,10 @@ exports.login = async (req, res) => {
       customer: { 
         id: customer._id,
         customerId: customer.customerId,
-        fullName: customer.fullName, 
+        fullName: customer.fullName,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        dateOfBirth: customer.dateOfBirth,
         email: customer.email,
         phone: customer.phone,
         city: customer.city,
@@ -228,6 +238,9 @@ exports.getProfile = async (req, res) => {
         id: customer._id,
         customerId: customer.customerId,
         fullName: customer.fullName,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        dateOfBirth: customer.dateOfBirth,
         email: customer.email,
         phone: customer.phone,
         address: customer.address,
@@ -253,7 +266,7 @@ exports.getProfile = async (req, res) => {
 // Update user profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { fullName, phone, address, city, dietaryPreferences, allergies, profileImage } = req.body;
+    const { fullName, firstName, lastName, dateOfBirth, phone, address, city, dietaryPreferences, allergies, profileImage } = req.body;
     
     // Validate required fields
     if (!fullName) {
@@ -282,6 +295,9 @@ exports.updateProfile = async (req, res) => {
     
     // Update fields
     customer.fullName = fullName;
+    if (firstName !== undefined) customer.firstName = firstName;
+    if (lastName !== undefined) customer.lastName = lastName;
+    if (dateOfBirth !== undefined) customer.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
     customer.phone = phone;
     customer.address = address;
     customer.city = city;
@@ -302,6 +318,9 @@ exports.updateProfile = async (req, res) => {
         id: customer._id,
         customerId: customer.customerId,
         fullName: customer.fullName,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        dateOfBirth: customer.dateOfBirth,
         email: customer.email,
         phone: customer.phone,
         address: customer.address,

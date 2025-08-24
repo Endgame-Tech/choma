@@ -15,7 +15,7 @@ jobs:
           echo "🔄 Pinging Render service to prevent sleep..."
           
           # Replace with your actual Render URL
-          RENDER_URL="${{ secrets.RENDER_SERVICE_URL || 'https://your-service-name.onrender.com' }}"
+          RENDER_URL="${{ secrets.RENDER_SERVICE_URL || 'https://choma.onrender.com' }}"
           
           echo "📡 Pinging: $RENDER_URL/ping"
           
@@ -35,7 +35,7 @@ jobs:
 
       - name: Check Health Endpoint
         run: |
-          RENDER_URL="${{ secrets.RENDER_SERVICE_URL || 'https://your-service-name.onrender.com' }}"
+          RENDER_URL="${{ secrets.RENDER_SERVICE_URL || 'https://choma.onrender.com' }}"
           
           echo "🏥 Checking health endpoint..."
           response=$(curl -s "$RENDER_URL/health" || echo "failed")
