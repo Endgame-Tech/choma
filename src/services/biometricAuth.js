@@ -30,7 +30,7 @@ class BiometricAuthService {
       if (this.isSupported) {
         this.availableTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
         console.log('📱 Biometric auth initialized');
-        console.log('Available types:', this.availableTypes);
+        console.log('Available biometric types:', this.availableTypes);
       }
       
       this.initialized = true;

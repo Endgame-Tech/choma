@@ -21,6 +21,16 @@ interface MealPlanCardProps {
     isSelected?: boolean;
 }
 
+// Local lightweight types to avoid 'any' and remain defensive with API shapes
+type RawAssignment = {
+    _id?: string;
+    weekNumber?: number;
+    dayOfWeek?: number;
+    mealTime?: string;
+    mealIds?: Array<string | Record<string, unknown>>;
+    meals?: Array<Record<string, unknown>>;
+}
+
 const MealPlanCard: React.FC<MealPlanCardProps> = ({
     mealPlan,
     onEdit,
@@ -48,6 +58,65 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
     };
 
     const imageUrl = mealPlan.coverImage || 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1000&q=80';
+
+    // Defensive derived stats (use assignments when present, else fallbacks)
+    const planTotalDays = (() => {
+        if (typeof mealPlan.durationWeeks === 'number') return mealPlan.durationWeeks * 7
+        if (mealPlan.stats && typeof mealPlan.stats.totalDays === 'number') return mealPlan.stats.totalDays
+        return 0
+    })()
+
+    const planAssignments: RawAssignment[] = ((mealPlan as unknown) as { assignments?: RawAssignment[] }).assignments || []
+
+    const uniqueSlots = new Set<string>()
+    planAssignments.forEach(a => {
+        try {
+            if (a && a.weekNumber != null && a.dayOfWeek != null && a.mealTime) {
+                uniqueSlots.add(`${a.weekNumber}-${a.dayOfWeek}-${a.mealTime}`)
+            }
+        } catch (e) {
+            // ignore malformed assignment
+        }
+    })
+
+    const totalMealsComputed = mealPlan.assignmentCount || (planAssignments.length > 0 ? planAssignments.length : uniqueSlots.size)
+
+    // Sum calories only when assignments include populated meal objects (defensive)
+    const getCaloriesFromPotentialMeal = (obj: unknown): number => {
+        if (typeof obj !== 'object' || obj === null) return 0
+        const o = obj as Record<string, unknown>
+        const nutrition = o['nutrition']
+        if (typeof nutrition === 'object' && nutrition !== null) {
+            const n = nutrition as Record<string, unknown>
+            const calories = n['calories']
+            if (typeof calories === 'number') return calories
+        }
+        return 0
+    }
+
+    const totalCalories = planAssignments.reduce((acc, a) => {
+        const mealsList: unknown[] = []
+        if (a) {
+            if (Array.isArray(a.mealIds)) {
+                // mealIds may be populated objects or ids; collect populated objects only
+                a.mealIds.forEach((m) => {
+                    if (m && typeof m === 'object') mealsList.push(m)
+                })
+            }
+            // some APIs may include a 'meals' or 'items' field already populated
+            if (Array.isArray(a.meals)) {
+                a.meals.forEach((m) => { if (m && typeof m === 'object') mealsList.push(m) })
+            }
+        }
+        return acc + mealsList.reduce((s: number, m: unknown) => s + getCaloriesFromPotentialMeal(m), 0)
+    }, 0)
+
+    const avgCaloriesPerDayComputed = (() => {
+        if (planTotalDays > 0 && totalCalories > 0) return Math.round(totalCalories / planTotalDays)
+        // fallback to backend field if available
+        if (mealPlan.nutritionInfo && typeof mealPlan.nutritionInfo.avgCaloriesPerDay === 'number') return Math.round(mealPlan.nutritionInfo.avgCaloriesPerDay)
+        return 0
+    })()
 
     return (
         <div className="group relative bg-white dark:bg-black/50 rounded-[20px] shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 w-full max-w-[320px] mx-auto overflow-hidden">
@@ -105,10 +174,10 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
                         }}
                         disabled={!mealPlan.isPublished && (!mealPlan.assignmentCount || mealPlan.assignmentCount === 0)}
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${mealPlan.isPublished
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                                : (!mealPlan.assignmentCount || mealPlan.assignmentCount === 0)
-                                    ? 'bg-red-100 border border-white dark:bg-red-900/40 text-red-800 dark:text-red-300 opacity-75 cursor-not-allowed'
-                                    : 'bg-gray-100 border border-white dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : (!mealPlan.assignmentCount || mealPlan.assignmentCount === 0)
+                                ? 'bg-red-100 border border-white dark:bg-red-900/40 text-red-800 dark:text-red-300 opacity-75 cursor-not-allowed'
+                                : 'bg-gray-100 border border-white dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
                             }`}
                         title={
                             !mealPlan.isPublished && (!mealPlan.assignmentCount || mealPlan.assignmentCount === 0)
@@ -158,25 +227,23 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
                     <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">
                         <FiCalendar className="w-[12px] h-[12px] text-gray-600 dark:text-gray-400" />
                         <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
-                            {mealPlan.stats?.totalDays || 0} days
+                            {planTotalDays} days
                         </span>
                     </div>
 
                     <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">
                         <FiUsers className="w-[12px] h-[12px] text-gray-600 dark:text-gray-400" />
                         <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
-                            {mealPlan.assignmentCount || 0} meals
+                            {totalMealsComputed} meals
                         </span>
                     </div>
 
-                    {mealPlan.nutritionInfo?.avgCaloriesPerDay && (
-                        <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">
-                            <span className="text-[10px] text-gray-600 dark:text-gray-400">🔥</span>
-                            <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
-                                {Math.round(mealPlan.nutritionInfo.avgCaloriesPerDay)} cal/day
-                            </span>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">
+                        <span className="text-[10px] text-gray-600 dark:text-gray-400">🔥</span>
+                        <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                            {avgCaloriesPerDayComputed} cal/day
+                        </span>
+                    </div>
 
                     {mealPlan.stats?.avgMealsPerDay && (
                         <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">
@@ -196,8 +263,8 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
                     {/* Publication Status */}
                     <div className="flex items-center gap-2">
                         <div className={`w-[24px] h-[24px] rounded-full flex items-center justify-center ${mealPlan.isPublished
-                                ? 'bg-green-500'
-                                : 'bg-gray-500'
+                            ? 'bg-green-500'
+                            : 'bg-gray-500'
                             }`}>
                             {mealPlan.isPublished ? (
                                 <FiGlobe className="w-3 h-3 text-white" />

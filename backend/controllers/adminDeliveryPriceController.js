@@ -7,46 +7,64 @@ const googleMapsClient = new Client({});
 // Create a new delivery price
 exports.createDeliveryPrice = async (req, res) => {
   try {
-    const { locationName, price, radius } = req.body;
+    // Handle both locationName and location field names for compatibility
+    const { locationName, location, price, radius, isDefault, state, latitude, longitude, area, country } = req.body;
+    const actualLocationName = locationName || location;
+    const actualRadius = radius || 10; // Default 10km radius if not provided
 
-    if (!locationName || !price || !radius) {
+    if (!actualLocationName || !price) {
       return res.status(400).json({
         success: false,
-        message: 'Location name, price, and radius are required'
+        message: 'Location name and price are required'
       });
     }
 
-    const existingLocation = await DeliveryPrice.findOne({ locationName });
+    const existingLocation = await DeliveryPrice.findOne({ 
+      locationName: { $regex: new RegExp(`^${actualLocationName}$`, 'i') }
+    });
     if (existingLocation) {
       return res.status(409).json({
         success: false,
-        message: 'Delivery price for this location already exists'
+        message: `Delivery price for location "${actualLocationName}" already exists. Please use a different location name or update the existing one.`
       });
     }
 
-    const geocodeResponse = await googleMapsClient.geocode({
-      params: {
-        address: locationName,
-        key: process.env.GOOGLE_MAPS_API_KEY
+    // Handle coordinates - use provided lat/lng or geocode the address
+    let lat = latitude, lng = longitude;
+    
+    if (!lat || !lng) {
+      if (!isDefault) {
+        const geocodeResponse = await googleMapsClient.geocode({
+          params: {
+            address: actualLocationName,
+            key: process.env.GOOGLE_MAPS_API_KEY
+          }
+        });
+
+        if (geocodeResponse.data.status !== 'OK') {
+          return res.status(400).json({
+            success: false,
+            message: 'Could not geocode the location. Please provide a more specific location or coordinates.',
+            error: geocodeResponse.data.status
+          });
+        }
+
+        const location = geocodeResponse.data.results[0].geometry.location;
+        lat = location.lat;
+        lng = location.lng;
       }
-    });
-
-    if (geocodeResponse.data.status !== 'OK') {
-      return res.status(400).json({
-        success: false,
-        message: 'Could not geocode the location. Please provide a more specific location.',
-        error: geocodeResponse.data.status
-      });
     }
-
-    const { lat, lng } = geocodeResponse.data.results[0].geometry.location;
 
     const deliveryPrice = new DeliveryPrice({
-      locationName,
-      price,
-      radius,
+      locationName: actualLocationName,
+      area: area || null,
+      state: state || null,
+      country: country || 'Nigeria',
+      price: Number(price),
+      radius: actualRadius,
       latitude: lat,
-      longitude: lng
+      longitude: lng,
+      isDefault: isDefault || false
     });
 
     await deliveryPrice.save();
@@ -155,7 +173,7 @@ exports.deleteDeliveryPrice = async (req, res) => {
       });
     }
 
-    await deliveryPrice.remove();
+    await DeliveryPrice.findByIdAndDelete(id);
 
     res.json({
       success: true,

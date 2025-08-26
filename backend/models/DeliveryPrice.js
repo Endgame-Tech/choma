@@ -7,17 +7,21 @@ const DeliveryPriceSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
-  latitude: {
-    type: Number,
-    required: true
+  area: {
+    type: String,
+    required: false,
+    trim: true
   },
-  longitude: {
-    type: Number,
-    required: true
+  state: {
+    type: String,
+    required: false,
+    trim: true
   },
-  radius: {
-    type: Number,
-    required: true, // in kilometers
+  country: {
+    type: String,
+    required: false,
+    trim: true,
+    default: 'Nigeria'
   },
   price: {
     type: Number,
@@ -26,6 +30,23 @@ const DeliveryPriceSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  // Keep old fields for backward compatibility
+  latitude: {
+    type: Number,
+    required: false
+  },
+  longitude: {
+    type: Number,
+    required: false
+  },
+  radius: {
+    type: Number,
+    required: false
+  },
+  isDefault: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

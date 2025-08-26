@@ -96,8 +96,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
   // Fetch discount information for the user and meal plan
   useEffect(() => {
-    // TEMPORARY: Clear discount service caches for testing
-    discountService.clearCaches(); // <--- ADDED BY GEMINI
+    discountService.clearCaches();
 
     const fetchDiscountInfo = async () => {
       // Debug logging to identify which condition is failing
@@ -801,7 +800,6 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               </Text>
             )}
           </View>
-
         </View>
 
         {/* Features Section */}
@@ -900,7 +898,17 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         <TouchableOpacity
           style={styles(colors).addToCartButton}
           onPress={() => {
-            navigation.navigate("Checkout", { mealPlan: bundle });
+            // Pass the fully fetched mealPlanDetails when available so Checkout
+            // has access to admin-configured fields like durationWeeks.
+            // Also include mealPlanId as a fallback for CheckoutScreen to fetch by id.
+            navigation.navigate("Checkout", {
+              mealPlan: mealPlanDetails || bundle,
+              mealPlanId:
+                (mealPlanDetails &&
+                  (mealPlanDetails.id || mealPlanDetails._id)) ||
+                bundle?.planId ||
+                bundle?.id,
+            });
           }}
         >
           <Text style={styles(colors).addToCartText}>
@@ -939,8 +947,6 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 resizeMode="contain"
               />
             </View>
-
-           
           </View>
         </View>
       </Modal>
@@ -1052,6 +1058,7 @@ const styles = (colors) =>
     },
     planMeta: {
       flexDirection: "row",
+      flexWrap: "wrap",
       alignItems: "center",
       marginBottom: 16,
     },
@@ -1059,12 +1066,17 @@ const styles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       marginRight: 20,
+      marginBottom: 8,
+      flexShrink: 1,
+      minWidth: 0,
     },
     metaText: {
       fontSize: 14,
       color: colors.textSecondary,
       marginLeft: 4,
       fontWeight: "500",
+      flexShrink: 1,
+      minWidth: 0,
     },
     planDescription: {
       fontSize: 16,
@@ -1113,7 +1125,7 @@ const styles = (colors) =>
     currentPrice: {
       fontSize: 24,
       fontWeight: "bold",
-      color: '#1b1b1b',
+      color: "#1b1b1b",
       marginRight: 12,
     },
     originalPrice: {
@@ -1133,7 +1145,7 @@ const styles = (colors) =>
       alignSelf: "flex-start",
       marginTop: 8,
       borderWidth: 1,
-      borderColor: '#1b1b1b',
+      borderColor: "#1b1b1b",
     },
     discountPillText: {
       fontSize: 14,
@@ -1296,7 +1308,7 @@ const styles = (colors) =>
       flex: 1,
     },
     mealPreviewImageContainer: {
-      position: 'relative',
+      position: "relative",
       marginLeft: 8,
     },
     mealPreviewImage: {
@@ -1306,12 +1318,12 @@ const styles = (colors) =>
     },
     // Small discount pills for meal preview images
     mealPreviewDiscountPill: {
-      position: 'absolute',
+      position: "absolute",
       bottom: -2,
       right: -2,
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#F5F4F0',
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#F5F4F0",
       paddingHorizontal: 4,
       paddingVertical: 1,
       borderRadius: 8,

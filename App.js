@@ -1,3 +1,4 @@
+import 'react-native-get-random-values'; // Must be first import for crypto polyfill
 import 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';

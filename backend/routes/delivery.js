@@ -20,6 +20,9 @@ const isAdmin = (req, res, next) => {
 // Public route - Get delivery price by location
 router.get('/price', deliveryController.getDeliveryPriceByLocation);
 
+// Public route - Get all delivery zones for user selection
+router.get('/zones', deliveryController.getDeliveryZones);
+
 // Public route - Get delivery tracking (no auth required for customer convenience)
 router.get('/tracking/:trackingId', deliveryController.getDeliveryTracking);
 

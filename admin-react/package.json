@@ -12,6 +12,7 @@
   "dependencies": {
     "@flaticon/flaticon-uicons": "^3.3.1",
     "@heroicons/react": "^2.0.18",
+    "@react-google-maps/api": "^2.20.7",
     "axios": "^1.6.2",
     "chart.js": "^4.4.0",
     "date-fns": "^4.1.0",

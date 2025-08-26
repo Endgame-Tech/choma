@@ -31,12 +31,15 @@ import Tutorial from "../../components/tutorial/Tutorial";
 import { homeScreenTutorialSteps } from "../../utils/tutorialSteps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NotificationService from "../../services/notificationService";
+import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
+import { useAlert } from "../../contexts/AlertContext";
 
 const { width } = Dimensions.get("window");
 
 const HomeScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
   const { user } = useAuth();
+  const { showSuccess, showError } = useAlert();
   const [selectedCategory, setSelectedCategory] = useState("All Plans");
 
   // Discount state
@@ -59,6 +62,7 @@ const HomeScreen = ({ navigation }) => {
   const [pauseDuration, setPauseDuration] = useState("1_week");
   const [showBrowseMode, setShowBrowseMode] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
@@ -128,6 +132,38 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  // Handle address change from modal
+  const handleAddressChange = async (addressInfo) => {
+    try {
+      // Update user profile with new address
+      const response = await apiService.updateProfile({
+        address: addressInfo.formattedAddress,
+        city: addressInfo.locality || addressInfo.adminArea || "",
+        state: addressInfo.adminArea || "Lagos",
+      });
+
+      if (response.success) {
+        setShowAddressModal(false);
+        // The user context will be updated automatically through the auth context
+        showSuccess(
+          "Address Updated",
+          "Your delivery address has been updated successfully"
+        );
+      } else {
+        showError(
+          "Update Failed",
+          response.message || "Failed to update address"
+        );
+      }
+    } catch (error) {
+      console.error("Error updating address:", error);
+      showError(
+        "Update Failed",
+        "An error occurred while updating your address"
+      );
+    }
+  };
+
   const categories = [
     { id: "All Plans", label: "All Plans" },
     { id: "Fitness", label: "Fitness" },
@@ -136,13 +172,16 @@ const HomeScreen = ({ navigation }) => {
     { id: "Wellness", label: "Wellness" },
   ];
 
-  // Prefer the most complete description field available for cards
+  // Prefer the same description precedence as the detail screen:
+  // mealPlanDetails?.description -> plan.description -> other fallbacks
   const getPlanDescription = (plan) => {
     if (!plan) return "";
     return (
+      plan.mealPlanDetails?.description ||
+      plan.description ||
+      plan.bundle?.description ||
       plan.longDescription ||
       plan.fullDescription ||
-      plan.description ||
       plan.summary ||
       plan.shortDescription ||
       ""
@@ -209,7 +248,6 @@ const HomeScreen = ({ navigation }) => {
           }
         }
 
-        console.log("💰 HomeScreen: All discount data fetched:", discounts);
         setDiscountData(discounts);
       } catch (error) {
         console.error("Error fetching discount data:", error);
@@ -226,8 +264,6 @@ const HomeScreen = ({ navigation }) => {
     try {
       setBannersLoading(true);
       const result = await apiService.getActiveBanners();
-
-      console.log("🔍 Banner API result:", JSON.stringify(result, null, 2));
 
       if (result.success) {
         // Handle nested response structure: result.data.data contains the actual banners array
@@ -1273,10 +1309,6 @@ const HomeScreen = ({ navigation }) => {
                       "🖼️ Banner image error:",
                       error.nativeEvent.error
                     );
-                    console.log("🖼️ Image URL:", banner.imageUrl);
-                  }}
-                  onLoad={() => {
-                    console.log("🖼️ Banner image loaded successfully");
                   }}
                   resizeMode="cover"
                 />
@@ -1328,12 +1360,7 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles(colors).header}>
         <TouchableOpacity
           style={styles(colors).locationContainer}
-          onPress={() =>
-            navigation.navigate("Profile", {
-              tab: "profile",
-              editAddress: true,
-            })
-          }
+          onPress={() => setShowAddressModal(true)}
           activeOpacity={0.7}
         >
           <Ionicons name="location" size={16} color={colors.primary} />
@@ -1685,6 +1712,46 @@ const HomeScreen = ({ navigation }) => {
         isVisible={showTutorial}
         onDismiss={() => setShowTutorial(false)}
       />
+
+      {/* Address Change Modal */}
+      <Modal
+        visible={showAddressModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddressModal(false)}
+      >
+        <TouchableOpacity
+          style={styles(colors).modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowAddressModal(false)}
+        >
+          <TouchableOpacity
+            style={styles(colors).modalContent}
+            activeOpacity={1}
+            onPress={() => {}} // Prevent close when tapping inside modal
+          >
+            <View style={styles(colors).modalHeader}>
+              <Text style={styles(colors).modalTitle}>
+                Change Delivery Address
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowAddressModal(false)}
+                style={styles(colors).modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles(colors).modalBody}>
+              <AddressAutocomplete
+                placeholder="Search for new delivery address"
+                onAddressSelect={handleAddressChange}
+                defaultValue={user?.address || ""}
+              />
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -2633,6 +2700,42 @@ const styles = (colors) =>
     bannerIndicatorActive: {
       backgroundColor: colors.primary,
       opacity: 1,
+    },
+    // Address Modal Styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
+    },
+    modalContent: {
+      backgroundColor: colors.cardBackground,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      minHeight: 400,
+      maxHeight: "80%",
+      overflow: "visible", // Allow suggestions to overflow
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      flex: 1,
+    },
+    modalCloseButton: {
+      padding: 4,
+    },
+    modalBody: {
+      flex: 1,
+      padding: 20,
+      minHeight: 250, // Ensure enough space for suggestions
     },
   });
 

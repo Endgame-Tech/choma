@@ -10,7 +10,7 @@ export const APP_CONFIG = {
   // For future backend integration
   API_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "http://10.115.150.28:5001/api"
+      ? "http://192.168.0.216:5001/api"
       : "http://localhost:5001/api"
     : "https://choma.onrender.com/api",
 
@@ -22,7 +22,7 @@ export const APP_CONFIG = {
   // App Settings
   CURRENCY: "NGN",
   CURRENCY_SYMBOL: "₦",
-  TAX_RATE: 0.1, // 10%
+  TAX_RATE: 0, // Tax removed as per user request
   FREE_DELIVERY_THRESHOLD: 10000, // Free delivery above ₦10,000
 
   // Demo Mode Settings (for MVP testing)

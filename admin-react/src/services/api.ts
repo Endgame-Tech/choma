@@ -518,8 +518,22 @@ export const deliveryPricesApi = {
   },
 
   // Create new delivery price
-  async createDeliveryPrice(data: { location: string; price: number; }): Promise<DeliveryPrice> {
-    const response = await api.post<ApiResponse<DeliveryPrice>>('/delivery-prices', data);
+  async createDeliveryPrice(data: { 
+    location: string; 
+    price: number; 
+    state?: string;
+    country?: string;
+    area?: string;
+  }): Promise<DeliveryPrice> {
+    // Map location to locationName for backend compatibility
+    const requestData = {
+      locationName: data.location,
+      price: data.price,
+      state: data.state,
+      country: data.country,
+      area: data.area
+    };
+    const response = await api.post<ApiResponse<DeliveryPrice>>('/delivery-prices', requestData);
     return handleResponse(response);
   },
 

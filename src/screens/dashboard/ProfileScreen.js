@@ -34,6 +34,7 @@ import { APP_CONFIG } from "../../utils/constants";
 import StatusMessage from "../../components/StatusMessage";
 import NetworkUtils from "../../utils/networkUtils";
 import { useAlert } from "../../contexts/AlertContext";
+import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
 
 const { width } = Dimensions.get("window");
 
@@ -1880,9 +1881,8 @@ Your meal plan has been updated with fresh options.`;
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            style={styles(colors).editScrollView}
-            contentContainerStyle={styles(colors).editScrollContent}
+          <View
+            style={styles(colors).editScrollContent}
           >
             {/* Profile Picture */}
             <View style={styles(colors).editFieldContainer}>
@@ -1963,21 +1963,22 @@ Your meal plan has been updated with fresh options.`;
             {/* Address */}
             <View style={styles(colors).editFieldContainer}>
               <Text style={styles(colors).editFieldLabel}>Address</Text>
-              <TextInput
-                style={[
-                  styles(colors).editInput,
-                  styles(colors).editTextArea,
-                  errors.address && styles(colors).editInputError,
-                ]}
-                value={editableUser.address}
-                onChangeText={(text) =>
-                  setEditableUser((prev) => ({ ...prev, address: text }))
-                }
-                placeholder="Enter your delivery address"
-                placeholderTextColor={colors.textMuted}
-                multiline
-                numberOfLines={3}
-              />
+              <View style={styles(colors).autocompleteContainer}>
+                <AddressAutocomplete
+                  placeholder="Enter your delivery address"
+                  onAddressSelect={(addressInfo) => {
+                    setEditableUser((prev) => ({ 
+                      ...prev, 
+                      address: addressInfo.formattedAddress,
+                      city: addressInfo.locality || addressInfo.adminArea || prev.city,
+                    }));
+                  }}
+                  defaultValue={editableUser.address}
+                  style={[
+                    errors.address && { borderColor: colors.error, borderWidth: 2 }
+                  ]}
+                />
+              </View>
               {errors.address && (
                 <Text style={styles(colors).editErrorText}>
                   {errors.address}
@@ -2057,7 +2058,7 @@ Your meal plan has been updated with fresh options.`;
                 </Text>
               )}
             </View>
-          </ScrollView>
+          </View>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -2679,9 +2680,6 @@ const styles = (colors) =>
     editSaveTextDisabled: {
       color: colors.textMuted,
     },
-    editScrollView: {
-      flex: 1,
-    },
     editScrollContent: {
       paddingHorizontal: 20,
       paddingVertical: 20,
@@ -2757,6 +2755,10 @@ const styles = (colors) =>
     editTextArea: {
       height: 80,
       textAlignVertical: "top",
+    },
+    autocompleteContainer: {
+      minHeight: 50,
+      zIndex: 1000,
     },
     editErrorText: {
       color: colors.error,

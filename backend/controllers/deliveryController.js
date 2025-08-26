@@ -25,63 +25,20 @@ const deg2rad = (deg) => {
   return deg * (Math.PI / 180);
 }
 
-// Get delivery price by location
+// Get delivery price by location - Deprecated: Users must now select a zone manually.
 exports.getDeliveryPriceByLocation = async (req, res) => {
   try {
-    const { address } = req.query;
-
-    if (!address) {
-      return res.status(400).json({
-        success: false,
-        message: 'Address is required'
-      });
-    }
-
-    const geocodeResponse = await googleMapsClient.geocode({
-      params: {
-        address: address,
-        key: process.env.GOOGLE_MAPS_API_KEY
-      }
-    });
-
-    if (geocodeResponse.data.status !== 'OK') {
-      return res.status(400).json({
-        success: false,
-        message: 'Could not geocode the address. Please provide a more specific address.',
-        error: geocodeResponse.data.status
-      });
-    }
-
-    const { lat, lng } = geocodeResponse.data.results[0].geometry.location;
-
-    const deliveryZones = await DeliveryPrice.find({ isActive: true });
-
-    let matchingZone = null;
-
-    for (const zone of deliveryZones) {
-      const distance = getDistance(lat, lng, zone.latitude, zone.longitude);
-      if (distance <= zone.radius) {
-        matchingZone = zone;
-        break; // Stop at the first matching zone
-      }
-    }
-
-    if (!matchingZone) {
-      return res.status(404).json({
-        success: false,
-        message: 'No delivery zone found for this address'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: matchingZone
+    // This endpoint is deprecated. Users should select a delivery zone from the list.
+    // Returning a 400 error to indicate that the client should use the /zones endpoint instead.
+    return res.status(400).json({
+      success: false,
+      message: 'Please select a delivery zone to calculate the delivery price. Address-based lookup is no longer supported.'
     });
   } catch (err) {
     console.error('Get delivery price error:', err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch delivery price',
+      message: 'Failed to process delivery price request.',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
@@ -547,8 +504,46 @@ exports.getDeliveryAnalytics = async (req, res) => {
   }
 };
 
+// Get all active delivery zones for user selection
+exports.getDeliveryZones = async (req, res) => {
+  try {
+    console.log('🔍 Fetching delivery zones for mobile app...');
+    
+    const deliveryZones = await DeliveryPrice.find({ 
+      isActive: true 
+    }).select('_id locationName area state country price').sort({ 
+      country: 1, 
+      state: 1, 
+      area: 1 
+    });
+
+    console.log(`📍 Found ${deliveryZones.length} active delivery zones:`, 
+      deliveryZones.map(z => ({ area: z.area, state: z.state, price: z.price }))
+    );
+
+    // Disable caching for this endpoint to ensure fresh data
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    res.json({
+      success: true,
+      data: deliveryZones,
+      count: deliveryZones.length
+    });
+  } catch (err) {
+    console.error('Get delivery zones error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch delivery zones',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
 module.exports = {
   getDeliveryPriceByLocation: exports.getDeliveryPriceByLocation,
+  getDeliveryZones: exports.getDeliveryZones,
   createDeliveryTracking: exports.createDeliveryTracking,
   getDeliveryTracking: exports.getDeliveryTracking,
   getCustomerDeliveries: exports.getCustomerDeliveries,

@@ -94,11 +94,12 @@ class PaymentService {
     }
   }
 
-  // Calculate payment amounts
+  // Calculate payment amounts (tax removed as per request)
   calculatePaymentAmounts(subtotal) {
     const deliveryFee = subtotal >= APP_CONFIG.FREE_DELIVERY_THRESHOLD ? 0 : 1000;
-    const tax = Math.round(subtotal * APP_CONFIG.TAX_RATE);
-    const total = subtotal + deliveryFee + tax;
+    // Tax removed from calculations
+    const tax = 0;
+    const total = subtotal + deliveryFee;
 
     return {
       subtotal,

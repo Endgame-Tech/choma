@@ -255,12 +255,16 @@ const SearchScreen = ({ navigation }) => {
   };
 
   // Prefer the most complete description field available for cards
+  // Prefer the same description precedence as the detail screen:
+  // mealPlanDetails?.description -> plan.description -> other fallbacks
   const getPlanDescription = (plan) => {
     if (!plan) return "";
     return (
+      plan.mealPlanDetails?.description ||
+      plan.description ||
+      plan.bundle?.description ||
       plan.longDescription ||
       plan.fullDescription ||
-      plan.description ||
       plan.summary ||
       plan.shortDescription ||
       ""

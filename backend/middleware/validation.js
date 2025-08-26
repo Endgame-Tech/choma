@@ -27,11 +27,28 @@ const commonValidations = {
     .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
   
   name: body('fullName')
+    .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Full name must be between 2 and 50 characters')
     .matches(/^[a-zA-Z\s]+$/)
     .withMessage('Full name can only contain letters and spaces'),
+  
+  firstName: body('firstName')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 25 })
+    .withMessage('First name must be between 2 and 25 characters')
+    .matches(/^[a-zA-Z\s]+$/)
+    .withMessage('First name can only contain letters and spaces'),
+  
+  lastName: body('lastName')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 25 })
+    .withMessage('Last name must be between 2 and 25 characters')
+    .matches(/^[a-zA-Z\s]+$/)
+    .withMessage('Last name can only contain letters and spaces'),
   
   phone: body('phone')
     .optional()
@@ -83,9 +100,13 @@ const userValidations = {
   
   updateProfile: [
     commonValidations.name,
+    commonValidations.firstName,
+    commonValidations.lastName,
     commonValidations.phone,
     body('address').optional().trim().isLength({ max: 200 }),
     body('city').optional().trim().isLength({ max: 50 }),
+    body('state').optional().trim().isLength({ max: 50 }),
+    body('dateOfBirth').optional().isISO8601().withMessage('Date of birth must be a valid date'),
     body('dietaryPreferences').optional().isArray(),
     body('allergies').optional().custom((value) => {
       // Accept both string and array for allergies

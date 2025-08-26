@@ -15,9 +15,6 @@ class DiscountService {
    */
   async calculateDiscount(user, mealPlan) {
     try {
-      console.log("🔍 DISCOUNT SERVICE DEBUG: Starting discount calculation");
-      console.log("🔍 DISCOUNT SERVICE DEBUG: user:", !!user, user ? Object.keys(user) : 'null');
-      console.log("🔍 DISCOUNT SERVICE DEBUG: mealPlan:", !!mealPlan, mealPlan ? Object.keys(mealPlan) : 'null');
       
       if (!user || !mealPlan) {
         console.log("❌ DISCOUNT SERVICE: Missing user or meal plan data");
@@ -27,29 +24,19 @@ class DiscountService {
       const mealPlanId = mealPlan.id || mealPlan._id;
       const userId = user.id || user._id;
       
-      console.log("🔍 DISCOUNT SERVICE DEBUG: mealPlanId:", mealPlanId);
-      console.log("🔍 DISCOUNT SERVICE DEBUG: userId:", userId);
 
-      // Get meal plan discount rules
-      console.log("💰 DISCOUNT SERVICE: Fetching discount rules for meal plan:", mealPlanId);
       const discountRulesResponse = await this.getMealPlanDiscountRules(mealPlanId);
-      console.log("💰 DISCOUNT SERVICE: Retrieved discount rules response:", discountRulesResponse);
       
       // Extract the actual rules array from the response
       const discountRules = discountRulesResponse?.data || discountRulesResponse || [];
-      console.log("💰 DISCOUNT SERVICE: Extracted discount rules array:", discountRules);
       
       if (!discountRules || discountRules.length === 0) {
-        console.log("❌ DISCOUNT SERVICE: No discount rules found");
         return { discountPercent: 0, discountAmount: 0, reason: 'No discount rules configured' };
       }
 
-      // SIMPLIFIED APPROACH: Check for universal discounts first, then try user-specific ones
-      console.log("🔍 DISCOUNT SERVICE: Checking for applicable discounts...");
       const applicableDiscounts = [];
       
       for (const rule of discountRules) {
-        console.log("🔍 DISCOUNT SERVICE: Evaluating rule:", rule.name, "Target:", rule.targetSegment);
         
         // First check if this rule applies to this meal plan
         const mealPlanEligibility = this.checkMealPlanEligibility(mealPlan, rule);
@@ -62,7 +49,6 @@ class DiscountService {
 
         // Handle universal discounts without user activity
         if (rule.targetSegment === 'all_users') {
-          console.log(`🎉 Universal discount found: ${rule.name}`);
           applicableDiscounts.push({
             ...rule,
             eligibilityReason: 'Universal discount',

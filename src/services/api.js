@@ -489,9 +489,14 @@ class ApiService {
     return await this.request(`/auth/delivery/track/${orderId}`);
   }
 
-  async getDeliveryPrice(address) {
+  async getDeliveryPrice(address, deliveryCount = 1, consolidatedDeliveries = false) {
     await this.getStoredToken();
-    return await this.request(`/delivery/price?address=${encodeURIComponent(address)}`);
+    const params = new URLSearchParams({
+      address: address,
+      deliveryCount: deliveryCount.toString(),
+      consolidatedDeliveries: consolidatedDeliveries.toString()
+    });
+    return await this.request(`/delivery/price?${params.toString()}`);
   }
 
   // Meal plans methods - real data only

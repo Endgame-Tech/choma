@@ -258,9 +258,15 @@ export interface BulkAssignmentData {
 // Delivery Price
 export interface DeliveryPrice {
   _id: string;
-  location: string;
+  locationName: string;
+  location?: string; // For backward compatibility
   price: number;
+  radius?: number;
   isActive: boolean;
+  isDefault?: boolean;
+  state?: string;
+  latitude?: number;
+  longitude?: number;
   createdAt: string;
   updatedAt: string;
 }

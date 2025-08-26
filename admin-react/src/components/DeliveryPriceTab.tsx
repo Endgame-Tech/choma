@@ -8,7 +8,12 @@ import ConfirmationModal from './ConfirmationModal';
 const DeliveryPriceTab: React.FC = () => {
     const [prices, setPrices] = useState<DeliveryPrice[]>([]);
     const [editing, setEditing] = useState<string | null>(null);
-    const [form, setForm] = useState<{ location: string; price: string }>({ location: '', price: '' });
+    const [form, setForm] = useState<{ area: string; state: string; country: string; price: string }>({ 
+        area: '', 
+        state: '', 
+        country: 'Nigeria', 
+        price: '' 
+    });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showAddForm, setShowAddForm] = useState(false);
@@ -42,16 +47,24 @@ const DeliveryPriceTab: React.FC = () => {
     }, []);
 
     const handleAdd = async () => {
-        if (!form.location || !form.price) return;
+        if (!form.area || !form.state || !form.country || !form.price) return;
         setLoading(true);
         setError(null);
         try {
-            const newPrice = await deliveryPricesApi.createDeliveryPrice({ location: form.location, price: Number(form.price) });
+            const locationName = `${form.area}, ${form.state}, ${form.country}`;
+            const newPrice = await deliveryPricesApi.createDeliveryPrice({ 
+                location: locationName,
+                price: Number(form.price),
+                state: form.state,
+                country: form.country,
+                area: form.area
+            });
             setPrices([...prices, newPrice]);
-            setForm({ location: '', price: '' });
+            setForm({ area: '', state: '', country: 'Nigeria', price: '' });
             setShowAddForm(false);
-        } catch (err) {
-            setError('Failed to add delivery price.');
+        } catch (err: any) {
+            const errorMessage = err?.response?.data?.message || 'Failed to add delivery zone.';
+            setError(errorMessage);
             console.error(err);
         } finally {
             setLoading(false);
@@ -60,7 +73,14 @@ const DeliveryPriceTab: React.FC = () => {
 
     const handleEdit = (price: DeliveryPrice) => {
         setEditing(price._id);
-        setForm({ location: price.location, price: price.price.toString() });
+        // Parse location name back to components
+        const locationParts = (price.locationName || price.location || '').split(', ');
+        setForm({ 
+            area: locationParts[0] || '',
+            state: locationParts[1] || price.state || '',
+            country: locationParts[2] || 'Nigeria',
+            price: price.price.toString()
+        });
     };
 
     const handleUpdate = async () => {
@@ -81,19 +101,19 @@ const DeliveryPriceTab: React.FC = () => {
 
     const cancelEdit = () => {
         setEditing(null);
-        setForm({ location: '', price: '' });
+        setForm({ area: '', state: '', country: 'Nigeria', price: '' });
     };
 
     const cancelAdd = () => {
         setShowAddForm(false);
-        setForm({ location: '', price: '' });
+        setForm({ area: '', state: '', country: 'Nigeria', price: '' });
     };
 
     const confirmDelete = (price: DeliveryPrice) => {
         setConfirmModal({
             isOpen: true,
             title: 'Delete Delivery Zone',
-            message: `Are you sure you want to delete the delivery zone for "${price.location}"? This action cannot be undone.`,
+            message: `Are you sure you want to delete the delivery zone for "${price.locationName || price.location}"? This action cannot be undone.`,
             type: 'danger',
             onConfirm: () => handleDelete(price._id),
             loading: false
@@ -113,6 +133,7 @@ const DeliveryPriceTab: React.FC = () => {
             setConfirmModal(prev => ({ ...prev, loading: false }));
         }
     };
+
 
     return (
         <div className="space-y-6">
@@ -151,6 +172,7 @@ const DeliveryPriceTab: React.FC = () => {
                 </div>
             )}
 
+
             {/* Add/Edit Form */}
             {(showAddForm || editing) && (
                 <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
@@ -170,17 +192,47 @@ const DeliveryPriceTab: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
-                                Location *
+                                Area/Location *
                             </label>
                             <input
                                 type="text"
-                                placeholder="e.g., Victoria Island"
-                                value={form.location}
-                                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                                placeholder="e.g., Utako, Victoria Island"
+                                value={form.area}
+                                onChange={(e) => setForm({ ...form, area: e.target.value })}
                                 disabled={!!editing}
                                 className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 dark:text-neutral-100 placeholder-gray-500 dark:placeholder-neutral-400 disabled:bg-gray-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed"
                             />
                         </div>
+                        
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                State *
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="e.g., Lagos, FCT"
+                                value={form.state}
+                                onChange={(e) => setForm({ ...form, state: e.target.value })}
+                                className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 dark:text-neutral-100 placeholder-gray-500 dark:placeholder-neutral-400"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                Country *
+                            </label>
+                            <select
+                                value={form.country}
+                                onChange={(e) => setForm({ ...form, country: e.target.value })}
+                                className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 dark:text-neutral-100"
+                            >
+                                <option value="Nigeria">Nigeria</option>
+                                <option value="Ghana">Ghana</option>
+                                <option value="Kenya">Kenya</option>
+                                <option value="South Africa">South Africa</option>
+                            </select>
+                        </div>
+
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
                                 Delivery Price (₦) *
@@ -191,7 +243,7 @@ const DeliveryPriceTab: React.FC = () => {
                                 </div>
                                 <input
                                     type="number"
-                                    placeholder="1000"
+                                    placeholder="1500"
                                     value={form.price}
                                     onChange={(e) => setForm({ ...form, price: e.target.value })}
                                     className="w-full pl-10 pr-3 py-2 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 dark:text-neutral-100 placeholder-gray-500 dark:placeholder-neutral-400"
@@ -209,7 +261,7 @@ const DeliveryPriceTab: React.FC = () => {
                         </button>
                         <button
                             onClick={editing ? handleUpdate : handleAdd}
-                            disabled={loading || !form.location || !form.price}
+                            disabled={loading || !form.area || !form.state || !form.country || !form.price}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 dark:disabled:bg-neutral-600 text-white font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
                         >
                             {editing ? (
@@ -279,7 +331,7 @@ const DeliveryPriceTab: React.FC = () => {
                                             <MapPinIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                                         </div>
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">{price.location}</div>
+                                            <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">{price.locationName || price.location}</div>
                                             <div className="text-xs text-gray-500 dark:text-neutral-400">Delivery Zone</div>
                                         </div>
                                     </div>

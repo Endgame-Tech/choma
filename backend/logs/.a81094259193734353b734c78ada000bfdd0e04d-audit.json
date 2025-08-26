@@ -24,6 +24,11 @@
             "date": 1756012049197,
             "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-08-24.log",
             "hash": "bc5e4fe2e77403d7010f71a0071b04cd773e6f533712d8683861d107e6790466"
+        },
+        {
+            "date": 1756084016146,
+            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-08-25.log",
+            "hash": "8a1a0571c46f7b549d04705d10b92bdbbee86fe08731b76dfee2413f5da91e2d"
         }
     ],
     "hashType": "sha256"

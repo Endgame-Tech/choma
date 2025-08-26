@@ -110,6 +110,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
               onClick={onClose}
               className="text-gray-400 dark:text-neutral-400 hover:text-gray-600 dark:hover:text-neutral-200"
               disabled={submitting}
+              title="Close"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
