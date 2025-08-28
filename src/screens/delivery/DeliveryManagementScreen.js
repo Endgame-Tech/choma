@@ -45,80 +45,16 @@ const DeliveryManagementScreen = ({ navigation }) => {
       if (result.success) {
         setDeliveries(result.data || []);
       } else {
-        // Fallback to mock data if API fails
-        setDeliveries(getMockDeliveries());
+        setDeliveries(getDeliveries());
       }
     } catch (error) {
       console.error('Error loading deliveries:', error);
-      setDeliveries(getMockDeliveries());
+      setDeliveries(getDeliveries());
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
-
-  const getMockDeliveries = () => [
-    {
-      _id: '1',
-      trackingId: 'TRK00000001',
-      deliveryStatus: 'Delivered',
-      order: {
-        _id: 'ORD001',
-        totalAmount: 12500,
-        createdAt: '2024-12-16T10:30:00Z'
-      },
-      driver: {
-        fullName: 'John Adebayo',
-        phone: '+2348123456789',
-        rating: 4.8,
-        vehicleInfo: {
-          type: 'motorcycle',
-          plateNumber: 'LAG-123-ABC'
-        }
-      },
-      deliveryLocation: {
-        address: 'Victoria Island, Lagos'
-      },
-      timeline: [
-        {
-          status: 'Delivered',
-          timestamp: '2024-12-16T12:45:00Z'
-        }
-      ],
-      customerRating: 5,
-      createdAt: '2024-12-16T10:30:00Z'
-    },
-    {
-      _id: '2',
-      trackingId: 'TRK00000002',
-      deliveryStatus: 'En Route to Customer',
-      order: {
-        _id: 'ORD002',
-        totalAmount: 8500,
-        createdAt: '2024-12-16T14:00:00Z'
-      },
-      driver: {
-        fullName: 'Sarah Okafor',
-        phone: '+2348987654321',
-        rating: 4.9,
-        vehicleInfo: {
-          type: 'bicycle',
-          plateNumber: 'N/A'
-        }
-      },
-      deliveryLocation: {
-        address: 'Ikeja, Lagos'
-      },
-      timeline: [
-        {
-          status: 'En Route to Customer',
-          timestamp: '2024-12-16T15:30:00Z'
-        }
-      ],
-      estimatedDeliveryTime: '2024-12-16T16:15:00Z',
-      createdAt: '2024-12-16T14:00:00Z'
-    }
-  ];
 
   const onRefresh = () => {
     setRefreshing(true);

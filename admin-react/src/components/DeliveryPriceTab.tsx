@@ -62,8 +62,14 @@ const DeliveryPriceTab: React.FC = () => {
             setPrices([...prices, newPrice]);
             setForm({ area: '', state: '', country: 'Nigeria', price: '' });
             setShowAddForm(false);
-        } catch (err: any) {
-            const errorMessage = err?.response?.data?.message || 'Failed to add delivery zone.';
+        } catch (err: unknown) {
+            let errorMessage = 'Failed to add delivery zone.';
+            if (typeof err === 'object' && err !== null && 'response' in err) {
+                const response = (err as { response?: { data?: { message?: string } } }).response;
+                if (response?.data?.message) {
+                    errorMessage = response.data.message;
+                }
+            }
             setError(errorMessage);
             console.error(err);
         } finally {

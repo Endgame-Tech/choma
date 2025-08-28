@@ -4,6 +4,7 @@ const Subscription = require('../models/Subscription');
 const Chef = require('../models/Chef');
 const OrderDelegation = require('../models/OrderDelegation');
 const NotificationService = require('../services/notificationService');
+const deliveryAssignmentService = require('../services/deliveryAssignmentService');
 const mongoose = require('mongoose');
 
 // ============= ENHANCED ORDER MANAGEMENT =============
@@ -271,6 +272,23 @@ exports.updateOrderStatus = async (req, res) => {
     switch (status) {
       case 'Confirmed':
         updateData.confirmedDate = now;
+        
+        // Auto-create delivery assignment when order is confirmed
+        try {
+          const result = await deliveryAssignmentService.createAssignmentFromOrder(id, {
+            isFirstDelivery: order.subscriptionId ? true : false,
+            priority: order.priority || 'normal',
+            autoAssign: false // Let admin or system assign later
+          });
+          
+          if (result.success) {
+            console.log(`✅ Delivery assignment created for order ${id}: ${result.confirmationCode}`);
+          } else {
+            console.warn(`⚠️ Failed to create delivery assignment for order ${id}: ${result.error}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error creating delivery assignment for order ${id}:`, error);
+        }
         break;
       case 'InProgress':
         updateData.inProgressDate = now;
@@ -306,11 +324,47 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     // Update chef delegation status if applicable
+    let chefInfo = null;
     if (status === 'Completed' || status === 'Cancelled') {
-      await OrderDelegation.findOneAndUpdate(
+      const delegation = await OrderDelegation.findOneAndUpdate(
         { order: id },
         { status: status === 'Completed' ? 'Completed' : 'Cancelled' }
-      );
+      ).populate('chef', 'fullName');
+      chefInfo = delegation?.chef;
+    }
+
+    // Send comprehensive notifications to all parties
+    try {
+      const NotificationService = require('../services/notificationService');
+      const notificationResult = await NotificationService.notifyAllPartiesOrderStatus({
+        orderId: updatedOrder._id,
+        orderNumber: updatedOrder.orderNumber,
+        customerId: updatedOrder.customer?._id,
+        customerName: updatedOrder.customer?.fullName || 'Customer',
+        chefId: updatedOrder.assignedChef,
+        chefName: chefInfo?.fullName || 'Chef',
+        totalAmount: updatedOrder.totalAmount,
+        deliveryDate: updatedOrder.deliveryDate
+      }, {
+        oldStatus: currentStatus,
+        newStatus: status
+      }, {
+        updatedBy: 'Admin',
+        reason: reason,
+        estimatedDelivery: estimatedDelivery,
+        timestamp: now
+      });
+
+      console.log(`Comprehensive notifications sent for order ${id} status change:`, {
+        from: currentStatus,
+        to: status,
+        totalSent: notificationResult.totalNotificationsSent,
+        success: notificationResult.success,
+        errors: notificationResult.results.errors
+      });
+    } catch (notificationError) {
+      console.error('Failed to send status change notifications:', notificationError.message);
+      // Don't fail the status update if notification fails
     }
 
     res.json({

@@ -489,12 +489,16 @@ class ApiService {
     return await this.request(`/auth/delivery/track/${orderId}`);
   }
 
-  async getDeliveryPrice(address, deliveryCount = 1, consolidatedDeliveries = false) {
+  async getDeliveryPrice(
+    address,
+    deliveryCount = 1,
+    consolidatedDeliveries = false
+  ) {
     await this.getStoredToken();
     const params = new URLSearchParams({
       address: address,
       deliveryCount: deliveryCount.toString(),
-      consolidatedDeliveries: consolidatedDeliveries.toString()
+      consolidatedDeliveries: consolidatedDeliveries.toString(),
     });
     return await this.request(`/delivery/price?${params.toString()}`);
   }
@@ -809,6 +813,30 @@ class ApiService {
   }
 
   async trackBannerImpression(bannerId) {
+    try {
+      // Respect user's privacy settings (cached locally) if present
+      const cached = await AsyncStorage.getItem("privacy_settings");
+      if (cached) {
+        const settings = JSON.parse(cached);
+        if (!settings?.allowDataCollection) {
+          console.log(
+            "Analytics disabled by user: skipping trackBannerImpression"
+          );
+          return {
+            success: false,
+            skipped: true,
+            reason: "data_collection_disabled",
+          };
+        }
+      }
+    } catch (err) {
+      // If reading cache fails, continue and try to send the event (fail-open)
+      console.warn(
+        "Could not read privacy settings before tracking banner impression:",
+        err.message
+      );
+    }
+
     return this.request(`/banners/${bannerId}/impression`, {
       method: "POST",
     });
@@ -865,6 +893,29 @@ class ApiService {
   // Activity logging
   async logUserActivity(activityData) {
     await this.getStoredToken();
+
+    try {
+      // Respect user's privacy settings (cached locally) if present
+      const cached = await AsyncStorage.getItem("privacy_settings");
+      if (cached) {
+        const settings = JSON.parse(cached);
+        if (!settings?.allowDataCollection) {
+          console.log("Analytics disabled by user: skipping logUserActivity");
+          return {
+            success: false,
+            skipped: true,
+            reason: "data_collection_disabled",
+          };
+        }
+      }
+    } catch (err) {
+      // If reading cache fails, continue and try to send the event (fail-open)
+      console.warn(
+        "Could not read privacy settings before logging user activity:",
+        err.message
+      );
+    }
+
     return this.request("/auth/activity/log", {
       method: "POST",
       body: activityData,
@@ -1645,12 +1696,17 @@ class ApiService {
     console.log("💰 Fetching meal plan discount rules for:", mealPlanId);
     await this.getStoredToken();
 
-    const result = await this.request(`/meal-plans/${mealPlanId}/discount-rules`);
+    const result = await this.request(
+      `/meal-plans/${mealPlanId}/discount-rules`
+    );
 
     if (result.success) {
       console.log("✅ Meal plan discount rules fetched successfully");
     } else {
-      console.error("❌ Failed to fetch meal plan discount rules:", result.error);
+      console.error(
+        "❌ Failed to fetch meal plan discount rules:",
+        result.error
+      );
     }
 
     return result;
@@ -1681,11 +1737,11 @@ class ApiService {
 
     if (result.success) {
       console.log("✅ User activity fetched successfully");
-      
+
       // Enhance the activity data with calculated fields
       const activityData = result.data;
       const now = new Date();
-      
+
       if (activityData.lastOrderDate) {
         const lastOrder = new Date(activityData.lastOrderDate);
         const daysDiff = Math.floor((now - lastOrder) / (1000 * 60 * 60 * 24));
@@ -1695,13 +1751,15 @@ class ApiService {
 
       if (activityData.registrationDate) {
         const registration = new Date(activityData.registrationDate);
-        const daysDiff = Math.floor((now - registration) / (1000 * 60 * 60 * 24));
+        const daysDiff = Math.floor(
+          (now - registration) / (1000 * 60 * 60 * 24)
+        );
         activityData.daysSinceRegistration = daysDiff;
       }
 
       // Determine if user is consistent (has ordered at least once every 2 months)
-      activityData.isConsistentUser = activityData.totalOrders >= 3 && 
-                                      activityData.monthsSinceLastOrder <= 2;
+      activityData.isConsistentUser =
+        activityData.totalOrders >= 3 && activityData.monthsSinceLastOrder <= 2;
 
       result.data = activityData;
     } else {
@@ -1713,12 +1771,17 @@ class ApiService {
 
   // Calculate discount for user and meal plan
   async calculateUserDiscount(userId, mealPlanId) {
-    console.log("🧮 Calculating discount for user:", userId, "meal plan:", mealPlanId);
+    console.log(
+      "🧮 Calculating discount for user:",
+      userId,
+      "meal plan:",
+      mealPlanId
+    );
     await this.getStoredToken();
 
     const result = await this.request("/discounts/calculate", {
       method: "POST",
-      body: { userId, mealPlanId }
+      body: { userId, mealPlanId },
     });
 
     if (result.success) {
@@ -1739,7 +1802,7 @@ class ApiService {
 
     const result = await this.request("/admin/discount-rules", {
       method: "POST",
-      body: discountRuleData
+      body: discountRuleData,
     });
 
     if (result.success) {
@@ -1758,7 +1821,7 @@ class ApiService {
 
     const result = await this.request(`/admin/discount-rules/${ruleId}`, {
       method: "PUT",
-      body: discountRuleData
+      body: discountRuleData,
     });
 
     if (result.success) {
@@ -1792,7 +1855,7 @@ class ApiService {
     await this.getStoredToken();
 
     const result = await this.request(`/admin/discount-rules/${ruleId}`, {
-      method: "DELETE"
+      method: "DELETE",
     });
 
     if (result.success) {
@@ -1860,6 +1923,88 @@ class ApiService {
       console.log("✅ Meal plan categories fetched successfully");
     } else {
       console.error("❌ Failed to fetch categories:", result.error);
+    }
+
+    return result;
+  }
+
+  // Email Verification Methods
+
+  // Send verification code to email
+  async sendVerificationCode({ email, purpose = "customer_registration" }) {
+    console.log("📧 Sending verification code to:", email, "for:", purpose);
+
+    const result = await this.request("/auth/send-verification", {
+      method: "POST",
+      body: { email, purpose },
+    });
+
+    if (result.success) {
+      console.log("✅ Verification code sent successfully");
+    } else {
+      console.error("❌ Failed to send verification code:", result.error);
+    }
+
+    return result;
+  }
+
+  // Verify email with code
+  async verifyEmail({
+    email,
+    verificationCode,
+    purpose = "customer_registration",
+  }) {
+    console.log("✅ Verifying email:", email, "with code:", verificationCode);
+
+    const result = await this.request("/auth/verify-email", {
+      method: "POST",
+      body: { email, verificationCode, purpose },
+    });
+
+    if (result.success) {
+      console.log("✅ Email verified successfully");
+    } else {
+      console.error("❌ Email verification failed:", result.error);
+    }
+
+    return result;
+  }
+
+  // Resend verification code
+  async resendVerificationCode({ email, purpose = "customer_registration" }) {
+    console.log("🔄 Resending verification code to:", email);
+
+    const result = await this.request("/auth/resend-verification", {
+      method: "POST",
+      body: { email, purpose },
+    });
+
+    if (result.success) {
+      console.log("✅ Verification code resent successfully");
+    } else {
+      console.error("❌ Failed to resend verification code:", result.error);
+    }
+
+    return result;
+  }
+
+  // Check verification status
+  async checkVerificationStatus(email, purpose = "customer_registration") {
+    console.log("🔍 Checking verification status for:", email);
+
+    const result = await this.request(
+      `/auth/verification-status/${encodeURIComponent(
+        email
+      )}?purpose=${purpose}`,
+      {
+        method: "GET",
+      }
+    );
+
+    if (result.success) {
+      console.log("✅ Verification status retrieved successfully");
+    } else {
+      console.error("❌ Failed to check verification status:", result.error);
     }
 
     return result;

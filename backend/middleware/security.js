@@ -103,6 +103,7 @@ const corsOptions = {
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:3002',
+      'http://localhost:3004',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3002'
@@ -113,10 +114,8 @@ const corsOptions = {
       const productionOrigins = [
         process.env.ADMIN_URL,
         process.env.CHEF_URL,
+        process.env.DRIVER_URL,
         process.env.API_URL,
-        // Additional production URLs
-        'https://chomaadmin-delta.vercel.app',
-        'https://chomachef.vercel.app'
       ].filter(Boolean); // Remove any undefined values
       
       allowedOrigins.push(...productionOrigins);

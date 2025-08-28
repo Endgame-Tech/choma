@@ -111,12 +111,41 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
         return acc + mealsList.reduce((s: number, m: unknown) => s + getCaloriesFromPotentialMeal(m), 0)
     }, 0)
 
+    // Calculate actual days with meals (not total plan duration days)
+    const actualDaysWithMeals = new Set<string>()
+    planAssignments.forEach(a => {
+        try {
+            if (a && a.weekNumber != null && a.dayOfWeek != null) {
+                actualDaysWithMeals.add(`${a.weekNumber}-${a.dayOfWeek}`)
+            }
+        } catch (e) {
+            // ignore malformed assignment
+        }
+    })
+
     const avgCaloriesPerDayComputed = (() => {
-        if (planTotalDays > 0 && totalCalories > 0) return Math.round(totalCalories / planTotalDays)
+        // Use actual days with meals for more accurate calculation
+        const daysWithMeals = actualDaysWithMeals.size
+        if (daysWithMeals > 0 && totalCalories > 0) {
+            return Math.round(totalCalories / daysWithMeals)
+        }
         // fallback to backend field if available
-        if (mealPlan.nutritionInfo && typeof mealPlan.nutritionInfo.avgCaloriesPerDay === 'number') return Math.round(mealPlan.nutritionInfo.avgCaloriesPerDay)
+        if (mealPlan.nutritionInfo && typeof mealPlan.nutritionInfo.avgCaloriesPerDay === 'number') {
+            return Math.round(mealPlan.nutritionInfo.avgCaloriesPerDay)
+        }
         return 0
     })()
+
+    // Use backend-calculated nutritional values (simpler and more reliable)
+    const avgProteinPerDay = mealPlan.nutritionInfo?.totalProtein ? 
+        Math.round(mealPlan.nutritionInfo.totalProtein / (actualDaysWithMeals.size || planTotalDays || 1)) : 0
+    const avgCarbsPerDay = mealPlan.nutritionInfo?.totalCarbs ? 
+        Math.round(mealPlan.nutritionInfo.totalCarbs / (actualDaysWithMeals.size || planTotalDays || 1)) : 0
+    const avgFatPerDay = mealPlan.nutritionInfo?.totalFat ? 
+        Math.round(mealPlan.nutritionInfo.totalFat / (actualDaysWithMeals.size || planTotalDays || 1)) : 0
+    const avgFiberPerDay = mealPlan.nutritionInfo?.totalFiber ? 
+        Math.round(mealPlan.nutritionInfo.totalFiber / (actualDaysWithMeals.size || planTotalDays || 1)) : 0
+
 
     return (
         <div className="group relative bg-white dark:bg-black/50 rounded-[20px] shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 w-full max-w-[320px] mx-auto overflow-hidden">
@@ -244,6 +273,42 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
                             {avgCaloriesPerDayComputed} cal/day
                         </span>
                     </div>
+
+                    {avgProteinPerDay > 0 && (
+                        <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <span className="text-[10px] text-gray-600 dark:text-gray-400">💪</span>
+                            <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                                {avgProteinPerDay}g protein/day
+                            </span>
+                        </div>
+                    )}
+
+                    {avgCarbsPerDay > 0 && (
+                        <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <span className="text-[10px] text-gray-600 dark:text-gray-400">🌾</span>
+                            <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                                {avgCarbsPerDay}g carbs/day
+                            </span>
+                        </div>
+                    )}
+
+                    {avgFatPerDay > 0 && (
+                        <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <span className="text-[10px] text-gray-600 dark:text-gray-400">🥑</span>
+                            <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                                {avgFatPerDay}g fat/day
+                            </span>
+                        </div>
+                    )}
+
+                    {avgFiberPerDay > 0 && (
+                        <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <span className="text-[10px] text-gray-600 dark:text-gray-400">🌱</span>
+                            <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                                {avgFiberPerDay}g fiber/day
+                            </span>
+                        </div>
+                    )}
 
                     {mealPlan.stats?.avgMealsPerDay && (
                         <div className="flex items-center gap-1 px-[8px] py-[4px] bg-gray-100 dark:bg-gray-700 rounded-full">

@@ -8,7 +8,8 @@
       "Bash(cat:*)",
       "Bash(ls:*)",
       "WebFetch(domain:localhost)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

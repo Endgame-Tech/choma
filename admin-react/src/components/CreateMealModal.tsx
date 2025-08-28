@@ -143,11 +143,20 @@ export default function CreateMealModal({ isOpen, onClose, onSubmit }: CreateMea
     // Auto-calculate cooking costs (return 0 if prep time is not set)
     const cookingCosts = preparationTime > 0 ? calculateCookingCost(preparationTime, ingredients, complexityLevel) : 0
 
+    // Total cost = ingredients + cooking + packaging (delivery calculated at checkout)
     const totalCosts = ingredients + cookingCosts + packaging
+    
+    // Profit = 40% of total cost
     const profit = totalCosts * 0.4
+    
+    // Final price = total cost + profit + platform fee
     const totalPrice = totalCosts + profit + platformFee
+    
+    // Chef gets: ingredients + cooking cost + 50% of profit
     const chefEarnings = ingredients + cookingCosts + (profit * 0.5)
-    const chomaEarnings = packaging + (profit * 0.5) + platformFee
+    
+    // Choma gets: platform fee + packaging + 50% of profit
+    const chomaEarnings = platformFee + packaging + (profit * 0.5)
 
     return {
       totalCosts,

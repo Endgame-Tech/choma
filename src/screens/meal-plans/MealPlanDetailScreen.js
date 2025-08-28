@@ -13,6 +13,8 @@ import {
   Dimensions,
   Animated,
   FlatList,
+  Share,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -52,6 +54,40 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     setSelectedImage(imageUri);
     setSelectedImageName(mealName || "Meal Image");
     setImageModalVisible(true);
+  };
+
+  // Handle share functionality
+  const handleShare = async () => {
+    try {
+      const planName = mealPlanDetails?.planName || bundle?.name || "Meal Plan";
+      const duration = mealPlanDetails?.durationWeeks 
+        ? `${mealPlanDetails.durationWeeks} week${mealPlanDetails.durationWeeks !== 1 ? 's' : ''}` 
+        : "4 weeks";
+      const price = mealPlanDetails?.basePrice || bundle?.price || 25000;
+      const calories = mealPlanDetails?.nutritionInfo?.avgCaloriesPerDay || "N/A";
+      const protein = mealPlanDetails?.nutritionInfo?.totalProtein 
+        ? Math.round(mealPlanDetails.nutritionInfo.totalProtein / (mealPlanDetails.durationWeeks * 7)) + "g"
+        : "N/A";
+
+      const shareMessage = `🍽️ Check out this amazing meal plan: ${planName}!\n\n` +
+        `⏱️ Duration: ${duration}\n` +
+        `💰 Price: ₦${price.toLocaleString()}\n` +
+        `🔥 Avg Calories/Day: ${calories}\n` +
+        `💪 Avg Protein/Day: ${protein}\n\n` +
+        `Download the Choma app to order your healthy meals! 📱`;
+
+      const result = await Share.share({
+        message: shareMessage,
+        title: `${planName} - Choma Meal Plan`,
+      });
+
+      if (result.action === Share.sharedAction) {
+        console.log('✅ Meal plan shared successfully');
+      }
+    } catch (error) {
+      console.error('❌ Error sharing meal plan:', error);
+      Alert.alert('Error', 'Unable to share meal plan. Please try again.');
+    }
   };
 
   // Fetch detailed meal plan data from backend
@@ -266,7 +302,6 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   // Get admin-configured plan features
   const adminPlanFeatures =
     mealPlanDetails?.planFeatures || bundle?.planFeatures || [];
-  console.log("🔍 DEBUG: Admin plan features:", adminPlanFeatures);
 
   // If admin configured features, use those; otherwise use defaults
   const features =
@@ -665,7 +700,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       <StandardHeader
         title="Details"
         onBackPress={() => navigation.goBack()}
-        showRightIcon={false}
+        rightIcon="share-outline"
+        onRightPress={handleShare}
+        showRightIcon={true}
       />
 
       <ScrollView
@@ -690,19 +727,19 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               style={styles(colors).quantityButton}
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
             >
-              <Ionicons name="remove" size={20} color={colors.text} />
+              <Ionicons name="remove" size={20} color={'#FFFFFF'} />
             </TouchableOpacity>
             <Text style={styles(colors).quantityText}>{quantity}</Text>
             <TouchableOpacity
               style={styles(colors).quantityButton}
               onPress={() => setQuantity(quantity + 1)}
             >
-              <Ionicons name="add" size={20} color={colors.text} />
+              <Ionicons name="add" size={20} color={'#FFFFFF'} />
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles(colors).bookmarkButton}>
-            <Ionicons name="heart-outline" size={24} color={colors.text} />
+            <Ionicons name="heart-outline" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -783,7 +820,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   ₦{discountInfo.originalPrice.toLocaleString()}
                 </Text>
                 <View style={styles(colors).discountPill}>
-                  <Ionicons name="gift-outline" size={18} color={colors.text} />
+                  <Ionicons name="gift-outline" size={18} color={colors.primary} />
                   <Text style={styles(colors).discountPillText}>
                     Up to {discountInfo.discountPercent}% Off
                   </Text>
@@ -820,44 +857,128 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Nutrition Info */}
+        {/* Premium Nutrition Info */}
         {mealPlanDetails?.nutritionInfo && (
           <View style={styles(colors).nutritionSection}>
             <Text style={styles(colors).sectionTitle}>
               Nutrition Information
             </Text>
-            <View style={styles(colors).nutritionGrid}>
-              <View style={styles(colors).nutritionItem}>
-                <Text style={styles(colors).nutritionValue}>
+            
+            {/* Calories Overview Cards */}
+            <View style={styles(colors).nutritionOverviewRow}>
+              <View style={[styles(colors).nutritionOverviewCard, { backgroundColor: colors.primary + '15' }]}>
+                <View style={[styles(colors).nutritionOverviewIcon, { backgroundColor: colors.primary + '25' }]}>
+                  <Text style={styles(colors).nutritionOverviewEmoji}>🔥</Text>
+                </View>
+                <Text style={styles(colors).nutritionOverviewValue}>
                   {mealPlanDetails.nutritionInfo.totalCalories || "N/A"}
                 </Text>
-                <Text style={styles(colors).nutritionLabel}>
+                <Text style={styles(colors).nutritionOverviewLabel}>
                   Total Calories
                 </Text>
               </View>
-              <View style={styles(colors).nutritionItem}>
-                <Text style={styles(colors).nutritionValue}>
+              
+              <View style={[styles(colors).nutritionOverviewCard, { backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}>
+                <View style={[styles(colors).nutritionOverviewIcon, { backgroundColor: colors.secondary + '25' }]}>
+                  <Text style={styles(colors).nutritionOverviewEmoji}>👌</Text>
+                </View>
+                <Text style={styles(colors).nutritionOverviewValue}>
                   {mealPlanDetails.nutritionInfo.avgCaloriesPerDay || "N/A"}
                 </Text>
-                <Text style={styles(colors).nutritionLabel}>Avg. Cal/Day</Text>
-              </View>
-              <View style={styles(colors).nutritionItem}>
-                <Text style={styles(colors).nutritionValue}>
-                  {mealPlanDetails.nutritionInfo.totalProtein || "N/A"}g
+                <Text style={styles(colors).nutritionOverviewLabel}>
+                  Avg. Cal/Day
                 </Text>
-                <Text style={styles(colors).nutritionLabel}>Protein</Text>
               </View>
-              <View style={styles(colors).nutritionItem}>
-                <Text style={styles(colors).nutritionValue}>
-                  {mealPlanDetails.nutritionInfo.totalCarbs || "N/A"}g
-                </Text>
-                <Text style={styles(colors).nutritionLabel}>Carbs</Text>
+            </View>
+
+            {/* Daily Nutrition Cards */}
+            <Text style={styles(colors).nutritionSubtitle}>Daily Average</Text>
+            <View style={styles(colors).nutritionCardsContainer}>
+              <View style={styles(colors).nutritionCard}>
+                <View style={[styles(colors).nutritionCardIcon, { backgroundColor: '#FF6B6B20' }]}>
+                  <Text style={styles(colors).nutritionCardEmoji}>🥩</Text>
+                </View>
+                <View style={styles(colors).nutritionCardContent}>
+                  <Text style={styles(colors).nutritionCardValue}>
+                    {mealPlanDetails.nutritionInfo.totalProtein ? 
+                      Math.round(mealPlanDetails.nutritionInfo.totalProtein / (mealPlanDetails.durationWeeks * 7)) + "g" : 
+                      "N/A"}
+                  </Text>
+                  <Text style={styles(colors).nutritionCardLabel}>Protein</Text>
+                </View>
               </View>
-              <View style={styles(colors).nutritionItem}>
-                <Text style={styles(colors).nutritionValue}>
-                  {mealPlanDetails.nutritionInfo.totalFat || "N/A"}g
-                </Text>
-                <Text style={styles(colors).nutritionLabel}>Fat</Text>
+
+              <View style={styles(colors).nutritionCard}>
+                <View style={[styles(colors).nutritionCardIcon, { backgroundColor: '#4ECDC420' }]}>
+                  <Text style={styles(colors).nutritionCardEmoji}>🌽</Text>
+                </View>
+                <View style={styles(colors).nutritionCardContent}>
+                  <Text style={styles(colors).nutritionCardValue}>
+                    {mealPlanDetails.nutritionInfo.totalCarbs ? 
+                      Math.round(mealPlanDetails.nutritionInfo.totalCarbs / (mealPlanDetails.durationWeeks * 7)) + "g" : 
+                      "N/A"}
+                  </Text>
+                  <Text style={styles(colors).nutritionCardLabel}>Carbs</Text>
+                </View>
+              </View>
+
+              <View style={styles(colors).nutritionCard}>
+                <View style={[styles(colors).nutritionCardIcon, { backgroundColor: '#FFE66D20' }]}>
+                  <Text style={styles(colors).nutritionCardEmoji}>🥑</Text>
+                </View>
+                <View style={styles(colors).nutritionCardContent}>
+                  <Text style={styles(colors).nutritionCardValue}>
+                    {mealPlanDetails.nutritionInfo.totalFat ? 
+                      Math.round(mealPlanDetails.nutritionInfo.totalFat / (mealPlanDetails.durationWeeks * 7)) + "g" : 
+                      "N/A"}
+                  </Text>
+                  <Text style={styles(colors).nutritionCardLabel}>Fat</Text>
+                </View>
+              </View>
+
+              <View style={styles(colors).nutritionCard}>
+                <View style={[styles(colors).nutritionCardIcon, { backgroundColor: '#95E1D320' }]}>
+                  <Text style={styles(colors).nutritionCardEmoji}>🥗</Text>
+                </View>
+                <View style={styles(colors).nutritionCardContent}>
+                  <Text style={styles(colors).nutritionCardValue}>
+                    {mealPlanDetails.nutritionInfo.totalFiber ? 
+                      Math.round(mealPlanDetails.nutritionInfo.totalFiber / (mealPlanDetails.durationWeeks * 7)) + "g" : 
+                      "N/A"}
+                  </Text>
+                  <Text style={styles(colors).nutritionCardLabel}>Fiber</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Total Values Summary */}
+            <Text style={styles(colors).nutritionSubtitle}>Total Plan Values</Text>
+            <View style={styles(colors).nutritionSummaryCard}>
+              <View style={styles(colors).nutritionSummaryRow}>
+                <View style={styles(colors).nutritionSummaryItem}>
+                  <Text style={styles(colors).nutritionSummaryValue}>
+                    {mealPlanDetails.nutritionInfo.totalProtein || "N/A"}g
+                  </Text>
+                  <Text style={styles(colors).nutritionSummaryLabel}>Protein</Text>
+                </View>
+                <View style={styles(colors).nutritionSummaryItem}>
+                  <Text style={styles(colors).nutritionSummaryValue}>
+                    {mealPlanDetails.nutritionInfo.totalCarbs || "N/A"}g
+                  </Text>
+                  <Text style={styles(colors).nutritionSummaryLabel}>Carbs</Text>
+                </View>
+                <View style={styles(colors).nutritionSummaryItem}>
+                  <Text style={styles(colors).nutritionSummaryValue}>
+                    {mealPlanDetails.nutritionInfo.totalFat || "N/A"}g
+                  </Text>
+                  <Text style={styles(colors).nutritionSummaryLabel}>Fat</Text>
+                </View>
+                <View style={styles(colors).nutritionSummaryItem}>
+                  <Text style={styles(colors).nutritionSummaryValue}>
+                    {mealPlanDetails.nutritionInfo.totalFiber || "N/A"}g
+                  </Text>
+                  <Text style={styles(colors).nutritionSummaryLabel}>Fiber</Text>
+                </View>
               </View>
             </View>
           </View>
@@ -891,16 +1012,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           style={styles(colors).customizeButton}
           onPress={() => navigation.navigate("Customize", { bundle })}
         >
-          <Ionicons name="options" size={20} color={colors.primary} />
+          <Ionicons name="options" size={20} color={colors.border2} />
           <Text style={styles(colors).customizeText}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles(colors).addToCartButton}
           onPress={() => {
-            // Pass the fully fetched mealPlanDetails when available so Checkout
-            // has access to admin-configured fields like durationWeeks.
-            // Also include mealPlanId as a fallback for CheckoutScreen to fetch by id.
             navigation.navigate("Checkout", {
               mealPlan: mealPlanDetails || bundle,
               mealPlanId:
@@ -995,10 +1113,12 @@ const styles = (colors) =>
     },
     heroContainer: {
       position: "relative",
-      margin: 20,
-      borderRadius: THEME.borderRadius.large,
+      margin: 15,
+      borderRadius: 30,
       overflow: "hidden",
-      height: 300,
+      height: 400,
+      borderWidth: 1,
+      borderColor: colors.border2,
     },
     heroImage: {
       width: "100%",
@@ -1013,37 +1133,37 @@ const styles = (colors) =>
     },
     quantityControls: {
       position: "absolute",
-      top: 15,
-      right: 15,
+      bottom: 15,
+      left: 15,
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "rgba(0,0,0,0.7)",
-      borderRadius: THEME.borderRadius.large,
+      backgroundColor: "#1b1b1b",
+      borderRadius: THEME.borderRadius.xxl,
       paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingVertical: 5,
     },
     quantityButton: {
       width: 30,
       height: 30,
       borderRadius: 15,
-      backgroundColor: "rgba(255,255,255,0.2)",
+      backgroundColor: "#1b1b1b",
       justifyContent: "center",
       alignItems: "center",
     },
     quantityText: {
-      color: colors.white,
+      color: colors.primary,
       fontSize: 16,
       fontWeight: "600",
       marginHorizontal: 15,
     },
     bookmarkButton: {
       position: "absolute",
-      top: 15,
-      left: 15,
+      bottom: 15,
+      right: 15,
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: "#1b1b1b",
       justifyContent: "center",
       alignItems: "center",
     },
@@ -1125,7 +1245,7 @@ const styles = (colors) =>
     currentPrice: {
       fontSize: 24,
       fontWeight: "bold",
-      color: "#1b1b1b",
+      color: colors.text,
       marginRight: 12,
     },
     originalPrice: {
@@ -1138,34 +1258,40 @@ const styles = (colors) =>
     discountPill: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#F3E9DF",
+      backgroundColor: colors.primaryDark2,
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 25, // Fully rounded pill shape
       alignSelf: "flex-start",
       marginTop: 8,
       borderWidth: 1,
-      borderColor: "#1b1b1b",
+      borderColor: colors.border2,
     },
     discountPillText: {
       fontSize: 14,
       fontWeight: "400",
-      color: colors.text,
+      color: colors.primary,
       marginLeft: 6,
     },
     featuresSection: {
-      padding: 20,
-      backgroundColor: colors.cardBackground,
+      // padding: 20,
+      // backgroundColor: "#F3E9DF",
       marginHorizontal: 20,
       borderRadius: THEME.borderRadius.large,
       marginBottom: 20,
     },
     featuresList: {
       gap: 16,
+      padding: 20,
+      borderRadius: THEME.borderRadius.large,
+      borderWidth: 1,
+      borderColor: `${colors.border2}50`,
+      // backgroundColor: "#F3E9DF",
     },
     featureItem: {
       flexDirection: "row",
       alignItems: "center",
+      
     },
     featureIcon: {
       width: 48,
@@ -1195,14 +1321,14 @@ const styles = (colors) =>
     weekTabs: {
       flexDirection: "row",
       backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.xl,
+      borderRadius: THEME.borderRadius.xxl,
       padding: 4,
       marginBottom: 20,
     },
     weekTab: {
       flex: 1,
       paddingVertical: 12,
-      borderRadius: THEME.borderRadius.xl,
+      borderRadius: THEME.borderRadius.xxl,
       alignItems: "center",
     },
     weekTabActive: {
@@ -1316,24 +1442,6 @@ const styles = (colors) =>
       height: 30,
       borderRadius: 4,
     },
-    // Small discount pills for meal preview images
-    mealPreviewDiscountPill: {
-      position: "absolute",
-      bottom: -2,
-      right: -2,
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#F5F4F0",
-      paddingHorizontal: 4,
-      paddingVertical: 1,
-      borderRadius: 8,
-      zIndex: 10,
-      elevation: 2,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
-      shadowRadius: 1,
-    },
     nutritionSection: {
       padding: 20,
       backgroundColor: colors.cardBackground,
@@ -1341,12 +1449,129 @@ const styles = (colors) =>
       borderRadius: THEME.borderRadius.large,
       marginBottom: 20,
     },
+    nutritionSubtitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginTop: 20,
+      marginBottom: 12,
+    },
+    // Overview Cards (Calories)
+    nutritionOverviewRow: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 20,
+    },
+    nutritionOverviewCard: {
+      flex: 1,
+      padding: 20,
+      borderRadius: THEME.borderRadius.large,
+      alignItems: "center",
+    },
+    nutritionOverviewIcon: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    nutritionOverviewEmoji: {
+      fontSize: 24,
+    },
+    nutritionOverviewValue: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    nutritionOverviewLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    // Daily Nutrition Cards
+    nutritionCardsContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      gap: 5,
+    },
+    nutritionCard: {
+      width: (width - 90) / 2, // Two cards per row with margins
+      backgroundColor: colors.background,
+      borderRadius: THEME.borderRadius.medium,
+      padding: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      elevation: 1,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+    },
+    nutritionCardIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+    },
+    nutritionCardEmoji: {
+      fontSize: 18,
+    },
+    nutritionCardContent: {
+      flex: 1,
+    },
+    nutritionCardValue: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 2,
+    },
+    nutritionCardLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    // Summary Card
+    nutritionSummaryCard: {
+      backgroundColor: colors.background,
+      borderRadius: THEME.borderRadius.medium,
+      padding: 20,
+      elevation: 1,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+    },
+    nutritionSummaryRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    nutritionSummaryItem: {
+      alignItems: "center",
+      flex: 1,
+    },
+    nutritionSummaryValue: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: colors.primary,
+      marginBottom: 4,
+    },
+    nutritionSummaryLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    // Legacy styles (keeping for compatibility)
     nutritionGrid: {
       flexDirection: "row",
       justifyContent: "space-between",
       backgroundColor: colors.background,
       padding: 20,
       borderRadius: THEME.borderRadius.medium,
+      marginBottom: 12,
     },
     nutritionItem: {
       alignItems: "center",
@@ -1391,20 +1616,11 @@ const styles = (colors) =>
       paddingHorizontal: width < 375 ? 12 : 20, // Adaptive padding for small screens
       borderRadius: 70,
       borderWidth: 1.5,
-      borderColor: colors.primary,
+      borderColor: colors.border2,
       backgroundColor: colors.background,
       minWidth: width < 375 ? 100 : 120, // Minimum width based on screen size
       maxWidth: width < 375 ? 140 : 180, // Maximum width to prevent overflow
       flex: 0.4, // Takes 40% of available space
-    },
-    customizeText: {
-      fontSize: width < 375 ? 14 : 16, // Smaller font on small screens
-      fontWeight: "600",
-      color: colors.primary,
-      marginLeft: 8,
-      textAlign: "center",
-      numberOfLines: 1, // Prevent text wrapping
-      flexShrink: 1,
     },
     aboutSection: {
       padding: 20,

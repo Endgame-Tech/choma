@@ -299,7 +299,12 @@ export const delegationApi = {
   async assignOrder(data: ChefAssignmentData): Promise<void> {
     const response = await api.post<ApiResponse<void>>(
       `/delegation/assign/${data.orderId}/${data.chefId}`, 
-      { notes: data.notes }
+      { 
+        notes: data.notes,
+        estimatedHours: data.estimatedHours,
+        priority: data.priority,
+        specialInstructions: data.specialInstructions
+      }
     )
     return handleResponse(response)
   },

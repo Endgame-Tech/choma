@@ -9,6 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
   FlatList,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../styles/theme';
@@ -28,8 +29,24 @@ const AddressAutocomplete = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const API_KEY = 'AIzaSyBBxkH4OxFvVDJ242aIOl7auZ2F4Lcf9fg';
+
+  // Keyboard visibility tracking
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true);
+    });
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
 
   // Debounced search effect
   useEffect(() => {
@@ -183,7 +200,15 @@ const AddressAutocomplete = ({
           value={query}
           onChangeText={setQuery}
           onFocus={() => query.length >= 2 && setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+          onBlur={() => {
+            // If keyboard is visible, hide suggestions immediately to prevent blocking clicks
+            // If keyboard is hidden, use timeout to allow suggestion clicks
+            if (keyboardVisible) {
+              setShowSuggestions(false);
+            } else {
+              setTimeout(() => setShowSuggestions(false), 150);
+            }
+          }}
           editable={editable}
         />
         {isLoading && (

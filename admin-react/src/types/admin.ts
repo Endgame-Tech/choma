@@ -89,6 +89,14 @@ export interface AdminPermissions {
   deliveryPrices: {
     view: boolean;
   };
+
+  // Drivers permissions (used for Drivers sidebar navigation)
+  drivers: {
+    view: boolean;
+    approve: boolean;
+    edit: boolean;
+    manage: boolean;
+  };
 }
 
 export interface AdminRole {
@@ -146,7 +154,8 @@ export const PREDEFINED_ROLES: AdminRole[] = [
       mealPlans: { view: true, create: true, edit: true, delete: true, publish: true, schedule: true },
       banners: { view: true, create: true, edit: true, delete: true },
   adminManagement: { view: true, create: true, edit: true, delete: true, managePermissions: true, view_activity_logs: true, manage_sessions: true },
-  deliveryPrices: { view: true }
+  deliveryPrices: { view: true },
+  drivers: { view: true, approve: true, edit: true, manage: true }
     }
   },
   {
@@ -165,7 +174,8 @@ export const PREDEFINED_ROLES: AdminRole[] = [
       mealPlans: { view: true, create: true, edit: true, delete: true, publish: true, schedule: true },
       banners: { view: true, create: true, edit: true, delete: true },
   adminManagement: { view: false, create: false, edit: false, delete: false, managePermissions: false, view_activity_logs: false, manage_sessions: false },
-  deliveryPrices: { view: true }
+  deliveryPrices: { view: true },
+  drivers: { view: true, approve: false, edit: false, manage: false }
     }
   },
   {
@@ -184,7 +194,8 @@ export const PREDEFINED_ROLES: AdminRole[] = [
       mealPlans: { view: true, create: false, edit: false, delete: false, publish: false, schedule: false },
       banners: { view: true, create: false, edit: false, delete: false },
   adminManagement: { view: false, create: false, edit: false, delete: false, managePermissions: false, view_activity_logs: false, manage_sessions: false },
-  deliveryPrices: { view: true }
+  deliveryPrices: { view: true },
+  drivers: { view: true, approve: true, edit: true, manage: true }
     }
   },
   {
@@ -203,7 +214,8 @@ export const PREDEFINED_ROLES: AdminRole[] = [
       mealPlans: { view: true, create: false, edit: false, delete: false, publish: false, schedule: false },
       banners: { view: true, create: false, edit: false, delete: false },
   adminManagement: { view: false, create: false, edit: false, delete: false, managePermissions: false, view_activity_logs: false, manage_sessions: false },
-  deliveryPrices: { view: true }
+  deliveryPrices: { view: true },
+  drivers: { view: true, approve: false, edit: false, manage: false }
     }
   }
 ];

@@ -16,7 +16,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import MapView, { Marker, Polyline } from "react-native-maps";
+// NOTE: react-native-maps is an optional native dependency. We avoid a static import
+// here to prevent bundler errors in environments where the package isn't installed.
+// If map features are added, require('react-native-maps') dynamically where needed.
 import ApiService from "../../services/api";
 import { useTheme } from "../../styles/theme";
 import { useAlert } from "../../contexts/AlertContext";
@@ -24,7 +26,7 @@ import { useAlert } from "../../contexts/AlertContext";
 export const TrackingScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
   const { showError, showInfo, showSuccess } = useAlert();
-  const { trackingId, orderId } = route.params || {};
+  const { trackingId, orderId, order } = route.params || {};
   const [tracking, setTracking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,13 +34,34 @@ export const TrackingScreen = ({ route, navigation }) => {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const [mapsAvailable, setMapsAvailable] = useState(false);
+  const [MapComponents, setMapComponents] = useState({
+    MapView: null,
+    Marker: null,
+    Polyline: null,
+  });
   const refreshInterval = useRef(null);
 
   useEffect(() => {
-    if (trackingId) {
+    if (trackingId || orderId || order) {
       loadTrackingData();
       // Set up auto-refresh every 2 minutes (reduced from 30 seconds)
       refreshInterval.current = setInterval(loadTrackingData, 120000);
+    }
+
+    // Try to lazily require react-native-maps; if not installed, disable map features
+    try {
+      // eslint-disable-next-line global-require
+      const Maps = require("react-native-maps");
+      setMapComponents({
+        MapView: Maps.default || Maps.MapView || Maps,
+        Marker: Maps.Marker,
+        Polyline: Maps.Polyline,
+      });
+      setMapsAvailable(true);
+    } catch (err) {
+      setMapsAvailable(false);
+      console.warn("react-native-maps not found; map view will be disabled.");
     }
 
     return () => {
@@ -48,17 +71,50 @@ export const TrackingScreen = ({ route, navigation }) => {
     };
   }, [trackingId]);
 
+
   const loadTrackingData = async () => {
     try {
-      const result = await ApiService.getDeliveryTracking(trackingId);
-      if (result.success) {
+      let result;
+
+      // Try to get tracking data by trackingId first
+      if (trackingId) {
+        result = await ApiService.getDeliveryTracking(trackingId);
+      }
+      // If no trackingId but we have orderId, try to find tracking by order
+      else if (orderId) {
+        // Try to get customer deliveries and find by order ID
+        const deliveriesResult = await ApiService.getUserOrders();
+        if (deliveriesResult.success) {
+          const orderData = order || { _id: orderId, orderStatus: "Preparing" };
+          setLoading(false);
+          setRefreshing(false);
+          return;
+        }
+      }
+        
+      else if (order) {
+        setTracking(createTrackingFromOrder(order));
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      if (result && result.success) {
         setTracking(result.data);
       } else {
-        showError("Error", "Failed to load tracking information");
+        if (order) {
+          setTracking(createTrackingFromOrder(order));
+        } else {
+          showError("Error", "Failed to load tracking information");
+        }
       }
     } catch (error) {
       console.error("Error loading tracking:", error);
-      showError("Error", "Failed to load tracking information");
+      if (order) {
+        setTracking(createTrackingFromOrder(order));
+      } else {
+        showError("Error", "Failed to load tracking information");
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -80,10 +136,7 @@ export const TrackingScreen = ({ route, navigation }) => {
 
   const submitRating = async () => {
     if (rating === 0) {
-      showError(
-        "Rating Required",
-        "Please select a rating before submitting"
-      );
+      showError("Rating Required", "Please select a rating before submitting");
       return;
     }
 
@@ -305,6 +358,19 @@ export const TrackingScreen = ({ route, navigation }) => {
                 <Ionicons name="call" size={20} color="white" />
               </TouchableOpacity>
             </View>
+          </View>
+        )}
+
+        {showMap && (
+          <View style={styles(colors).mapNoticeContainer}>
+            {mapsAvailable ? (
+              <Text style={styles(colors).mapNoticeText}>Loading map...</Text>
+            ) : (
+              <Text style={styles(colors).mapNoticeText}>
+                Map features are unavailable. Install the optional native
+                package "react-native-maps" to enable live location maps.
+              </Text>
+            )}
           </View>
         )}
 
@@ -659,6 +725,17 @@ const styles = (colors) =>
       height: 30,
       backgroundColor: colors.border,
       marginTop: 4,
+    },
+    mapNoticeContainer: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      alignItems: "center",
+    },
+    mapNoticeText: {
+      color: colors.textSecondary,
+      textAlign: "center",
     },
     timelineContent: {
       flex: 1,

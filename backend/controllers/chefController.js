@@ -589,6 +589,48 @@ exports.getChefOrders = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
+    // Enhance orders with delegation pricing information for chef transparency
+    const enhancedOrders = await Promise.all(orders.map(async (order) => {
+      const delegation = await OrderDelegation.findOne({ 
+        order: order._id, 
+        chef: new mongoose.Types.ObjectId(chefId) 
+      });
+
+      if (delegation) {
+        // Always include delegation status for debugging
+        const orderObj = order.toObject();
+        orderObj.actualDelegationStatus = delegation.status; // Current delegation status
+        orderObj.delegationStatusMismatch = orderObj.delegationStatus !== delegation.status;
+
+        if (delegation.payment) {
+          // Calculate detailed breakdown for chef transparency
+          const chefFee = delegation.payment.chefFee || 0;
+          const ingredientsCost = delegation.payment.ingredientsCost || 0;
+          const totalCost = delegation.payment.totalCost || 0;
+          
+          // Calculate cooking cost (chefFee - ingredientsCost - profit share)
+          // Based on your formula: chefEarnings = ingredients + cookingCosts + (profit * 0.5)
+          // We need to reverse-engineer this for transparency
+          const totalMealCosts = ingredientsCost + (totalCost - ingredientsCost); // ingredients + cooking + packaging
+          const totalProfit = totalMealCosts * 0.4; // 40% profit
+          const chefProfitShare = totalProfit * 0.5; // Chef gets 50% of profit
+          const cookingCost = chefFee - ingredientsCost - chefProfitShare; // Remaining is cooking cost
+
+          orderObj.chefEarning = chefFee;
+          orderObj.pricingBreakdown = {
+            ingredientsCost,
+            cookingCost: Math.max(0, cookingCost), // Ensure non-negative
+            chefProfitShare,
+            totalChefEarning: chefFee
+          };
+        }
+
+        return orderObj;
+      }
+
+      return order.toObject();
+    }));
+
     const total = await Order.countDocuments(query);
 
     console.log(`📋 Found ${orders.length} orders for chef ${chefId}`);
@@ -611,7 +653,7 @@ exports.getChefOrders = async (req, res) => {
     res.json({
       success: true,
       data: {
-        orders,
+        orders: enhancedOrders,
         pagination: {
           currentPage: parseInt(page),
           totalPages: Math.ceil(total / limit),
@@ -1106,6 +1148,55 @@ exports.updateChefStatus = async (req, res) => {
     delegation.updatedAt = new Date();
     await delegation.save();
 
+    // IMPORTANT: Also update the Order.delegationStatus field so it syncs properly
+    await Order.findByIdAndUpdate(orderId, {
+      delegationStatus: chefStatus,
+      updatedAt: new Date()
+    });
+
+    // Track chef earnings when order is completed
+    if (chefStatus === 'Completed') {
+      try {
+        const ChefEarning = require("../models/ChefEarning");
+        
+        // Check if earnings already recorded for this order
+        const existingEarning = await ChefEarning.findOne({
+          chef: chefId,
+          order: orderId
+        });
+        
+        if (!existingEarning) {
+          // Get the order to calculate earnings
+          const orderDoc = await Order.findById(orderId);
+          
+          // Calculate chef earnings (85% of order total, 15% platform fee)
+          const orderTotal = orderDoc?.totalAmount || delegation.chefFee || 0;
+          const chefPercentage = delegation.chefFeePercentage || 85;
+          const cookingFee = (orderTotal * chefPercentage) / 100;
+          
+          const currentDate = new Date();
+          const weekStart = ChefEarning.getWeekStart(currentDate);
+          const weekEnd = ChefEarning.getWeekEnd(currentDate);
+          
+          await ChefEarning.create({
+            chef: chefId,
+            order: orderId,
+            cookingFee,
+            orderTotal,
+            chefPercentage,
+            weekStartDate: weekStart,
+            weekEndDate: weekEnd,
+            completedDate: currentDate,
+            status: 'pending' // Will be paid on Friday
+          });
+          
+          console.log(`💰 Chef earning recorded: ₦${cookingFee} for order ${orderId}`);
+        }
+      } catch (earningError) {
+        console.warn("⚠️ Failed to record chef earning:", earningError.message);
+      }
+    }
+
     // Get the updated order with delegation info
     const order = await Order.findById(orderId)
       .populate("customer", "fullName email phone")
@@ -1120,8 +1211,11 @@ exports.updateChefStatus = async (req, res) => {
       order.delegationStatus = chefStatus;
     }
 
-    // Send notification to admin about status change
+    // Send notification to admin and customer about status change
     try {
+      const NotificationService = require("../services/notificationService");
+      
+      // Send notification to admin
       const Notification = require("../models/Notification");
       await Notification.create({
         userId: "admin", // Or specific admin ID
@@ -1135,11 +1229,60 @@ exports.updateChefStatus = async (req, res) => {
           orderNumber: order?.orderNumber,
         },
       });
+
+      // Send real-time notification to customer
+      if (order && order.customer) {
+        const statusMessages = {
+          "Assigned": "Your order has been assigned to a chef and will begin preparation soon!",
+          "Accepted": "Great news! Your chef has accepted your order and will start cooking shortly.",
+          "In Progress": "🍳 Your chef is now preparing your delicious meal!",
+          "Ready": "🍽️ Your meal is ready! It will be delivered to you soon.",
+          "Completed": "✅ Your order has been completed successfully! Enjoy your meal!"
+        };
+
+        await NotificationService.createNotification({
+          userId: order.customer._id,
+          title: "Order Status Update",
+          message: statusMessages[chefStatus] || `Your order status has been updated to ${chefStatus}`,
+          type: "order_status_update",
+          data: {
+            orderId,
+            chefStatus,
+            // Don't include orderNumber for customer privacy
+          },
+          priority: chefStatus === "Ready" ? "high" : "medium",
+        });
+      }
     } catch (notificationError) {
       console.warn(
         "⚠️ Failed to send notification:",
         notificationError.message
       );
+    }
+
+    // CRITICAL: Invalidate mobile app order caches so status updates are immediate
+    try {
+      const { cacheService } = require("../config/redis");
+      const customerId = order?.customer?._id;
+      
+      if (customerId && cacheService) {
+        // Invalidate the specific cache keys that mobile app uses
+        const cacheKeys = [
+          `user:${customerId}:/api/orders/assigned:{}`,  // User's assigned orders
+          `user-orders:${customerId}:1:20:`,              // User's general orders  
+          `user:${customerId}:/api/orders:{}`,            // User's orders endpoint
+        ];
+        
+        for (const key of cacheKeys) {
+          await cacheService.delete(key);
+          console.log(`🗑️ Invalidated cache: ${key}`);
+        }
+        
+        console.log(`🔄 Cache invalidated for customer ${customerId} after chef status update to "${chefStatus}"`);
+      }
+    } catch (cacheError) {
+      console.warn("⚠️ Failed to invalidate cache:", cacheError.message);
+      // Don't fail the request if cache invalidation fails
     }
 
     res.json({
@@ -1340,6 +1483,372 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to reset password',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// ============= CHEF EARNINGS =============
+
+// Get chef earnings summary
+exports.getChefEarnings = async (req, res) => {
+  try {
+    const chefId = req.chef.chefId;
+    const { period = 'current_week' } = req.query;
+    
+    const ChefEarning = require("../models/ChefEarning");
+    const currentDate = new Date();
+    
+    let startDate, endDate;
+    
+    switch (period) {
+      case 'current_week':
+        startDate = ChefEarning.getWeekStart(currentDate);
+        endDate = ChefEarning.getWeekEnd(currentDate);
+        break;
+      case 'last_week':
+        const lastWeek = new Date(currentDate);
+        lastWeek.setDate(currentDate.getDate() - 7);
+        startDate = ChefEarning.getWeekStart(lastWeek);
+        endDate = ChefEarning.getWeekEnd(lastWeek);
+        break;
+      case 'current_month':
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        break;
+      default:
+        startDate = ChefEarning.getWeekStart(currentDate);
+        endDate = ChefEarning.getWeekEnd(currentDate);
+    }
+    
+    // Get earnings for the period
+    const earnings = await ChefEarning.find({
+      chef: chefId,
+      completedDate: { $gte: startDate, $lte: endDate }
+    }).populate('order', 'totalAmount deliveryDate'); // Removed orderNumber for privacy
+    
+    // Calculate totals
+    const totalPending = earnings
+      .filter(e => e.status === 'pending')
+      .reduce((sum, e) => sum + e.cookingFee, 0);
+      
+    const totalPaid = earnings
+      .filter(e => e.status === 'paid')
+      .reduce((sum, e) => sum + e.cookingFee, 0);
+      
+    const totalEarnings = totalPending + totalPaid;
+    
+    // Get next payout date (next Friday)
+    const nextPayoutDate = ChefEarning.getNextFridayPayout(currentDate);
+    
+    // Group earnings by day for weekly view
+    const dailyEarnings = {};
+    earnings.forEach(earning => {
+      const day = earning.completedDate.toISOString().split('T')[0];
+      if (!dailyEarnings[day]) {
+        dailyEarnings[day] = {
+          date: day,
+          totalEarnings: 0,
+          completedOrders: 0,
+          orders: []
+        };
+      }
+      dailyEarnings[day].totalEarnings += earning.cookingFee;
+      dailyEarnings[day].completedOrders += 1;
+      dailyEarnings[day].orders.push({
+        orderId: earning.order._id,
+        cookingFee: earning.cookingFee,
+        status: earning.status
+      });
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        period,
+        startDate,
+        endDate,
+        summary: {
+          totalEarnings,
+          totalPending,
+          totalPaid,
+          completedOrders: earnings.length,
+          nextPayoutDate
+        },
+        dailyEarnings: Object.values(dailyEarnings).sort((a, b) => new Date(a.date) - new Date(b.date)),
+        earnings: earnings.map(e => ({
+          id: e._id,
+          cookingFee: e.cookingFee,
+          orderTotal: e.orderTotal,
+          status: e.status,
+          completedDate: e.completedDate,
+          payoutDate: e.payoutDate,
+          chefPercentage: e.chefPercentage
+        }))
+      }
+    });
+  } catch (error) {
+    console.error("Get chef earnings error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get earnings data",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Get detailed meal plan for an order
+exports.getMealPlan = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const chefId = req.chef.chefId;
+
+    console.log('🍽️ Getting meal plan for order:', orderId, 'chef:', chefId);
+
+    // Verify the order belongs to this chef
+    const order = await Order.findOne({ 
+      _id: orderId, 
+      assignedChef: new mongoose.Types.ObjectId(chefId) 
+    }).populate({
+      path: 'subscription',
+      populate: {
+        path: 'mealPlanId',
+        model: 'MealPlan',
+        select: 'planName description durationWeeks nutritionInfo'
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found or not assigned to you'
+      });
+    }
+
+    // Get the delegation to access special notes
+    const delegation = await OrderDelegation.findOne({ 
+      order: orderId, 
+      chef: new mongoose.Types.ObjectId(chefId) 
+    });
+
+    // Get meal plan assignments (daily meals)
+    const MealPlanAssignment = require('../models/MealPlanAssignment');
+    const DailyMeal = require('../models/DailyMeal');
+    
+    const mealPlan = order.subscription?.mealPlanId;
+    
+    if (!mealPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meal plan not found for this order'
+      });
+    }
+
+    // Get meal assignments for this meal plan
+    const assignments = await MealPlanAssignment.find({ 
+      mealPlanId: mealPlan._id 
+    }).populate('mealIds').sort({ weekNumber: 1, dayOfWeek: 1, mealTime: 1 });
+
+    console.log('🔍 Found assignments:', assignments.length);
+
+    // Group meals by day (combine week and day into single day number)
+    const dailyMeals = {};
+    let totalCalories = 0;
+    let totalMeals = 0;
+
+    assignments.forEach(assignment => {
+      // Calculate day number: week 1 day 1 = day 1, week 2 day 1 = day 8, etc.
+      const dayNumber = ((assignment.weekNumber - 1) * 7) + assignment.dayOfWeek;
+      const mealType = assignment.mealTime; // breakfast, lunch, dinner
+      
+      if (!dailyMeals[dayNumber]) {
+        dailyMeals[dayNumber] = { day: dayNumber, meals: {} };
+      }
+      
+      if (!dailyMeals[dayNumber].meals[mealType]) {
+        dailyMeals[dayNumber].meals[mealType] = [];
+      }
+
+      // Process each meal in the assignment (mealIds is an array)
+      if (assignment.mealIds && assignment.mealIds.length > 0) {
+        assignment.mealIds.forEach(meal => {
+          if (meal) {
+            dailyMeals[dayNumber].meals[mealType].push({
+              _id: meal._id,
+              name: meal.name,
+              ingredients: meal.ingredients,
+              instructions: meal.adminNotes || meal.chefNotes || assignment.notes || 'No specific instructions provided.',
+              preparationTime: meal.preparationTime || 30,
+              complexityLevel: meal.complexityLevel || 'medium',
+              nutrition: meal.nutrition || { calories: 0, protein: 0, carbs: 0, fat: 0, weight: 0 },
+              allergens: meal.allergens || [],
+              category: meal.category || 'main'
+            });
+
+            // Add to totals
+            if (meal.nutrition && meal.nutrition.calories) {
+              totalCalories += meal.nutrition.calories;
+              totalMeals += 1;
+            }
+          }
+        });
+      }
+    });
+
+    // Convert dailyMeals object to array
+    const dailyMealsArray = Object.values(dailyMeals).sort((a, b) => a.day - b.day);
+
+    // Calculate nutrition info
+    const totalNutrition = {
+      totalCalories,
+      avgCaloriesPerDay: dailyMealsArray.length > 0 ? Math.round(totalCalories / dailyMealsArray.length) : 0,
+      avgCaloriesPerMeal: totalMeals > 0 ? Math.round(totalCalories / totalMeals) : 0
+    };
+
+    // Prepare special notes
+    const specialNotes = {
+      customerRequests: order.specialInstructions || null,
+      adminInstructions: delegation?.adminNotes || delegation?.specialInstructions || null,
+      dietaryRestrictions: []
+    };
+
+    // Extract dietary restrictions from customer requests
+    if (order.specialInstructions) {
+      const restrictions = order.specialInstructions
+        .toLowerCase()
+        .split(/[,;]/)
+        .map(r => r.trim())
+        .filter(r => r.length > 0)
+        .map(r => r.charAt(0).toUpperCase() + r.slice(1));
+      
+      specialNotes.dietaryRestrictions = restrictions;
+    }
+
+    const mealPlanData = {
+      planName: mealPlan.planName || 'Meal Preparation Service',
+      duration: mealPlan.durationWeeks || dailyMealsArray.length,
+      dailyMeals: dailyMealsArray,
+      specialNotes,
+      totalNutrition
+    };
+
+    console.log('✅ Meal plan data prepared:', {
+      planName: mealPlanData.planName,
+      daysCount: dailyMealsArray.length,
+      totalMeals: totalMeals,
+      hasSpecialNotes: !!(specialNotes.customerRequests || specialNotes.adminInstructions)
+    });
+
+    res.json({
+      success: true,
+      data: mealPlanData
+    });
+
+  } catch (error) {
+    console.error('❌ Get meal plan error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch meal plan',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Get earnings breakdown for a specific order by summing actual meal plan assignment data
+exports.getOrderEarningsBreakdown = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const chefId = req.chef.chefId;
+
+    console.log('🧮 Getting earnings breakdown for order:', orderId, 'chef:', chefId);
+
+    // Verify the order belongs to this chef
+    const order = await Order.findOne({ 
+      _id: orderId, 
+      assignedChef: new mongoose.Types.ObjectId(chefId) 
+    }).populate({
+      path: 'subscription',
+      populate: {
+        path: 'mealPlanId',
+        model: 'MealPlan'
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found or not assigned to you'
+      });
+    }
+
+    const mealPlan = order.subscription?.mealPlanId;
+    if (!mealPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Meal plan not found for this order'
+      });
+    }
+
+    // Get meal assignments for this meal plan
+    const MealPlanAssignment = require('../models/MealPlanAssignment');
+    const assignments = await MealPlanAssignment.find({ 
+      mealPlanId: mealPlan._id 
+    }).populate('mealIds').sort({ weekNumber: 1, dayOfWeek: 1, mealTime: 1 });
+
+    console.log('📊 Found assignments for earnings calculation:', assignments.length);
+
+    // Calculate totals from actual meal data
+    let totalIngredientsCost = 0;
+    let totalCookingCost = 0;
+    let totalChefProfitShare = 0;
+    let totalMealsCount = 0;
+
+    assignments.forEach(assignment => {
+      if (assignment.mealIds && assignment.mealIds.length > 0) {
+        assignment.mealIds.forEach(meal => {
+          if (meal && meal.pricing) {
+            // Sum up the individual components that the chef gets
+            const mealIngredients = meal.pricing.ingredients || 0;
+            const mealCooking = meal.pricing.cookingCosts || 0;
+            const mealProfit = meal.pricing.profit || 0;
+            const chefProfitShare = mealProfit * 0.5; // Chef gets 50% of profit
+
+            totalIngredientsCost += mealIngredients;
+            totalCookingCost += mealCooking;
+            totalChefProfitShare += chefProfitShare;
+            totalMealsCount += 1;
+
+            console.log(`💰 Meal ${meal.mealId}: ingredients=${mealIngredients}, cooking=${mealCooking}, profit_share=${chefProfitShare}`);
+          }
+        });
+      }
+    });
+
+    // Total chef earnings is the sum of all three components
+    const totalChefEarnings = totalIngredientsCost + totalCookingCost + totalChefProfitShare;
+
+    const earningsBreakdown = {
+      totalChefEarnings,
+      totalIngredientsCost,
+      totalCookingCost,
+      totalChefProfitShare,
+      totalMealsCount,
+      planName: mealPlan.planName,
+      planDuration: mealPlan.durationWeeks
+    };
+
+    console.log('✅ Earnings breakdown calculated:', earningsBreakdown);
+
+    res.json({
+      success: true,
+      data: earningsBreakdown
+    });
+
+  } catch (error) {
+    console.error('❌ Get earnings breakdown error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch earnings breakdown',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

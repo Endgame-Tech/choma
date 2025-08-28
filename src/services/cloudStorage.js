@@ -154,53 +154,6 @@ class CloudStorageService {
       throw error;
     }
   }
-
-  /**
-   * Mock upload function for development
-   * Returns a mock URL after a delay
-   */
-  async mockUpload(imageUri, userId) {
-    try {
-      // Simulate upload delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Return mock URL (in production, this would be a real cloud URL)
-      return `https://mock-storage.com/profiles/${userId}_${Date.now()}.jpg`;
-      
-    } catch (error) {
-      console.error('Mock upload error:', error);
-      throw error;
-    }
-  }
 }
 
 export default new CloudStorageService();
-
-// Usage example:
-/*
-import CloudStorageService from './cloudStorage';
-
-// Upload image
-const uploadImage = async (imageUri, userId) => {
-  try {
-    const cloudUrl = await CloudStorageService.uploadImage(imageUri, userId);
-    console.log('Image uploaded:', cloudUrl);
-    return cloudUrl;
-  } catch (error) {
-    Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
-    throw error;
-  }
-};
-
-// For development, use mock upload
-const mockUpload = async (imageUri, userId) => {
-  try {
-    const cloudUrl = await CloudStorageService.mockUpload(imageUri, userId);
-    console.log('Mock upload successful:', cloudUrl);
-    return cloudUrl;
-  } catch (error) {
-    Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
-    throw error;
-  }
-};
-*/

@@ -98,6 +98,14 @@ export interface Order {
     daysSinceOrder: number
     displayText: string
   }
+  // Chef pricing breakdown (sent when order is assigned)
+  chefEarning?: number
+  pricingBreakdown?: {
+    ingredientsCost: number
+    cookingCost: number
+    chefProfitShare: number
+    totalChefEarning: number
+  }
 }
 
 // API Response types
@@ -235,12 +243,38 @@ export interface ChefDashboardStats {
 
 // Earnings types
 export interface EarningsData {
-  totalEarnings: number
-  currentMonthEarnings: number
-  availableBalance: number
-  pendingPayments: number
-  ordersCompleted: number
-  averageOrderValue: number
+  chef?: {
+    id: string
+    fullName: string
+    email: string
+  }
+  period: string
+  startDate: string
+  endDate: string
+  summary: {
+    totalEarnings: number
+    totalPending: number
+    totalPaid: number
+    completedOrders: number
+  }
+  earnings: Array<{
+    id: string
+    cookingFee: number
+    orderTotal: number
+    orderNumber: string | null
+    status: 'pending' | 'paid' | 'cancelled'
+    completedDate: string
+    payoutDate: string | null
+    payoutReference: string | null
+    chefPercentage: number
+  }>
+  // Legacy support
+  totalEarnings?: number
+  currentMonthEarnings?: number
+  availableBalance?: number
+  pendingPayments?: number
+  ordersCompleted?: number
+  averageOrderValue?: number
 }
 
 export interface PaymentRecord {

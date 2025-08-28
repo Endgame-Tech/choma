@@ -245,7 +245,6 @@ export interface ChefAssignmentData {
   estimatedHours?: number
   priority?: string
   specialInstructions?: string
-  chefFeePercentage?: number
 }
 
 // Bulk Assignment Data

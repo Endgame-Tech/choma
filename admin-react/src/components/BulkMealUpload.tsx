@@ -303,13 +303,21 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
       const cookingCosts = calculateCookingCost(preparationTime, complexityLevel)
 
       // Calculate total costs and pricing
+      // Total cost = ingredients + cooking + packaging (delivery calculated at checkout)
       const totalCosts = ingredients + cookingCosts + packaging
-      const profit = totalCosts * 0.4 // 40% profit
+      
+      // Profit = 40% of total cost
+      const profit = totalCosts * 0.4
+      
+      // Final price = total cost + profit + platform fee
       const totalPrice = totalCosts + profit + platformFee
 
       // Calculate revenue splits
-      const chefEarnings = ingredients + cookingCosts + (profit * 0.5) // Chef gets ingredients + cooking + 50% of profit
-      const chomaEarnings = packaging + (profit * 0.5) + platformFee // Choma gets packaging + 50% of profit + platform fee
+      // Chef gets: ingredients + cooking cost + 50% of profit
+      const chefEarnings = ingredients + cookingCosts + (profit * 0.5)
+      
+      // Choma gets: platform fee + packaging + 50% of profit
+      const chomaEarnings = platformFee + packaging + (profit * 0.5)
 
       return {
         name: meal.name?.trim() || '',

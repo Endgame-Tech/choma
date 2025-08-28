@@ -39,11 +39,11 @@ const MealCard: React.FC<MealCardProps> = ({
         const profit = totalCosts * 0.4; // 40% profit
         const totalPrice = totalCosts + profit + platformFee; // Recalculated total price including platform fee
 
-        // Chef gets: Ingredients + Cooking + 50% of profit
+        // Chef gets: ingredients + cooking cost + 50% of profit
         const chefEarnings = ingredients + cookingCosts + (profit * 0.5);
 
-        // Choma gets: Packaging + 50% of profit + Platform Fee
-        const chomaEarnings = packaging + (profit * 0.5) + platformFee;
+        // Choma gets: platform fee + packaging + 50% of profit
+        const chomaEarnings = platformFee + packaging + (profit * 0.5);
 
         return {
             chefEarnings,

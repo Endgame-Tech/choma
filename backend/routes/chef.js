@@ -133,4 +133,15 @@ router.get('/notifications', chefAuth, chefController.getChefNotifications);
 // PUT /api/chef/notifications/:notificationId/read - Mark notification as read
 router.put('/notifications/:notificationId/read', chefAuth, chefController.markNotificationAsRead);
 
+// ============= EARNINGS ROUTES =============
+// GET /api/chef/earnings - Get chef earnings summary
+router.get('/earnings', chefAuth, chefController.getChefEarnings);
+
+// ============= MEAL PLAN ROUTES =============
+// GET /api/chef/orders/:orderId/meal-plan - Get detailed meal plan for an order
+router.get('/orders/:orderId/meal-plan', chefAuth, chefController.getMealPlan);
+
+// GET /api/chef/orders/:orderId/earnings-breakdown - Get earnings breakdown for an order
+router.get('/orders/:orderId/earnings-breakdown', chefAuth, chefController.getOrderEarningsBreakdown);
+
 module.exports = router;

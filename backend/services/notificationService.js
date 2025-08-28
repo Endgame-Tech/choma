@@ -1,6 +1,8 @@
 const Notification = require("../models/Notification");
 const Customer = require("../models/Customer");
+const Driver = require("../models/Driver");
 const PushNotificationService = require("./pushNotificationService");
+const socketService = require("./socketService");
 
 class NotificationService {
   // Create a new notification
@@ -518,6 +520,303 @@ class NotificationService {
       console.error("Get notification stats error:", error);
       throw error;
     }
+  }
+
+  // Driver-specific notifications
+  static async sendDriverNotification(driverId, notificationData) {
+    try {
+      const { title, body, data = {}, priority = "normal" } = notificationData;
+
+      // Find driver
+      const driver = await Driver.findById(driverId);
+      if (!driver) {
+        throw new Error("Driver not found");
+      }
+
+      // Send real-time notification via WebSocket
+      const socketSent = socketService.sendToDriver(driverId, 'notification', {
+        title,
+        body,
+        data,
+        priority,
+        timestamp: new Date()
+      });
+
+      // Send push notification if driver has push token
+      let pushSent = false;
+      if (driver.pushToken) {
+        try {
+          await PushNotificationService.sendToDevice(driver.pushToken, {
+            title,
+            body,
+            data
+          });
+          pushSent = true;
+        } catch (error) {
+          console.error(`Push notification failed for driver ${driverId}:`, error);
+        }
+      }
+
+      console.log(`Driver notification sent to ${driver.driverId}: Socket=${socketSent}, Push=${pushSent}`);
+      
+      return {
+        success: true,
+        socketSent,
+        pushSent,
+        driverId: driver.driverId
+      };
+
+    } catch (error) {
+      console.error('Send driver notification error:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // Send assignment notification to driver
+  static async notifyDriverAssignment(driverId, assignment) {
+    return await this.sendDriverNotification(driverId, {
+      title: 'New Delivery Assignment',
+      body: `Pickup from ${assignment.pickupLocation.chefName} • ₦${assignment.totalEarning}`,
+      data: {
+        type: 'assignment',
+        assignmentId: assignment._id,
+        orderId: assignment.orderId,
+        pickupLocation: assignment.pickupLocation.address,
+        deliveryLocation: assignment.deliveryLocation.address,
+        earning: assignment.totalEarning
+      },
+      priority: 'high'
+    });
+  }
+
+  // Send assignment update to driver
+  static async notifyDriverAssignmentUpdate(driverId, assignment, status, message) {
+    return await this.sendDriverNotification(driverId, {
+      title: 'Assignment Update',
+      body: message,
+      data: {
+        type: 'assignment_update',
+        assignmentId: assignment._id,
+        status,
+        orderId: assignment.orderId
+      },
+      priority: 'normal'
+    });
+  }
+
+  // Send delivery reminder to driver
+  static async notifyDriverDeliveryReminder(driverId, assignment) {
+    return await this.sendDriverNotification(driverId, {
+      title: 'Delivery Reminder',
+      body: `Don't forget to deliver order to ${assignment.deliveryLocation.address}`,
+      data: {
+        type: 'delivery_reminder',
+        assignmentId: assignment._id,
+        orderId: assignment.orderId
+      },
+      priority: 'normal'
+    });
+  }
+
+  // Broadcast to all drivers
+  static async broadcastToDrivers(notificationData) {
+    try {
+      const { title, body, data = {}, priority = "normal" } = notificationData;
+
+      // Get all approved drivers
+      const drivers = await Driver.find({ 
+        accountStatus: 'approved',
+        status: { $in: ['online', 'busy'] }
+      }).select('_id driverId pushToken');
+
+      let sentCount = 0;
+      let errors = [];
+
+      for (const driver of drivers) {
+        try {
+          const result = await this.sendDriverNotification(driver._id, {
+            title, body, data, priority
+          });
+          if (result.success) sentCount++;
+        } catch (error) {
+          errors.push({ driverId: driver.driverId, error: error.message });
+        }
+      }
+
+      return {
+        success: true,
+        totalDrivers: drivers.length,
+        sentCount,
+        errors
+      };
+
+    } catch (error) {
+      console.error('Broadcast to drivers error:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // ============= COMPREHENSIVE ORDER STATUS NOTIFICATIONS =============
+
+  // Notify customer about order status changes
+  static async notifyCustomerOrderStatus(customerId, orderData, statusChange) {
+    const statusMessages = {
+      'Confirmed': `Your order #${orderData.orderNumber} has been confirmed and assigned to our chef! 🍳`,
+      'In Progress': `Great news! Your chef has started preparing your order #${orderData.orderNumber} 👨‍🍳`,
+      'Ready': `Your order #${orderData.orderNumber} is ready and will be delivered soon! 🚚`,
+      'Out for Delivery': `Your order #${orderData.orderNumber} is on its way to you! Track your delivery in real-time 📍`,
+      'Delivered': `Your order #${orderData.orderNumber} has been delivered! Enjoy your meal! 🍽️`,
+      'Cancelled': `Your order #${orderData.orderNumber} has been cancelled. You will be refunded shortly. 💰`
+    };
+
+    const title = `Order Update - ${statusChange.newStatus}`;
+    const message = statusMessages[statusChange.newStatus] || `Your order #${orderData.orderNumber} status has been updated to ${statusChange.newStatus}`;
+
+    return await this.createNotification({
+      userId: customerId,
+      title,
+      message,
+      type: "order_status_update",
+      data: {
+        orderId: orderData.orderId,
+        orderNumber: orderData.orderNumber,
+        oldStatus: statusChange.oldStatus,
+        newStatus: statusChange.newStatus,
+        timestamp: new Date()
+      },
+      priority: "high"
+    });
+  }
+
+  // Notify chef about order status changes
+  static async notifyChefOrderStatus(chefId, orderData, statusChange) {
+    const statusMessages = {
+      'Confirmed': `New order #${orderData.orderNumber} has been assigned to you! Please check your dashboard for details. 🍳`,
+      'In Progress': `Order #${orderData.orderNumber} status updated. Continue with preparation! 👨‍🍳`,
+      'Ready': `Order #${orderData.orderNumber} marked as ready. Awaiting delivery pickup! 📦`,
+      'Out for Delivery': `Order #${orderData.orderNumber} is now out for delivery! 🚚`,
+      'Delivered': `Great job! Order #${orderData.orderNumber} has been successfully delivered! 🎉`,
+      'Cancelled': `Order #${orderData.orderNumber} has been cancelled. Please stop preparation if in progress. ❌`
+    };
+
+    const title = `Order Update - ${statusChange.newStatus}`;
+    const message = statusMessages[statusChange.newStatus] || `Order #${orderData.orderNumber} status changed to ${statusChange.newStatus}`;
+
+    return await this.createNotification({
+      userId: chefId,
+      title,
+      message,
+      type: "chef_order_status",
+      data: {
+        orderId: orderData.orderId,
+        orderNumber: orderData.orderNumber,
+        oldStatus: statusChange.oldStatus,
+        newStatus: statusChange.newStatus,
+        customerName: orderData.customerName,
+        timestamp: new Date()
+      },
+      priority: "high"
+    });
+  }
+
+  // Notify admin about order status changes
+  static async notifyAdminOrderStatus(orderData, statusChange, context = {}) {
+    const AdminNotificationService = require('./adminNotificationService');
+    
+    const statusMessages = {
+      'Confirmed': `Order #${orderData.orderNumber} has been confirmed and assigned to chef.`,
+      'In Progress': `Chef has started preparing order #${orderData.orderNumber}.`,
+      'Ready': `Order #${orderData.orderNumber} is ready for delivery pickup.`,
+      'Out for Delivery': `Order #${orderData.orderNumber} is out for delivery.`,
+      'Delivered': `Order #${orderData.orderNumber} has been successfully delivered.`,
+      'Cancelled': `Order #${orderData.orderNumber} has been cancelled. ${context.reason || ''}`
+    };
+
+    const title = `Order Status Update - ${statusChange.newStatus}`;
+    const message = statusMessages[statusChange.newStatus] || `Order #${orderData.orderNumber} status changed to ${statusChange.newStatus}`;
+
+    return await AdminNotificationService.createNotification({
+      adminId: 'system', // Can be updated to specific admin ID
+      title,
+      message,
+      type: 'order_management',
+      severity: statusChange.newStatus === 'Cancelled' ? 'warning' : 'info',
+      actionUrl: `/orders/${orderData.orderId}`,
+      actionLabel: 'View Order',
+      metadata: {
+        orderId: orderData.orderId,
+        orderNumber: orderData.orderNumber,
+        oldStatus: statusChange.oldStatus,
+        newStatus: statusChange.newStatus,
+        customerName: orderData.customerName,
+        chefName: orderData.chefName,
+        totalAmount: orderData.totalAmount,
+        timestamp: new Date(),
+        ...context
+      }
+    });
+  }
+
+  // Comprehensive function to notify all parties about order status changes
+  static async notifyAllPartiesOrderStatus(orderData, statusChange, context = {}) {
+    const results = {
+      customer: null,
+      chef: null,
+      admin: null,
+      errors: []
+    };
+
+    try {
+      // Notify customer
+      if (orderData.customerId) {
+        results.customer = await this.notifyCustomerOrderStatus(
+          orderData.customerId, 
+          orderData, 
+          statusChange
+        );
+      }
+    } catch (error) {
+      console.error('Failed to notify customer:', error);
+      results.errors.push({ target: 'customer', error: error.message });
+    }
+
+    try {
+      // Notify chef
+      if (orderData.chefId) {
+        results.chef = await this.notifyChefOrderStatus(
+          orderData.chefId, 
+          orderData, 
+          statusChange
+        );
+      }
+    } catch (error) {
+      console.error('Failed to notify chef:', error);
+      results.errors.push({ target: 'chef', error: error.message });
+    }
+
+    try {
+      // Notify admin
+      results.admin = await this.notifyAdminOrderStatus(
+        orderData, 
+        statusChange, 
+        context
+      );
+    } catch (error) {
+      console.error('Failed to notify admin:', error);
+      results.errors.push({ target: 'admin', error: error.message });
+    }
+
+    return {
+      success: results.errors.length === 0,
+      results,
+      totalNotificationsSent: [results.customer, results.chef, results.admin].filter(Boolean).length
+    };
   }
 }
 

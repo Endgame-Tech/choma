@@ -63,6 +63,8 @@ const HomeScreen = ({ navigation }) => {
   const [showBrowseMode, setShowBrowseMode] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [activeOrders, setActiveOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
@@ -206,10 +208,11 @@ const HomeScreen = ({ navigation }) => {
     }));
   }, [mealPlans]);
 
-  // Load banners and subscription from backend
+  // Load banners, subscription, and orders from backend
   useEffect(() => {
     loadBanners();
     loadActiveSubscription();
+    loadActiveOrders();
   }, []);
 
   // Fetch discount data for meal plans
@@ -480,6 +483,73 @@ const HomeScreen = ({ navigation }) => {
       setActiveSubscription(null);
     } finally {
       setSubscriptionLoading(false);
+    }
+  };
+
+  const loadActiveOrders = async () => {
+    try {
+      setOrdersLoading(true);
+      
+      // Try to get both regular orders and subscription-based orders
+      const [ordersResult, subscriptionsResult] = await Promise.all([
+        apiService.getUserOrders().catch(err => ({ success: false, error: err })),
+        apiService.getUserSubscriptions().catch(err => ({ success: false, error: err }))
+      ]);
+
+      let allActiveOrders = [];
+
+      // Process regular orders
+      if (ordersResult.success) {
+        const orders = ordersResult.data?.data || ordersResult.data || ordersResult.orders || [];
+        const regularActiveOrders = Array.isArray(orders) ? orders.filter(order => {
+          // Check both 'status' and 'orderStatus' fields
+          const status = (order.status || order.orderStatus || '').toLowerCase();
+          return status && !['delivered', 'cancelled', 'completed'].includes(status);
+        }) : [];
+        
+        console.log('🔍 Found orders:', orders.length);
+        console.log('🔍 Active orders after filter:', regularActiveOrders.length);
+        if (orders.length > 0) {
+          console.log('🔍 First order status:', orders[0].status, 'orderStatus:', orders[0].orderStatus);
+        }
+        
+        allActiveOrders = [...regularActiveOrders];
+      }
+
+      // Process subscription-based orders (create virtual order from subscription)
+      if (subscriptionsResult.success && !allActiveOrders.length) {
+        const subscriptions = subscriptionsResult.data?.data || subscriptionsResult.data || subscriptionsResult.subscriptions || [];
+        const activeSubscriptions = Array.isArray(subscriptions) ? subscriptions.filter((sub) => {
+          const status = sub.status?.toLowerCase();
+          return status === "active" || status === "paid" || sub.paymentStatus === "Paid";
+        }) : [];
+
+        // Convert active subscriptions to virtual orders for tracking
+        const subscriptionOrders = activeSubscriptions.map(subscription => ({
+          _id: `sub_${subscription._id}`,
+          orderNumber: subscription.subscriptionId || `SUB${subscription._id?.slice(-8)}`,
+          status: 'preparing', // Default status for active subscriptions
+          mealPlan: subscription.mealPlanId || { name: 'Subscription Meal Plan' },
+          totalAmount: subscription.totalPrice || subscription.price,
+          createdAt: subscription.startDate || subscription.createdAt,
+          estimatedDelivery: subscription.nextDelivery,
+          deliveryAddress: subscription.deliveryAddress || 'Your delivery address',
+          paymentMethod: subscription.paymentMethod || 'Subscription payment',
+          instructions: 'Subscription delivery',
+          quantity: 1,
+          isSubscriptionOrder: true
+        }));
+
+        allActiveOrders = [...allActiveOrders, ...subscriptionOrders];
+      }
+      
+      console.log('🚚 Active orders found:', allActiveOrders.length);
+      setActiveOrders(allActiveOrders);
+    } catch (error) {
+      console.error('Error loading active orders:', error);
+      setActiveOrders([]);
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -1389,6 +1459,7 @@ const HomeScreen = ({ navigation }) => {
             onRefresh={() => {
               refreshMealPlans();
               loadActiveSubscription();
+              loadActiveOrders();
             }}
             colors={[colors.primary]}
             tintColor={colors.primary}
@@ -1532,6 +1603,7 @@ const HomeScreen = ({ navigation }) => {
             return (
               // Subscription-focused UI
               <>
+
                 {/* Today's Meals Section */}
                 {renderTodaysMeals()}
 
@@ -1599,6 +1671,7 @@ const HomeScreen = ({ navigation }) => {
             return (
               // Regular browsing UI
               <>
+
                 {/* Promo Banners */}
                 {renderPromoBanners()}
 

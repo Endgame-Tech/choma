@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 // import 'flaticon-uicons/css/uicons-solid-rounded.css';
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -23,6 +23,7 @@ import SecuritySettings from './pages/SecuritySettings'
 import PromoBanners from './pages/PromoBanners'
 import DeliveryPricePage from './pages/DeliveryPricePage'
 import Discounts from './pages/Discounts'
+import Drivers from './pages/Drivers'
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -84,91 +85,33 @@ function PublicRoute({ children }: PublicRouteProps) {
 }
 
 function AppRoutes() {
-  return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/login" element={
-        <PublicRoute>
-          <Login />
-        </PublicRoute>
-      } />
+  // create a router with future flags enabled to opt-in to v7 behaviors
+  const routes = [
+    { path: '/login', element: <PublicRoute><Login /></PublicRoute> },
+    { path: '/', element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
+    { path: '/analytics', element: <ProtectedRoute><AnalyticsDashboard /></ProtectedRoute> },
+    { path: '/orders', element: <ProtectedRoute><Orders /></ProtectedRoute> },
+    { path: '/chefs', element: <ProtectedRoute><Chefs /></ProtectedRoute> },
+    { path: '/users', element: <ProtectedRoute><Users /></ProtectedRoute> },
+    { path: '/customers', element: <ProtectedRoute><AdvancedCustomers /></ProtectedRoute> },
+    { path: '/meals', element: <ProtectedRoute><Meals /></ProtectedRoute> },
+    { path: '/meal-plans', element: <ProtectedRoute><MealPlans /></ProtectedRoute> },
+    { path: '/admin-management', element: <ProtectedRoute><AdminManagement /></ProtectedRoute> },
+    { path: '/profile', element: <ProtectedRoute><Profile /></ProtectedRoute> },
+    { path: '/security-settings', element: <ProtectedRoute><SecuritySettings /></ProtectedRoute> },
+    { path: '/promo-banners', element: <ProtectedRoute><PromoBanners /></ProtectedRoute> },
+    { path: '/delivery-prices', element: <ProtectedRoute><DeliveryPricePage /></ProtectedRoute> },
+    { path: '/discounts', element: <ProtectedRoute><Discounts /></ProtectedRoute> },
+    { path: '/drivers', element: <ProtectedRoute><Drivers /></ProtectedRoute> },
+    { path: '*', element: <Navigate to='/' replace /> }
+  ]
 
-      {/* Protected Routes */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/analytics" element={
-        <ProtectedRoute>
-          <AnalyticsDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/orders" element={
-        <ProtectedRoute>
-          <Orders />
-        </ProtectedRoute>
-      } />
-      <Route path="/chefs" element={
-        <ProtectedRoute>
-          <Chefs />
-        </ProtectedRoute>
-      } />
-      <Route path="/users" element={
-        <ProtectedRoute>
-          <Users />
-        </ProtectedRoute>
-      } />
-      <Route path="/customers" element={
-        <ProtectedRoute>
-          <AdvancedCustomers />
-        </ProtectedRoute>
-      } />
-      <Route path="/meals" element={
-        <ProtectedRoute>
-          <Meals />
-        </ProtectedRoute>
-      } />
-      <Route path="/meal-plans" element={
-        <ProtectedRoute>
-          <MealPlans />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin-management" element={
-        <ProtectedRoute>
-          <AdminManagement />
-        </ProtectedRoute>
-      } />
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <Profile />
-        </ProtectedRoute>
-      } />
-      <Route path="/security-settings" element={
-        <ProtectedRoute>
-          <SecuritySettings />
-        </ProtectedRoute>
-      } />
-      <Route path="/promo-banners" element={
-        <ProtectedRoute>
-          <PromoBanners />
-        </ProtectedRoute>
-      } />
-      <Route path="/delivery-prices" element={
-        <ProtectedRoute>
-          <DeliveryPricePage />
-        </ProtectedRoute>
-      } />
-      <Route path="/discounts" element={
-        <ProtectedRoute>
-          <Discounts />
-        </ProtectedRoute>
-      } />
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const futureFlags: any = { v7_startTransition: true, v7_relativeSplatPath: true }
 
-      {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  )
+  const router = createBrowserRouter(routes, { future: futureFlags })
+
+  return <RouterProvider router={router} />
 }
 
 const App: React.FC = () => {
@@ -189,11 +132,9 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <Router>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </Router>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </ThemeProvider>
   )
 }

@@ -36,11 +36,6 @@ router.post('/report', asyncHandler(async (req, res) => {
     source: 'mobile_app'
   });
 
-  // In a production app, you might want to:
-  // 1. Store this in a database
-  // 2. Send to external error tracking service
-  // 3. Send alerts for critical errors
-  // 4. Aggregate similar errors
 
   res.json({
     success: true,

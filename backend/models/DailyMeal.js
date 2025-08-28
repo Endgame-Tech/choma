@@ -71,12 +71,21 @@ MealSchema.pre('save', async function(next) {
   }
   
   // Calculate derived pricing fields if components are provided
-  if (this.pricing && this.pricing.ingredients && this.pricing.cookingCosts && this.pricing.packaging && this.pricing.delivery) {
-    this.pricing.totalCosts = this.pricing.ingredients + this.pricing.cookingCosts + this.pricing.packaging + this.pricing.delivery;
-    this.pricing.profit = this.pricing.totalCosts * 0.4; // 40% profit margin
-    this.pricing.totalPrice = this.pricing.totalCosts + this.pricing.profit;
-    this.pricing.chefEarnings = this.pricing.profit / 2; // 50% of profit to chef
-    this.pricing.chomaEarnings = this.pricing.profit / 2; // 50% of profit to choma
+  if (this.pricing && this.pricing.ingredients && this.pricing.cookingCosts && this.pricing.packaging) {
+    // Total cost = ingredients + cooking + packaging (delivery calculated at checkout)
+    this.pricing.totalCosts = this.pricing.ingredients + this.pricing.cookingCosts + this.pricing.packaging;
+    
+    // Profit = 40% of total cost
+    this.pricing.profit = this.pricing.totalCosts * 0.4;
+    
+    // Final price = total cost + profit + platform fee
+    this.pricing.totalPrice = this.pricing.totalCosts + this.pricing.profit + (this.pricing.platformFee || 0);
+    
+    // Chef gets: ingredients + cooking cost + 50% of profit
+    this.pricing.chefEarnings = this.pricing.ingredients + this.pricing.cookingCosts + (this.pricing.profit * 0.5);
+    
+    // Choma gets: platform fee + packaging + 50% of profit (delivery added at checkout)
+    this.pricing.chomaEarnings = (this.pricing.platformFee || 0) + this.pricing.packaging + (this.pricing.profit * 0.5);
   }
   
   // Update the updatedAt timestamp
@@ -86,22 +95,32 @@ MealSchema.pre('save', async function(next) {
 });
 
 // Method to update pricing
-MealSchema.methods.updatePricing = function(ingredients, cookingCosts, packaging, delivery, platformFee) {
-  const totalCosts = ingredients + cookingCosts + packaging + delivery;
+MealSchema.methods.updatePricing = function(ingredients, cookingCosts, packaging, platformFee) {
+  // Total cost = ingredients + cooking + packaging (delivery calculated at checkout)
+  const totalCosts = ingredients + cookingCosts + packaging;
+  
+  // Profit = 40% of total cost
   const profit = totalCosts * 0.4;
-  const totalPrice = totalCosts + profit;
+  
+  // Final price = total cost + profit + platform fee
+  const totalPrice = totalCosts + profit + platformFee;
+  
+  // Chef gets: ingredients + cooking cost + 50% of profit
+  const chefEarnings = ingredients + cookingCosts + (profit * 0.5);
+  
+  // Choma gets: platform fee + packaging + 50% of profit
+  const chomaEarnings = platformFee + packaging + (profit * 0.5);
   
   this.pricing = {
     ingredients,
     cookingCosts,
     packaging,
-    delivery,
     platformFee,
     totalCosts,
     profit,
     totalPrice,
-    chefEarnings: profit / 2,
-    chomaEarnings: profit / 2
+    chefEarnings,
+    chomaEarnings
   };
   return this.save();
 };

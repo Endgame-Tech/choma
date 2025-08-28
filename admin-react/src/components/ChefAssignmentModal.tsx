@@ -33,7 +33,7 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
     estimatedHours: 2,
     priority: 'Medium',
     specialInstructions: '',
-    chefFeePercentage: 70
+    chefFeePercentage: 10 // Default value, adjust as needed
   })
   const { chefs: availableChefs, loading: chefsLoading, error: chefsError } = useAvailableChefs()
 
@@ -48,12 +48,11 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setSelectedChef('')
-      setSearchTerm('')
       setAssignmentDetails({
         estimatedHours: 2,
         priority: 'Medium',
         specialInstructions: '',
-        chefFeePercentage: 70
+        chefFeePercentage: 10 // Reset to default value
       })
     }
   }, [isOpen])
@@ -197,29 +196,6 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                 <option value="Urgent">Urgent</option>
               </select>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chef Fee (% of total)
-              </label>
-              <input
-                type="number"
-                min="50"
-                max="90"
-                value={assignmentDetails.chefFeePercentage}
-                onChange={(e) => setAssignmentDetails(prev => ({
-                  ...prev,
-                  chefFeePercentage: parseInt(e.target.value) || 70
-                }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                aria-label="Chef Fee Percentage"
-                title="Chef Fee Percentage"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Chef will earn: {orderDetails ? formatCurrency((orderDetails.totalAmount * assignmentDetails.chefFeePercentage) / 100) : '-'}
-              </p>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Special Instructions
@@ -235,9 +211,26 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Chef Fee Percentage
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={assignmentDetails.chefFeePercentage}
+                onChange={(e) => setAssignmentDetails(prev => ({
+                  ...prev,
+                  chefFeePercentage: parseInt(e.target.value) || 0
+                }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Chef Fee Percentage"
+                title="Chef Fee Percentage"
+              />
+            </div>
           </div>
         </div>
-
         {/* Content */}
         <div className="px-6 py-4 max-h-96 overflow-y-auto">
           {chefsLoading ? (

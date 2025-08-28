@@ -79,66 +79,10 @@ const AdvancedCustomers: React.FC = () => {
       calculateAnalytics(response.users as User[])
       
     } catch (err) {
-      setMockData()
+      console.error('Failed to fetch customers:', err)
     } finally {
       setLoading(false)
     }
-  }
-
-  // Set mock data for demonstration
-  const setMockData = () => {
-    const mockCustomers: User[] = [
-      {
-        _id: '1',
-        customerId: 'CUST001',
-        fullName: 'Adebayo Johnson',
-        email: 'adebayo@example.com',
-        phone: '+234123456789',
-        address: '123 Victoria Island, Lagos',
-        status: 'Active',
-        registrationDate: '2023-12-01T00:00:00Z',
-        lastLogin: '2024-01-15T10:30:00Z',
-        emailVerified: true,
-        profileComplete: true,
-        subscriptionStatus: 'Premium',
-        totalOrders: 23,
-        totalSpent: 145000
-      },
-      {
-        _id: '2', 
-        customerId: 'CUST002',
-        fullName: 'Fatima Ahmed',
-        email: 'fatima@example.com',
-        phone: '+234987654321',
-        address: '456 Wuse II, Abuja',
-        status: 'Active',
-        registrationDate: '2023-11-15T00:00:00Z',
-        lastLogin: '2024-01-14T15:45:00Z',
-        emailVerified: true,
-        profileComplete: false,
-        subscriptionStatus: 'Basic',
-        totalOrders: 12,
-        totalSpent: 89000
-      },
-      {
-        _id: '3',
-        customerId: 'CUST003', 
-        fullName: 'Chidi Okafor',
-        email: 'chidi@example.com',
-        phone: '+234555666777',
-        address: '789 GRA, Port Harcourt',
-        status: 'Inactive',
-        registrationDate: '2023-10-20T00:00:00Z',
-        lastLogin: '2023-12-20T09:15:00Z',
-        emailVerified: false,
-        profileComplete: true,
-        totalOrders: 5,
-        totalSpent: 32000
-      }
-    ]
-    
-    setCustomers(mockCustomers)
-    calculateAnalytics(mockCustomers)
   }
 
   // Calculate analytics

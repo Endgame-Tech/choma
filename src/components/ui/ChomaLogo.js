@@ -1,7 +1,7 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
-const ChomaLogo = ({ width = 50, height = 27, color1 = "#652815", color2 = "#FBE0CE" }) => {
+const ChomaLogo = ({ width = 50, height = 27, color1 = "#F5A71F", color2 = "#652815" }) => {
   // Calculate aspect ratio from original SVG (292x159)
   const aspectRatio = 292 / 159;
   const calculatedHeight = height || width / aspectRatio;

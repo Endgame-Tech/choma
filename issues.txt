@@ -1,0 +1,17 @@
+api.ts:89 
+ POST http://localhost:5001/api/driver/auth/login 500 (Internal Server Error)
+Promise.then		
+login	@	api.ts:89
+login	@	AuthContext.tsx:57
+handleSubmit	@	Login.tsx:47
+
+api.ts:77 API Request Error: 
+AxiosError {message: 'Request failed with status code 500', name: 'AxiosError', code: 'ERR_BAD_RESPONSE', config: {…}, request: XMLHttpRequest, …}
+handleRequest	@	api.ts:77
+await in handleRequest		
+login	@	api.ts:88
+login	@	AuthContext.tsx:57
+handleSubmit	@	Login.tsx:47
+
+﻿
+

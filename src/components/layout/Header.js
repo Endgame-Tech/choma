@@ -18,6 +18,7 @@ const StandardHeader = ({
   
   return (
     <View style={styles(colors).header}>
+      {/* Left side - Back button */}
       <TouchableOpacity
         style={styles(colors).backButton}
         onPress={onBackPress}
@@ -25,25 +26,27 @@ const StandardHeader = ({
         <Ionicons name="chevron-back" size={24} color={colors.text} />
       </TouchableOpacity>
       
+      {/* Center - Title */}
       <View style={styles(colors).headerContent}>
         <Text style={styles(colors).headerTitle}>{title}</Text>
       </View>
 
+      {/* Right side - Icons */}
+      <View style={styles(colors).rightSection}>
         {navigation && (
           <View style={styles(colors).notificationContainer}>
             <NotificationIcon navigation={navigation} />
           </View>
         )}
 
-
-      
-      {showRightIcon && (
-        rightComponent ? rightComponent : (
-          <TouchableOpacity style={styles(colors).rightButton} onPress={onRightPress}>
-            <Ionicons name={rightIcon} size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
-        )
-      )}
+        {showRightIcon && (
+          rightComponent ? rightComponent : (
+            <TouchableOpacity style={styles(colors).rightButton} onPress={onRightPress}>
+              <Ionicons name={rightIcon} size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )
+        )}
+      </View>
     </View>
   );
 };
@@ -52,16 +55,15 @@ const styles = (colors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: colors.background,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
-    position: 'relative',
   },
   backButton: {
     padding: 8,
-    marginRight: 12,
     zIndex: 1,
   },
   headerContent: {
@@ -76,13 +78,17 @@ const styles = (colors) => StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 1,
+  },
   rightButton: {
     padding: 8,
     marginLeft: 12,
-    zIndex: 1,
   },
   notificationContainer: {
-    zIndex: 1,
+    marginRight: 12,
   },
 });
 

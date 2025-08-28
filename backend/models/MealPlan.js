@@ -173,27 +173,55 @@ MealPlanSchema.methods.updateCalculatedFields = async function() {
   const assignments = await MealPlanAssignment.find({ mealPlanId: this._id })
     .populate('mealIds');
   
-  // Calculate totals
+  // Calculate totals and actual days with meals
   let totalPrice = 0;
   let totalCalories = 0;
+  let totalProtein = 0;
+  let totalCarbs = 0;
+  let totalFat = 0;
+  let totalFiber = 0;
   let totalMeals = assignments.length;
   
+  // Track actual days with meals (not total plan duration days)
+  const actualDaysWithMeals = new Set();
+  
   assignments.forEach(assignment => {
+    // Track which days actually have meals scheduled
+    if (assignment.weekNumber != null && assignment.dayOfWeek != null) {
+      actualDaysWithMeals.add(`${assignment.weekNumber}-${assignment.dayOfWeek}`);
+    }
+    
     if (assignment.mealIds && assignment.mealIds.length > 0) {
       assignment.mealIds.forEach(meal => {
         if (meal && meal.pricing) {
           totalPrice += meal.pricing.totalPrice || 0;
-          totalCalories += meal.nutrition?.calories || 0;
+        }
+        if (meal && meal.nutrition) {
+          totalCalories += meal.nutrition.calories || 0;
+          totalProtein += meal.nutrition.protein || 0;
+          totalCarbs += meal.nutrition.carbs || 0;
+          totalFat += meal.nutrition.fat || 0;
+          totalFiber += meal.nutrition.fiber || 0;
         }
       });
     }
   });
   
+  // Calculate average calories per day using actual days with meals
+  const daysWithMeals = actualDaysWithMeals.size;
+  const avgCaloriesPerDay = (daysWithMeals > 0 && totalCalories > 0) 
+    ? Math.round(totalCalories / daysWithMeals)
+    : 0;
+  
   // Update calculated fields
   this.totalPrice = totalPrice;
   this.nutritionInfo.totalCalories = totalCalories;
+  this.nutritionInfo.totalProtein = totalProtein;
+  this.nutritionInfo.totalCarbs = totalCarbs;
+  this.nutritionInfo.totalFat = totalFat;
+  this.nutritionInfo.totalFiber = totalFiber;
   this.nutritionInfo.avgCaloriesPerMeal = totalMeals > 0 ? Math.round(totalCalories / totalMeals) : 0;
-  this.nutritionInfo.avgCaloriesPerDay = Math.round(totalCalories / this.getTotalDays());
+  this.nutritionInfo.avgCaloriesPerDay = avgCaloriesPerDay;
   
   this.stats.totalMealsAssigned = totalMeals;
   this.stats.totalDays = this.getTotalDays();

@@ -161,8 +161,6 @@ class EmailService {
             .next-steps {
               background: #f8f9fa;
               padding: 20px;
-              border-radius: 8px;
-              border-left: 4px solid #F7AE1A;
               margin: 20px 0;
             }
             .next-steps h3 {
@@ -207,7 +205,7 @@ class EmailService {
           <div class="container">
             <div class="header">
               <div class="logo">
-                <img src="${this.logoUrl}" alt="Choma Logo" />
+                <img src="https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png" alt="Choma Logo" />
                 <div class="logo-text">CHOMA</div>
               </div>
               <div class="welcome-badge">Application Approved!</div>
@@ -343,7 +341,7 @@ class EmailService {
           <div class="container">
             <div class="header">
               <div class="logo">
-                <img src="${this.logoUrl}" alt="Choma Logo" />
+                <img src="https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png" alt="Choma Logo" />
                 <div class="logo-text">CHOMA</div>
               </div>
             </div>
@@ -611,7 +609,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <img src="${this.logoUrl}" alt="Choma Logo" style="width: 120px; height: auto;" />
+              <img src="https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png" alt="Choma Logo" style="width: 120px; height: auto;" />
               <h1 style="color: #F7AE1A; font-size: 32px; margin: 8px 0 0 0;">CHOMA</h1>
             </div>
             <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -870,7 +868,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         <body>
           <div class="container">
             <div class="header">
-              <img src="${this.logoUrl}" alt="Choma Logo" width="120">
+              <img src="https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png" alt="Choma Logo" width="120">
               <div class="alert-badge">Account Suspended</div>
             </div>
             
@@ -995,7 +993,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         <body>
           <div class="container">
             <div class="header">
-              <img src="${this.logoUrl}" alt="Choma Logo" width="120">
+              <img src="https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png" alt="Choma Logo" width="120">
               <div class="deactivated-badge">Account Deactivated</div>
             </div>
             
@@ -1119,7 +1117,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         <body>
           <div class="container">
             <div class="header">
-              <img src="${this.logoUrl}" alt="Choma Logo" width="120">
+              <img src="https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png" alt="Choma Logo" width="120">
               <div class="welcome-badge">Account Reactivated</div>
             </div>
             
@@ -1237,7 +1235,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         <body>
           <div class="container">
             <div class="header">
-              <img src="${this.logoUrl}" alt="Choma Logo" width="120">
+              <img src="https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png" alt="Choma Logo" width="120">
               <div class="lifted-badge">Suspension Lifted</div>
             </div>
             
@@ -1419,7 +1417,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         <body>
           <div class="container">
             <div class="header">
-              <img src="${this.logoUrl}" alt="Choma Logo" width="120">
+              <img src="https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png" alt="Choma Logo" width="120">
               <div class="reset-badge">Password Reset</div>
             </div>
             
@@ -1543,7 +1541,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         <body>
           <div class="container">
             <div class="header">
-              <img src="${this.logoUrl}" alt="Choma Logo" width="120">
+              <img src="https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png" alt="Choma Logo" width="120">
               <div class="success-badge">Password Reset Complete</div>
             </div>
             

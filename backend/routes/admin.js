@@ -48,6 +48,17 @@ router.get('/analytics/business-intelligence', advancedAnalyticsController.getBu
 router.get('/users', cacheMiddleware.medium, adminController.getAllUsers);
 router.get('/users/stats', cacheMiddleware.medium, adminController.getUserStats);
 router.put('/users/:id/status', adminController.updateUserStatus);
+
+// ============= DRIVER MANAGEMENT ROUTES =============
+const adminDriverController = require('../controllers/adminDriverController');
+
+router.get('/drivers', cacheMiddleware.medium, adminDriverController.getDrivers);
+router.get('/drivers/:id', adminDriverController.getDriver);
+router.put('/drivers/:id/status', adminDriverController.updateDriverStatus);
+router.delete('/drivers/:id', adminDriverController.deleteDriver);
+router.get('/drivers/:id/assignments', adminDriverController.getDriverAssignments);
+router.post('/assignments', adminDriverController.createDriverAssignment);
+router.get('/delivery-stats', cacheMiddleware.long, adminDriverController.getDeliveryStats);
 router.get('/export/users', adminController.exportUsers);
 
 // ============= ORDER MANAGEMENT ROUTES =============
@@ -83,6 +94,12 @@ router.put('/chefs/:id/approve', adminController.approveChef);
 router.put('/chefs/:id/reject', adminController.rejectChef);
 router.get('/chefs/pending/count', adminController.getPendingChefsCount);
 router.post('/chefs/:id/notify', adminController.notifyChef);
+
+// ============= CHEF PAYOUT ROUTES =============
+const adminChefController = require('../controllers/adminChefController');
+router.post('/chefs/payouts/process', adminChefController.processWeeklyPayouts);
+router.get('/chefs/payouts/summary', adminChefController.getPayoutSummary);
+router.get('/chefs/:chefId/earnings', adminChefController.getChefEarningsAdmin);
 
 
 

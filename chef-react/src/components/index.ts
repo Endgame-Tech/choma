@@ -7,5 +7,6 @@ export { default as ThemeToggle } from './ThemeToggle';
 export { default as BankVerification } from './BankVerification';
 export { default as ChefStatusModal } from './ChefStatusModal';
 export { default as OrderDetailsModal } from './OrderDetailsModal';
+export { default as MealPlanViewerModal } from './MealPlanViewerModal';
 export { default as PrivacyModal } from './PrivacyModal';
 export { default as TermsModal } from './TermsModal';

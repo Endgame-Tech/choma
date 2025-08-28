@@ -194,54 +194,72 @@ export const profileApi = {
 
 // Earnings API
 export const earningsApi = {
-  // Get earnings overview
+  // Get chef earnings (new integrated endpoint)
+  async getEarnings(period: 'current_week' | 'last_week' | 'current_month' = 'current_month'): Promise<any> {
+    const response = await api.get<ApiResponse<any>>(`/earnings?period=${period}`)
+    return handleResponse(response)
+  },
+
+  // Get earnings overview (legacy support)
   async getEarningsOverview(period: 'week' | 'month' | 'year' = 'month'): Promise<any> {
-    const response = await api.get<ApiResponse<any>>(`/earnings/overview?period=${period}`)
-    return handleResponse(response)
-  },
-
-  // Get payment history
-  async getPaymentHistory(filters: any = {}): Promise<any> {
-    const params = new URLSearchParams()
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '' && value !== null) {
-        params.append(key, value.toString())
-      }
-    })
+    // Map the period to our new backend format
+    let mappedPeriod = 'current_month'
+    if (period === 'week') mappedPeriod = 'current_week'
+    else if (period === 'month') mappedPeriod = 'current_month'
     
-    const response = await api.get<ApiResponse<any>>(`/earnings/payments?${params.toString()}`)
-    return handleResponse<any>(response)
+    return this.getEarnings(mappedPeriod as any)
   },
 
-  // Request withdrawal
+  // Get payment history (using earnings data)
+  async getPaymentHistory(filters: any = {}): Promise<any> {
+    const earningsData = await this.getEarnings('current_month')
+    // Transform earnings into payment history format
+    const payments = earningsData.earnings?.map((earning: any) => ({
+      _id: earning.id,
+      chefId: earningsData.chef?.id,
+      amount: earning.cookingFee,
+      type: 'earning',
+      status: earning.status,
+      description: `Order completed - ₦${earning.cookingFee.toLocaleString()}`,
+      orderId: earning.orderNumber,
+      createdAt: earning.completedDate,
+      updatedAt: earning.payoutDate || earning.completedDate
+    })) || []
+    
+    return { payments }
+  },
+
+  // Request withdrawal (placeholder - not implemented in backend yet)
   async requestWithdrawal(amount: number): Promise<any> {
-    const response = await api.post<ApiResponse<any>>('/earnings/withdraw', { amount })
-    return handleResponse(response)
+    // Note: This would need to be implemented in the backend
+    throw new Error('Withdrawal requests will be available soon. Payouts are processed weekly on Fridays.')
   },
 
   // Get earnings summary (backward compatibility)
   async getEarningsSummary(): Promise<any> {
-    const response = await api.get<ApiResponse<any>>('/earnings/summary')
-    return handleResponse(response)
+    return this.getEarnings('current_month')
   },
 
   // Get earnings history (backward compatibility)
   async getEarningsHistory(filters: any = {}): Promise<any> {
-    const params = new URLSearchParams()
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '' && value !== null) {
-        params.append(key, value.toString())
-      }
-    })
-    
-    const response = await api.get<ApiResponse<any>>(`/earnings/history?${params.toString()}`)
-    return handleResponse<any>(response)
+    return this.getEarnings('current_month')
   },
 
   // Request payout (backward compatibility)
   async requestPayout(amount: number): Promise<any> {
-    const response = await api.post<ApiResponse<any>>('/earnings/payout', { amount })
-    return handleResponse(response)
+    return this.requestWithdrawal(amount)
+  },
+
+  // Get detailed meal plan for an order
+  async getMealPlan(orderId: string): Promise<any> {
+    const response = await api.get<ApiResponse<any>>(`/orders/${orderId}/meal-plan`)
+    return handleResponse<any>(response)
+  },
+
+  // Get earnings breakdown for an order
+  async getOrderEarningsBreakdown(orderId: string): Promise<any> {
+    const response = await api.get<ApiResponse<any>>(`/orders/${orderId}/earnings-breakdown`)
+    return handleResponse<any>(response)
   }
 }
 

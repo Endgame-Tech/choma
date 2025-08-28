@@ -44,9 +44,8 @@ const Orders: React.FC = () => {
   const [statusModal, setStatusModal] = useState<{
     isOpen: boolean
     orderId: string
-    orderNumber: string
     currentStatus: string
-  }>({ isOpen: false, orderId: '', orderNumber: '', currentStatus: '' })
+  }>({ isOpen: false, orderId: '', currentStatus: '' })
 
   useEffect(() => {
     fetchOrders()
@@ -137,13 +136,12 @@ const Orders: React.FC = () => {
     setStatusModal({
       isOpen: true,
       orderId: order._id,
-      orderNumber: order.orderNumber,
       currentStatus: order.delegationStatus || 'Assigned'
     })
   }
 
   const closeStatusModal = () => {
-    setStatusModal({ isOpen: false, orderId: '', orderNumber: '', currentStatus: '' })
+    setStatusModal({ isOpen: false, orderId: '', currentStatus: '' })
   }
 
   const getStatusLabel = (status: string) => {
@@ -204,7 +202,8 @@ const Orders: React.FC = () => {
   }
 
   const filteredOrders = orders.filter(order =>
-    order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+    order.subscription?.mealPlanId?.planName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.items?.some(item => item.name?.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   if (loading) {
@@ -269,7 +268,7 @@ const Orders: React.FC = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search by order number..."
+              placeholder="Search by meal plan or items..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full md:w-64 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-200"
@@ -299,7 +298,7 @@ const Orders: React.FC = () => {
               {/* Order Header */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">#{order.orderNumber}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">New Cooking Order</h3>
                   <div className="flex items-center space-x-2">
                     {order.priority && order.priority !== 'Medium' && (
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(order.priority)}`}>
@@ -311,7 +310,7 @@ const Orders: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Customer #{order.customer?._id?.slice(-6).toUpperCase() || 'UNKNOWN'}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Cooking Assignment</p>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">{formatCurrency(order.totalAmount)}</p>
               </div>
 
@@ -465,7 +464,6 @@ const Orders: React.FC = () => {
         onClose={closeStatusModal}
         currentStatus={statusModal.currentStatus}
         onUpdateStatus={(newStatus) => handleChefStatusUpdate(statusModal.orderId, newStatus)}
-        orderNumber={statusModal.orderNumber}
         loading={actionLoading === statusModal.orderId}
       />
     </div>

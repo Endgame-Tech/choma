@@ -29,6 +29,21 @@
             "date": 1756084016137,
             "name": "C:\\dev\\choma\\backend\\logs\\error-2025-08-25.log",
             "hash": "5284070cc1f896fc51485147d5f7f67aaf2c8c8b9f1199e5dc62a710787c6ff2"
+        },
+        {
+            "date": 1756199860053,
+            "name": "C:\\dev\\choma\\backend\\logs\\error-2025-08-26.log",
+            "hash": "e112371a53fc255b317854b118dd93c109092d2143fb3c3139a3434bef7f873b"
+        },
+        {
+            "date": 1756283362315,
+            "name": "C:\\dev\\choma\\backend\\logs\\error-2025-08-27.log",
+            "hash": "b567f647f40e5c4123e894fcae98712eed593907676bd7e8eee03afabceb832a"
+        },
+        {
+            "date": 1756336912521,
+            "name": "C:\\dev\\choma\\backend\\logs\\error-2025-08-28.log",
+            "hash": "a367c73e405971c5811b9a59d3b3819776b47dfde0950481e99b76d412ac1784"
         }
     ],
     "hashType": "sha256"

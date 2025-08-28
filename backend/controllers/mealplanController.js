@@ -434,7 +434,6 @@ exports.saveMealCustomization = async (req, res) => {
       lastModified: new Date()
     };
     
-    // For demo purposes, we'll just return success
     // In a real implementation, you'd save this to a MealCustomization collection
     console.log('Meal customization saved:', customization);
     

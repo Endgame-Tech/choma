@@ -4,6 +4,7 @@ import { useOrders } from '../hooks/useOrders'
 import { useAvailableChefs } from '../hooks/useChefs'
 import { delegationApi } from '../services/api'
 import ChefAssignmentModal from '../components/ChefAssignmentModal'
+import DriverAssignmentModal from '../components/DriverAssignmentModal'
 import type { OrderFilters } from '../types'
 
 const Orders: React.FC = () => {
@@ -19,6 +20,18 @@ const Orders: React.FC = () => {
       customer: string
       totalAmount: number
       deliveryDate: string
+    } | null
+  }>({ isOpen: false, orderId: '', orderDetails: null })
+
+  const [driverAssignmentModal, setDriverAssignmentModal] = useState<{
+    isOpen: boolean
+    orderId: string
+    orderDetails: {
+      orderNumber: string
+      customer: string
+      totalAmount: number
+      deliveryAddress: string
+      delegationStatus: string
     } | null
   }>({ isOpen: false, orderId: '', orderDetails: null })
 
@@ -83,6 +96,37 @@ const Orders: React.FC = () => {
     setChefAssignmentModal({ isOpen: false, orderId: '', orderDetails: null })
   }
 
+  // Handle opening driver assignment modal for completed orders
+  type OrderWithDeliveryType = {
+    _id: string
+    orderNumber: string
+    customer?: {
+      fullName?: string
+    }
+    totalAmount: number
+    deliveryAddress: string
+    delegationStatus: string
+  }
+
+  const openDriverAssignmentModal = (order: OrderWithDeliveryType) => {
+    setDriverAssignmentModal({
+      isOpen: true,
+      orderId: order._id,
+      orderDetails: {
+        orderNumber: order.orderNumber,
+        customer: order.customer?.fullName || 'Unknown Customer',
+        totalAmount: order.totalAmount,
+        deliveryAddress: order.deliveryAddress,
+        delegationStatus: order.delegationStatus
+      }
+    })
+  }
+
+  // Handle closing driver assignment modal
+  const closeDriverAssignmentModal = () => {
+    setDriverAssignmentModal({ isOpen: false, orderId: '', orderDetails: null })
+  }
+
   // Handle chef assignment
   const handleAssignChef = async (chefId: string, assignmentDetails: {
     estimatedHours: number
@@ -101,6 +145,53 @@ const Orders: React.FC = () => {
     } catch (error) {
       console.error('Failed to assign chef:', error)
     }
+  }
+
+  // Handle driver assignment for completed orders
+  const handleAssignDriver = async (driverId: string, assignmentDetails: {
+    priority: string
+    specialInstructions: string
+    estimatedPickupTime?: string
+  }) => {
+    try {
+      // Call the admin driver assignment API
+      const response = await fetch('/api/admin/assignments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('choma-admin-token')}`
+        },
+        body: JSON.stringify({
+          orderId: driverAssignmentModal.orderId,
+          driverId,
+          ...assignmentDetails
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        await refreshOrders()
+        closeDriverAssignmentModal()
+      } else {
+        console.error('Failed to assign driver:', result.message)
+        // You might want to show an error toast here
+      }
+    } catch (error) {
+      console.error('Failed to assign driver:', error)
+      // You might want to show an error toast here
+    }
+  }
+
+  // Check if order can be reassigned to chef (prevent reassignment if food ready or beyond)
+  const canReassignChef = (delegationStatus: string | undefined) => {
+    const blockedStatuses = ['Ready', 'Completed', 'Out for Delivery', 'Delivered']
+    return !delegationStatus || !blockedStatuses.includes(delegationStatus)
+  }
+
+  // Check if order is ready for driver assignment
+  const canAssignDriver = (delegationStatus: string | undefined) => {
+    return delegationStatus === 'Completed'
   }
 
   // Handle order status change
@@ -288,8 +379,8 @@ const Orders: React.FC = () => {
               key={filterType}
               onClick={() => setFilter(filterType)}
               className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${filter === filterType
-                  ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-neutral-100 shadow-sm'
-                  : 'text-gray-500 dark:text-neutral-300 hover:text-gray-700 dark:hover:text-neutral-100'
+                ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-neutral-100 shadow-sm'
+                : 'text-gray-500 dark:text-neutral-300 hover:text-gray-700 dark:hover:text-neutral-100'
                 }`}
             >
               <span className="hidden sm:inline">{filterType.charAt(0).toUpperCase() + filterType.slice(1)} Orders</span>
@@ -406,6 +497,9 @@ const Orders: React.FC = () => {
                   Chef Assignment
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">
+                  Driver Assignment
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-neutral-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -413,7 +507,7 @@ const Orders: React.FC = () => {
             <tbody className="bg-white/90 dark:bg-neutral-800/90 divide-y divide-gray-200 dark:divide-neutral-700">
               {orders.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-6 py-12 text-center text-gray-500 dark:text-neutral-200">
+                  <td colSpan={12} className="px-6 py-12 text-center text-gray-500 dark:text-neutral-200">
                     <div className="text-4xl mb-2"><i className="fi fi-sr-order"></i></div>
                     <p>No orders found</p>
                   </td>
@@ -506,12 +600,18 @@ const Orders: React.FC = () => {
                           <div className="text-green-600 dark:text-green-300 font-medium">
                             <i className="fi fi-sr-user mr-1"></i> {order.assignedChef.fullName}
                           </div>
-                          <button
-                            className="text-xs text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-400 underline"
-                            onClick={() => openChefAssignmentModal({ ...order, deliveryDate: order.deliveryDate ?? '' })}
-                          >
-                            Reassign
-                          </button>
+                          {canReassignChef(order.delegationStatus ?? undefined) ? (
+                            <button
+                              className="text-xs text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-400 underline"
+                              onClick={() => openChefAssignmentModal({ ...order, deliveryDate: order.deliveryDate ?? '' })}
+                            >
+                              Reassign
+                            </button>
+                          ) : (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+                              Cannot reassign - food {order.delegationStatus?.toLowerCase() || 'in progress'}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <button
@@ -534,6 +634,36 @@ const Orders: React.FC = () => {
                             </>
                           )}
                         </button>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {order.orderStatus === 'Out for Delivery' || order.orderStatus === 'Delivered' ? (
+                        <div className="text-sm">
+                          <div className="text-green-600 dark:text-green-300 font-medium">
+                            <i className="fi fi-sr-truck mr-1"></i> Driver Assigned
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Status: {order.orderStatus}
+                          </div>
+                        </div>
+                      ) : canAssignDriver(order.delegationStatus ?? undefined) ? (
+                        <button
+                          onClick={() => openDriverAssignmentModal({
+                            ...order,
+                            deliveryAddress: order.deliveryAddress || 'N/A',
+                            delegationStatus: order.delegationStatus ?? ''
+                          })}
+                          className="inline-flex items-center px-3 py-1 border border-green-300 dark:border-green-700 text-sm font-medium rounded-md text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-800/30 transition-colors"
+                        >
+                          <i className="fi fi-sr-truck mr-1"></i> Assign Driver
+                        </button>
+                      ) : (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {order.delegationStatus === 'Completed' ?
+                            'Ready for driver assignment' :
+                            `Waiting for chef (${order.delegationStatus || 'Not assigned'})`
+                          }
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -561,6 +691,15 @@ const Orders: React.FC = () => {
         onAssign={handleAssignChef}
         orderId={chefAssignmentModal.orderId}
         orderDetails={chefAssignmentModal.orderDetails}
+      />
+
+      {/* Driver Assignment Modal */}
+      <DriverAssignmentModal
+        isOpen={driverAssignmentModal.isOpen}
+        onClose={closeDriverAssignmentModal}
+        onAssign={handleAssignDriver}
+        orderId={driverAssignmentModal.orderId}
+        orderDetails={driverAssignmentModal.orderDetails}
       />
     </div>
   )

@@ -24,35 +24,19 @@ const OnboardingScreen = ({ navigation, onComplete }) => {
   const onboardingData = [
     {
       id: '1',
-      title: 'Welcome to choma',
-      description: 'Discover delicious, healthy Nigerian meals delivered fresh to your doorstep',
-      image: require('../../../assets/images/meal-plans/healthyfam.jpg'),
-      backgroundColor: colors.primary,
-      gradientColors: [colors.primary, colors.primaryDark],
+      image: require('../../../assets/images/onboarding/getChomaWelcomeScreen1.jpg'),
     },
     {
       id: '2',
-      title: 'Fresh & Healthy Meals',
-      description: 'All our meals are prepared with fresh ingredients and traditional Nigerian recipes',
-      image: require('../../../assets/images/meal-plans/fitfuel.jpg'),
-      backgroundColor: colors.warning,
-      gradientColors: [colors.warning, colors.warningDark],
+      image: require('../../../assets/images/onboarding/getChomaWelcomeScreen2.jpg'),
     },
     {
       id: '3',
-      title: 'Convenient Delivery',
-      description: 'Order your favorite meals and get them delivered fast and fresh to your location',
-      image: require('../../../assets/images/meal-plans/wellness-hub.jpg'),
-      backgroundColor: colors.info,
-      gradientColors: [colors.info, colors.infoDark],
+      image: require('../../../assets/images/onboarding/getChomaWelcomeScreen3.jpg'),
     },
     {
       id: '4',
-      title: 'Track Your Orders',
-      description: 'Real-time order tracking so you know exactly when your meal will arrive',
-      image: require('../../../assets/images/meal-plans/recharge.jpg'),
-      backgroundColor: colors.secondary,
-      gradientColors: [colors.secondary, colors.secondaryDark],
+      image: require('../../../assets/images/onboarding/getChomaWelcomeScreen4.jpg'),
     },
   ];
 
@@ -87,19 +71,9 @@ const OnboardingScreen = ({ navigation, onComplete }) => {
   };
 
   const renderOnboardingItem = ({ item, index }) => (
-    <LinearGradient
-      colors={item.gradientColors}
-      style={[styles(colors).slide, { backgroundColor: item.backgroundColor }]}
-    >
-      <View style={styles(colors).imageContainer}>
-        <Image source={item.image} style={styles(colors).image} resizeMode="contain" />
-      </View>
-      
-      <View style={styles(colors).contentContainer}>
-        <Text style={styles(colors).title}>{item.title}</Text>
-        <Text style={styles(colors).description}>{item.description}</Text>
-      </View>
-    </LinearGradient>
+    <View style={styles(colors).slide}>
+      <Image source={item.image} style={styles(colors).image} resizeMode="cover" />
+    </View>
   );
 
   const renderPagination = () => (
@@ -174,42 +148,13 @@ const styles = (colors) => StyleSheet.create({
   slide: {
     width: screenWidth,
     height: screenHeight,
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 100,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
   },
   image: {
-    width: screenWidth * 0.7,
-    height: screenWidth * 0.7,
-    maxHeight: 300,
-  },
-  contentContainer: {
-    flex: 0.4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.white,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  description: {
-    fontSize: 16,
-    color: colors.white,
-    textAlign: 'center',
-    lineHeight: 24,
-    opacity: 0.9,
+    width: screenWidth,
+    height: screenHeight,
+    borderRadius: 0,
   },
   bottomContainer: {
     position: 'absolute',
@@ -218,7 +163,6 @@ const styles = (colors) => StyleSheet.create({
     right: 0,
     paddingHorizontal: 20,
     paddingBottom: 40,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
   paginationContainer: {
     flexDirection: 'row',

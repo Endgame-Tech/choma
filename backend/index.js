@@ -223,6 +223,9 @@ app.use('/api/delivery', require('./routes/delivery'));
 // Chef routes (with general rate limiting)
 app.use('/api/chef', require('./routes/chef'));
 
+// Driver routes (with general rate limiting)
+app.use('/api/driver', generalLimiter, require('./routes/driver'));
+
 // Image upload routes (with general rate limiting)
 app.use('/api/images', require('./routes/images'));
 

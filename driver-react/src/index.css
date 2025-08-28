@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-choma-orange hover:bg-primary-600 text-choma-black font-semibold py-2 px-4 rounded-lg transition-colors duration-200 shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply bg-choma-brown hover:bg-secondary-600 text-choma-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl border border-gray-100;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-choma-orange focus:border-transparent transition-all duration-200;
+  }
+  
+  .status-online {
+    @apply bg-green-500 text-white;
+  }
+  
+  .status-offline {
+    @apply bg-gray-500 text-white;
+  }
+  
+  .status-on-delivery {
+    @apply bg-choma-orange text-choma-black font-semibold;
+  }
+  
+  .status-available {
+    @apply bg-choma-orange text-choma-black font-semibold;
+  }
+  
+  .status-assigned {
+    @apply bg-choma-brown text-choma-white;
+  }
+  
+  .status-delivered {
+    @apply bg-green-500 text-white;
+  }
+
+  /* Choma theme utilities */
+  .choma-gradient {
+    @apply bg-gradient-to-r from-choma-orange to-choma-brown;
+  }
+  
+  .choma-card {
+    @apply bg-white dark:bg-choma-dark rounded-2xl border border-gray-100 dark:border-choma-brown/20;
+  }
+}

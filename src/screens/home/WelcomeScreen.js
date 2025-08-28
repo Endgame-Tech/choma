@@ -10,7 +10,7 @@ const WelcomeScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <ChomaLogo width={150} height={81} />
-        <Text style={styles.title}>Welcome to choma! 🍽️</Text>
+        <Text style={styles.title}>Welcome to choma!</Text>
         <Text style={styles.subtitle}>Your personalized meal delivery service</Text>
           <TouchableOpacity 
           style={styles.button}
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   button: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#652815',
     paddingHorizontal: 40,
     paddingVertical: 15,
     borderRadius: 25,

@@ -12,7 +12,6 @@ interface ChefStatusModalProps {
   onClose: () => void
   currentStatus: string
   onUpdateStatus: (newStatus: string) => Promise<void>
-  orderNumber: string
   loading: boolean
 }
 
@@ -29,7 +28,6 @@ const ChefStatusModal: React.FC<ChefStatusModalProps> = ({
   onClose,
   currentStatus,
   onUpdateStatus,
-  orderNumber,
 }) => {
   const [updating, setUpdating] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState(currentStatus)
@@ -69,7 +67,7 @@ const ChefStatusModal: React.FC<ChefStatusModalProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Update Cooking Status</h2>
-              <p className="text-sm text-gray-600">Order #{orderNumber}</p>
+              <p className="text-sm text-gray-600">Meal Preparation Progress</p>
             </div>
             <button
               onClick={onClose}

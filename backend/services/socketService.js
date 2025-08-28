@@ -1,11 +1,13 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const Driver = require('../models/Driver');
 
 class SocketService {
   constructor() {
     this.io = null;
     this.connectedAdmins = new Map(); // Map of adminId -> { socketId, admin }
+    this.connectedDrivers = new Map(); // Map of driverId -> { socketId, driver }
   }
 
   // Initialize socket.io with Express server
@@ -46,18 +48,37 @@ class SocketService {
         // Verify JWT token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        // Find admin
-        const admin = await Admin.findById(decoded.adminId).select('-password');
-        if (!admin || !admin.isActive) {
-          console.log('Socket connection rejected: Invalid admin or inactive status');
-          return next(new Error('Authentication error: Invalid admin'));
-        }
+        // Check if it's admin or driver token
+        if (decoded.adminId) {
+          // Admin authentication
+          const admin = await Admin.findById(decoded.adminId).select('-password');
+          if (!admin || !admin.isActive) {
+            console.log('Socket connection rejected: Invalid admin or inactive status');
+            return next(new Error('Authentication error: Invalid admin'));
+          }
 
-        // Attach admin to socket
-        socket.admin = admin;
-        socket.adminId = admin._id.toString();
-        
-        console.log(`Admin ${admin.email} authenticated for socket connection`);
+          socket.admin = admin;
+          socket.adminId = admin._id.toString();
+          socket.userType = 'admin';
+          console.log(`Admin ${admin.email} authenticated for socket connection`);
+          
+        } else if (decoded.driverId) {
+          // Driver authentication
+          const driver = await Driver.findById(decoded.driverId).select('-password');
+          if (!driver || driver.accountStatus !== 'approved') {
+            console.log('Socket connection rejected: Invalid driver or not approved');
+            return next(new Error('Authentication error: Invalid driver'));
+          }
+
+          socket.driver = driver;
+          socket.driverId = driver._id.toString();
+          socket.userType = 'driver';
+          console.log(`Driver ${driver.driverId} authenticated for socket connection`);
+          
+        } else {
+          console.log('Socket connection rejected: No valid user ID in token');
+          return next(new Error('Authentication error: Invalid token format'));
+        }
         next();
       } catch (error) {
         console.error('Socket authentication error:', error.message);
@@ -76,6 +97,20 @@ class SocketService {
 
   // Handle new socket connection
   handleConnection(socket) {
+    if (socket.userType === 'admin') {
+      this.handleAdminConnection(socket);
+    } else if (socket.userType === 'driver') {
+      this.handleDriverConnection(socket);
+    }
+
+    // Handle disconnect
+    socket.on('disconnect', () => {
+      this.handleDisconnect(socket);
+    });
+  }
+
+  // Handle admin connection
+  handleAdminConnection(socket) {
     const adminId = socket.adminId;
     const admin = socket.admin;
 
@@ -102,20 +137,54 @@ class SocketService {
     // Handle custom events
     this.setupEventHandlers(socket);
 
-    // Handle disconnection
-    socket.on('disconnect', (reason) => {
-      console.log(`Admin ${admin.email} disconnected: ${reason}`);
-      this.connectedAdmins.delete(adminId);
-    });
-
-    // Handle connection errors
-    socket.on('error', (error) => {
-      console.error(`Socket error for admin ${admin.email}:`, error);
-    });
+    // Setup admin-specific event handlers
+    this.setupAdminEventHandlers(socket);
   }
 
-  // Setup event handlers for socket
-  setupEventHandlers(socket) {
+  // Handle driver connection
+  handleDriverConnection(socket) {
+    const driverId = socket.driverId;
+    const driver = socket.driver;
+
+    console.log(`Driver ${driver.driverId} connected via socket: ${socket.id}`);
+
+    // Store connection
+    this.connectedDrivers.set(driverId, {
+      socketId: socket.id,
+      driver: driver,
+      connectedAt: new Date()
+    });
+
+    // Join driver-specific room
+    socket.join(`driver_${driverId}`);
+    socket.join('all_drivers'); // For broadcast notifications
+
+    // Send connection confirmation
+    socket.emit('connected', {
+      message: 'Connected to delivery service',
+      driverId: driverId,
+      timestamp: new Date()
+    });
+
+    // Setup driver-specific event handlers
+    this.setupDriverEventHandlers(socket);
+  }
+
+  // Handle disconnect for both admin and driver
+  handleDisconnect(socket) {
+    if (socket.userType === 'admin') {
+      const adminId = socket.adminId;
+      console.log(`Admin ${socket.admin?.email} disconnected`);
+      this.connectedAdmins.delete(adminId);
+    } else if (socket.userType === 'driver') {
+      const driverId = socket.driverId;
+      console.log(`Driver ${socket.driver?.driverId} disconnected`);
+      this.connectedDrivers.delete(driverId);
+    }
+  }
+
+  // Setup admin-specific event handlers
+  setupAdminEventHandlers(socket) {
     const adminId = socket.adminId;
 
     // Handle notification acknowledgment
@@ -136,6 +205,67 @@ class SocketService {
         connectedAdmins: this.connectedAdmins.size,
         timestamp: new Date()
       });
+    });
+
+    // Handle ping-pong for connection health
+    socket.on('ping', () => {
+      socket.emit('pong', { timestamp: new Date() });
+    });
+  }
+
+  // Setup driver-specific event handlers
+  setupDriverEventHandlers(socket) {
+    const driverId = socket.driverId;
+
+    // Handle location updates
+    socket.on('location_update', async (data) => {
+      try {
+        const { latitude, longitude } = data;
+        await Driver.findByIdAndUpdate(driverId, {
+          'currentLocation.coordinates': [longitude, latitude],
+          'currentLocation.updatedAt': new Date()
+        });
+        
+        // Broadcast location to admins monitoring this driver
+        this.io.to('all_admins').emit('driver_location_update', {
+          driverId,
+          location: { latitude, longitude },
+          timestamp: new Date()
+        });
+      } catch (error) {
+        console.error('Location update error:', error);
+      }
+    });
+
+    // Handle assignment status updates
+    socket.on('assignment_status', (data) => {
+      const { assignmentId, status } = data;
+      console.log(`Driver ${driverId} updated assignment ${assignmentId} status to ${status}`);
+      
+      // Notify admins of status change
+      this.io.to('all_admins').emit('assignment_status_change', {
+        driverId,
+        assignmentId,
+        status,
+        timestamp: new Date()
+      });
+    });
+
+    // Handle driver status changes
+    socket.on('status_change', async (data) => {
+      try {
+        const { status } = data;
+        await Driver.findByIdAndUpdate(driverId, { status });
+        
+        // Notify admins
+        this.io.to('all_admins').emit('driver_status_change', {
+          driverId,
+          status,
+          timestamp: new Date()
+        });
+      } catch (error) {
+        console.error('Driver status change error:', error);
+      }
     });
 
     // Handle ping-pong for connection health
@@ -177,6 +307,39 @@ class SocketService {
     return sentCount;
   }
 
+  // Send notification to specific driver
+  sendToDriver(driverId, event, data) {
+    try {
+      const connection = this.connectedDrivers.get(driverId);
+      if (connection) {
+        this.io.to(`driver_${driverId}`).emit(event, {
+          ...data,
+          timestamp: new Date(),
+          delivered: true
+        });
+        console.log(`Notification sent to driver ${driverId}: ${event}`);
+        return true;
+      } else {
+        console.log(`Driver ${driverId} not connected - notification queued`);
+        return false;
+      }
+    } catch (error) {
+      console.error(`Error sending notification to driver ${driverId}:`, error);
+      return false;
+    }
+  }
+
+  // Send notification to multiple drivers
+  sendToDrivers(driverIds, event, data) {
+    let sentCount = 0;
+    for (const driverId of driverIds) {
+      if (this.sendToDriver(driverId, event, data)) {
+        sentCount++;
+      }
+    }
+    return sentCount;
+  }
+
   // Broadcast notification to all connected admins
   broadcast(event, data) {
     try {
@@ -189,6 +352,22 @@ class SocketService {
       return this.connectedAdmins.size;
     } catch (error) {
       console.error('Error broadcasting notification:', error);
+      return 0;
+    }
+  }
+
+  // Broadcast to all drivers
+  broadcastToDrivers(event, data) {
+    try {
+      this.io.to('all_drivers').emit(event, {
+        ...data,
+        timestamp: new Date(),
+        broadcast: true
+      });
+      console.log(`Broadcast notification sent: ${event} to ${this.connectedDrivers.size} drivers`);
+      return this.connectedDrivers.size;
+    } catch (error) {
+      console.error('Error broadcasting notification to drivers:', error);
       return 0;
     }
   }
@@ -267,9 +446,17 @@ class SocketService {
   getStats() {
     return {
       connectedAdmins: this.connectedAdmins.size,
-      connections: Array.from(this.connectedAdmins.entries()).map(([adminId, connection]) => ({
+      connectedDrivers: this.connectedDrivers.size,
+      adminConnections: Array.from(this.connectedAdmins.entries()).map(([adminId, connection]) => ({
         adminId,
         email: connection.admin.email,
+        connectedAt: connection.connectedAt,
+        socketId: connection.socketId
+      })),
+      driverConnections: Array.from(this.connectedDrivers.entries()).map(([driverId, connection]) => ({
+        driverId,
+        driverId: connection.driver.driverId,
+        fullName: connection.driver.fullName,
         connectedAt: connection.connectedAt,
         socketId: connection.socketId
       }))
@@ -279,6 +466,11 @@ class SocketService {
   // Check if admin is connected
   isAdminConnected(adminId) {
     return this.connectedAdmins.has(adminId);
+  }
+
+  // Check if driver is connected
+  isDriverConnected(driverId) {
+    return this.connectedDrivers.has(driverId);
   }
 
   // Disconnect admin
@@ -294,6 +486,45 @@ class SocketService {
       return true;
     }
     return false;
+  }
+
+  // Disconnect driver
+  disconnectDriver(driverId, reason = 'Server initiated disconnect') {
+    const connection = this.connectedDrivers.get(driverId);
+    if (connection) {
+      const socket = this.io.sockets.sockets.get(connection.socketId);
+      if (socket) {
+        socket.emit('force_disconnect', { reason });
+        socket.disconnect(true);
+      }
+      this.connectedDrivers.delete(driverId);
+      return true;
+    }
+    return false;
+  }
+
+  // Send delivery assignment notification to driver
+  sendDeliveryAssignment(driverId, assignment) {
+    return this.sendToDriver(driverId, 'new_assignment', {
+      id: assignment._id,
+      orderId: assignment.orderId,
+      pickupLocation: assignment.pickupLocation,
+      deliveryLocation: assignment.deliveryLocation,
+      estimatedPickupTime: assignment.estimatedPickupTime,
+      estimatedDeliveryTime: assignment.estimatedDeliveryTime,
+      totalEarning: assignment.totalEarning,
+      priority: assignment.priority,
+      specialInstructions: assignment.specialInstructions
+    });
+  }
+
+  // Send assignment status update notification
+  sendAssignmentUpdate(driverId, assignmentId, status, data = {}) {
+    return this.sendToDriver(driverId, 'assignment_update', {
+      assignmentId,
+      status,
+      ...data
+    });
   }
 
   // Get socket.io instance

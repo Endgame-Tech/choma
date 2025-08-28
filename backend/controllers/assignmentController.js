@@ -237,16 +237,16 @@ exports.assignOrderToChef = async (req, res) => {
         const { 
             estimatedHours = 2, 
             priority = 'Medium', 
-            specialInstructions = '', 
-            chefFeePercentage = 70 
+            specialInstructions = ''
         } = req.body;
 
         // Calculate estimated completion time
         const estimatedCompletionTime = new Date();
         estimatedCompletionTime.setHours(estimatedCompletionTime.getHours() + estimatedHours);
 
-        // Calculate payment details
-        const chefFee = Math.round(order.totalAmount * (chefFeePercentage / 100));
+        // Calculate payment details using the established 85% chef commission system
+        const chefFee = Math.round(order.totalAmount * 0.85); // 85% goes to chef
+        const platformFee = order.totalAmount - chefFee; // 15% platform fee
         const totalCost = order.totalAmount;
 
         // Create a new order delegation record
@@ -279,19 +279,35 @@ exports.assignOrderToChef = async (req, res) => {
         order.delegationStatus = 'Assigned';
         await order.save();
 
-        // Send notifications
+        // Send comprehensive notifications to all parties
         try {
-            await NotificationService.notifyChefNewOrder(chefId, {
+            const notificationResult = await NotificationService.notifyAllPartiesOrderStatus({
                 orderId: order._id,
                 orderNumber: order.orderNumber,
+                customerId: order.customer?._id,
                 customerName: order.customer?.fullName || 'Customer',
+                chefId: chefId,
+                chefName: chef.fullName,
                 totalAmount: order.totalAmount,
-                deliveryDate: order.deliveryDate,
-                items: order.items || []
+                deliveryDate: order.deliveryDate
+            }, {
+                oldStatus: 'Pending',
+                newStatus: 'Confirmed'
+            }, {
+                assignedBy: 'Admin',
+                estimatedHours: estimatedHours,
+                priority: priority,
+                chefFee: chefFee,
+                platformFee: platformFee
             });
-            console.log(`Notification sent to chef ${chefId} for order ${orderId}`);
+
+            console.log(`Comprehensive notifications sent for order ${orderId}:`, {
+                totalSent: notificationResult.totalNotificationsSent,
+                success: notificationResult.success,
+                errors: notificationResult.results.errors
+            });
         } catch (notificationError) {
-            console.error('Failed to send notification to chef:', notificationError.message);
+            console.error('Failed to send comprehensive notifications:', notificationError.message);
             // Don't fail the assignment if notification fails
         }
 

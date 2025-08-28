@@ -53,10 +53,10 @@ const Profile: React.FC = () => {
     try {
       // TODO: Implement actual API call to update profile
       console.log('Saving profile:', profileData)
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       setEditing(false)
       // Show success message
       alert('Profile updated successfully!')
@@ -99,7 +99,7 @@ const Profile: React.FC = () => {
     if (!role || typeof role !== 'string') {
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
     }
-    
+
     switch (role.toLowerCase()) {
       case 'super admin':
         return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
@@ -120,7 +120,7 @@ const Profile: React.FC = () => {
           <h1 className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">Profile</h1>
           <p className="text-gray-600 dark:text-neutral-300">Manage your account information and preferences</p>
         </div>
-        
+
         {!editing ? (
           <button
             onClick={() => setEditing(true)}
@@ -181,7 +181,7 @@ const Profile: React.FC = () => {
                     <p className="text-gray-900 dark:text-neutral-100 py-2">{profileData.firstName}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                     Last Name
@@ -318,7 +318,12 @@ const Profile: React.FC = () => {
                   </div>
                 )}
                 {editing && (
-                  <button className="absolute bottom-0 right-0 bg-blue-600 dark:bg-blue-700 text-white rounded-full p-2 hover:bg-blue-700 dark:hover:bg-blue-800">
+                  <button
+                    type="button"
+                    aria-label="Change profile picture"
+                    title="Change profile picture"
+                    className="absolute bottom-0 right-0 bg-blue-600 dark:bg-blue-700 text-white rounded-full p-2 hover:bg-blue-700 dark:hover:bg-blue-800"
+                  >
                     <CameraIcon className="w-4 h-4" />
                   </button>
                 )}

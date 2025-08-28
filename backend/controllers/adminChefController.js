@@ -757,4 +757,154 @@ exports.sendChefNotification = async (req, res) => {
   }
 };
 
+// ============= CHEF PAYOUT MANAGEMENT =============
+
+// Process weekly payouts (admin can trigger manually)
+exports.processWeeklyPayouts = async (req, res) => {
+  try {
+    const ChefPayoutService = require('../services/chefPayoutService');
+    
+    console.log('🔧 Admin triggered weekly payout process');
+    const result = await ChefPayoutService.processWeeklyPayouts();
+    
+    res.json({
+      success: true,
+      message: 'Weekly payout process completed',
+      data: result
+    });
+  } catch (error) {
+    console.error('Admin payout process error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process payouts',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Get weekly payout summary
+exports.getPayoutSummary = async (req, res) => {
+  try {
+    const ChefPayoutService = require('../services/chefPayoutService');
+    const ChefEarning = require('../models/ChefEarning');
+    
+    const { weekStart, weekEnd } = req.query;
+    
+    let startDate, endDate;
+    
+    if (weekStart && weekEnd) {
+      startDate = new Date(weekStart);
+      endDate = new Date(weekEnd);
+    } else {
+      // Default to current week
+      const currentDate = new Date();
+      startDate = ChefEarning.getWeekStart(currentDate);
+      endDate = ChefEarning.getWeekEnd(currentDate);
+    }
+    
+    const summary = await ChefPayoutService.getWeeklyPayoutSummary(startDate, endDate);
+    
+    res.json({
+      success: true,
+      data: {
+        weekStart: startDate,
+        weekEnd: endDate,
+        summary
+      }
+    });
+  } catch (error) {
+    console.error('Get payout summary error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get payout summary',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Get individual chef earnings
+exports.getChefEarningsAdmin = async (req, res) => {
+  try {
+    const { chefId } = req.params;
+    const { period = 'current_week' } = req.query;
+    
+    const ChefEarning = require('../models/ChefEarning');
+    const currentDate = new Date();
+    
+    let startDate, endDate;
+    
+    switch (period) {
+      case 'current_week':
+        startDate = ChefEarning.getWeekStart(currentDate);
+        endDate = ChefEarning.getWeekEnd(currentDate);
+        break;
+      case 'last_week':
+        const lastWeek = new Date(currentDate);
+        lastWeek.setDate(currentDate.getDate() - 7);
+        startDate = ChefEarning.getWeekStart(lastWeek);
+        endDate = ChefEarning.getWeekEnd(lastWeek);
+        break;
+      case 'current_month':
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        break;
+      default:
+        startDate = ChefEarning.getWeekStart(currentDate);
+        endDate = ChefEarning.getWeekEnd(currentDate);
+    }
+    
+    // Get earnings for the chef and period
+    const earnings = await ChefEarning.find({
+      chef: chefId,
+      completedDate: { $gte: startDate, $lte: endDate }
+    }).populate('order', 'orderNumber totalAmount deliveryDate')
+      .populate('chef', 'fullName email');
+    
+    // Calculate totals
+    const totalPending = earnings
+      .filter(e => e.status === 'pending')
+      .reduce((sum, e) => sum + e.cookingFee, 0);
+      
+    const totalPaid = earnings
+      .filter(e => e.status === 'paid')
+      .reduce((sum, e) => sum + e.cookingFee, 0);
+      
+    const totalEarnings = totalPending + totalPaid;
+    
+    res.json({
+      success: true,
+      data: {
+        chef: earnings[0]?.chef || null,
+        period,
+        startDate,
+        endDate,
+        summary: {
+          totalEarnings,
+          totalPending,
+          totalPaid,
+          completedOrders: earnings.length
+        },
+        earnings: earnings.map(e => ({
+          id: e._id,
+          cookingFee: e.cookingFee,
+          orderTotal: e.orderTotal,
+          orderNumber: e.order?.orderNumber,
+          status: e.status,
+          completedDate: e.completedDate,
+          payoutDate: e.payoutDate,
+          payoutReference: e.payoutReference,
+          chefPercentage: e.chefPercentage
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Get chef earnings admin error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get chef earnings',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = exports;

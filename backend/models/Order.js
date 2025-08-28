@@ -26,7 +26,7 @@ const OrderSchema = new mongoose.Schema({
   },
   delegationStatus: {
     type: String,
-    enum: ['Not Assigned', 'Pending Assignment', 'Assigned', 'Accepted', 'In Progress', 'Completed'],
+    enum: ['Not Assigned', 'Pending Assignment', 'Assigned', 'Accepted', 'In Progress', 'Ready', 'Completed'],
     default: 'Not Assigned'
   },
   chefAssignedDate: Date,

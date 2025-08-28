@@ -14,8 +14,6 @@ export const DEV_CONFIG = {
   // Enable verbose logging in development
   ENABLE_VERBOSE_LOGGING: __DEV__,
   
-  // Mock data for development
-  USE_MOCK_DATA: false, // Set to true if you want to use mock data
 };
 
 /**
@@ -69,37 +67,6 @@ export const devLog = {
 };
 
 /**
- * Mock data for development testing
- */
-export const MOCK_DATA = {
-  notifications: [
-    {
-      id: '1',
-      title: 'Welcome to Choma!',
-      message: 'Your meal delivery app is ready to use.',
-      timestamp: new Date().toISOString(),
-      read: false,
-      type: 'welcome'
-    },
-    {
-      id: '2', 
-      title: 'Order Confirmed',
-      message: 'Your meal plan subscription has been confirmed.',
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      read: true,
-      type: 'order'
-    }
-  ],
-  
-  user: {
-    id: 'dev-user-1',
-    name: 'Dev User',
-    email: 'dev@choma.app',
-    isAuthenticated: false
-  }
-};
-
-/**
  * Check if running in development with specific conditions
  */
 export const isDevelopment = () => {
@@ -124,7 +91,6 @@ export default {
   DEV_CONFIG,
   safeApiCall,
   devLog,
-  MOCK_DATA,
   isDevelopment,
   shouldSkipFirebase,
   shouldSkipAuthAPIs

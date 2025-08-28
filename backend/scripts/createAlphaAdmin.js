@@ -97,7 +97,9 @@ async function createAlphaAdmin() {
           managePermissions: true, 
           view_activity_logs: true, 
           manage_sessions: true 
-        }
+        },
+        deliveryPrices: { view: true },
+        drivers: { view: true, approve: true, edit: true, manage: true }
       },
       isDefault: true
     };

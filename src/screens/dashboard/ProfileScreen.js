@@ -945,15 +945,11 @@ Your meal plan has been updated with fresh options.`;
   };
 
   const handleLogout = async () => {
-    showConfirm(
-      "Logout",
-      "Are you sure you want to logout?",
-      async () => {
-        setIsLoading(true);
-        await logout();
-        setIsLoading(false);
-      }
-    );
+    showConfirm("Logout", "Are you sure you want to logout?", async () => {
+      setIsLoading(true);
+      await logout();
+      setIsLoading(false);
+    });
   };
 
   const pickImage = async () => {
@@ -1139,8 +1135,7 @@ Your meal plan has been updated with fresh options.`;
           // Update user profile - include all user data to avoid validation errors
           // Ensure fullName meets minimum requirements
           const fullName = user?.fullName || "";
-          const validFullName =
-            fullName.length >= 2 ? fullName : "User Name";
+          const validFullName = fullName.length >= 2 ? fullName : "User Name";
 
           const profileUpdateData = {
             fullName: validFullName,
@@ -1881,9 +1876,7 @@ Your meal plan has been updated with fresh options.`;
             </TouchableOpacity>
           </View>
 
-          <View
-            style={styles(colors).editScrollContent}
-          >
+          <View style={styles(colors).editScrollContent}>
             {/* Profile Picture */}
             <View style={styles(colors).editFieldContainer}>
               <Text style={styles(colors).editFieldLabel}>Profile Picture</Text>
@@ -1967,15 +1960,21 @@ Your meal plan has been updated with fresh options.`;
                 <AddressAutocomplete
                   placeholder="Enter your delivery address"
                   onAddressSelect={(addressInfo) => {
-                    setEditableUser((prev) => ({ 
-                      ...prev, 
+                    setEditableUser((prev) => ({
+                      ...prev,
                       address: addressInfo.formattedAddress,
-                      city: addressInfo.locality || addressInfo.adminArea || prev.city,
+                      city:
+                        addressInfo.locality ||
+                        addressInfo.adminArea ||
+                        prev.city,
                     }));
                   }}
                   defaultValue={editableUser.address}
                   style={[
-                    errors.address && { borderColor: colors.error, borderWidth: 2 }
+                    errors.address && {
+                      borderColor: colors.error,
+                      borderWidth: 2,
+                    },
                   ]}
                 />
               </View>
@@ -2509,7 +2508,7 @@ const styles = (colors) =>
       backgroundColor: colors.primary,
       paddingHorizontal: 20,
       paddingVertical: 10,
-      borderRadius: THEME.borderRadius.medium,
+      borderRadius: THEME.borderRadius.xxl,
     },
     startSubscriptionButtonText: {
       color: colors.black,
@@ -2624,7 +2623,7 @@ const styles = (colors) =>
       backgroundColor: colors.primary,
       paddingHorizontal: 20,
       paddingVertical: 10,
-      borderRadius: THEME.borderRadius.medium,
+      borderRadius: THEME.borderRadius.xxl,
     },
     startAchievementsButtonText: {
       color: colors.black,
@@ -2635,7 +2634,7 @@ const styles = (colors) =>
       backgroundColor: colors.primary,
       paddingHorizontal: 20,
       paddingVertical: 10,
-      borderRadius: THEME.borderRadius.medium,
+      borderRadius: THEME.borderRadius.xxl,
       marginTop: 15,
     },
     startActivityButtonText: {
@@ -2795,14 +2794,13 @@ const styles = (colors) =>
     headerContent: {
       backgroundColor: colors.background,
       zIndex: 1000,
-      elevation: 50,
-      shadowColor: "#000",
+      elevation: 10,
+      shadowColor: "#00000040",
       shadowOffset: {
         width: 0,
-        height: 20,
+        height: 5,
       },
-      shadowOpacity: 0.5,
-      shadowRadius: 6,
+      shadowOpacity: 0.2,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
     },

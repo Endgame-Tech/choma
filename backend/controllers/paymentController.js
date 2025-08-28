@@ -249,7 +249,7 @@ class PaymentController {
             totalAmount: paymentData.amount / 100,
             paymentMethod: 'Card',
             paymentReference: paymentData.reference,
-            paymentStatus: 'Paid',
+            paymentStatus: 'Pending', // Will be updated to 'Paid' when chef successfully delivers (weekly payout)
             orderStatus: 'Confirmed',
             deliveryAddress: subscription.deliveryAddress,
             deliveryDate: subscription.nextDelivery

@@ -15,7 +15,7 @@ const emailVerificationSchema = new mongoose.Schema({
   },
   purpose: {
     type: String,
-    enum: ['chef_registration', 'password_reset', 'email_change'],
+    enum: ['chef_registration', 'customer_registration', 'password_reset', 'email_change'],
     default: 'chef_registration'
   },
   verified: {
@@ -70,6 +70,8 @@ emailVerificationSchema.methods.isValidCode = function(inputCode) {
 emailVerificationSchema.methods.markAsVerified = async function() {
   this.verified = true;
   this.verifiedAt = new Date();
+  // Extend expiration to 24 hours for verified emails so they don't get auto-deleted
+  this.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   return this.save();
 };
 

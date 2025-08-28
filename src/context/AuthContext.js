@@ -319,7 +319,6 @@ export const AuthProvider = ({ children }) => {
         isUpdatingProfile ||
         now - lastProfileUpdate < profileUpdateCooldown
       ) {
-        console.log("� Profile update rate limited, skipping...");
         return {
           success: true,
           message: "Profile update skipped (rate limited)",
@@ -379,7 +378,6 @@ export const AuthProvider = ({ children }) => {
         isUpdatingProfile ||
         now - lastProfileUpdate < profileUpdateCooldown
       ) {
-        console.log("🚫 User profile update rate limited, skipping...");
         return {
           success: false,
           message: "Please wait a moment before updating again",
@@ -449,14 +447,6 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsUpdatingProfile(false);
     }
-  };
-
-  // Quick demo login for testing
-  const demoLogin = async () => {
-    return await login({
-      email: "demo@choma.ng",
-      password: "password123",
-    });
   };
 
   // Check connection status
@@ -614,7 +604,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     updateUserProfile,
-    demoLogin,
+    // demoLogin,
     checkConnection,
     syncData,
     deleteAccount,

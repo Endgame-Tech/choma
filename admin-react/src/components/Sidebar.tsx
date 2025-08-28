@@ -30,6 +30,7 @@ const navigationItems = [
   { name: 'Discounts', href: '/discounts', icon: ReceiptPercentIcon, permission: 'banners' as keyof AdminPermissions },
   // Delivery Prices: permission key is 'deliveryPrices' (see AdminPermissions)
   { name: 'Delivery Prices', href: '/delivery-prices', icon: TruckIcon, permission: 'deliveryPrices' as keyof AdminPermissions },
+  { name: 'Drivers', href: '/drivers', icon: TruckIcon, permission: 'drivers' as keyof AdminPermissions },
   { name: 'Admin Management', href: '/admin-management', icon: CogIcon, permission: 'adminManagement' as keyof AdminPermissions },
 ]
 

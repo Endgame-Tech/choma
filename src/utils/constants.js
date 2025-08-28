@@ -10,7 +10,7 @@ export const APP_CONFIG = {
   // For future backend integration
   API_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "http://192.168.0.216:5001/api"
+      ? "http://192.168.137.1:5001/api"
       : "http://localhost:5001/api"
     : "https://choma.onrender.com/api",
 
@@ -28,50 +28,6 @@ export const APP_CONFIG = {
   // Demo Mode Settings (for MVP testing)
   DEMO_MODE: false,
   USE_MOCK_DATA: false,
-};
-
-// Meal Plan Types
-export const MEAL_PLAN_TYPES = {
-  FITFUEL: {
-    id: "fitfuel",
-    name: "FitFuel",
-    description: "High-protein meals for fitness enthusiasts",
-    basePrice: 15000,
-    mealsPerWeek: 21,
-    targetAudience: "Fitness",
-    color: ["#FF6B6B", "#FF8E53"],
-    icon: "fitness",
-  },
-  RECHARGE: {
-    id: "recharge",
-    name: "Recharge",
-    description: "Quick, nutritious meals for busy professionals",
-    basePrice: 12000,
-    mealsPerWeek: 14,
-    targetAudience: "Professional",
-    color: ["#4ECDC4", "#44A08D"],
-    icon: "business",
-  },
-  HEALTHYFAM: {
-    id: "healthyfam",
-    name: "HealthyFam",
-    description: "Family-sized healthy meal portions",
-    basePrice: 25000,
-    mealsPerWeek: 42,
-    targetAudience: "Family",
-    color: ["#A8E6CF", "#88D8A3"],
-    icon: "people",
-  },
-  WELLNESSPACK: {
-    id: "wellnesspack",
-    name: "WellnessPack",
-    description: "Specially curated for health-conscious individuals",
-    basePrice: 18000,
-    mealsPerWeek: 21,
-    targetAudience: "Wellness",
-    color: ["#FFB347", "#FF8C42"],
-    icon: "leaf",
-  },
 };
 
 // Order Statuses
@@ -141,81 +97,14 @@ export const COLORS = {
   info: "#74b9ff",
 };
 
-// Demo Users (for testing)
-export const DEMO_USERS = [
-  {
-    email: "demo@Choma.ng",
-    password: "password123",
-    name: "Demo User",
-    phone: "+234 800 000 0000",
-  },
-  {
-    email: "admin@Choma.ng",
-    password: "admin123",
-    name: "Admin User",
-    phone: "+234 800 000 0001",
-  },
-  {
-    email: "test@Choma.ng",
-    password: "test123",
-    name: "Test User",
-    phone: "+234 800 000 0002",
-  },
-];
-
-// Mock meal plans data (for MVP testing)
-export const MOCK_MEAL_PLANS = [
-  {
-    ...MEAL_PLAN_TYPES.FITFUEL,
-    image:
-      "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=300&fit=crop",
-    isBookmarked: true,
-    tag: "Most Popular",
-    features: [
-      "25g+ protein per meal",
-      "Post-workout nutrition",
-      "Muscle building focus",
-    ],
-    rating: 4.9,
-  },
-  {
-    ...MEAL_PLAN_TYPES.RECHARGE,
-    image:
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
-    isBookmarked: false,
-    tag: "Best Value",
-    features: ["Ready in 3 minutes", "Balanced nutrition", "Energy boosting"],
-    rating: 4.8,
-  },
-  {
-    ...MEAL_PLAN_TYPES.HEALTHYFAM,
-    image:
-      "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
-    isBookmarked: false,
-    tag: "Family Size",
-    features: ["Serves 4-6 people", "Kid-friendly options", "Family nutrition"],
-    rating: 4.7,
-  },
-  {
-    ...MEAL_PLAN_TYPES.WELLNESSPACK,
-    image:
-      "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=400&h=300&fit=crop",
-    isBookmarked: true,
-    tag: "Premium",
-    features: ["Organic ingredients", "Anti-inflammatory", "Superfood rich"],
-    rating: 4.9,
-  },
-];
-
 export default {
   APP_CONFIG,
-  MEAL_PLAN_TYPES,
+  // MEAL_PLAN_TYPES,
   ORDER_STATUSES,
   SUBSCRIPTION_FREQUENCIES,
   SUBSCRIPTION_DURATIONS,
   PAYMENT_METHODS,
   DELIVERY_SLOTS,
   COLORS,
-  DEMO_USERS,
-  MOCK_MEAL_PLANS,
+  // DEMO_USERS,
 };

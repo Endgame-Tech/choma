@@ -297,7 +297,9 @@ exports.checkVerificationStatus = async (req, res) => {
         verified: verification.verified,
         expiresAt: verification.expiresAt,
         attempts: verification.attempts,
-        canResend: !verification.verified && (Date.now() - verification.createdAt.getTime()) > 60 * 1000
+        canResend: !verification.verified && (Date.now() - verification.createdAt.getTime()) > 60 * 1000,
+        // Include token for verified emails (simple verification token)
+        token: verification.verified ? `verified_${verification._id}_${Date.now()}` : null
       }
     });
 
