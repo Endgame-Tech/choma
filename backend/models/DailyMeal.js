@@ -11,7 +11,7 @@ const MealSchema = new mongoose.Schema({
     ingredients: { type: Number, required: true },
     cookingCosts: { type: Number, required: true },
     packaging: { type: Number, required: true },
-    delivery: { type: Number, required: true },
+    delivery: { type: Number, default: 0 },
     platformFee: { type: Number, required: true },
     totalCosts: { type: Number, required: true },
     profit: { type: Number, required: true },
