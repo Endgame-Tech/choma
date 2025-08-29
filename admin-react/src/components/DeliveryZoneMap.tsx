@@ -123,11 +123,14 @@ const DeliveryZoneMap: React.FC<DeliveryZoneMapProps> = ({
     return 0.2;
   };
 
-  if (!process.env.REACT_APP_GOOGLE_MAPS_API_KEY) {
+  // Prefer Vite-style env var, fall back to process.env if present (only for environments where it's defined)
+  const GOOGLE_MAPS_API_KEY = (import.meta as any)?.env?.VITE_GOOGLE_MAPS_API_KEY || (typeof process !== 'undefined' && process.env?.REACT_APP_GOOGLE_MAPS_API_KEY) || '';
+
+  if (!GOOGLE_MAPS_API_KEY) {
     return (
       <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
         <p className="text-gray-600 dark:text-gray-400">
-          Google Maps API key not configured. Please add REACT_APP_GOOGLE_MAPS_API_KEY to your environment variables.
+          Google Maps API key not configured. Please add VITE_GOOGLE_MAPS_API_KEY (or REACT_APP_GOOGLE_MAPS_API_KEY) to your environment variables.
         </p>
       </div>
     );
@@ -135,7 +138,7 @@ const DeliveryZoneMap: React.FC<DeliveryZoneMapProps> = ({
 
   return (
     <LoadScript
-      googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
+      googleMapsApiKey={GOOGLE_MAPS_API_KEY}
       libraries={libraries}
       loadingElement={
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
