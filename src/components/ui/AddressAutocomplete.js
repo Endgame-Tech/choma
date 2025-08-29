@@ -201,13 +201,8 @@ const AddressAutocomplete = ({
           onChangeText={setQuery}
           onFocus={() => query.length >= 2 && setShowSuggestions(true)}
           onBlur={() => {
-            // If keyboard is visible, hide suggestions immediately to prevent blocking clicks
-            // If keyboard is hidden, use timeout to allow suggestion clicks
-            if (keyboardVisible) {
-              setShowSuggestions(false);
-            } else {
-              setTimeout(() => setShowSuggestions(false), 150);
-            }
+            // Always use timeout to allow suggestion clicks regardless of keyboard state
+            setTimeout(() => setShowSuggestions(false), 200);
           }}
           editable={editable}
         />

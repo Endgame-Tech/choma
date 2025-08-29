@@ -193,7 +193,6 @@ const ProfileScreen = ({ navigation, route }) => {
 
   const loadProfileImage = async () => {
     try {
-
       // First check if user has a profile image from registration
       if (user?.profileImage) {
         setProfileImage(user.profileImage);
@@ -220,7 +219,6 @@ const ProfileScreen = ({ navigation, route }) => {
       const lastUpdate = refreshProfileImage.lastUpdate || 0;
       const cooldown = 2000; // 2 seconds minimum between image refreshes
 
-
       refreshProfileImage.lastUpdate = now;
 
       const result = await updateProfile();
@@ -229,8 +227,7 @@ const ProfileScreen = ({ navigation, route }) => {
       } else if (result.rateLimited) {
       } else {
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const fetchUserStats = async () => {
@@ -243,27 +240,25 @@ const ProfileScreen = ({ navigation, route }) => {
 
       if (response.success && response.data) {
         // Ensure all numeric values are valid numbers
+        // Handle nested API response structure
+        const statsData = response.data.data || response.data;
         const validStats = {
-          ordersThisMonth: isNaN(response.data.ordersThisMonth)
+          ordersThisMonth: isNaN(statsData.ordersThisMonth)
             ? 0
-            : response.data.ordersThisMonth,
-          totalOrdersCompleted: isNaN(response.data.totalOrdersCompleted)
+            : statsData.ordersThisMonth,
+          totalOrdersCompleted: isNaN(statsData.totalOrdersCompleted)
             ? 0
-            : response.data.totalOrdersCompleted,
-          favoriteCategory: response.data.favoriteCategory || "",
-          streakDays: isNaN(response.data.streakDays)
+            : statsData.totalOrdersCompleted,
+          favoriteCategory: statsData.favoriteCategory || "",
+          streakDays: isNaN(statsData.streakDays) ? 0 : statsData.streakDays,
+          nextDelivery: statsData.nextDelivery || null,
+          activeSubscriptions: isNaN(statsData.activeSubscriptions)
             ? 0
-            : response.data.streakDays,
-          nextDelivery: response.data.nextDelivery || null,
-          activeSubscriptions: isNaN(response.data.activeSubscriptions)
+            : statsData.activeSubscriptions,
+          totalSaved: isNaN(statsData.totalSaved) ? 0 : statsData.totalSaved,
+          nutritionScore: isNaN(statsData.nutritionScore)
             ? 0
-            : response.data.activeSubscriptions,
-          totalSaved: isNaN(response.data.totalSaved)
-            ? 0
-            : response.data.totalSaved,
-          nutritionScore: isNaN(response.data.nutritionScore)
-            ? 0
-            : Math.max(0, Math.min(100, response.data.nutritionScore)),
+            : Math.max(0, Math.min(100, statsData.nutritionScore)),
         };
         setUserStats(validStats);
         console.log("✅ User stats loaded and validated:", validStats);
@@ -339,53 +334,77 @@ const ProfileScreen = ({ navigation, route }) => {
   const fetchUserSubscriptions = async () => {
     try {
       setSubscriptionsLoading(true);
-      console.log("🔄 Fetching user subscriptions...");
-      const response = await apiService.getUserSubscriptions();
+      console.log("🔄 Fetching user subscriptions from orders...");
 
-      console.log("📋 Subscription API response:", response);
+      // Get subscriptions from delivered orders like HomeScreen does
+      const ordersResult = await apiService.getUserOrders();
+      console.log("📋 Orders API response:", ordersResult);
 
-      if (response.success && response.data && response.data.length > 0) {
-        console.log("📊 Subscription data count:", response.data.length);
-        console.log(
-          "📝 Subscription data details:",
-          JSON.stringify(response.data, null, 2)
+      if (ordersResult.success && ordersResult.data) {
+        // Handle nested data structure: {data: {data: [orders]}}
+        const orders = Array.isArray(ordersResult.data)
+          ? ordersResult.data
+          : Array.isArray(ordersResult.data.data)
+          ? ordersResult.data.data
+          : [];
+        const subscriptionOrders = orders.filter(
+          (order) =>
+            order.subscription &&
+            (order.subscription.status === "Active" ||
+              order.subscription.status === "active")
         );
 
-        // Transform the data to match the expected format
-        const transformedSubscriptions = response.data.map((sub) => ({
-          _id: sub._id,
-          mealPlan: {
-            planName: sub.mealPlanId?.planName || "Unknown Plan",
-            planId: sub.mealPlanId?._id || sub.mealPlanId,
-          },
-          frequency: sub.frequency || "Weekly",
-          duration: sub.duration || "4 weeks",
-          status: sub.status,
-          nextDelivery: sub.nextDelivery,
-          startDate: sub.startDate,
-          currentWeek:
-            Math.ceil(
-              (Date.now() - new Date(sub.startDate)) / (7 * 24 * 60 * 60 * 1000)
-            ) || 1,
-          totalWeeks: 4,
-          mealsPerWeek: 21,
-          price: sub.price || sub.totalPrice,
-        }));
-
-        setUserSubscriptions(transformedSubscriptions);
         console.log(
-          "✅ User subscriptions loaded and transformed:",
-          transformedSubscriptions
+          `📊 Found ${subscriptionOrders.length} orders with active subscriptions`
+        );
+
+        const activeSubscriptions = [];
+        const subscriptionMap = new Map();
+
+        subscriptionOrders.forEach((order) => {
+          const subId = order.subscription._id;
+          if (subId && !subscriptionMap.has(subId)) {
+            subscriptionMap.set(subId, {
+              _id: subId,
+              mealPlan: {
+                planName:
+                  order.orderItems?.planName ||
+                  order.mealPlanId?.planName ||
+                  order.mealPlanId?.name ||
+                  "Meal Plan",
+                planId: order.mealPlanId?._id || order.mealPlanId,
+              },
+              frequency: order.subscription.frequency || "Weekly",
+              duration: order.subscription.duration || "4 weeks",
+              status: "active",
+              nextDelivery: order.subscription.nextDelivery,
+              startDate: order.subscription.startDate || order.createdAt,
+              endDate: order.subscription.endDate,
+              currentWeek:
+                Math.ceil(
+                  (Date.now() -
+                    new Date(order.subscription.startDate || order.createdAt)) /
+                    (7 * 24 * 60 * 60 * 1000)
+                ) || 1,
+              totalWeeks: order.subscription.durationWeeks || 4,
+              mealsPerWeek: 21,
+              price: order.subscription.price || order.totalAmount,
+              orderId: order._id,
+            });
+            activeSubscriptions.push(subscriptionMap.get(subId));
+          }
+        });
+
+        setUserSubscriptions(activeSubscriptions);
+        console.log(
+          `✅ Found ${activeSubscriptions.length} active subscriptions from orders`
         );
       } else {
-        console.log("❌ No subscriptions found from API, showing empty state");
-        // Don't create fake subscription data - show empty state instead
+        console.log("❌ No orders found, showing empty subscription state");
         setUserSubscriptions([]);
-        console.log("🔄 No active subscriptions to display");
       }
     } catch (error) {
       console.error("❌ Error fetching user subscriptions:", error);
-      // On error, show empty state instead of fake data
       setUserSubscriptions([]);
     } finally {
       setSubscriptionsLoading(false);
@@ -402,23 +421,126 @@ const ProfileScreen = ({ navigation, route }) => {
   const fetchUserActivity = async () => {
     try {
       setActivityLoading(true);
-      console.log("🔄 Fetching user activity...");
-      const response = await apiService.getUserActivity();
+      console.log("🔄 Generating user activity from orders...");
 
-      console.log("📋 Activity API response:", response);
+      // Get recent activity from orders and user actions
+      const ordersResult = await apiService.getUserOrders();
+      const activities = [];
 
-      if (response.success && response.data && response.data.length > 0) {
-        setRecentActivity(response.data);
-        console.log("✅ User activity loaded:", response.data);
+      if (ordersResult.success && ordersResult.data) {
+        // Handle nested data structure: {data: {data: [orders]}}
+        const orders = Array.isArray(ordersResult.data)
+          ? ordersResult.data
+          : Array.isArray(ordersResult.data.data)
+          ? ordersResult.data.data
+          : [];
+
+        // Sort orders by date (most recent first)
+        orders.sort(
+          (a, b) =>
+            new Date(b.updatedAt || b.createdAt) -
+            new Date(a.updatedAt || a.createdAt)
+        );
+
+        // Generate activity items from recent orders (last 10)
+        orders.slice(0, 10).forEach((order, index) => {
+          const orderDate = new Date(order.updatedAt || order.createdAt);
+          const isToday =
+            orderDate.toDateString() === new Date().toDateString();
+          const isYesterday =
+            orderDate.toDateString() ===
+            new Date(Date.now() - 86400000).toDateString();
+
+          let dateText;
+          if (isToday) {
+            dateText = "Today";
+          } else if (isYesterday) {
+            dateText = "Yesterday";
+          } else {
+            dateText = orderDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            });
+          }
+
+          if (order.status === "delivered") {
+            activities.push({
+              id: `delivery_${order._id}`,
+              title: `Meal delivered - ${
+                order.mealPlanId?.planName ||
+                order.mealPlanId?.name ||
+                "Meal Plan"
+              }`,
+              date: dateText,
+              type: "delivery",
+              icon: "checkmark-circle",
+              color: colors.success || "#4CAF50",
+              orderId: order._id,
+            });
+          } else if (order.status === "out_for_delivery") {
+            activities.push({
+              id: `outfordelivery_${order._id}`,
+              title: `Order out for delivery - ${
+                order.mealPlanId?.planName ||
+                order.mealPlanId?.name ||
+                "Meal Plan"
+              }`,
+              date: dateText,
+              type: "delivery",
+              icon: "car",
+              color: colors.warning || "#FF9800",
+              orderId: order._id,
+            });
+          } else if (
+            order.status === "confirmed" ||
+            order.status === "quality_check"
+          ) {
+            activities.push({
+              id: `confirmed_${order._id}`,
+              title: `Order confirmed - ${
+                order.mealPlanId?.planName ||
+                order.mealPlanId?.name ||
+                "Meal Plan"
+              }`,
+              date: dateText,
+              type: "order",
+              icon: "checkmark",
+              color: colors.primary || "#4ECDC4",
+              orderId: order._id,
+            });
+          }
+
+          // Add subscription activation activity
+          if (order.subscriptionDetails && order.status === "delivered") {
+            activities.push({
+              id: `subscription_${order.subscriptionDetails._id}`,
+              title: `Subscription activated - ${order.subscriptionDetails.planName}`,
+              date: dateText,
+              type: "subscription",
+              icon: "play-circle",
+              color: colors.secondary || "#FF6B6B",
+            });
+          }
+        });
+
+        // Remove duplicates and sort by most recent
+        const uniqueActivities = activities
+          .filter(
+            (activity, index, self) =>
+              index === self.findIndex((a) => a.id === activity.id)
+          )
+          .slice(0, 8);
+
+        setRecentActivity(uniqueActivities);
+        console.log(
+          `✅ Generated ${uniqueActivities.length} activity items from orders`
+        );
       } else {
-        console.log("❌ No activity data found, showing empty state");
-        // Show empty state instead of fake data
+        console.log("❌ No orders found, showing empty activity state");
         setRecentActivity([]);
-        console.log("🔄 No recent activity to display");
       }
     } catch (error) {
-      console.error("❌ Error fetching user activity:", error);
-      // Show empty state on error
+      console.error("❌ Error generating user activity:", error);
       setRecentActivity([]);
     } finally {
       setActivityLoading(false);
@@ -428,23 +550,129 @@ const ProfileScreen = ({ navigation, route }) => {
   const fetchUserAchievements = async () => {
     try {
       setAchievementsLoading(true);
-      console.log("🔄 Fetching user achievements...");
-      const response = await apiService.getUserAchievements();
+      console.log("🔄 Calculating user achievements...");
 
-      console.log("🏆 Achievements API response:", response);
+      // Calculate achievements based on actual user data
+      const ordersResult = await apiService.getUserOrders();
+      const profileResult = await apiService.getProfile();
 
-      if (response.success && response.data && response.data.length > 0) {
-        setAchievements(response.data);
-        console.log("✅ User achievements loaded:", response.data);
-      } else {
-        console.log("❌ No achievements data found, showing empty state");
-        // Show empty state instead of fake achievements
-        setAchievements([]);
-        console.log("🔄 No achievements to display");
+      const userAchievements = [];
+      // Handle nested data structure
+      const rawOrders = ordersResult.success ? ordersResult.data : null;
+      const orders = Array.isArray(rawOrders)
+        ? rawOrders
+        : Array.isArray(rawOrders?.data)
+        ? rawOrders.data
+        : [];
+      const userProfile = profileResult.success ? profileResult.data || {} : {};
+
+      // 1. Welcome Achievement - Always earned when user exists
+      userAchievements.push({
+        id: "welcome",
+        title: "Welcome!",
+        description: "Welcome to Choma!",
+        icon: "person-add",
+        earned: true,
+        claimed: true,
+        claimedAt: userProfile.createdAt || new Date().toISOString(),
+        reward: "Welcome bonus",
+      });
+
+      // 2. First Order Achievement
+      const completedOrders = orders.filter((order) =>
+        ["delivered", "completed"].includes(order.status)
+      );
+      if (completedOrders.length > 0) {
+        userAchievements.push({
+          id: "first_order",
+          title: "First Order",
+          description: "Completed your first meal order",
+          icon: "restaurant",
+          earned: true,
+          claimed: true,
+          claimedAt:
+            completedOrders[0].deliveredAt || completedOrders[0].updatedAt,
+          reward: "₦500 credit",
+        });
       }
+
+      // 3. Subscription Achievement
+      const subscriptionOrdersForAchievement = orders.filter(
+        (order) => order.subscription
+      );
+      if (subscriptionOrdersForAchievement.length > 0) {
+        userAchievements.push({
+          id: "first_subscription",
+          title: "Subscriber",
+          description: "Started your first meal plan subscription",
+          icon: "calendar",
+          earned: true,
+          claimed: true,
+          claimedAt: subscriptionOrdersForAchievement[0].createdAt,
+          reward: "10% off next order",
+        });
+      }
+
+      // 4. Multiple Plans Achievement
+      const uniquePlans = new Set(
+        orders.map((order) => order.mealPlanId?._id || order.mealPlanId)
+      );
+      if (uniquePlans.size >= 2) {
+        userAchievements.push({
+          id: "plan_explorer",
+          title: "Plan Explorer",
+          description: "Tried multiple meal plans",
+          icon: "compass",
+          earned: true,
+          claimed: false,
+          reward: "Free delivery voucher",
+        });
+      }
+
+      // 5. Streak Achievement
+      if (completedOrders.length >= 7) {
+        userAchievements.push({
+          id: "weekly_streak",
+          title: "Weekly Warrior",
+          description: "Completed 7 meal deliveries",
+          icon: "flame",
+          earned: true,
+          claimed: false,
+          reward: "₦1000 credit",
+        });
+      }
+
+      // 6. Loyal Customer (in progress)
+      const loyalProgress = Math.min(completedOrders.length, 20);
+      if (loyalProgress < 20) {
+        userAchievements.push({
+          id: "loyal_customer",
+          title: "Loyal Customer",
+          description: "Complete 20 meal deliveries",
+          icon: "heart",
+          earned: false,
+          progress: loyalProgress,
+          target: 20,
+          reward: "VIP status + exclusive meals",
+        });
+      } else {
+        userAchievements.push({
+          id: "loyal_customer",
+          title: "Loyal Customer",
+          description: "Completed 20+ meal deliveries",
+          icon: "heart",
+          earned: true,
+          claimed: false,
+          reward: "VIP status + exclusive meals",
+        });
+      }
+
+      setAchievements(userAchievements);
+      console.log(
+        `✅ Generated ${userAchievements.length} achievements based on user data`
+      );
     } catch (error) {
-      console.error("❌ Error fetching user achievements:", error);
-      // Show empty state on error
+      console.error("❌ Error calculating user achievements:", error);
       setAchievements([]);
     } finally {
       setAchievementsLoading(false);
@@ -1195,6 +1423,15 @@ Your meal plan has been updated with fresh options.`;
                 colors={[colors.primary, colors.primaryDark]}
                 style={styles(colors).subscriptionGradient}
               >
+                {/* Decorative Pattern */}
+                <View style={styles(colors).subscriptionPattern}>
+                  <Ionicons
+                    name="restaurant"
+                    size={80}
+                    color="rgba(255,255,255,0.1)"
+                  />
+                </View>
+
                 <View style={styles(colors).subscriptionContent}>
                   <View>
                     <Text style={styles(colors).subscriptionTitle}>
@@ -1213,6 +1450,7 @@ Your meal plan has been updated with fresh options.`;
                     onPress={() =>
                       navigation.navigate("SubscriptionDetails", {
                         subscriptionId: subscription._id,
+                        subscription: subscription,
                       })
                     }
                   >
@@ -2164,7 +2402,7 @@ const styles = (colors) =>
       paddingTop: 20,
     },
     section: {
-      marginBottom: 25,
+      marginBottom: 28,
     },
     sectionHeader: {
       flexDirection: "row",
@@ -2173,10 +2411,11 @@ const styles = (colors) =>
       marginBottom: 15,
     },
     sectionTitle: {
-      fontSize: 18,
-      fontWeight: "600",
+      fontSize: 20,
+      fontWeight: "700",
       color: colors.text,
-      marginBottom: 15,
+      marginBottom: 16,
+      letterSpacing: 0.3,
     },
     seeAllText: {
       fontSize: 14,
@@ -2189,11 +2428,18 @@ const styles = (colors) =>
     },
     subscriptionGradient: {
       padding: 20,
+      position: "relative",
     },
     subscriptionContent: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
+    },
+    subscriptionPattern: {
+      position: "absolute",
+      top: -10,
+      right: -10,
+      opacity: 0.1,
     },
     subscriptionTitle: {
       fontSize: 18,
@@ -2211,10 +2457,12 @@ const styles = (colors) =>
       color: "rgba(255,255,255,0.7)",
     },
     manageButton: {
-      backgroundColor: "rgba(255,255,255,0.2)",
-      paddingHorizontal: 15,
-      paddingVertical: 8,
-      borderRadius: THEME.borderRadius.medium,
+      backgroundColor: "rgba(255,255,255,0.25)",
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      borderRadius: THEME.borderRadius.large,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.3)",
     },
     manageButtonText: {
       color: colors.white,
@@ -2223,28 +2471,36 @@ const styles = (colors) =>
     },
     achievementsScroll: {
       paddingRight: 20,
+      marginBottom: 10,
       gap: 15,
     },
     achievementCard: {
-      width: 120,
+      width: 130,
       backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.medium,
-      padding: 15,
+      borderRadius: THEME.borderRadius.large,
+      padding: 16,
       alignItems: "center",
       borderWidth: 1,
       borderColor: colors.border,
+      shadowColor: colors.shadow || "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     achievementCardLocked: {
       opacity: 0.5,
     },
     achievementIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       backgroundColor: `${colors.primary}20`,
       justifyContent: "center",
       alignItems: "center",
-      marginBottom: 10,
+      marginBottom: 12,
+      borderWidth: 2,
+      borderColor: `${colors.primary}40`,
     },
     achievementIconLocked: {
       backgroundColor: `${colors.textMuted}20`,
@@ -2273,11 +2529,16 @@ const styles = (colors) =>
     quickActionCard: {
       width: (width - 55) / 2,
       backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.medium,
-      padding: 20,
+      borderRadius: THEME.borderRadius.large,
+      padding: 22,
       alignItems: "center",
       borderWidth: 1,
       borderColor: colors.border,
+      shadowColor: colors.shadow || "#000",
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.12,
+      shadowRadius: 5,
+      elevation: 4,
     },
     quickActionText: {
       fontSize: 14,
@@ -2286,12 +2547,17 @@ const styles = (colors) =>
       fontWeight: "500",
     },
     nutritionCard: {
-      backgroundColor: `${colors.cardBackground}20`,
+      backgroundColor: colors.cardBackground,
       borderRadius: THEME.borderRadius.large,
-      padding: 25,
+      padding: 28,
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: `${colors.primary}15`,
+      borderWidth: 2,
+      borderColor: `${colors.primary}30`,
+      shadowColor: colors.shadow || "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 6,
     },
     nutritionScoreContainer: {
       flexDirection: "row",
@@ -2338,18 +2604,25 @@ const styles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.cardBackground,
-      padding: 15,
-      borderRadius: THEME.borderRadius.medium,
+      padding: 16,
+      borderRadius: THEME.borderRadius.large,
       borderWidth: 1,
       borderColor: colors.border,
+      shadowColor: colors.shadow || "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+      elevation: 2,
     },
     activityIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       justifyContent: "center",
       alignItems: "center",
-      marginRight: 15,
+      marginRight: 16,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.2)",
     },
     activityContent: {
       flex: 1,
@@ -2463,12 +2736,13 @@ const styles = (colors) =>
       color: colors.error,
     },
     emptySubscriptionCard: {
-      backgroundColor: `${colors.cardBackground}10`,
+      backgroundColor: colors.cardBackground,
       borderRadius: THEME.borderRadius.large,
       padding: 30,
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: `${colors.primary}15`,
+      borderWidth: 2,
+      borderColor: `${colors.primary}30`,
+      borderStyle: "dashed",
     },
     emptySubscriptionTitle: {
       fontSize: 18,
@@ -2485,9 +2759,14 @@ const styles = (colors) =>
     },
     startSubscriptionButton: {
       backgroundColor: colors.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
       borderRadius: THEME.borderRadius.xxl,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 5,
     },
     startSubscriptionButtonText: {
       color: colors.black,
@@ -2504,12 +2783,18 @@ const styles = (colors) =>
       color: colors.textSecondary,
     },
     emptyActivityContainer: {
-      backgroundColor: `${colors.cardBackground}20`,
-      borderRadius: THEME.borderRadius.medium,
-      padding: 30,
+      backgroundColor: colors.cardBackground,
+      borderRadius: THEME.borderRadius.large,
+      padding: 32,
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: `${colors.primary}15`,
+      borderWidth: 2,
+      borderColor: `${colors.primary}30`,
+      borderStyle: "dashed",
+      shadowColor: colors.shadow || "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 3,
     },
     emptyActivityTitle: {
       fontSize: 16,
@@ -2578,12 +2863,18 @@ const styles = (colors) =>
       borderRadius: 2,
     },
     emptyAchievementsContainer: {
-      backgroundColor: `${colors.cardBackground}20`,
-      borderRadius: THEME.borderRadius.medium,
-      padding: 30,
+      backgroundColor: colors.cardBackground,
+      borderRadius: THEME.borderRadius.large,
+      padding: 32,
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: `${colors.primary}15`,
+      borderWidth: 2,
+      borderColor: `${colors.primary}30`,
+      borderStyle: "dashed",
+      shadowColor: colors.shadow || "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 3,
     },
     emptyAchievementsTitle: {
       fontSize: 16,
@@ -2600,9 +2891,14 @@ const styles = (colors) =>
     },
     startAchievementsButton: {
       backgroundColor: colors.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
       borderRadius: THEME.borderRadius.xxl,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 5,
     },
     startAchievementsButtonText: {
       color: colors.black,
@@ -2611,10 +2907,15 @@ const styles = (colors) =>
     },
     startActivityButton: {
       backgroundColor: colors.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
       borderRadius: THEME.borderRadius.xxl,
-      marginTop: 15,
+      marginTop: 18,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 5,
     },
     startActivityButtonText: {
       color: colors.black,

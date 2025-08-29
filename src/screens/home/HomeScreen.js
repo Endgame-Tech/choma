@@ -444,17 +444,58 @@ const HomeScreen = ({ navigation }) => {
   const loadActiveSubscriptions = async () => {
     try {
       setSubscriptionLoading(true);
-      const result = await apiService.getUserSubscriptions();
+      
+      // SOLUTION: Extract subscription data from delivered orders since that's where the real data is
+      const ordersResult = await apiService.getUserOrders();
+      const subscriptionsFromOrders = [];
+      
+      if (ordersResult.success) {
+        const orders = ordersResult.data?.data || ordersResult.data || ordersResult.orders || [];
+        
+        console.log('🔍 Orders data structure:', {
+          hasData: !!ordersResult.data,
+          dataType: typeof ordersResult.data,
+          isArray: Array.isArray(orders),
+          ordersLength: orders?.length,
+          firstOrderHasSubscription: orders?.[0]?.subscription ? 'YES' : 'NO'
+        });
+        
+        // Extract unique subscriptions from orders - only if orders is an array
+        if (Array.isArray(orders)) {
+          const uniqueSubscriptions = new Map();
+          
+          orders.forEach(order => {
+            if (order.subscription && order.subscription.status === 'Active') {
+              const subId = order.subscription._id;
+              if (!uniqueSubscriptions.has(subId)) {
+                // Enrich subscription with meal plan data from order
+                const enrichedSubscription = {
+                  ...order.subscription,
+                  mealPlanId: order.subscription.mealPlanId || {
+                    _id: order.orderItems?.mealPlan,
+                    name: order.orderItems?.planName,
+                    planName: order.orderItems?.planName
+                  }
+                };
+                uniqueSubscriptions.set(subId, enrichedSubscription);
+              }
+            }
+          });
+          
+          subscriptionsFromOrders.push(...uniqueSubscriptions.values());
+        }
+      }
 
+      // Also try the subscriptions endpoint as fallback
+      const result = await apiService.getUserSubscriptions();
+      let apiSubscriptions = [];
+      
       if (result.success) {
-        // Handle different response structures - API returns nested data
         const subscriptions =
           result.data?.data || result.data || result.subscriptions || [];
 
-        // Ensure subscriptions is an array
-        if (Array.isArray(subscriptions) && subscriptions.length > 0) {
-          // Find all active subscriptions (check for multiple status variations)
-          const targetSubscriptionsList = subscriptions.filter((sub) => {
+        if (Array.isArray(subscriptions)) {
+          apiSubscriptions = subscriptions.filter((sub) => {
             const status = sub.status?.toLowerCase();
             return (
               status === "active" ||
@@ -462,28 +503,60 @@ const HomeScreen = ({ navigation }) => {
               sub.paymentStatus === "Paid"
             );
           });
-
-          setActiveSubscriptions(targetSubscriptionsList);
-        } else if (!Array.isArray(subscriptions)) {
-          // If it's a single subscription object
+        } else if (subscriptions && typeof subscriptions === 'object') {
           const status = subscriptions?.status?.toLowerCase();
-          if (
-            subscriptions &&
-            (status === "active" ||
-              status === "paid" ||
-              subscriptions.paymentStatus === "Paid")
-          ) {
-            setActiveSubscriptions([subscriptions]);
-          } else {
-            setActiveSubscriptions([]);
+          if (status === "active" || status === "paid" || subscriptions.paymentStatus === "Paid") {
+            apiSubscriptions = [subscriptions];
           }
-        } else {
-          setActiveSubscriptions([]);
         }
-      } else {
-        setActiveSubscriptions([]);
       }
+
+      // Combine and deduplicate subscriptions from both sources
+      const allSubscriptions = [...subscriptionsFromOrders, ...apiSubscriptions];
+      const uniqueSubscriptionsMap = new Map();
+      
+      allSubscriptions.forEach(sub => {
+        const subId = sub._id || sub.subscriptionId;
+        if (subId && !uniqueSubscriptionsMap.has(subId)) {
+          uniqueSubscriptionsMap.set(subId, sub);
+        }
+      });
+      
+      const finalSubscriptions = Array.from(uniqueSubscriptionsMap.values());
+      
+      // CRITICAL FIX: Fetch full meal plan data for each subscription
+      const enrichedSubscriptions = await Promise.all(
+        finalSubscriptions.map(async (subscription) => {
+          try {
+            const mealPlanId = subscription.mealPlanId?._id || subscription.mealPlanId;
+            if (mealPlanId) {
+              const mealPlanResult = await apiService.getMealPlanById(mealPlanId);
+              if (mealPlanResult.success && mealPlanResult.data) {
+                return {
+                  ...subscription,
+                  mealPlanId: mealPlanResult.data
+                };
+              }
+            }
+            return subscription;
+          } catch (error) {
+            console.error('❌ Error fetching meal plan for subscription:', error);
+            return subscription;
+          }
+        })
+      );
+      
+      setActiveSubscriptions(enrichedSubscriptions);
+      
+      console.log('🎯 Active subscriptions found:', enrichedSubscriptions.length);
+      console.log('📦 Subscription sources:', {
+        fromOrders: subscriptionsFromOrders.length,
+        fromAPI: apiSubscriptions.length,
+        final: enrichedSubscriptions.length
+      });
+      
     } catch (error) {
+      console.error('❌ Error loading subscriptions:', error);
       setActiveSubscriptions([]);
     } finally {
       setSubscriptionLoading(false);
@@ -652,7 +725,7 @@ const HomeScreen = ({ navigation }) => {
           <TouchableOpacity
             key={subscription._id}
             style={styles(colors).subscriptionListCard}
-            onPress={() => navigation.navigate('SubscriptionDetails', { 
+            onPress={() => navigation.navigate('SubscriptionTracking', { 
               subscriptionId: subscription._id,
               subscription 
             })}
@@ -794,33 +867,6 @@ const HomeScreen = ({ navigation }) => {
     const currentWeek = weeklyMeals[`week${currentWeekNumber}`] || {};
     const todaysMealsData = currentWeek[dayName] || {};
 
-    // Debug today's meals
-    console.log("\n=== TODAY'S MEALS DEBUG ===");
-    console.log("Subscription start date:", startDate.toDateString());
-    console.log("Today's date:", today.toDateString());
-    console.log("Days since subscription started:", daysDiff);
-    console.log("Current subscription day:", subscriptionDay);
-    console.log(
-      "Week number:",
-      weekNumber,
-      "-> Mapped to week:",
-      currentWeekNumber
-    );
-    console.log("Day in week:", dayInWeek);
-    console.log(
-      "Looking for meals in: week" + currentWeekNumber + "." + dayName
-    );
-    console.log(
-      "Weekly meals structure:",
-      JSON.stringify(weeklyMeals, null, 2)
-    );
-    console.log("Current week data:", JSON.stringify(currentWeek, null, 2));
-    console.log(
-      "Today's meals data:",
-      JSON.stringify(todaysMealsData, null, 2)
-    );
-    console.log("=== END TODAY'S MEALS DEBUG ===\n");
-
     // Get meal images from the meal plan
     const mealImages = primarySubscription.mealPlanId.mealImages || {};
     const todayMealImages = mealImages[dayName] || {};
@@ -873,10 +919,19 @@ const HomeScreen = ({ navigation }) => {
 
     // Helper function to get actual meal name (no fallback to template)
     const getMealName = (mealType) => {
-      // Database uses capitalized meal types: Breakfast, Lunch, Dinner
-      const capitalizedMealType =
-        mealType.charAt(0).toUpperCase() + mealType.slice(1);
-      const mealData = todaysMealsData[capitalizedMealType];
+      // Try both lowercase and capitalized meal types
+      const lowercaseMealType = mealType.toLowerCase();
+      const capitalizedMealType = mealType.charAt(0).toUpperCase() + mealType.slice(1);
+      
+      const mealData = todaysMealsData[lowercaseMealType] || todaysMealsData[capitalizedMealType];
+
+      console.log(`🍽️ getMealName for ${mealType}:`, {
+        lowercaseMealType,
+        capitalizedMealType,
+        mealData,
+        hasData: !!mealData,
+        title: mealData?.title
+      });
 
       if (mealData) {
         // Try different possible field names for meal name
@@ -884,23 +939,27 @@ const HomeScreen = ({ navigation }) => {
         if (typeof mealData === "string") {
           return mealData;
         } else if (typeof mealData === "object") {
-          return (
+          const result = (
             mealData.name ||
             mealData.meal ||
             mealData.title ||
             mealData.description
           );
+          console.log(`📝 Meal name result for ${mealType}:`, result);
+          return result;
         }
       }
+      console.log(`❌ No meal found for ${mealType}`);
       return null;
     };
 
     // Helper function to get actual meal calories
     const getMealCalories = (mealType) => {
-      // Database uses capitalized meal types: Breakfast, Lunch, Dinner
-      const capitalizedMealType =
-        mealType.charAt(0).toUpperCase() + mealType.slice(1);
-      const mealData = todaysMealsData[capitalizedMealType];
+      // Try both lowercase and capitalized meal types
+      const lowercaseMealType = mealType.toLowerCase();
+      const capitalizedMealType = mealType.charAt(0).toUpperCase() + mealType.slice(1);
+      
+      const mealData = todaysMealsData[lowercaseMealType] || todaysMealsData[capitalizedMealType];
 
       if (mealData && typeof mealData === "object" && mealData.calories) {
         return mealData.calories;
@@ -999,12 +1058,49 @@ const HomeScreen = ({ navigation }) => {
         </Text>
         <Text style={styles(colors).deliveryStatus}>{deliveryStatus}</Text>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles(colors).mealsScroll}
-        >
-          {Object.entries(todaysMeals).map(([mealType, meal]) => (
+        {/* Dynamic layout: ScrollView for multiple meals, full width for single meal */}
+        {availableMeals.length === 1 ? (
+          // Single meal - full width card
+          <View style={styles(colors).singleMealContainer}>
+            {availableMeals.map(([mealType, meal]) => (
+              <TouchableOpacity
+                key={mealType}
+                style={styles(colors).fullWidthMealCard}
+              >
+                <View style={styles(colors).todayMealImageContainer}>
+                  <Image
+                    source={meal.image}
+                    style={styles(colors).todayMealImage}
+                  />
+                  <LinearGradient
+                    colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.7)"]}
+                    style={styles(colors).todayMealOverlay}
+                  >
+                    <View style={styles(colors).mealTimeContainer}>
+                      <Text style={styles(colors).mealTime}>{meal.time}</Text>
+                    </View>
+                    <Text style={styles(colors).mealType}>
+                      {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                    </Text>
+                    <Text style={styles(colors).todayMealName} numberOfLines={2}>
+                      {meal.name}
+                    </Text>
+                    <Text style={styles(colors).mealCalories}>
+                      {meal.calories} cal
+                    </Text>
+                  </LinearGradient>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          // Multiple meals - horizontal scroll
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles(colors).mealsScroll}
+          >
+            {availableMeals.map(([mealType, meal]) => (
             <TouchableOpacity
               key={mealType}
               style={styles(colors).todayMealCard}
@@ -1033,8 +1129,9 @@ const HomeScreen = ({ navigation }) => {
                 </LinearGradient>
               </View>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        )}
       </View>
     );
   };
@@ -1764,17 +1861,18 @@ const HomeScreen = ({ navigation }) => {
             return (
               // Subscription-focused UI
               <>
-                {/* Active Orders Tracking */}
-                {renderActiveOrdersSection()}
-
+                {/* Today's Meals Section - only show for single subscription */}
+                {activeSubscriptions.length === 1 && renderTodaysMeals()}
+                
                 {/* Multiple Subscription Cards Section */}
                 {renderSubscriptionCards()}
 
-                {/* Today's Meals Section - only for primary subscription */}
-                {renderTodaysMeals()}
 
                 {/* Quick Stats - aggregate from all subscriptions */}
                 {renderAggregateStats()}
+
+                {/* Active Orders Tracking */}
+                {renderActiveOrdersSection()}
 
                 {/* Browse Meal Plans Button */}
                 <View style={styles(colors).browseSection}>
@@ -2465,15 +2563,16 @@ const styles = (colors) =>
     },
     todayMealOverlay: {
       position: "absolute",
-      top: 0,
+      // top: 0,
       bottom: 0,
       left: 0,
       right: 0,
       padding: 15,
-      justifyContent: "space-between",
+      // justifyContent: ",
     },
     mealTimeContainer: {
       alignSelf: "flex-start",
+      top: 0,
       backgroundColor: "rgba(255, 255, 255, 0.9)",
       paddingHorizontal: 12,
       paddingVertical: 2,
@@ -2482,7 +2581,7 @@ const styles = (colors) =>
     mealTime: {
       fontSize: 12,
       fontWeight: "600",
-      color: colors.black,
+      color: '#1b1b1b',
     },
     mealType: {
       fontSize: 16,
@@ -2911,6 +3010,22 @@ const styles = (colors) =>
     activeOrdersSection: {
       paddingHorizontal: 20,
       paddingVertical: 15,
+    },
+    // Single Meal Layout Styles
+    singleMealContainer: {
+      paddingHorizontal: 0,
+    },
+    fullWidthMealCard: {
+      width: width - 40, // Full width minus section padding
+      height: 200,
+      borderRadius: 16,
+      overflow: "hidden",
+      marginHorizontal: 20,
+      elevation: 4,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
     },
     orderCard: {
       marginBottom: 12,

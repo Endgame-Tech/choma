@@ -36,6 +36,7 @@ import CheckoutScreen from "../screens/subscription/CheckoutScreen";
 import PaymentScreen from "../screens/subscription/PaymentScreen";
 import SubscriptionSuccessScreen from "../screens/subscription/SubscriptionSuccessScreen";
 import SubscriptionDetailsScreen from "../screens/subscription/SubscriptionDetailsScreen";
+import SubscriptionTrackingScreen from "../screens/subscription/SubscriptionTrackingScreen";
 
 // Dashboard screens
 import DashboardScreen from "../screens/dashboard/DashboardScreen";
@@ -510,6 +511,13 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
           <Stack.Screen
             name="SubscriptionDetails"
             component={SubscriptionDetailsScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="SubscriptionTracking"
+            component={SubscriptionTrackingScreen}
             options={{
               headerShown: false,
             }}
