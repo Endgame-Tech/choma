@@ -33,6 +33,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import NotificationService from "../../services/notificationService";
 import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
 import { useAlert } from "../../contexts/AlertContext";
+import OrderTrackingCard from "../../components/orders/OrderTrackingCard";
 
 const { width } = Dimensions.get("window");
 
@@ -54,7 +55,7 @@ const HomeScreen = ({ navigation }) => {
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const [banners, setBanners] = useState([]);
   const [bannersLoading, setBannersLoading] = useState(true);
-  const [activeSubscription, setActiveSubscription] = useState(null);
+  const [activeSubscriptions, setActiveSubscriptions] = useState([]);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [showSubscriptionMenu, setShowSubscriptionMenu] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
@@ -211,7 +212,7 @@ const HomeScreen = ({ navigation }) => {
   // Load banners, subscription, and orders from backend
   useEffect(() => {
     loadBanners();
-    loadActiveSubscription();
+    loadActiveSubscriptions();
     loadActiveOrders();
   }, []);
 
@@ -295,12 +296,13 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const confirmPauseSubscription = async () => {
-    if (!activeSubscription || !pauseReason) return;
+    const primarySubscription = activeSubscriptions[0];
+    if (!primarySubscription || !pauseReason) return;
 
     try {
       // Update subscription status
       const result = await apiService.updateSubscription(
-        activeSubscription._id,
+        primarySubscription._id,
         {
           status: "paused",
           pauseReason,
@@ -310,15 +312,19 @@ const HomeScreen = ({ navigation }) => {
       );
 
       if (result.success) {
-        setActiveSubscription({ ...activeSubscription, status: "paused" });
+        // Update the subscription in the list
+        const updatedSubscriptions = activeSubscriptions.map(sub => 
+          sub._id === primarySubscription._id ? { ...sub, status: "paused" } : sub
+        );
+        setActiveSubscriptions(updatedSubscriptions);
 
         // Send notifications to all stakeholders
         await NotificationService.notifySubscriptionPause(
-          activeSubscription._id,
+          primarySubscription._id,
           pauseReason,
           pauseDuration,
           {
-            id: activeSubscription.userId,
+            id: primarySubscription.userId,
             name: "User", // You might want to get actual user name
           }
         );
@@ -333,41 +339,43 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleModifySubscription = async () => {
-    if (!activeSubscription) return;
+    const primarySubscription = activeSubscriptions[0];
+    if (!primarySubscription) return;
 
     // Navigate to subscription modification screen
     navigation.navigate("MealPlanDetail", {
-      bundle: activeSubscription.mealPlanId,
-      subscriptionId: activeSubscription._id,
+      bundle: primarySubscription.mealPlanId,
+      subscriptionId: primarySubscription._id,
       isModification: true,
     });
 
     // Send notification about modification attempt
     await NotificationService.notifySubscriptionModification(
-      activeSubscription._id,
+      primarySubscription._id,
       { action: "modification_started" },
       {
-        id: activeSubscription.userId,
+        id: primarySubscription.userId,
         name: "User",
       }
     );
   };
 
   const handleScheduleSubscription = async () => {
-    if (!activeSubscription) return;
+    const primarySubscription = activeSubscriptions[0];
+    if (!primarySubscription) return;
 
     // Navigate to scheduling screen
     navigation.navigate("Profile", {
       tab: "schedule",
-      subscriptionId: activeSubscription._id,
+      subscriptionId: primarySubscription._id,
     });
 
     // Send notification about schedule change attempt
     await NotificationService.notifyScheduleChange(
-      activeSubscription._id,
+      primarySubscription._id,
       { action: "schedule_modification_started" },
       {
-        id: activeSubscription.userId,
+        id: primarySubscription.userId,
         name: "User",
       }
     );
@@ -425,14 +433,15 @@ const HomeScreen = ({ navigation }) => {
   ];
 
   const handleCancelSubscription = async () => {
-    if (!activeSubscription) return;
+    const primarySubscription = activeSubscriptions[0];
+    if (!primarySubscription) return;
 
     // Show confirmation dialog first
     // For now, just log
-    console.log("Cancel subscription requested");
+    console.log("Cancel subscription requested for:", primarySubscription._id);
   };
 
-  const loadActiveSubscription = async () => {
+  const loadActiveSubscriptions = async () => {
     try {
       setSubscriptionLoading(true);
       const result = await apiService.getUserSubscriptions();
@@ -444,8 +453,8 @@ const HomeScreen = ({ navigation }) => {
 
         // Ensure subscriptions is an array
         if (Array.isArray(subscriptions) && subscriptions.length > 0) {
-          // Find the first active subscription (check for multiple status variations)
-          const activeSubscriptions = subscriptions.filter((sub) => {
+          // Find all active subscriptions (check for multiple status variations)
+          const targetSubscriptionsList = subscriptions.filter((sub) => {
             const status = sub.status?.toLowerCase();
             return (
               status === "active" ||
@@ -454,12 +463,7 @@ const HomeScreen = ({ navigation }) => {
             );
           });
 
-          if (activeSubscriptions.length > 0) {
-            const subscription = activeSubscriptions[0];
-            setActiveSubscription(subscription);
-          } else {
-            setActiveSubscription(null);
-          }
+          setActiveSubscriptions(targetSubscriptionsList);
         } else if (!Array.isArray(subscriptions)) {
           // If it's a single subscription object
           const status = subscriptions?.status?.toLowerCase();
@@ -469,18 +473,18 @@ const HomeScreen = ({ navigation }) => {
               status === "paid" ||
               subscriptions.paymentStatus === "Paid")
           ) {
-            setActiveSubscription(subscriptions);
+            setActiveSubscriptions([subscriptions]);
           } else {
-            setActiveSubscription(null);
+            setActiveSubscriptions([]);
           }
         } else {
-          setActiveSubscription(null);
+          setActiveSubscriptions([]);
         }
       } else {
-        setActiveSubscription(null);
+        setActiveSubscriptions([]);
       }
     } catch (error) {
-      setActiveSubscription(null);
+      setActiveSubscriptions([]);
     } finally {
       setSubscriptionLoading(false);
     }
@@ -519,13 +523,13 @@ const HomeScreen = ({ navigation }) => {
       // Process subscription-based orders (create virtual order from subscription)
       if (subscriptionsResult.success && !allActiveOrders.length) {
         const subscriptions = subscriptionsResult.data?.data || subscriptionsResult.data || subscriptionsResult.subscriptions || [];
-        const activeSubscriptions = Array.isArray(subscriptions) ? subscriptions.filter((sub) => {
+        const activeSubscriptionsList = Array.isArray(subscriptions) ? subscriptions.filter((sub) => {
           const status = sub.status?.toLowerCase();
           return status === "active" || status === "paid" || sub.paymentStatus === "Paid";
         }) : [];
 
         // Convert active subscriptions to virtual orders for tracking
-        const subscriptionOrders = activeSubscriptions.map(subscription => ({
+        const subscriptionOrders = activeSubscriptionsList.map(subscription => ({
           _id: `sub_${subscription._id}`,
           orderNumber: subscription.subscriptionId || `SUB${subscription._id?.slice(-8)}`,
           status: 'preparing', // Default status for active subscriptions
@@ -592,12 +596,173 @@ const HomeScreen = ({ navigation }) => {
   }, [banners?.length]);
 
   // Subscription-focused UI components
+  const renderActiveOrdersSection = () => {
+    if (!activeOrders.length) return null;
+
+    return (
+      <View style={styles(colors).activeOrdersSection}>
+        <Text style={styles(colors).sectionTitle}>Active Orders</Text>
+        {activeOrders.map((order) => (
+          <OrderTrackingCard
+            key={order._id}
+            order={order}
+            onContactSupport={() => navigation.navigate('Support')}
+            onReorder={(order) => {
+              // Handle reorder logic
+              navigation.navigate('MealPlanDetail', { 
+                bundle: order.mealPlan 
+              });
+            }}
+            onCancelOrder={(orderId) => {
+              // Handle order cancellation
+              console.log('Cancel order requested:', orderId);
+            }}
+            onRateOrder={(order) => {
+              // Handle order rating
+              navigation.navigate('OrderDetail', { 
+                orderId: order._id 
+              });
+            }}
+            onTrackDriver={(driver) => {
+              // Handle driver tracking
+              navigation.navigate('TrackingScreen', { 
+                orderId: order._id 
+              });
+            }}
+            style={styles(colors).orderCard}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  const renderSubscriptionCards = () => {
+    if (!activeSubscriptions.length) return null;
+
+    if (activeSubscriptions.length === 1) {
+      // Single subscription - show detailed card
+      return renderSubscriptionStatus(activeSubscriptions[0]);
+    }
+
+    // Multiple subscriptions - show card list
+    return (
+      <View style={styles(colors).subscriptionsSection}>
+        <Text style={styles(colors).sectionTitle}>Your Meal Plans</Text>
+        {activeSubscriptions.map((subscription, index) => (
+          <TouchableOpacity
+            key={subscription._id}
+            style={styles(colors).subscriptionListCard}
+            onPress={() => navigation.navigate('SubscriptionDetails', { 
+              subscriptionId: subscription._id,
+              subscription 
+            })}
+            activeOpacity={0.8}
+          >
+            <View style={styles(colors).subscriptionCardContent}>
+              <View style={styles(colors).subscriptionCardImage}>
+                <Image
+                  source={{
+                    uri: subscription.mealPlanId?.planImageUrl || subscription.mealPlanId?.image
+                  }}
+                  style={styles(colors).subscriptionCardImageStyle}
+                  defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+                />
+              </View>
+              
+              <View style={styles(colors).subscriptionCardDetails}>
+                <Text style={styles(colors).subscriptionCardTitle} numberOfLines={1}>
+                  {subscription.mealPlanId?.planName || subscription.mealPlanId?.name || "Meal Plan"}
+                </Text>
+                
+                <Text style={styles(colors).subscriptionCardSubtitle}>
+                  {(() => {
+                    const endDate = new Date(subscription.endDate);
+                    const currentDate = new Date();
+                    const daysRemaining = Math.max(0, Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24)));
+                    return daysRemaining > 0 ? `${daysRemaining} days remaining` : "Plan completed";
+                  })()}
+                </Text>
+                
+                <View style={styles(colors).subscriptionCardMeta}>
+                  <View style={[styles(colors).subscriptionStatusBadge, { 
+                    backgroundColor: subscription.status === 'active' ? colors.success + '20' : colors.warning + '20'
+                  }]}>
+                    <Text style={[styles(colors).subscriptionStatusText, {
+                      color: subscription.status === 'active' ? colors.success : colors.warning
+                    }]}>
+                      {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                    </Text>
+                  </View>
+                  
+                  <Text style={styles(colors).subscriptionCardPrice}>
+                    ₦{(subscription.totalPrice || subscription.price || 0).toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+              
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.textMuted}
+                style={styles(colors).subscriptionCardChevron}
+              />
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const renderAggregateStats = () => {
+    if (!activeSubscriptions.length) return null;
+
+    // Calculate aggregate stats from all subscriptions
+    const aggregateStats = activeSubscriptions.reduce((acc, subscription) => {
+      const metrics = subscription.metrics || {};
+      return {
+        totalMealsDelivered: acc.totalMealsDelivered + (metrics.totalMealsDelivered || 0),
+        totalSpent: acc.totalSpent + (metrics.totalSpent || subscription.totalPrice || subscription.price || 0),
+        maxConsecutiveDays: Math.max(acc.maxConsecutiveDays, metrics.consecutiveDays || 0)
+      };
+    }, { totalMealsDelivered: 0, totalSpent: 0, maxConsecutiveDays: 0 });
+
+    return (
+      <View style={styles(colors).quickStatsSection}>
+        <Text style={styles(colors).sectionTitle}>Your Progress</Text>
+        <View style={styles(colors).statsGrid}>
+          <View style={styles(colors).statCard}>
+            <Text style={styles(colors).statNumber}>
+              {aggregateStats.totalMealsDelivered}
+            </Text>
+            <Text style={styles(colors).statLabel}>
+              Meals Delivered
+            </Text>
+          </View>
+          <View style={styles(colors).statCard}>
+            <Text style={styles(colors).statNumber}>
+              ₦{aggregateStats.totalSpent.toLocaleString()}
+            </Text>
+            <Text style={styles(colors).statLabel}>Total Spent</Text>
+          </View>
+          <View style={styles(colors).statCard}>
+            <Text style={styles(colors).statNumber}>
+              {aggregateStats.maxConsecutiveDays}
+            </Text>
+            <Text style={styles(colors).statLabel}>Best Streak</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const renderTodaysMeals = () => {
-    if (!activeSubscription?.mealPlanId) return null;
+    // Use the first active subscription for today's meals
+    const primarySubscription = activeSubscriptions[0];
+    if (!primarySubscription?.mealPlanId) return null;
 
     // Calculate subscription day based on start date
     const today = new Date();
-    const startDate = new Date(activeSubscription.startDate);
+    const startDate = new Date(primarySubscription.startDate);
 
     // Calculate how many days into the subscription we are (starting from day 1)
     const timeDiff = today.getTime() - startDate.getTime();
@@ -625,7 +790,7 @@ const HomeScreen = ({ navigation }) => {
     const dayName = dayNames[dayInWeek - 1]; // dayInWeek is 1-7, array is 0-6
 
     // Get today's meals from the subscription's meal plan
-    const weeklyMeals = activeSubscription.mealPlanId.weeklyMeals || {};
+    const weeklyMeals = primarySubscription.mealPlanId.weeklyMeals || {};
     const currentWeek = weeklyMeals[`week${currentWeekNumber}`] || {};
     const todaysMealsData = currentWeek[dayName] || {};
 
@@ -657,7 +822,7 @@ const HomeScreen = ({ navigation }) => {
     console.log("=== END TODAY'S MEALS DEBUG ===\n");
 
     // Get meal images from the meal plan
-    const mealImages = activeSubscription.mealPlanId.mealImages || {};
+    const mealImages = primarySubscription.mealPlanId.mealImages || {};
     const todayMealImages = mealImages[dayName] || {};
 
     // Debug meal images structure
@@ -672,7 +837,7 @@ const HomeScreen = ({ navigation }) => {
       ":",
       JSON.stringify(todayMealImages, null, 2)
     );
-    console.log("Plan image URL:", activeSubscription.mealPlanId.planImageUrl);
+    console.log("Plan image URL:", primarySubscription.mealPlanId.planImageUrl);
     console.log("=== END MEAL IMAGES DEBUG ===\n");
 
     // Helper function to get meal image
@@ -694,12 +859,12 @@ const HomeScreen = ({ navigation }) => {
       }
 
       // Fallback to plan image if specific meal image not found
-      if (activeSubscription.mealPlanId.planImageUrl) {
+      if (primarySubscription.mealPlanId.planImageUrl) {
         console.log(
           "Using plan image URL as fallback:",
-          activeSubscription.mealPlanId.planImageUrl
+          primarySubscription.mealPlanId.planImageUrl
         );
-        return { uri: activeSubscription.mealPlanId.planImageUrl };
+        return { uri: primarySubscription.mealPlanId.planImageUrl };
       }
 
       console.log("Using default image fallback");
@@ -808,7 +973,7 @@ const HomeScreen = ({ navigation }) => {
     }
 
     // Calculate delivery status based on real subscription data
-    const nextDelivery = new Date(activeSubscription.nextDelivery);
+    const nextDelivery = new Date(primarySubscription.nextDelivery);
     const isToday = nextDelivery.toDateString() === today.toDateString();
     const deliveryTime = nextDelivery.toLocaleTimeString("en-US", {
       hour: "numeric",
@@ -874,12 +1039,13 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  const renderSubscriptionStatus = () => {
-    if (!activeSubscription) return null;
+  const renderSubscriptionStatus = (subscription = null) => {
+    const targetSubscription = subscription || activeSubscriptions[0];
+    if (!targetSubscription) return null;
 
     // Calculate real days remaining and progress
-    const startDate = new Date(activeSubscription.startDate);
-    const endDate = new Date(activeSubscription.endDate);
+    const startDate = new Date(targetSubscription.startDate);
+    const endDate = new Date(targetSubscription.endDate);
     const currentDate = new Date();
 
     const totalDuration = Math.ceil(
@@ -908,7 +1074,7 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles(colors).subscriptionHeader}>
               <View>
                 <Text style={styles(colors).subscriptionPlanName}>
-                  {activeSubscription.mealPlanId?.planName || "Your Meal Plan"}
+                  {targetSubscription.mealPlanId?.planName || "Your Meal Plan"}
                 </Text>
                 <Text style={styles(colors).subscriptionDuration}>
                   {daysRemaining > 0
@@ -1458,7 +1624,7 @@ const HomeScreen = ({ navigation }) => {
             refreshing={refreshing || subscriptionLoading}
             onRefresh={() => {
               refreshMealPlans();
-              loadActiveSubscription();
+              loadActiveSubscriptions();
               loadActiveOrders();
             }}
             colors={[colors.primary]}
@@ -1592,56 +1758,23 @@ const HomeScreen = ({ navigation }) => {
           }
 
           // Calculate subscription progress for use in multiple components
-          if (!subscriptionLoading && activeSubscription) {
-            const startDate = new Date(activeSubscription.startDate);
-            const endDate = new Date(activeSubscription.endDate);
-            const currentDate = new Date();
-            const daysElapsed = Math.ceil(
-              (currentDate - startDate) / (1000 * 60 * 60 * 24)
-            );
+          if (!subscriptionLoading && activeSubscriptions.length > 0) {
+            // Show subscription-focused UI when user has active subscriptions
 
             return (
               // Subscription-focused UI
               <>
+                {/* Active Orders Tracking */}
+                {renderActiveOrdersSection()}
 
-                {/* Today's Meals Section */}
+                {/* Multiple Subscription Cards Section */}
+                {renderSubscriptionCards()}
+
+                {/* Today's Meals Section - only for primary subscription */}
                 {renderTodaysMeals()}
 
-                {/* Subscription Status Card */}
-                {renderSubscriptionStatus()}
-
-                {/* Quick Stats */}
-                <View style={styles(colors).quickStatsSection}>
-                  <Text style={styles(colors).sectionTitle}>Your Progress</Text>
-                  <View style={styles(colors).statsGrid}>
-                    <View style={styles(colors).statCard}>
-                      <Text style={styles(colors).statNumber}>
-                        {activeSubscription.metrics?.totalMealsDelivered || 0}
-                      </Text>
-                      <Text style={styles(colors).statLabel}>
-                        Meals Delivered
-                      </Text>
-                    </View>
-                    <View style={styles(colors).statCard}>
-                      <Text style={styles(colors).statNumber}>
-                        ₦
-                        {(
-                          activeSubscription.metrics?.totalSpent ||
-                          activeSubscription.totalPrice ||
-                          0
-                        ).toLocaleString()}
-                      </Text>
-                      <Text style={styles(colors).statLabel}>Total Spent</Text>
-                    </View>
-                    <View style={styles(colors).statCard}>
-                      <Text style={styles(colors).statNumber}>
-                        {activeSubscription.metrics?.consecutiveDays ||
-                          Math.max(0, daysElapsed)}
-                      </Text>
-                      <Text style={styles(colors).statLabel}>Day Streak</Text>
-                    </View>
-                  </View>
-                </View>
+                {/* Quick Stats - aggregate from all subscriptions */}
+                {renderAggregateStats()}
 
                 {/* Browse Meal Plans Button */}
                 <View style={styles(colors).browseSection}>
@@ -2773,6 +2906,82 @@ const styles = (colors) =>
     bannerIndicatorActive: {
       backgroundColor: colors.primary,
       opacity: 1,
+    },
+    // Active Orders Section Styles
+    activeOrdersSection: {
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+    },
+    orderCard: {
+      marginBottom: 12,
+    },
+    // Multiple Subscription Cards Styles
+    subscriptionsSection: {
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+    },
+    subscriptionListCard: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      elevation: 2,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    subscriptionCardContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 16,
+    },
+    subscriptionCardImage: {
+      marginRight: 16,
+    },
+    subscriptionCardImageStyle: {
+      width: 60,
+      height: 60,
+      borderRadius: 12,
+      backgroundColor: colors.background,
+    },
+    subscriptionCardDetails: {
+      flex: 1,
+      justifyContent: "space-between",
+    },
+    subscriptionCardTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    subscriptionCardSubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    subscriptionCardMeta: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    subscriptionStatusBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    subscriptionStatusText: {
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    subscriptionCardPrice: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    subscriptionCardChevron: {
+      marginLeft: 8,
     },
     // Address Modal Styles
     modalOverlay: {
