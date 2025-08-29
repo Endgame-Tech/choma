@@ -689,21 +689,33 @@ class ApiService {
     await this.getStoredToken();
     const result = await this.request("/orders");
 
-    // Add detailed logging for debugging
-    console.log(
-      "🔍 getUserOrders API Response:",
-      JSON.stringify(result, null, 2)
-    );
-    console.log("📊 result.success:", result.success);
-    console.log("📦 result.data type:", typeof result.data);
-    console.log("📋 result.data:", result.data);
-
     return result;
   }
 
   async getOrderById(id) {
     await this.getStoredToken();
     return this.request(`/orders/${id}`);
+  }
+
+  // Get detailed order information (real-time)
+  async getOrderDetails(id) {
+    console.log(`🔍 Fetching detailed order for ID: ${id}`);
+    const result = await this.getOrderById(id);
+
+    // Match the expected return format similar to MealPlanDetailScreen
+    if (result.success) {
+      return {
+        success: true,
+        order: result.data,
+        message: "Order details retrieved successfully",
+      };
+    } else {
+      return {
+        success: false,
+        order: null,
+        message: result.error || "Failed to retrieve order details",
+      };
+    }
   }
 
   async cancelOrder(orderId) {

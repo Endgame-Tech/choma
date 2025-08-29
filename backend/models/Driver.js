@@ -55,7 +55,7 @@ const DriverSchema = new mongoose.Schema({
   // Online/Offline status for receiving assignments
   status: { 
     type: String, 
-    enum: ['online', 'offline', 'on_delivery', 'break'], 
+    enum: ['online', 'offline', 'on_delivery', 'break', 'busy'], 
     default: 'offline' 
   },
   currentLocation: {
@@ -218,6 +218,14 @@ DriverSchema.pre('save', async function(next) {
 
 DriverSchema.methods.comparePassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Method to start delivery (update status to busy)
+DriverSchema.methods.startDelivery = async function() {
+  this.status = 'busy';
+  this.isAvailable = false;
+  await this.save();
+  return this;
 };
 
 module.exports = mongoose.model('Driver', DriverSchema);

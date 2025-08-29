@@ -40,6 +40,7 @@ const OrdersScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const { user } = useAuth();
+  const [realTimeUpdateInterval, setRealTimeUpdateInterval] = useState(null);
 
   // Dynamic tabs based on actual order counts
   const [tabs, setTabs] = useState([
@@ -53,6 +54,38 @@ const OrdersScreen = ({ navigation }) => {
     loadOrders();
   }, []);
 
+  // Set up real-time updates for active orders
+  useEffect(() => {
+    // Clear any existing interval
+    if (realTimeUpdateInterval) {
+      clearInterval(realTimeUpdateInterval);
+    }
+    
+    // Only set up real-time updates if we have active orders
+    const hasActiveOrders = orders.some(order => {
+      const status = (order.delegationStatus || order.status || order.orderStatus || "").toLowerCase();
+      return status && !["cancelled", "delivered"].includes(status);
+    });
+    
+    if (hasActiveOrders && orders.length > 0) {
+      console.log("🔄 Starting real-time order updates...");
+      const interval = setInterval(() => {
+        console.log("🔄 Real-time order update check...");
+        loadOrders();
+      }, 30000); // Update every 30 seconds for active orders
+      
+      setRealTimeUpdateInterval(interval);
+      
+      return () => clearInterval(interval);
+    }
+    
+    return () => {
+      if (realTimeUpdateInterval) {
+        clearInterval(realTimeUpdateInterval);
+      }
+    };
+  }, [orders.length, orders]);
+
   // Refresh orders when screen comes into focus (chef status might have changed)
   useFocusEffect(
     React.useCallback(() => {
@@ -60,6 +93,15 @@ const OrdersScreen = ({ navigation }) => {
       loadOrders();
     }, [])
   );
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (realTimeUpdateInterval) {
+        clearInterval(realTimeUpdateInterval);
+      }
+    };
+  }, []);
 
   const loadOrders = async () => {
     try {
@@ -166,7 +208,7 @@ const OrdersScreen = ({ navigation }) => {
           ""
         ).toLowerCase();
         return (
-          status && !["completed", "cancelled", "delivered"].includes(status)
+          status && !["cancelled", "delivered"].includes(status)
         );
       }).length;
 
@@ -179,7 +221,7 @@ const OrdersScreen = ({ navigation }) => {
           order.orderStatus || 
           ""
         ).toLowerCase();
-        return status && ["completed", "delivered"].includes(status);
+        return status && ["delivered"].includes(status);
       }).length;
 
       const cancelledCount = allOrders.filter((order) => {
@@ -216,6 +258,25 @@ const OrdersScreen = ({ navigation }) => {
     setRefreshing(true);
     await loadOrders();
     setRefreshing(false);
+  };
+
+  // Get fresh order details with fallback (similar to meal plan pattern)
+  const getOrderDetails = async (orderBundle) => {
+    try {
+      // Try to fetch fresh data from API
+      const result = await apiService.getOrderDetails(orderBundle._id || orderBundle.id);
+      
+      if (result.success && result.order) {
+        console.log("✅ Fresh order data loaded from API");
+        return result.order;
+      } else {
+        console.log("⚠️ API failed, using fallback order data");
+        return orderBundle; // Fallback to existing data
+      }
+    } catch (error) {
+      console.log("⚠️ API error, using fallback order data:", error);
+      return orderBundle; // Fallback to existing data
+    }
   };
 
   // Get status styling based on order status
@@ -322,7 +383,10 @@ const OrdersScreen = ({ navigation }) => {
     <TouchableOpacity
       key={order.id}
       style={styles(colors).orderCard}
-      onPress={() => navigation.navigate("OrderDetail", { order })}
+      onPress={async () => {
+        const freshOrder = await getOrderDetails(order);
+        navigation.navigate("OrderDetail", { order: freshOrder });
+      }}
       activeOpacity={0.9}
     >
       {/* Order Header */}
@@ -345,7 +409,7 @@ const OrdersScreen = ({ navigation }) => {
           <Text style={styles(colors).orderItemName}>{order.planName}</Text>
           <View style={styles(colors).orderItemMeta}>
             <Text style={styles(colors).orderItemPrice}>
-              ₦{order.price.toLocaleString()}
+              ₦{(order.price || order.totalAmount || 0).toLocaleString()}
             </Text>
             <Text style={styles(colors).orderItemCount}>
               {order.items} Items
@@ -370,7 +434,7 @@ const OrdersScreen = ({ navigation }) => {
         <View style={styles(colors).summaryRow}>
           <Text style={styles(colors).summaryLabel}>Total Amount</Text>
           <Text style={styles(colors).summaryValue}>
-            ₦{order.transaction.total.toLocaleString()}
+            ₦{(order.transaction?.total || order.totalAmount || order.price || 0).toLocaleString()}
           </Text>
         </View>
         <View style={styles(colors).summaryRow}>
@@ -400,28 +464,48 @@ const OrdersScreen = ({ navigation }) => {
           </TouchableOpacity>
         )}
 
-        {/* Determine if this order is trackable: explicit trackingId or delivery-ish statuses */}
-        {(order.trackingId ||
+        {/* Show Track Order only for orders being actively prepared or delivered - NOT for completed orders */}
+        {selectedTab === "active" && 
           [
             "out_for_delivery",
-            "en_route",
+            "en_route", 
             "ready",
-            "processing",
+            "preparing",
+            "inprogress",
             "confirmed",
+            "processing"
           ].includes(
             (order.status || order.orderStatus || "").toLowerCase()
-          )) && (
+          ) && (
           <TouchableOpacity
             style={styles(colors).primaryButton}
-            onPress={() =>
+            onPress={async () => {
+              const freshOrder = await getOrderDetails(order);
               navigation.navigate("TrackingScreen", {
-                orderId: order._id || order.id,
-                trackingId: order.trackingId || null,
-                order,
-              })
-            }
+                orderId: freshOrder._id || freshOrder.id,
+                trackingId: freshOrder.trackingId || null,
+                order: freshOrder,
+              });
+            }}
           >
             <Text style={styles(colors).primaryButtonText}>Track Order</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Show "View Details" button for delivered orders */}
+        {["delivered", "cancelled"].includes(
+          (order.status || order.orderStatus || "").toLowerCase()
+        ) && (
+          <TouchableOpacity
+            style={styles(colors).secondaryButton}
+            onPress={async () => {
+              const freshOrder = await getOrderDetails(order);
+              navigation.navigate("OrderDetail", {
+                order: freshOrder,
+              });
+            }}
+          >
+            <Text style={styles(colors).secondaryButtonText}>View Details</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -478,11 +562,11 @@ const OrdersScreen = ({ navigation }) => {
 
         if (selectedTab === "active") {
           return (
-            status && !["cancelled", "completed", "delivered"].includes(status)
+            status && !["cancelled", "delivered"].includes(status)
           );
         }
         if (selectedTab === "completed") {
-          return status && ["completed", "delivered"].includes(status);
+          return status && ["delivered"].includes(status);
         }
         if (selectedTab === "cancelled") {
           return status === "cancelled";

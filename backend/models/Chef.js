@@ -406,14 +406,12 @@ const chefSchema = new mongoose.Schema({
     }
 });
 
-// Generate unique chef ID before saving, with logging for debugging
+// Generate unique chef ID before saving
 chefSchema.pre('save', async function(next) {
-    console.log('[ChefSchema] pre-save hook (chefId generation) triggered');
     if (this.isNew) {
         try {
             const count = await mongoose.model('Chef').countDocuments();
             this.chefId = `CHEF${String(count + 1).padStart(4, '0')}`;
-            console.log(`[ChefSchema] Generated chefId: ${this.chefId}`);
         } catch (error) {
             console.error('[ChefSchema] Error generating chefId:', error);
             return next(error);
@@ -421,21 +419,17 @@ chefSchema.pre('save', async function(next) {
     }
     // Update the updatedAt field
     this.updatedAt = new Date();
-    console.log('[ChefSchema] pre-save hook (chefId generation) completed');
     next();
 });
 
-// Hash password before saving, with logging for debugging
+// Hash password before saving
 chefSchema.pre('save', async function(next) {
-    console.log('[ChefSchema] pre-save hook (password hash) triggered');
     if (!this.isModified('password')) {
-        console.log('[ChefSchema] Password not modified, skipping hash');
         return next();
     }
     try {
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
-        console.log('[ChefSchema] Password hashed successfully');
         next();
     } catch (error) {
         console.error('[ChefSchema] Error hashing password:', error);

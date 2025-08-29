@@ -331,10 +331,10 @@ export const dashboardApi = {
   // Get dashboard stats
   async getStats(): Promise<DashboardStats> {
     const response = await api.get<ApiResponse<DashboardStats>>('/dashboard/stats')
-    console.log('🐛 Dashboard Response Data:', response.data)
-    console.log('🐛 Dashboard Response Success:', response.data.success)
+    // console.log('🐛 Dashboard Response Data:', response.data)
+    // console.log('🐛 Dashboard Response Success:', response.data.success)
     if (response.data.message) {
-      console.log('🐛 Dashboard Response Message:', response.data.message)
+      // console.log('🐛 Dashboard Response Message:', response.data.message)
     }
     return handleResponse(response)
   },
@@ -559,10 +559,31 @@ export const deliveryPricesApi = {
 
 // Define DiscountRule type (replace with actual fields as needed)
 export type DiscountRule = {
-  id: string;
+  // Backend may return either _id or id depending on endpoint/versioning
+  _id?: string;
+  id?: string;
   name: string;
   description?: string;
-  // Add other fields relevant to your discount rules
+  discountPercent?: number;
+  targetSegment?: string;
+  isActive?: boolean;
+  validFrom?: string | Date;
+  validUntil?: string | Date;
+  criteria?: {
+    minSpent?: number;
+    minStreak?: number;
+    withinDays?: number;
+    seasonName?: string;
+    seasonStart?: string | Date;
+    seasonEnd?: string | Date;
+    [key: string]: unknown;
+  };
+  applicableMealPlans?: string[];
+  applicableCategories?: string[];
+  applicableTags?: string[];
+  applyToAllMealPlans?: boolean;
+  // Allow extra backend fields without breaking assignment compatibility
+  [key: string]: unknown;
 };
 
 export const discountApi = {

@@ -49,7 +49,6 @@ class SocketService implements SocketServiceInterface {
 
   public connect(): void {
     if (this.socket?.connected) {
-      console.log('🔌 Socket already connected');
       return;
     }
 
@@ -58,8 +57,6 @@ class SocketService implements SocketServiceInterface {
       console.warn('🔌 No authentication token found');
       return;
     }
-
-    console.log('🔌 Connecting to WebSocket server...');
 
     try {
       this.socket = io(import.meta.env.VITE_WS_URL || 'ws://localhost:3001', {
@@ -80,13 +77,11 @@ class SocketService implements SocketServiceInterface {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('🔌 Connected to WebSocket server');
       this.isConnected = true;
       this.reconnectAttempts = 0;
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('🔌 Disconnected from WebSocket server:', reason);
       this.isConnected = false;
       
       if (reason === 'io server disconnect') {
@@ -106,11 +101,6 @@ class SocketService implements SocketServiceInterface {
       }
     });
 
-    this.socket.on('reconnect', (attemptNumber) => {
-      console.log(`🔌 Reconnected after ${attemptNumber} attempts`);
-      this.isConnected = true;
-      this.reconnectAttempts = 0;
-    });
 
     this.socket.on('reconnect_error', (error) => {
       console.error('🔌 Reconnection error:', error);
@@ -118,22 +108,21 @@ class SocketService implements SocketServiceInterface {
     });
 
     this.socket.on('new_notification', (notification: Notification) => {
-      console.log('🔔 New notification received:', notification);
       this.triggerCallbacks('new_notification', notification);
     });
 
     this.socket.on('security_alert', (alert: SecurityNotification) => {
-      console.log('🚨 Security alert received:', alert);
+      this.triggerCallbacks('security_alert', alert);
       this.triggerCallbacks('security_alert', alert);
     });
 
     this.socket.on('system_update', (update: SystemUpdatePayload) => {
-      console.log('⚙️ System update received:', update);
+      this.triggerCallbacks('system_update', update);
       this.triggerCallbacks('system_update', update);
     });
 
     this.socket.on('2fa_event', (event: TwoFactorAuthEvent) => {
-      console.log('🔐 2FA event received:', event);
+      this.triggerCallbacks('2fa_event', event);
       this.triggerCallbacks('2fa_event', event);
     });
 
@@ -158,8 +147,6 @@ class SocketService implements SocketServiceInterface {
     this.reconnectAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
     
-    console.log(`🔌 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms...`);
-    
     this.reconnectTimeoutId = setTimeout(() => {
       this.connect();
     }, delay);
@@ -172,7 +159,6 @@ class SocketService implements SocketServiceInterface {
     }
     
     if (this.socket) {
-      console.log('🔌 Disconnecting from WebSocket server');
       this.socket.disconnect();
       this.socket = null;
     }
@@ -287,7 +273,6 @@ export const socketService = new SocketService();
 const checkAutoConnect = () => {
   const token = localStorage.getItem('choma-admin-token');
   if (token && !socketService.getConnectionStatus()) {
-    console.log('🔌 Auto-connecting to WebSocket with existing token');
     socketService.connect();
   }
 };

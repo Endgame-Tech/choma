@@ -77,11 +77,7 @@ exports.getRegistrationStatus = async (req, res) => {
   }
 };
 exports.registerChef = async (req, res) => {
-  // Log incoming request details for debugging aborted requests
-  console.log("--- Incoming Chef Registration Request ---");
-  console.log("Headers:", req.headers);
-  console.log("Body:", JSON.stringify(req.body, null, 2));
-  console.log("-----------------------------------------");
+
   try {
     const {
       // Personal Information
@@ -558,9 +554,6 @@ exports.getChefOrders = async (req, res) => {
     const chefId = req.chef.chefId;
     const { status, page = 1, limit = 20 } = req.query;
 
-    console.log("🔍 Chef Orders Query Debug:");
-    console.log("👨‍🍳 Chef ID from auth:", chefId);
-    console.log("📊 Query parameters:", { status, page, limit });
 
     const skip = (page - 1) * limit;
 
@@ -569,9 +562,6 @@ exports.getChefOrders = async (req, res) => {
     if (status) {
       query.delegationStatus = status;
     }
-
-    console.log("🔎 Final query:", JSON.stringify(query));
-    console.log("🔎 Chef ID type in query:", typeof query.assignedChef);
 
     const orders = await Order.find(query)
       .populate("customer", "fullName email phone deliveryAddress city state")
@@ -633,22 +623,10 @@ exports.getChefOrders = async (req, res) => {
 
     const total = await Order.countDocuments(query);
 
-    console.log(`📋 Found ${orders.length} orders for chef ${chefId}`);
-    console.log(`📊 Total orders in database matching query: ${total}`);
-
     // Additional debugging - check if there are ANY orders assigned to this chef
     const debugOrders = await Order.find({
       assignedChef: new mongoose.Types.ObjectId(chefId),
     }).select("_id orderNumber delegationStatus assignedChef");
-    console.log(
-      "🔍 Debug - All orders for this chef:",
-      debugOrders.map((o) => ({
-        id: o._id,
-        orderNumber: o.orderNumber,
-        status: o.delegationStatus,
-        assignedChef: o.assignedChef,
-      }))
-    );
 
     res.json({
       success: true,
@@ -698,6 +676,26 @@ exports.acceptOrder = async (req, res) => {
     order.chefAcceptedDate = new Date();
     await order.save();
 
+    // Invalidate mobile app cache for immediate status update
+    try {
+      const { cacheService } = require("../config/redis");
+      const customerId = order.customer;
+      
+      if (customerId && cacheService) {
+        const cacheKeys = [
+          `user:${customerId}:/api/orders/assigned:{}`,
+          `user-orders:${customerId}:1:20:`,
+          `user:${customerId}:/api/orders:{}`,
+        ];
+        
+        for (const key of cacheKeys) {
+          await cacheService.del(key);
+        }
+      }
+    } catch (cacheError) {
+      console.warn("⚠️ Failed to invalidate cache after chef acceptOrder:", cacheError.message);
+    }
+
     // Update chef's current capacity without triggering validation
     await Chef.findByIdAndUpdate(
       chefId,
@@ -746,6 +744,26 @@ exports.startOrder = async (req, res) => {
     order.orderStatus = "Preparing";
     await order.save();
 
+    // Invalidate mobile app cache for immediate status update
+    try {
+      const { cacheService } = require("../config/redis");
+      const customerId = order.customer;
+      
+      if (customerId && cacheService) {
+        const cacheKeys = [
+          `user:${customerId}:/api/orders/assigned:{}`,
+          `user-orders:${customerId}:1:20:`,
+          `user:${customerId}:/api/orders:{}`,
+        ];
+        
+        for (const key of cacheKeys) {
+          await cacheService.del(key);
+        }
+      }
+    } catch (cacheError) {
+      console.warn("⚠️ Failed to invalidate cache after chef startOrder:", cacheError.message);
+    }
+
     res.json({
       success: true,
       message: "Order started successfully",
@@ -785,9 +803,29 @@ exports.completeOrder = async (req, res) => {
     // Update order status
     order.delegationStatus = "Completed";
     order.chefCompletedDate = new Date();
-    order.orderStatus = "Out for Delivery";
+    order.orderStatus = "Quality Check";
     order.chefNotes = notes || "";
     await order.save();
+
+    // Invalidate mobile app cache for immediate status update
+    try {
+      const { cacheService } = require("../config/redis");
+      const customerId = order.customer;
+      
+      if (customerId && cacheService) {
+        const cacheKeys = [
+          `user:${customerId}:/api/orders/assigned:{}`,
+          `user-orders:${customerId}:1:20:`,
+          `user:${customerId}:/api/orders:{}`,
+        ];
+        
+        for (const key of cacheKeys) {
+          await cacheService.del(key);
+        }
+      }
+    } catch (cacheError) {
+      console.warn("⚠️ Failed to invalidate cache after chef completeOrder:", cacheError.message);
+    }
 
     // Update chef stats without triggering validation
     const chef = await Chef.findById(chefId);
@@ -1019,7 +1057,6 @@ exports.getChefNotifications = async (req, res) => {
     const chefId = req.chef.chefId;
     const { page = 1, limit = 20, unreadOnly = false } = req.query;
 
-    console.log("📬 Fetching notifications for chef:", chefId);
 
     const skip = (page - 1) * limit;
     const query = { userId: chefId };
@@ -1070,7 +1107,6 @@ exports.markNotificationAsRead = async (req, res) => {
     const chefId = req.chef.chefId;
     const { notificationId } = req.params;
 
-    console.log("✅ Marking notification as read:", { chefId, notificationId });
 
     const Notification = require("../models/Notification");
 
@@ -1112,7 +1148,6 @@ exports.updateChefStatus = async (req, res) => {
     const { orderId } = req.params;
     const { chefStatus } = req.body;
 
-    console.log("✅ Updating chef status:", { chefId, orderId, chefStatus });
 
     // Validate chef status (must match OrderDelegation enum)
     const validStatuses = [
@@ -1149,10 +1184,17 @@ exports.updateChefStatus = async (req, res) => {
     await delegation.save();
 
     // IMPORTANT: Also update the Order.delegationStatus field so it syncs properly
-    await Order.findByIdAndUpdate(orderId, {
+    const orderUpdate = {
       delegationStatus: chefStatus,
       updatedAt: new Date()
-    });
+    };
+
+    // When chef marks as completed, set status to Quality Check before delivery
+    if (chefStatus === 'Completed') {
+      orderUpdate.orderStatus = "Quality Check";
+    }
+
+    await Order.findByIdAndUpdate(orderId, orderUpdate);
 
     // Track chef earnings when order is completed
     if (chefStatus === 'Completed') {
@@ -1190,7 +1232,6 @@ exports.updateChefStatus = async (req, res) => {
             status: 'pending' // Will be paid on Friday
           });
           
-          console.log(`💰 Chef earning recorded: ₦${cookingFee} for order ${orderId}`);
         }
       } catch (earningError) {
         console.warn("⚠️ Failed to record chef earning:", earningError.message);
@@ -1218,7 +1259,7 @@ exports.updateChefStatus = async (req, res) => {
       // Send notification to admin
       const Notification = require("../models/Notification");
       await Notification.create({
-        userId: "admin", // Or specific admin ID
+        userId: new require('mongoose').Types.ObjectId(), // Valid ObjectId for admin notifications
         type: "chef_status_update",
         title: "Chef Status Updated",
         message: `Chef has updated status to "${chefStatus}" for order #${order?.orderNumber}`,
@@ -1274,15 +1315,28 @@ exports.updateChefStatus = async (req, res) => {
         ];
         
         for (const key of cacheKeys) {
-          await cacheService.delete(key);
-          console.log(`🗑️ Invalidated cache: ${key}`);
+          await cacheService.del(key);
         }
-        
-        console.log(`🔄 Cache invalidated for customer ${customerId} after chef status update to "${chefStatus}"`);
+        console.log(`🔄 Cache invalidated for customer ${customerId} after chef status update to "${chefStatus}"`)
       }
     } catch (cacheError) {
       console.warn("⚠️ Failed to invalidate cache:", cacheError.message);
       // Don't fail the request if cache invalidation fails
+    }
+
+    // Send real-time update to customer via WebSocket
+    try {
+      const socketService = require('../services/socketService');
+      if (order && order.customer) {
+        socketService.sendToCustomer(order.customer._id, 'order:status_update', {
+          orderId: order._id,
+          delegationStatus: order.delegationStatus,
+          orderStatus: order.orderStatus,
+          chefNotes: order.chefNotes
+        });
+      }
+    } catch (socketError) {
+      console.warn("⚠️ Failed to send socket update:", socketError.message);
     }
 
     res.json({
@@ -1603,7 +1657,6 @@ exports.getMealPlan = async (req, res) => {
     const { orderId } = req.params;
     const chefId = req.chef.chefId;
 
-    console.log('🍽️ Getting meal plan for order:', orderId, 'chef:', chefId);
 
     // Verify the order belongs to this chef
     const order = await Order.findOne({ 

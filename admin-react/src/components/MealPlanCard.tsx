@@ -1,5 +1,5 @@
 import React from 'react';
-import { type MealPlan } from '../services/mealApi';
+import type { MealPlan } from '../types';
 import {
     FiEdit,
     FiTrash2,
@@ -57,7 +57,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
         return `${months}mo ${remainingWeeks}w`;
     };
 
-    const imageUrl = mealPlan.coverImage || 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1000&q=80';
+    const imageUrl = mealPlan.coverImage ?? 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1000&q=80';
 
     // Defensive derived stats (use assignments when present, else fallbacks)
     const planTotalDays = (() => {
@@ -66,7 +66,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
         return 0
     })()
 
-    const planAssignments: RawAssignment[] = ((mealPlan as unknown) as { assignments?: RawAssignment[] }).assignments || []
+    const planAssignments: RawAssignment[] = ((mealPlan as unknown) as { assignments?: RawAssignment[] }).assignments ?? []
 
     const uniqueSlots = new Set<string>()
     planAssignments.forEach(a => {
@@ -79,7 +79,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
         }
     })
 
-    const totalMealsComputed = mealPlan.assignmentCount || (planAssignments.length > 0 ? planAssignments.length : uniqueSlots.size)
+    const totalMealsComputed = mealPlan.assignmentCount ?? (planAssignments.length > 0 ? planAssignments.length : uniqueSlots.size)
 
     // Sum calories only when assignments include populated meal objects (defensive)
     const getCaloriesFromPotentialMeal = (obj: unknown): number => {
@@ -137,14 +137,24 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
     })()
 
     // Use backend-calculated nutritional values (simpler and more reliable)
-    const avgProteinPerDay = mealPlan.nutritionInfo?.totalProtein ? 
-        Math.round(mealPlan.nutritionInfo.totalProtein / (actualDaysWithMeals.size || planTotalDays || 1)) : 0
-    const avgCarbsPerDay = mealPlan.nutritionInfo?.totalCarbs ? 
-        Math.round(mealPlan.nutritionInfo.totalCarbs / (actualDaysWithMeals.size || planTotalDays || 1)) : 0
-    const avgFatPerDay = mealPlan.nutritionInfo?.totalFat ? 
-        Math.round(mealPlan.nutritionInfo.totalFat / (actualDaysWithMeals.size || planTotalDays || 1)) : 0
-    const avgFiberPerDay = mealPlan.nutritionInfo?.totalFiber ? 
-        Math.round(mealPlan.nutritionInfo.totalFiber / (actualDaysWithMeals.size || planTotalDays || 1)) : 0
+    // nutritionInfo may be a partial object from API; use defensive typing without `any`
+    const nutritionInfo = (mealPlan as unknown as { nutritionInfo?: Record<string, unknown> }).nutritionInfo ?? {};
+    const toNumber = (val: unknown) => {
+        if (typeof val === 'number') return val;
+        if (typeof val === 'string' && val.trim() !== '') return Number(val) || 0;
+        return 0;
+    };
+
+    const totalProtein = toNumber(nutritionInfo['totalProtein']);
+    const totalCarbs = toNumber(nutritionInfo['totalCarbs']);
+    const totalFat = toNumber(nutritionInfo['totalFat']);
+    const totalFiber = toNumber(nutritionInfo['totalFiber']);
+
+    const denom = (actualDaysWithMeals.size || planTotalDays || 1);
+    const avgProteinPerDay = totalProtein > 0 ? Math.round(totalProtein / denom) : 0;
+    const avgCarbsPerDay = totalCarbs > 0 ? Math.round(totalCarbs / denom) : 0;
+    const avgFatPerDay = totalFat > 0 ? Math.round(totalFat / denom) : 0;
+    const avgFiberPerDay = totalFiber > 0 ? Math.round(totalFiber / denom) : 0;
 
 
     return (
@@ -224,7 +234,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
                 {/* Plan Category */}
                 <div className="mb-2">
                     <h3 className="text-[14px] font-medium text-gray-700 dark:text-gray-300">
-                        {mealPlan.targetAudience || 'Meal Plan'} - {getDurationText(mealPlan.durationWeeks)}
+                        {mealPlan.targetAudience || 'Meal Plan'} - {getDurationText(mealPlan.durationWeeks ?? 0)}
                     </h3>
                 </div>
 
@@ -353,7 +363,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
                         <div>
                             <p className="text-[8px] text-gray-600 dark:text-gray-400 leading-tight">Duration</p>
                             <p className="text-[8px] font-medium text-gray-900 dark:text-white leading-tight">
-                                {getDurationText(mealPlan.durationWeeks)}
+                                {getDurationText(mealPlan.durationWeeks ?? 0)}
                             </p>
                         </div>
                     </div>

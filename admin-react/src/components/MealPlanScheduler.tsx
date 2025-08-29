@@ -542,7 +542,7 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
 
               {selectedDay && selectedMealTime && availableMealTimes.includes(selectedMealTime) ? (
                 <div className="flex-1 overflow-y-auto">
-                  <div className="p-4 space-y-6">
+                  <div className="p-4">
                     {/* Meal Configuration Section */}
                     <div className="p-4 bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-600">
                       <h4 className="font-medium text-gray-900 dark:text-neutral-100 mb-3">Meal Details</h4>

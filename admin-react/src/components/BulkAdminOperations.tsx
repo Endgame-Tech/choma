@@ -176,8 +176,6 @@ const BulkAdminOperations: React.FC<BulkAdminOperationsProps> = ({
 
       switch (operation) {
         case 'activate':
-          // TODO: Replace with actual API call
-          console.log('Bulk activating admins:', data.map((a: Admin) => a.email));
 
           if (currentAdmin) {
             await activityLogger.logAdminAction(

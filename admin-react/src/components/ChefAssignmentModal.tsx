@@ -24,7 +24,6 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
   isOpen,
   onClose,
   onAssign,
-  orderId,
   orderDetails
 }) => {
   const [selectedChef, setSelectedChef] = useState('')
@@ -36,13 +35,6 @@ const ChefAssignmentModal: React.FC<ChefAssignmentModalProps> = ({
     chefFeePercentage: 10 // Default value, adjust as needed
   })
   const { chefs: availableChefs, loading: chefsLoading, error: chefsError } = useAvailableChefs()
-
-  // Log order ID for debugging (prevents unused variable warning)
-  useEffect(() => {
-    if (isOpen && orderId) {
-      console.log('Opening chef assignment for order:', orderId)
-    }
-  }, [isOpen, orderId])
 
   // Reset modal state when closed
   useEffect(() => {

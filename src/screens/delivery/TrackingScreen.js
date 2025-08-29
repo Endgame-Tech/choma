@@ -75,6 +75,24 @@ export const TrackingScreen = ({ route, navigation }) => {
   const loadTrackingData = async () => {
     try {
       let result;
+      let freshOrderData = order;
+
+      // First, get fresh order data if we have an order ID (similar to meal plan pattern)
+      if (orderId || order?._id) {
+        try {
+          const orderResult = await ApiService.getOrderDetails(orderId || order._id);
+          if (orderResult.success && orderResult.order) {
+            console.log("✅ Fresh order data loaded for tracking");
+            freshOrderData = orderResult.order;
+          } else {
+            console.log("⚠️ Order API failed, using fallback order data");
+            freshOrderData = order;
+          }
+        } catch (error) {
+          console.log("⚠️ Order API error, using fallback order data:", error);
+          freshOrderData = order;
+        }
+      }
 
       // Try to get tracking data by trackingId first
       if (trackingId) {
@@ -85,15 +103,16 @@ export const TrackingScreen = ({ route, navigation }) => {
         // Try to get customer deliveries and find by order ID
         const deliveriesResult = await ApiService.getUserOrders();
         if (deliveriesResult.success) {
-          const orderData = order || { _id: orderId, orderStatus: "Preparing" };
+          const orderData = freshOrderData || { _id: orderId, orderStatus: "Preparing" };
+          setTracking(createTrackingFromOrder(orderData));
           setLoading(false);
           setRefreshing(false);
           return;
         }
       }
         
-      else if (order) {
-        setTracking(createTrackingFromOrder(order));
+      else if (freshOrderData) {
+        setTracking(createTrackingFromOrder(freshOrderData));
         setLoading(false);
         setRefreshing(false);
         return;
@@ -102,16 +121,16 @@ export const TrackingScreen = ({ route, navigation }) => {
       if (result && result.success) {
         setTracking(result.data);
       } else {
-        if (order) {
-          setTracking(createTrackingFromOrder(order));
+        if (freshOrderData) {
+          setTracking(createTrackingFromOrder(freshOrderData));
         } else {
           showError("Error", "Failed to load tracking information");
         }
       }
     } catch (error) {
       console.error("Error loading tracking:", error);
-      if (order) {
-        setTracking(createTrackingFromOrder(order));
+      if (freshOrderData) {
+        setTracking(createTrackingFromOrder(freshOrderData));
       } else {
         showError("Error", "Failed to load tracking information");
       }

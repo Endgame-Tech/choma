@@ -205,9 +205,6 @@ const updateDriverStatus = async (req, res) => {
 
     await driver.save();
 
-    // Log status change
-    console.log(`Driver ${driver.driverId} status changed from ${previousStatus} to ${accountStatus} by admin ${req.admin.id}`);
-
     // If driver is suspended, cancel any active assignments
     if (accountStatus === 'suspended') {
       await DriverAssignment.updateMany(
@@ -342,7 +339,8 @@ const createDriverAssignment = async (req, res) => {
     const result = await deliveryAssignmentService.createAssignmentFromOrder(orderId, {
       priority,
       isFirstDelivery,
-      autoAssign: !!driverId
+      autoAssign: !!driverId,
+      driverId: driverId // Pass driverId to service
     });
 
     if (!result.success) {
@@ -352,7 +350,7 @@ const createDriverAssignment = async (req, res) => {
       });
     }
 
-    // If specific driver is assigned, assign immediately
+    // If specific driver is assigned, validate and update status
     if (driverId) {
       const driver = await Driver.findById(driverId);
       if (!driver || driver.accountStatus !== 'approved') {
@@ -363,7 +361,6 @@ const createDriverAssignment = async (req, res) => {
       }
 
       const assignment = result.assignment;
-      assignment.driverId = driverId;
       assignment.status = 'assigned';
       assignment.acceptedAt = new Date();
       await assignment.save();
@@ -387,11 +384,9 @@ const createDriverAssignment = async (req, res) => {
           ];
           
           for (const key of cacheKeys) {
-            await cacheService.delete(key);
-            console.log(`🗑️ Cache invalidated: ${key}`);
+            await cacheService.del(key);
           }
           
-          console.log(`🔄 Cache invalidated for customer ${customerId} after driver assignment`);
         }
       } catch (cacheError) {
         console.warn("⚠️ Failed to invalidate cache after driver assignment:", cacheError.message);

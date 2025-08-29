@@ -41,7 +41,6 @@ class SettingsService {
       }
       
       await AsyncStorage.setItem(storageKey, JSON.stringify(value));
-      console.log(`✅ Setting saved: ${key} = ${value}`);
       return true;
     } catch (error) {
       console.error(`Error saving setting ${key}:`, error);
@@ -84,7 +83,6 @@ class SettingsService {
       if (apiService.updateUserSettings) {
         const response = await apiService.updateUserSettings(settings);
         if (response.success) {
-          console.log('✅ Settings synced with backend');
           return true;
         }
       }
@@ -101,7 +99,6 @@ class SettingsService {
       if (apiService.getUserSettings) {
         const response = await apiService.getUserSettings();
         if (response.success) {
-          console.log('✅ Settings loaded from backend');
           return response.data;
         }
       }
@@ -117,7 +114,7 @@ class SettingsService {
     try {
       const keys = Object.values(this.KEYS);
       await AsyncStorage.multiRemove(keys);
-      console.log('✅ All settings cleared');
+      
       return true;
     } catch (error) {
       console.error('Error clearing settings:', error);
@@ -135,7 +132,6 @@ class SettingsService {
         version: '1.0.0'
       };
       
-      console.log('✅ Settings exported');
       return exportData;
     } catch (error) {
       console.error('Error exporting settings:', error);
@@ -157,7 +153,6 @@ class SettingsService {
         await this.setSetting(key, value);
       }
 
-      console.log('✅ Settings imported');
       return true;
     } catch (error) {
       console.error('Error importing settings:', error);
@@ -183,7 +178,6 @@ class SettingsService {
         await this.setSetting(key, value);
       }
 
-      console.log('✅ Settings reset to defaults');
       return defaults;
     } catch (error) {
       console.error('Error resetting settings:', error);

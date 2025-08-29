@@ -17,15 +17,16 @@ interface UseWebSocketReturn {
   updateAssignmentStatus: (assignmentId: string, status: string) => void;
   updateDriverStatus: (status: 'online' | 'offline' | 'busy') => void;
   ping: () => void;
-  onNewAssignment: (callback: (assignment: DeliveryAssignment) => void) => void;
-  onAssignmentUpdate: (callback: (data: { assignmentId: string; status: string; [key: string]: any }) => void) => void;
+  // Each listener returns an unsubscribe function so callers can cleanup.
+  onNewAssignment: (callback: (assignment: DeliveryAssignment) => void) => () => void;
+  onAssignmentUpdate: (callback: (data: { assignmentId: string; status: string; [key: string]: any }) => void) => () => void;
   onNotification: (callback: (notification: {
     title: string;
     body: string;
     data: any;
     priority: string;
     timestamp: string;
-  }) => void) => void;
+  }) => void) => () => void;
 }
 
 export const useWebSocket = (): UseWebSocketReturn => {
@@ -110,8 +111,8 @@ export const useWebSocket = (): UseWebSocketReturn => {
       connect().catch(console.error);
     }
 
-    // Update status periodically
-    const statusInterval = setInterval(updateStatus, 5000);
+    // Update status periodically (reduced frequency)
+    const statusInterval = setInterval(updateStatus, 30000); // Every 30 seconds instead of 5
     
     return () => {
       clearInterval(statusInterval);

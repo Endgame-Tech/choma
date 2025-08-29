@@ -37,11 +37,55 @@ export interface User {
 // Meal Plan
 export interface MealPlan {
   _id: string
+  // alternative stable id sometimes emitted by the API
+  planId?: string
   planName: string
   planType?: string
   duration?: string
-  mealsPerDay?: number
+  // number of weeks for the plan (used across UI)
+  durationWeeks?: number
+  // number of weeks for the plan (used across UI)
+  // derived / display fields
+  totalPrice?: number
   price?: number
+  mealsPerDay?: number
+  // meal types and extra features provided by the API
+  mealTypes?: string[]
+  planFeatures?: string[]
+  // timestamps
+  createdAt?: string
+  updatedAt?: string
+  // publication and scheduling
+  isPublished?: boolean
+  assignmentCount?: number
+  // images
+  coverImage?: string
+  planImageUrl?: string
+  // audience/category/tags
+  targetAudience?: string
+  category?: string
+  tags?: string[]
+  // backend-provided stats and nutrition summaries
+  stats?: {
+    avgMealsPerDay?: number
+    totalDays?: number
+    totalAssignments?: number
+    [key: string]: unknown
+  }
+  nutritionInfo?: {
+    totalCalories?: number
+    avgCaloriesPerDay?: number
+    avgCaloriesPerMeal?: number
+    totalProtein?: number
+    totalCarbs?: number
+    totalFat?: number
+    totalFiber?: number
+    [key: string]: unknown
+  }
+  // assignments may be populated or simple ids depending on API
+  assignments?: Array<Record<string, unknown>>
+  // allow other backend fields
+  [key: string]: unknown
 }
 
 // Subscription

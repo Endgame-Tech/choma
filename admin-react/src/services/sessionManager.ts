@@ -27,7 +27,6 @@ class SessionManager {
       await this.checkSessionValidity(adminId);
     }, 5 * 60 * 1000);
 
-    console.log(`Session monitoring started for admin: ${adminId}`);
   }
 
   // Stop session monitoring
@@ -37,7 +36,6 @@ class SessionManager {
       this.sessionCheckInterval = null;
     }
     this.listeners.clear();
-    console.log('Session monitoring stopped');
   }
 
   // Check if current session is still valid
@@ -73,7 +71,6 @@ class SessionManager {
 
   // Handle session invalidation
   private async handleSessionInvalidation(adminId: string, reason: string): Promise<void> {
-    console.log(`Session invalidated for admin ${adminId}: ${reason}`);
     
     // Clear local storage
     localStorage.removeItem('choma-admin-token');
@@ -156,7 +153,6 @@ class SessionManager {
         body: JSON.stringify({ adminId, reason }),
       });
 
-      console.log(`Forced logout for admin: ${adminId}, reason: ${reason}`);
     } catch (error) {
       console.error('Error forcing admin logout:', error);
     }
@@ -174,7 +170,6 @@ class SessionManager {
         body: JSON.stringify({ adminId, reason }),
       });
 
-      console.log(`Invalidated sessions for admin: ${adminId}, reason: ${reason}`);
     } catch (error) {
       console.error('Error invalidating admin sessions:', error);
     }
@@ -205,7 +200,7 @@ class SessionManager {
         body: JSON.stringify(alert),
       });
 
-      console.log('Security alert created for admin change:', alert);
+
     } catch (error) {
       console.error('Error creating security alert:', error);
     }
@@ -248,7 +243,6 @@ class SessionManager {
         body: JSON.stringify({ reason }),
       });
 
-      console.log(`Session ${sessionId} terminated: ${reason}`);
     } catch (error) {
       console.error('Error terminating session:', error);
     }

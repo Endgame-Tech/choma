@@ -19,27 +19,17 @@ const {
 // ============= DASHBOARD ANALYTICS =============
 exports.getDashboardStats = async (req, res) => {
   try {
-    console.log('📊 Dashboard Stats: Starting to fetch data...');
     
-    // Get total counts with status breakdown
-    console.log('👥 Fetching user counts...');
     const totalUsers = await Customer.countDocuments();
     const activeUsers = await Customer.countDocuments({ status: "Active" });
     const deletedUsers = await Customer.countDocuments({ status: "Deleted" });
     
-    console.log('📦 Fetching order counts...');
     const totalOrders = await Order.countDocuments();
     
-    console.log('📋 Fetching subscription counts...');
     const totalSubscriptions = await Subscription.countDocuments();
     
-    console.log('🍽️ Fetching meal plan counts...');
     const totalMealPlans = await MealPlan.countDocuments({ isActive: true });
     
-    console.log('📊 User stats:', { totalUsers, activeUsers, deletedUsers });
-    console.log('📦 Order stats:', { totalOrders });
-    console.log('📋 Subscription stats:', { totalSubscriptions });
-    console.log('🍽️ Meal plan stats:', { totalMealPlans });
 
     // Get revenue data
     const totalRevenue = await Order.aggregate([
@@ -713,18 +703,6 @@ exports.getAllOrders = async (req, res) => {
 
     const total = await Order.countDocuments(query);
 
-    console.log(
-      `📋 Admin Orders Query: Found ${orders.length}/${total} orders with filters:`,
-      {
-        search,
-        orderStatus,
-        paymentStatus,
-        delegationStatus,
-        priority,
-        sortBy,
-      }
-    );
-
     res.json({
       success: true,
       data: {
@@ -906,9 +884,7 @@ async function sendOrderStatusNotifications(order, notifications, orderStatus) {
 
     if (notifications.inApp) {
       // In-app notification (you would implement this based on your notification system)
-      console.log(
-        `In-app notification sent to ${customer.fullName}: ${message}`
-      );
+      console.log(`In-app notification sent to ${customer.fullName}: ${message}`);
     }
 
     if (notifications.email && customer.email) {
@@ -943,16 +919,7 @@ async function sendOrderStatusNotifications(order, notifications, orderStatus) {
 // Email notification function
 async function sendEmailNotification(email, title, message, order) {
   try {
-    // This is a placeholder implementation
-    // In a real application, you would use a service like SendGrid, Nodemailer, etc.
-    console.log(`📧 Email sent to ${email}`);
-    console.log(`Subject: ${title}`);
-    console.log(`Message: ${message}`);
-    console.log(
-      `Order Details: #${
-        order.orderId || order._id.toString().slice(-8)
-      } - ₦${order.totalAmount?.toLocaleString()}`
-    );
+
 
     // Example implementation with a hypothetical email service:
     /*
@@ -985,11 +952,6 @@ async function sendEmailNotification(email, title, message, order) {
 // SMS notification function
 async function sendSMSNotification(phone, message) {
   try {
-    // This is a placeholder implementation
-    // In a real application, you would use a service like Twilio, Africas Talking, etc.
-    console.log(`📱 SMS sent to ${phone}`);
-    console.log(`Message: ${message}`);
-
     // Example implementation with a hypothetical SMS service:
     /*
     const smsData = {
@@ -997,7 +959,7 @@ async function sendSMSNotification(phone, message) {
       message: `choma: ${message}`,
       from: 'choma'
     };
-    
+
     await smsService.send(smsData);
     */
 
@@ -1236,27 +1198,22 @@ exports.createMealPlan = async (req, res) => {
     try {
       // Upload main plan image if provided
       if (planImageUrl && planImageUrl.startsWith("data:image/")) {
-        console.log("🔄 Uploading main plan image to Cloudinary...");
         const uploadResult = await uploadMealPlanMainImage(
           planImageUrl,
           mealPlan.planId
         );
         if (uploadResult) {
           cloudinaryPlanImageUrl = uploadResult.url;
-          console.log("✅ Main plan image uploaded:", uploadResult.url);
         }
       }
 
       // Upload meal images if provided
       if (mealImages && Object.keys(mealImages).length > 0) {
-        console.log("🔄 Uploading meal images to Cloudinary...");
         cloudinaryMealImages = await uploadMealImages(
           mealImages,
           mealPlan.planId
         );
-        console.log(
-          `✅ Uploaded ${Object.keys(cloudinaryMealImages).length} meal images`
-        );
+
       }
 
       // Update meal plan with Cloudinary URLs
@@ -1325,7 +1282,6 @@ exports.updateMealPlan = async (req, res) => {
         updates.planImageUrl &&
         updates.planImageUrl.startsWith("data:image/")
       ) {
-        console.log("🔄 Uploading updated main plan image to Cloudinary...");
 
         // Delete old image if exists
         if (
@@ -1346,13 +1302,11 @@ exports.updateMealPlan = async (req, res) => {
         );
         if (uploadResult) {
           cloudinaryPlanImageUrl = uploadResult.url;
-          console.log("✅ Updated main plan image uploaded:", uploadResult.url);
         }
       }
 
       // Upload new meal images if provided
       if (updates.mealImages && Object.keys(updates.mealImages).length > 0) {
-        console.log("🔄 Uploading updated meal images to Cloudinary...");
 
         // Delete old meal images that are being replaced
         for (const [mealKey, newImage] of Object.entries(updates.mealImages)) {
@@ -1370,11 +1324,6 @@ exports.updateMealPlan = async (req, res) => {
         cloudinaryMealImages = await uploadMealImages(
           updates.mealImages,
           currentMealPlan.planId
-        );
-        console.log(
-          `✅ Uploaded ${
-            Object.keys(cloudinaryMealImages).length
-          } updated meal images`
         );
       }
     } catch (imageError) {
@@ -1481,7 +1430,6 @@ exports.deleteMealPlan = async (req, res) => {
         const publicId = extractPublicIdFromUrl(mealPlan.planImageUrl);
         if (publicId) {
           await deleteImageFromCloudinary(publicId);
-          console.log("🗑️ Deleted main plan image from Cloudinary");
         }
       }
 
@@ -1495,7 +1443,6 @@ exports.deleteMealPlan = async (req, res) => {
             }
           }
         }
-        console.log("🗑️ Deleted meal images from Cloudinary");
       }
     } catch (imageError) {
       console.error("⚠️ Error deleting images from Cloudinary:", imageError);

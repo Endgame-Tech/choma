@@ -1,15 +1,17 @@
 import React from 'react'
 import { useState, useEffect } from 'react'
-import { mealPlansApi, type MealPlan, type MealPlanFilters } from '../services/mealApi'
+import { mealPlansApi, type MealPlan as ApiMealPlan, type MealPlanFilters } from '../services/mealApi'
+import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
 import CreateMealPlanModal from '../components/CreateMealPlanModal'
 import EditMealPlanModal from '../components/EditMealPlanModal'
 import MealPlanScheduler from '../components/MealPlanScheduler'
 import MealPlanCard from '../components/MealPlanCard'
-import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
+import type { MealPlan as UiMealPlan } from '../types'
 
 const MealPlans: React.FC = () => {
   const { hasPermission } = usePermissionCheck();
-  const [mealPlans, setMealPlans] = useState<MealPlan[]>([])
+  const [mealPlans, setMealPlans] = useState<UiMealPlan[]>([])
+  const [apiPlanMap, setApiPlanMap] = useState<Record<string, ApiMealPlan>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pagination, setPagination] = useState({
@@ -36,7 +38,7 @@ const MealPlans: React.FC = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [schedulerModalOpen, setSchedulerModalOpen] = useState(false)
-  const [selectedMealPlan, setSelectedMealPlan] = useState<MealPlan | null>(null)
+  const [selectedMealPlan, setSelectedMealPlan] = useState<UiMealPlan | null>(null)
 
   // View mode toggle
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
@@ -61,8 +63,57 @@ const MealPlans: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await mealPlansApi.getAllMealPlans(filters) as { data: { mealPlans: MealPlan[]; pagination: typeof pagination } }
-      setMealPlans(response.data.mealPlans)
+      const response = await mealPlansApi.getAllMealPlans(filters) as { data: { mealPlans: ApiMealPlan[]; pagination: typeof pagination } }
+      // Normalize API MealPlan -> UI MealPlan shape to satisfy shared UI types
+      const apiPlans = response.data.mealPlans || []
+      const uiPlans: UiMealPlan[] = apiPlans.map((p) => {
+        // Safe extraction helpers
+        const statsRecord = p.stats as unknown as Record<string, unknown> | undefined
+        const possibleTotalAssignments = typeof statsRecord?.totalMealsAssigned === 'number'
+          ? statsRecord!.totalMealsAssigned as number
+          : (typeof statsRecord?.totalAssignments === 'number' ? statsRecord!.totalAssignments as number : undefined)
+
+        const extra = p as unknown as Record<string, unknown>
+        const planImageUrl = typeof extra?.planImageUrl === 'string' ? extra.planImageUrl as string : p.coverImage
+        const category = typeof extra?.category === 'string' ? extra.category as string : undefined
+        const tags = Array.isArray(extra?.tags) ? (extra.tags as unknown[]).map(String) : []
+
+        return {
+          _id: p._id,
+          planId: p.planId,
+          planName: p.planName,
+          description: p.description,
+          coverImage: p.coverImage,
+          durationWeeks: p.durationWeeks,
+          targetAudience: p.targetAudience,
+          mealTypes: p.mealTypes,
+          planFeatures: p.planFeatures,
+          adminNotes: p.adminNotes,
+          totalPrice: p.totalPrice,
+          isPublished: p.isPublished,
+          isActive: p.isActive,
+          nutritionInfo: {
+            avgCaloriesPerDay: p.nutritionInfo?.avgCaloriesPerDay,
+            totalCalories: p.nutritionInfo?.totalCalories,
+            avgCaloriesPerMeal: p.nutritionInfo?.avgCaloriesPerMeal,
+          },
+          stats: {
+            avgMealsPerDay: p.stats?.avgMealsPerDay,
+            totalDays: p.stats?.totalDays,
+            totalAssignments: possibleTotalAssignments,
+          },
+          assignmentCount: p.assignmentCount,
+          assignments: (p.assignments ?? []).map(a => a as unknown as Record<string, unknown>),
+          planImageUrl,
+          category,
+          tags,
+        }
+      })
+      setMealPlans(uiPlans)
+      // store api plans by id for components that need the API shape
+      const map: Record<string, ApiMealPlan> = {}
+      apiPlans.forEach(p => { map[p._id] = p })
+      setApiPlanMap(map)
       setPagination(response.data.pagination)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch meal plans')
@@ -71,7 +122,7 @@ const MealPlans: React.FC = () => {
     }
   }
 
-  const handleCreateMealPlan = async (planData: Partial<MealPlan>) => {
+  const handleCreateMealPlan = async (planData: Partial<ApiMealPlan>) => {
     try {
       await mealPlansApi.createMealPlan(planData)
       await fetchMealPlans()
@@ -81,7 +132,7 @@ const MealPlans: React.FC = () => {
     }
   }
 
-  const handleEditMealPlan = async (planData: Partial<MealPlan>) => {
+  const handleEditMealPlan = async (planData: Partial<ApiMealPlan>) => {
     if (!selectedMealPlan) return
 
     try {
@@ -107,7 +158,7 @@ const MealPlans: React.FC = () => {
     }
   }
 
-  const handleTogglePublish = async (plan: MealPlan) => {
+  const handleTogglePublish = async (plan: UiMealPlan) => {
     try {
       if (plan.isPublished) {
         await mealPlansApi.unpublishMealPlan(plan._id)
@@ -419,7 +470,7 @@ const MealPlans: React.FC = () => {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">{plan.planName}</div>
-                          <div className="text-sm text-gray-500 dark:text-neutral-300">ID: {plan.planId}</div>
+                          <div className="text-sm text-gray-500 dark:text-neutral-300">ID: {String(plan.planId ?? plan._id)}</div>
                         </div>
                       </div>
                     </td>
@@ -427,8 +478,8 @@ const MealPlans: React.FC = () => {
                       <div className="space-y-2">
                         {/* Meal Types */}
                         <div className="flex flex-wrap gap-1">
-                          {plan.mealTypes && plan.mealTypes.length > 0 ? (
-                            plan.mealTypes.map((type) => (
+                          {Array.isArray(plan.mealTypes) && plan.mealTypes.length > 0 ? (
+                            (plan.mealTypes as string[]).map((type) => (
                               <span
                                 key={type}
                                 className="px-2 py-1 text-xs font-medium rounded-full capitalize bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
@@ -443,7 +494,7 @@ const MealPlans: React.FC = () => {
                           )}
                         </div>
                         <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">
-                          {getDurationText(plan.durationWeeks)}
+                          {getDurationText(plan.durationWeeks ?? 0)}
                         </div>
                         {plan.stats && (
                           <div className="text-xs text-gray-500 dark:text-neutral-300">
@@ -455,7 +506,7 @@ const MealPlans: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-2">
                         <div className="text-lg font-bold text-gray-900 dark:text-neutral-100">
-                          {formatCurrency(plan.totalPrice)}
+                          {formatCurrency(plan.totalPrice ?? 0)}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-neutral-300">
                           {plan.assignmentCount || 0} meals assigned
@@ -630,7 +681,7 @@ const MealPlans: React.FC = () => {
               setSchedulerModalOpen(false)
               setSelectedMealPlan(null)
             }}
-            mealPlan={mealPlans.find(p => p._id === selectedMealPlan?._id) || selectedMealPlan!}
+            mealPlan={(apiPlanMap[selectedMealPlan?._id ?? ''] as ApiMealPlan) || (mealPlans.find(p => p._id === selectedMealPlan?._id) as unknown as ApiMealPlan) || (selectedMealPlan as unknown as ApiMealPlan)}
             onUpdate={fetchMealPlans}
           />
         </>

@@ -1,40 +1,7 @@
 // admin-react/src/components/DiscountManagement.tsx - Dynamic Discount Management
 import React, { useState, useEffect } from 'react';
-import { discountApi } from '../services/api';
-
-interface DiscountRule {
-  _id?: string;
-  name: string;
-  discountPercent: number;
-  targetSegment: string;
-  isActive: boolean;
-  validFrom?: Date;
-  validUntil?: Date;
-  criteria?: {
-    minSpent?: number;
-    minStreak?: number;
-    withinDays?: number;
-    seasonName?: string;
-    seasonStart?: Date;
-    seasonEnd?: Date;
-  };
-  description?: string;
-  applicableMealPlans?: string[];
-  applicableCategories?: string[];
-  applicableTags?: string[];
-  applyToAllMealPlans?: boolean;
-}
-
-interface MealPlan {
-  _id: string;
-  planName: string;
-  name: string;
-  category?: string;
-  tags?: string[];
-  basePrice?: number;
-  totalPrice?: number;
-  planImageUrl?: string;
-}
+import { discountApi, type DiscountRule } from '../services/api';
+import type { MealPlan } from '../types';
 
 const TARGET_SEGMENTS = [
   { value: 'first_time', label: 'First-time Users', description: 'Users who have never placed an order' },
@@ -167,13 +134,13 @@ const DiscountManagement: React.FC = () => {
   const handleSaveRule = async () => {
     try {
       setError(null);
-      
-      if (!formData.name || formData.discountPercent <= 0) {
+
+      if (!formData.name || (formData.discountPercent ?? 0) <= 0) {
         setError('Please fill in all required fields');
         return;
       }
 
-      if (formData.discountPercent > 100) {
+      if ((formData.discountPercent ?? 0) > 100) {
         setError('Discount percentage cannot exceed 100%');
         return;
       }
@@ -221,7 +188,7 @@ const DiscountManagement: React.FC = () => {
             />
           </div>
         );
-      
+
       case 'long_streak':
         return (
           <div style={{ marginBottom: '16px' }}>
@@ -246,7 +213,7 @@ const DiscountManagement: React.FC = () => {
             />
           </div>
         );
-      
+
       case 'new_registrant':
         return (
           <div style={{ marginBottom: '16px' }}>
@@ -271,7 +238,7 @@ const DiscountManagement: React.FC = () => {
             />
           </div>
         );
-      
+
       case 'seasonal':
         return (
           <div>
@@ -342,7 +309,7 @@ const DiscountManagement: React.FC = () => {
             </div>
           </div>
         );
-      
+
       default:
         return null;
     }
@@ -364,10 +331,10 @@ const DiscountManagement: React.FC = () => {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ 
-            width: '40px', 
-            height: '40px', 
-            border: '4px solid #f3f4f6', 
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f4f6',
             borderTop: '4px solid #3b82f6',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
@@ -512,7 +479,7 @@ const DiscountManagement: React.FC = () => {
       {error && (
         <div className="alert alert-error">
           <strong>Error:</strong> {error}
-          <button 
+          <button
             onClick={() => setError(null)}
             style={{ float: 'right', background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer' }}
           >
@@ -524,7 +491,7 @@ const DiscountManagement: React.FC = () => {
       {success && (
         <div className="alert alert-success">
           <strong>Success:</strong> {success}
-          <button 
+          <button
             onClick={() => setSuccess(null)}
             style={{ float: 'right', background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer' }}
           >
@@ -542,21 +509,21 @@ const DiscountManagement: React.FC = () => {
                 <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', flex: 1 }}>
                   {rule.name}
                 </h3>
-                <span 
+                <span
                   className="tag"
                   style={{ backgroundColor: '#3b82f6', color: 'white' }}
                 >
-                  {rule.discountPercent}% OFF
+                  {(rule.discountPercent ?? 0)}% OFF
                 </span>
               </div>
-              
-              <span 
+
+              <span
                 className="tag"
-                style={{ backgroundColor: getSegmentColor(rule.targetSegment), color: 'white' }}
+                style={{ backgroundColor: getSegmentColor(rule.targetSegment ?? 'first_time'), color: 'white' }}
               >
-                {segment?.label || rule.targetSegment}
+                {segment?.label || (rule.targetSegment ?? 'first_time')}
               </span>
-              
+
               <p style={{ color: '#6b7280', fontSize: '14px', margin: '8px 0' }}>
                 {segment?.description}
               </p>
@@ -589,32 +556,32 @@ const DiscountManagement: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <span 
+                <span
                   className="tag"
-                  style={{ 
-                    backgroundColor: rule.isActive ? '#10b981' : '#6b7280', 
-                    color: 'white' 
+                  style={{
+                    backgroundColor: rule.isActive ? '#10b981' : '#6b7280',
+                    color: 'white'
                   }}
                 >
                   {rule.isActive ? 'Active' : 'Inactive'}
                 </span>
-                
+
                 {rule.validUntil && (
                   <span style={{ fontSize: '12px', color: '#6b7280' }}>
                     Until {new Date(rule.validUntil).toLocaleDateString()}
                   </span>
                 )}
               </div>
-              
+
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
+                <button
                   className="btn btn-secondary"
                   onClick={() => handleEditRule(rule)}
                   style={{ flex: 1 }}
                 >
                   Edit
                 </button>
-                <button 
+                <button
                   className="btn btn-danger"
                   onClick={() => handleDeleteRule(rule._id!)}
                   style={{ flex: 1 }}
@@ -634,7 +601,7 @@ const DiscountManagement: React.FC = () => {
             <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: '600' }}>
               {editingRule ? 'Edit Discount Rule' : 'Create Discount Rule'}
             </h2>
-            
+
             <div className="form-group">
               <label className="form-label" htmlFor="ruleName">
                 Rule Name *
@@ -660,7 +627,7 @@ const DiscountManagement: React.FC = () => {
                   type="number"
                   min="1"
                   max="100"
-                  value={formData.discountPercent}
+                  value={formData.discountPercent ?? 0}
                   onChange={(e) => setFormData({ ...formData, discountPercent: parseInt(e.target.value) || 0 })}
                   required
                 />
@@ -672,7 +639,7 @@ const DiscountManagement: React.FC = () => {
                 <select
                   id="targetSegment"
                   className="form-input"
-                  value={formData.targetSegment}
+                  value={formData.targetSegment ?? 'first_time'}
                   onChange={(e) => setFormData({ ...formData, targetSegment: e.target.value })}
                 >
                   {TARGET_SEGMENTS.map((segment) => (
@@ -691,12 +658,12 @@ const DiscountManagement: React.FC = () => {
               <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
                 Meal Plan Selection
               </h3>
-              
+
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input
                     type="checkbox"
-                    checked={formData.applyToAllMealPlans || false}
+                    checked={formData.applyToAllMealPlans ?? true}
                     onChange={(e) => {
                       setFormData({
                         ...formData,
@@ -719,7 +686,7 @@ const DiscountManagement: React.FC = () => {
                         <label key={mealPlan._id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                           <input
                             type="checkbox"
-                            checked={formData.applicableMealPlans?.includes(mealPlan._id) || false}
+                            checked={formData.applicableMealPlans?.includes(mealPlan._id) ?? false}
                             onChange={(e) => {
                               const current = formData.applicableMealPlans || [];
                               const updated = e.target.checked
@@ -735,7 +702,7 @@ const DiscountManagement: React.FC = () => {
                             {mealPlan.planImageUrl && (
                               <img
                                 src={mealPlan.planImageUrl}
-                                alt={mealPlan.planName || mealPlan.name}
+                                alt={String(mealPlan.planName ?? mealPlan.name ?? '')}
                                 style={{
                                   width: '30px',
                                   height: '30px',
@@ -746,10 +713,10 @@ const DiscountManagement: React.FC = () => {
                             )}
                             <div>
                               <div style={{ fontWeight: '500', fontSize: '14px' }}>
-                                {mealPlan.planName || mealPlan.name}
+                                {String(mealPlan.planName ?? mealPlan.name ?? '')}
                               </div>
                               <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                {mealPlan.category} • ₦{(mealPlan.totalPrice || mealPlan.basePrice)?.toLocaleString()}
+                                {String(mealPlan.category ?? '')} • ₦{Number(mealPlan.totalPrice ?? mealPlan.basePrice ?? 0).toLocaleString()}
                               </div>
                             </div>
                           </div>
@@ -765,7 +732,7 @@ const DiscountManagement: React.FC = () => {
                         <label key={category} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <input
                             type="checkbox"
-                            checked={formData.applicableCategories?.includes(category) || false}
+                            checked={formData.applicableCategories?.includes(category) ?? false}
                             onChange={(e) => {
                               const current = formData.applicableCategories || [];
                               const updated = e.target.checked
@@ -784,8 +751,8 @@ const DiscountManagement: React.FC = () => {
                   </div>
 
                   <div style={{ padding: '12px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '14px' }}>
-                    <strong>Selection Logic:</strong> If you select specific meal plans, the discount will only apply to those plans. 
-                    If you select categories, it will apply to all meal plans in those categories. 
+                    <strong>Selection Logic:</strong> If you select specific meal plans, the discount will only apply to those plans.
+                    If you select categories, it will apply to all meal plans in those categories.
                     If you select both, it will apply to plans that match either criteria.
                   </div>
                 </>
@@ -800,7 +767,7 @@ const DiscountManagement: React.FC = () => {
                 id="description"
                 className="form-input"
                 rows={3}
-                value={formData.description || ''}
+                value={formData.description ?? ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
             </div>
@@ -844,13 +811,13 @@ const DiscountManagement: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button 
+              <button
                 className="btn btn-secondary"
                 onClick={() => setDialogOpen(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={handleSaveRule}
               >

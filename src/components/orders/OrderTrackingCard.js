@@ -70,15 +70,15 @@ const OrderTrackingCard = ({
     {
       key: "quality_check",
       title: "Quality Check",
-      subtitle: "Final quality check completed",
+      subtitle: "Final quality inspection in progress",
       icon: "shield-checkmark",
       color: "#9C27B0",
-      estimatedTime: "2-5 min",
+      estimatedTime: "3-5 min",
     },
     {
       key: "out_for_delivery",
       title: "Out for Delivery",
-      subtitle: "Your order is on the way",
+      subtitle: "Driver has been assigned and is on the way",
       icon: "car",
       color: "#2196F3",
       estimatedTime: "15-25 min",
@@ -115,17 +115,21 @@ const OrderTrackingCard = ({
       "Assigned": 1,      // When admin assigns → "Order Confirmed" (backend format)
       "In Progress": 2,   // When chef starts cooking → "Preparing Food" (backend format)
       
-      // Delivery statuses
-      "out for delivery": 5,  // When handed to driver → "Out for Delivery"
+      // Quality Check status
+      "Quality Check": 4,     // Quality inspection step
+      "quality check": 4,     // lowercase variant
+      
+      // Delivery statuses - THESE ARE THE IMPORTANT ONES
+      "out for delivery": 5,  // When driver assigned → "Out for Delivery"
+      "Out for Delivery": 5,  // Backend format → "Out for Delivery"
       delivered: 6,           // Final step → "Delivered"
+      "Delivered": 6,         // Backend format → "Delivered"
       
       // Alternative spellings/formats that might come from backend
       preparing: 2,
       inprogress: 2,
       "preparing food": 2,
       "food ready": 3,
-      "quality check": 4,
-      quality_check: 4,
       "out_for_delivery": 5,
       outfordelivery: 5,
       
@@ -134,18 +138,21 @@ const OrderTrackingCard = ({
       "pending assignment": 0,
     };
 
-    // Check status, orderStatus, and delegationStatus fields for most accurate status
-    const rawOrderStatus = (
-      order?.delegationStatus ||  // Primary: Chef delegation status (most accurate)
-      order?.status ||           // Secondary: General order status  
-      order?.orderStatus ||      // Tertiary: Alternative status field
-      ""
-    );
+    // Check status fields, giving final statuses the highest priority
+    const orderStatus = order?.orderStatus || order?.status;
+    const delegationStatus = order?.delegationStatus;
+    let rawFinalStatus;
+
+    if (orderStatus === 'Delivered' || orderStatus === 'delivered' || orderStatus === 'Cancelled' || orderStatus === 'cancelled') {
+      rawFinalStatus = orderStatus;
+    } else {
+      rawFinalStatus = delegationStatus || orderStatus || "";
+    }
     
     // Try exact case match first, then lowercase
-    let step = statusMap[rawOrderStatus];
+    let step = statusMap[rawFinalStatus];
     if (step === undefined) {
-      const normalizedStatus = rawOrderStatus.toLowerCase();
+      const normalizedStatus = rawFinalStatus.toLowerCase();
       step = statusMap[normalizedStatus] || 0;
     }
     
@@ -154,17 +161,10 @@ const OrderTrackingCard = ({
     console.log('🔄 Order tracking status update:', {
       orderId: order?._id,
       rawDelegationStatus: order?.delegationStatus,
-      rawStatus: order?.status, 
       rawOrderStatus: order?.orderStatus,
-      finalRawStatus: rawOrderStatus,
-      normalizedStatus: rawOrderStatus.toLowerCase(),
-      foundExactMatch: statusMap.hasOwnProperty(rawOrderStatus),
-      foundNormalizedMatch: statusMap.hasOwnProperty(rawOrderStatus.toLowerCase()),
+      finalRawStatus: rawFinalStatus,
       mappedStep: step,
       stepName: orderSteps[step]?.title,
-      currentStepBefore: currentStep,
-      willUpdate: step !== currentStep,
-      allStatusMapKeys: Object.keys(statusMap)
     });
 
     // Animate progress

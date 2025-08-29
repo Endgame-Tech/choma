@@ -49,6 +49,15 @@ const notificationSchema = new mongoose.Schema({
       'chef_assigned',
       'chef_changed',
       
+      // Driver notifications
+      'driver_assignment',
+      
+      // Chef notifications
+      'chef_status_update',
+      
+      // Order status notifications
+      'order_status_update',
+      
       // Promotional notifications
       'new_meal_plans',
       'special_offer',

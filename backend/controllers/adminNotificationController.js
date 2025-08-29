@@ -386,7 +386,6 @@ class AdminNotificationController {
         // Check preferences before sending
         const preferences = await NotificationPreferences.findOne({ adminId });
         if (preferences && !preferences.shouldSendNotification(type, severity)) {
-          console.log(`Skipping notification for admin ${adminId} due to preferences`);
           continue;
         }
 

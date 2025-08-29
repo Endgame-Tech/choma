@@ -25,7 +25,7 @@ export const safeApiCall = async (apiFunction, requiresAuth = true) => {
     if (requiresAuth) {
       const token = await AsyncStorage.getItem('authToken');
       if (!token) {
-        console.log('🔒 Skipping API call - user not authenticated');
+        
         return { success: false, error: 'Not authenticated', skipRetry: true };
       }
     }

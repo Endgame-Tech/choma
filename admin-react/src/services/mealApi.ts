@@ -13,7 +13,6 @@ const api = axios.create({
 
 // Request interceptor for authentication
 api.interceptors.request.use((config) => {
-  console.log(`🍽️ Meal API Request: ${config.method?.toUpperCase()} ${config.url}`)
   
   // Add authentication token if available
   const token = localStorage.getItem('choma-admin-token')
@@ -27,7 +26,6 @@ api.interceptors.request.use((config) => {
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ Meal API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`)
     return response
   },
   (error) => {

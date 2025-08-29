@@ -7,6 +7,42 @@ const NotificationService = require('../services/notificationService');
 const deliveryAssignmentService = require('../services/deliveryAssignmentService');
 const mongoose = require('mongoose');
 
+// Helper function to check if this is the first order for a subscription
+const isFirstSubscriptionOrder = async (order) => {
+  console.log(`🔍 Checking if first subscription order:`, {
+    orderId: order._id,
+    subscriptionId: order.subscriptionId,
+    hasSubscriptionId: !!order.subscriptionId
+  });
+  
+  if (!order.subscriptionId) {
+    console.log(`❌ Not a subscription order - no subscriptionId`);
+    return false; // Not a subscription order
+  }
+  
+  try {
+    // Count previous orders for this subscription
+    const previousOrdersCount = await Order.countDocuments({
+      subscriptionId: order.subscriptionId,
+      createdAt: { $lt: order.createdAt },
+      status: { $nin: ['cancelled', 'failed'] }
+    });
+    
+    const isFirst = previousOrdersCount === 0;
+    console.log(`🔍 Subscription order analysis:`, {
+      subscriptionId: order.subscriptionId,
+      previousOrdersCount,
+      isFirstOrder: isFirst,
+      currentOrderCreatedAt: order.createdAt
+    });
+    
+    return isFirst;
+  } catch (error) {
+    console.error('Error checking first subscription order:', error);
+    return false;
+  }
+};
+
 // ============= ENHANCED ORDER MANAGEMENT =============
 
 // Get all orders with advanced filtering
@@ -276,7 +312,7 @@ exports.updateOrderStatus = async (req, res) => {
         // Auto-create delivery assignment when order is confirmed
         try {
           const result = await deliveryAssignmentService.createAssignmentFromOrder(id, {
-            isFirstDelivery: order.subscriptionId ? true : false,
+            isFirstDelivery: await isFirstSubscriptionOrder(order),
             priority: order.priority || 'normal',
             autoAssign: false // Let admin or system assign later
           });
@@ -536,11 +572,6 @@ exports.cancelOrder = async (req, res) => {
       { status: 'Cancelled' }
     );
 
-    // Here you would integrate with payment gateway for actual refund
-    // For now, we'll just log it
-    if (order.paymentStatus === 'Paid') {
-      console.log(`Refund of ₦${updateData.refundAmount} initiated for order ${order.orderId}`);
-    }
 
     res.json({
       success: true,
@@ -698,10 +729,6 @@ exports.updateOrder = async (req, res) => {
        }
      });
 
-    // If priority was updated, log it
-    if (updateData.priority) {
-      console.log(`Order ${order.orderNumber || id} priority updated to ${updateData.priority}`);
-    }
 
     res.json({
       success: true,
@@ -775,7 +802,6 @@ exports.bulkUpdateOrders = async (req, res) => {
 // Utility function to recalculate chef current capacity based on active orders
 exports.recalculateChefCapacities = async (req, res) => {
   try {
-    console.log('🔄 Starting chef capacity recalculation...');
     
     // Get all chefs
     const chefs = await Chef.find({ status: 'Active' });
@@ -803,12 +829,10 @@ exports.recalculateChefCapacities = async (req, res) => {
         corrected: oldCapacity !== activeOrdersCount
       });
       
-      console.log(`👨‍🍳 Chef ${chef.fullName}: ${oldCapacity} → ${activeOrdersCount}`);
     }
     
     const correctedChefs = results.filter(r => r.corrected);
     
-    console.log(`✅ Recalculation complete. ${correctedChefs.length} chefs had incorrect capacities.`);
     
     res.json({
       success: true,

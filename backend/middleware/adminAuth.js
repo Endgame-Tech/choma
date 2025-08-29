@@ -4,12 +4,9 @@ const Admin = require("../models/Admin");
 // Admin authentication middleware
 const authenticateAdmin = async (req, res, next) => {
   try {
-    console.log("🔍 AdminAuth middleware called for:", req.method, req.path);
     const authHeader = req.header("Authorization");
-    console.log("🔍 Auth header:", authHeader ? "Present" : "Missing");
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.log("❌ No valid auth header found");
       return res.status(401).json({
         success: false,
         error: "Access denied. No token provided or invalid format.",
@@ -17,18 +14,12 @@ const authenticateAdmin = async (req, res, next) => {
     }
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    console.log("🔍 Token extracted, length:", token.length);
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("🔍 Token decoded:", {
-        adminId: decoded.adminId,
-        type: decoded.type,
-      });
 
       // Check if it's an admin token
       if (decoded.type !== "admin") {
-        console.log("❌ Invalid token type:", decoded.type);
         return res.status(401).json({
           success: false,
           error: "Invalid token type",
@@ -71,11 +62,6 @@ const authenticateAdmin = async (req, res, next) => {
         firstName: admin.firstName,
         lastName: admin.lastName,
       };
-
-      console.log("✅ Admin authenticated successfully:", {
-        adminId: req.admin.adminId,
-        email: req.admin.email,
-      });
 
       next();
     } catch (tokenError) {

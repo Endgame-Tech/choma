@@ -32,11 +32,6 @@ class RateLimitService {
 
     if (backoffDelay > 0 && now - lastRequest < backoffDelay) {
       const remainingDelay = backoffDelay - (now - lastRequest);
-      console.log(
-        `⏱️ Rate limit active for ${endpoint}, ${Math.ceil(
-          remainingDelay / 1000
-        )}s remaining`
-      );
       return {
         shouldLimit: true,
         remainingDelay: remainingDelay,
@@ -47,9 +42,6 @@ class RateLimitService {
     // Check request count in the current minute
     const requestCount = this.requestCounts.get(key) || 0;
     if (requestCount >= this.maxRequestsPerMinute) {
-      console.log(
-        `⏱️ Request limit exceeded for ${endpoint}: ${requestCount}/${this.maxRequestsPerMinute}`
-      );
       return {
         shouldLimit: true,
         remainingDelay: this.cooldownPeriod,
@@ -75,11 +67,6 @@ class RateLimitService {
     // Reset backoff delay on successful request
     this.backoffDelays.delete(key);
 
-    console.log(
-      `📊 Request recorded for ${endpoint}: ${currentCount + 1}/${
-        this.maxRequestsPerMinute
-      }`
-    );
   }
 
   // Record a failed request (increases backoff)
@@ -104,10 +91,6 @@ class RateLimitService {
 
     this.backoffDelays.set(key, newBackoff);
     this.lastRequests.set(key, now);
-
-    console.log(
-      `❌ Failure recorded for ${endpoint}, backoff: ${newBackoff}ms`
-    );
 
     return {
       backoffDelay: newBackoff,
@@ -149,7 +132,6 @@ class RateLimitService {
     this.requestCounts.delete(key);
     this.backoffDelays.delete(key);
     this.lastRequests.delete(key);
-    console.log(`🔄 Rate limiting reset for ${endpoint}`);
   }
 
   // Get status for debugging

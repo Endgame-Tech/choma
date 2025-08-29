@@ -23,6 +23,17 @@ export interface Driver {
     totalEarnings: number;
     rating: number;
   };
+  // Optional fields populated by admin API
+  completionRate?: number;
+  activeAssignment?: {
+    _id?: string;
+    status?: string;
+    orderId?: string | {
+      orderNumber?: string;
+      totalAmount?: number;
+    };
+    estimatedDeliveryTime?: string;
+  };
   lastActiveAt: string;
   createdAt: string;
 }
@@ -34,5 +45,14 @@ export interface DriverApiResponse {
     currentPage: number;
     totalPages: number;
     totalItems: number;
+  };
+  // Summary counts provided by the admin API
+  summary?: {
+    total?: number;
+    pending?: number;
+    approved?: number;
+    suspended?: number;
+    online?: number;
+    busy?: number;
   };
 }

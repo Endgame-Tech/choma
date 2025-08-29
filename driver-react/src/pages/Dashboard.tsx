@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useDelivery } from '../contexts/DeliveryContext';
 import { DeliveryAssignment, Driver, DailyStats } from '../types';
 import { driverApi } from '../services/api';
 import {
@@ -12,80 +13,50 @@ import {
   SignalIcon,
   SignalSlashIcon
 } from '@heroicons/react/24/outline';
+import AssignmentDetailsModal from '../components/AssignmentDetailsModal';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const {
     isConnected,
     updateDriverStatus,
-    onNewAssignment,
-    onNotification
+
   } = useWebSocket();
 
   const [driver, setDriver] = useState<Driver | null>(null);
-  const [assignments, setAssignments] = useState<DeliveryAssignment[]>([]);
+  const { assignments, loading: assignmentsLoading } = useDelivery();
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [selectedAssignment, setSelectedAssignment] = useState<DeliveryAssignment | null>(null);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
 
   // Load initial data
   useEffect(() => {
     loadDashboardData();
   }, []);
 
-  // Setup WebSocket listeners
-  useEffect(() => {
-    const unsubscribeNewAssignment = onNewAssignment((assignment) => {
-      console.log('📦 New assignment received:', assignment);
-      setAssignments(prev => [assignment, ...prev]);
 
-      // Show notification
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('New Delivery Assignment', {
-          body: `Pickup from ${assignment.pickupLocation.chefName}`,
-          icon: '/delivery-icon.png'
-        });
-      }
-    });
-
-    const unsubscribeNotification = onNotification((notification) => {
-      console.log('🔔 New notification:', notification);
-      setNotifications(prev => [notification, ...prev.slice(0, 4)]);
-
-      // Show browser notification
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(notification.title, {
-          body: notification.body,
-          icon: '/delivery-icon.png'
-        });
-      }
-    });
-
-    return () => {
-      if (typeof unsubscribeNewAssignment === 'function') (unsubscribeNewAssignment as any)();
-      if (typeof unsubscribeNotification === 'function') (unsubscribeNotification as any)();
-    };
-  }, [onNewAssignment, onNotification]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
 
-      // Load driver profile
       const profileResponse = await driverApi.getProfile();
       if (profileResponse.success && profileResponse.data) {
         setDriver(profileResponse.data);
         setIsOnline(profileResponse.data.status === 'online');
       }
 
-      // Load assignments
       const assignmentsResponse = await driverApi.getAssignments();
       if (assignmentsResponse.success && assignmentsResponse.data) {
-        setAssignments(assignmentsResponse.data);
+        // Use the delivery context refresher rather than a local setter (setAssignments
+        // is not defined in this component). This keeps assignments state centralized
+        // in the DeliveryContext provider.
+        await refreshAssignments();
       }
 
-      // Load daily stats
       const statsResponse = await driverApi.getDailyStats();
       if (statsResponse.success && statsResponse.data) {
         setDailyStats(statsResponse.data);
@@ -115,11 +86,28 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleAvailabilityToggle = async () => {
+    if (!driver) return;
+
+    try {
+      const newAvailability = !driver.isAvailable;
+      const response = await driverApi.updateProfile({ isAvailable: newAvailability });
+
+      if (response.success && response.data) {
+        setDriver(response.data);
+      } else {
+        alert(response.message || 'Failed to update availability.');
+      }
+    } catch (error) {
+      console.error('Error toggling availability:', error);
+      alert('Failed to update availability. Please try again.');
+    }
+  };
+
   const handleAcceptAssignment = async (assignmentId: string) => {
     try {
       const response = await driverApi.acceptAssignment(assignmentId);
       if (response.success) {
-        // Redirect to assignment detail
         navigate(`/assignment/${assignmentId}`);
       } else {
         alert(response.message || 'Failed to accept assignment');
@@ -145,6 +133,20 @@ const Dashboard: React.FC = () => {
     });
   };
 
+  // Modal handlers
+  const handleCloseAssignmentModal = () => {
+    setShowAssignmentModal(false);
+    setSelectedAssignment(null);
+  };
+
+  const { refreshAssignments } = useDelivery();
+
+  const handleAssignmentUpdate = async (updatedAssignment: DeliveryAssignment) => {
+    // Refresh assignments from context
+    await refreshAssignments();
+    setSelectedAssignment(updatedAssignment);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -165,7 +167,6 @@ const Dashboard: React.FC = () => {
             <p className="text-gray-600 mt-1">Driver ID: {driver?.driverId}</p>
           </div>
 
-          {/* Connection Status */}
           <div className="flex items-center space-x-4">
             <div className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
               {isConnected ? (
@@ -181,27 +182,50 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Status Toggle */}
+      {/* Status Controls */}
       <div className="choma-card p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
-              <TruckIcon className="h-6 w-6 text-choma-orange" />
-              <span>Driver Status</span>
-            </h3>
-            <p className="text-gray-600 mt-2">
-              {isOnline ? '🟢 You are online and can receive delivery requests' : '🔴 You are offline and will not receive delivery requests'}
-            </p>
+        <h3 className="text-xl font-semibold text-gray-900 flex items-center space-x-2 mb-4">
+          <TruckIcon className="h-6 w-6 text-choma-orange" />
+          <span>Driver Controls</span>
+        </h3>
+        <div className="space-y-4">
+          {/* Online/Offline Toggle */}
+          <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
+            <div>
+              <p className="font-medium text-gray-800">Network Status</p>
+              <p className="text-sm text-gray-600">
+                {isOnline ? 'You are connected to the server.' : 'You are disconnected.'}
+              </p>
+            </div>
+            <button
+              onClick={handleStatusToggle}
+              className={`px-6 py-2 rounded-xl font-semibold transition-all duration-300 text-sm ${isOnline
+                ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}
+            >
+              {isOnline ? 'Go Offline' : 'Go Online'}
+            </button>
           </div>
-          <button
-            onClick={handleStatusToggle}
-            className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${isOnline
-              ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-red-500/25'
-              : 'choma-gradient hover:shadow-xl hover:shadow-choma-orange/25 text-choma-white'
-              }`}
-          >
-            {isOnline ? 'Go Offline' : 'Go Online'}
-          </button>
+          {/* Availability Toggle */}
+          <div className={`flex items-center justify-between p-4 rounded-lg ${isOnline ? 'bg-gray-50' : 'bg-gray-100 opacity-60'}`}>
+            <div>
+              <p className="font-medium text-gray-800">Accepting New Orders</p>
+              <p className="text-sm text-gray-600">
+                {driver?.isAvailable ? 'You will receive new assignments.' : 'You are not accepting new assignments.'}
+              </p>
+            </div>
+            <button
+              onClick={handleAvailabilityToggle}
+              disabled={!isOnline}
+              className={`px-6 py-2 rounded-xl font-semibold transition-all duration-300 text-sm disabled:cursor-not-allowed ${driver?.isAvailable
+                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}
+            >
+              {driver?.isAvailable ? 'Set Unavailable' : 'Set Available'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -214,10 +238,7 @@ const Dashboard: React.FC = () => {
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600 dark:text-neutral-300 mb-2">Completed Deliveries</p>
                 <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-neutral-100">
-                  {dailyStats?.completedDeliveries ?? assignments.filter(a => a.status === 'delivered').length}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {(dailyStats as any)?.completedToday ? `${(dailyStats as any).completedToday} today` : '0 today'}
+                  {dailyStats.completedDeliveries}
                 </p>
               </div>
               <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -232,13 +253,7 @@ const Dashboard: React.FC = () => {
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600 dark:text-neutral-300 mb-2">Earnings Today</p>
                 <p className="text-2xl lg:text-3xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(
-                    // prefer today's earnings, fall back to earnings or sum of assignment earnings
-                    (dailyStats as any)?.earningsToday ?? dailyStats?.earnings ?? assignments.reduce((s, a) => s + ((a as any).totalEarning ?? (a as any).earning ?? 0), 0)
-                  )}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {(dailyStats as any)?.revenueToday ? `${formatCurrency((dailyStats as any).revenueToday)} today` : '0 today'}
+                  {formatCurrency(dailyStats.earnings)}
                 </p>
               </div>
               <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -253,10 +268,7 @@ const Dashboard: React.FC = () => {
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600 dark:text-neutral-300 mb-2">Distance Covered</p>
                 <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-neutral-100">
-                  {((dailyStats?.distance ?? (dailyStats as any)?.distanceKm ?? 0)).toFixed(1)} km
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {(dailyStats as any)?.distanceToday ? `${(dailyStats as any).distanceToday} km today` : '0 km today'}
+                  {dailyStats.distance.toFixed(1)} km
                 </p>
               </div>
               <div className="w-14 h-14 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -271,10 +283,7 @@ const Dashboard: React.FC = () => {
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600 dark:text-neutral-300 mb-2">Total Assigned</p>
                 <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-neutral-100">
-                  {dailyStats?.totalDeliveries ?? assignments.length}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {assignments.filter(a => a.status === 'available').length} available
+                  {dailyStats.totalDeliveries}
                 </p>
               </div>
               <div className="w-14 h-14 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -401,7 +410,10 @@ const Dashboard: React.FC = () => {
 
                     {(assignment.status === 'assigned' || assignment.status === 'picked_up') && (
                       <button
-                        onClick={() => navigate(`/assignment/${assignment._id}`)}
+                        onClick={() => {
+                          setSelectedAssignment(assignment);
+                          setShowAssignmentModal(true);
+                        }}
                         className="px-6 py-2 bg-choma-brown text-choma-white text-sm font-bold rounded-xl hover:bg-choma-brown/80 transition-all duration-300 transform hover:scale-105"
                       >
                         View Details
@@ -414,6 +426,14 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Assignment Details Modal */}
+      <AssignmentDetailsModal
+        isOpen={showAssignmentModal}
+        onClose={handleCloseAssignmentModal}
+        assignment={selectedAssignment}
+        onAssignmentUpdate={handleAssignmentUpdate}
+      />
     </div>
   );
 };

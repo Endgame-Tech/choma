@@ -343,7 +343,7 @@ const Orders: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="">
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-neutral-100">Orders</h1>
         <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-200">Manage all customer orders ({orders.length} orders)</p>

@@ -17,6 +17,8 @@ const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost
 
 class DriverApiService {
   private api: any;
+  private cache: Map<string, { data: any; timestamp: number }> = new Map();
+  private readonly CACHE_DURATION = 10000; // 10 seconds cache
 
   constructor() {
     this.api = axios.create({
@@ -112,9 +114,32 @@ class DriverApiService {
     return this.handleRequest(this.api.post('/auth/reset-password', { email }));
   }
 
+  private getCachedData(key: string): any {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedData(key: string, data: any): void {
+    this.cache.set(key, { data, timestamp: Date.now() });
+  }
+
   // Profile methods
   async getProfile(): Promise<ApiResponse<Driver>> {
-    return this.handleRequest<Driver>(this.api.get('/profile'));
+    const cacheKey = 'profile';
+    const cached = this.getCachedData(cacheKey);
+    if (cached) {
+      console.log('📁 Using cached profile data');
+      return cached;
+    }
+
+    const result = await this.handleRequest<Driver>(this.api.get('/profile'));
+    if (result.success) {
+      this.setCachedData(cacheKey, result);
+    }
+    return result;
   }
 
   async updateProfile(updates: Partial<Driver>): Promise<ApiResponse<Driver>> {
@@ -139,7 +164,18 @@ class DriverApiService {
 
   // Assignment methods
   async getAssignments(): Promise<ApiResponse<DeliveryAssignment[]>> {
-    return this.handleRequest<DeliveryAssignment[]>(this.api.get('/assignments'));
+    const cacheKey = 'assignments';
+    const cached = this.getCachedData(cacheKey);
+    if (cached) {
+      console.log('📁 Using cached assignments data');
+      return cached;
+    }
+
+    const result = await this.handleRequest<DeliveryAssignment[]>(this.api.get('/assignments'));
+    if (result.success) {
+      this.setCachedData(cacheKey, result);
+    }
+    return result;
   }
 
   async acceptAssignment(assignmentId: string): Promise<ApiResponse> {

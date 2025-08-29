@@ -16,7 +16,7 @@ interface LocationTrackerProps {
 
 const LocationTracker: React.FC<LocationTrackerProps> = ({ 
   isActive = true, 
-  updateInterval = 10000 // 10 seconds
+  updateInterval = 60000 // 60 seconds (1 minute)
 }) => {
   const { isConnected, updateLocation } = useWebSocket();
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
@@ -87,7 +87,6 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
           updateLocation(location.latitude, location.longitude);
         }
 
-        console.log('📍 Location updated:', location);
       },
       (error) => {
         let errorMessage = 'Unknown location error';

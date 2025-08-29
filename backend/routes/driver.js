@@ -15,7 +15,8 @@ const {
   getDeliveryHistory,
   getDailyStats,
   goOnline,
-  goOffline
+  goOffline,
+  updateDriverProfile
 } = require('../controllers/driverController');
 
 const driverAuth = require('../middleware/driverAuth');
@@ -92,6 +93,7 @@ router.post('/auth/verify', verifyToken);
 
 // Profile management
 router.get('/profile', getDriverProfile);
+router.put('/profile', updateDriverProfile);
 
 // Location management
 router.put('/location', validateLocationUpdate, updateDriverLocation);

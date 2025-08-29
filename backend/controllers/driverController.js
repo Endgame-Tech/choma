@@ -262,7 +262,10 @@ const getAvailableAssignments = async (req, res) => {
     let availableAssignments = [];
     
     try {
-      if (driver.currentLocation && driver.currentLocation.coordinates) {
+      if (driver.currentLocation && 
+          driver.currentLocation.coordinates && 
+          driver.currentLocation.coordinates.length === 2 &&
+          driver.currentLocation.coordinates.every(coord => typeof coord === 'number' && !isNaN(coord))) {
         console.log('Finding assignments near driver location:', driver.currentLocation.coordinates);
         availableAssignments = await DriverAssignment.findAvailableAssignments(
           driver.currentLocation.coordinates,
@@ -411,7 +414,11 @@ const confirmDelivery = async (req, res) => {
     const { id } = req.params;
     const { confirmationCode, deliveryNotes = '', deliveryPhoto = '' } = req.body;
 
+    console.log(`🚚 Driver ${req.driver.id} confirming delivery for assignment ${id}`);
+    console.log(`📝 Request body:`, { confirmationCode, deliveryNotes, deliveryPhoto });
+
     if (!confirmationCode) {
+      console.log('❌ Missing confirmation code');
       return res.status(400).json({
         success: false,
         message: 'Confirmation code is required'
@@ -424,7 +431,22 @@ const confirmDelivery = async (req, res) => {
       status: 'picked_up'
     }).populate('orderId');
 
+    console.log(`🔍 Assignment query result:`, assignment ? 'Found' : 'Not found');
+    
     if (!assignment) {
+      // Debug: Let's see what assignments exist for this driver
+      const allAssignments = await DriverAssignment.find({ _id: id }).populate('orderId');
+      console.log(`🔍 Assignment with ID ${id} exists:`, allAssignments.length > 0);
+      if (allAssignments.length > 0) {
+        console.log(`📊 Assignment details:`, {
+          id: allAssignments[0]._id,
+          driverId: allAssignments[0].driverId,
+          status: allAssignments[0].status,
+          confirmationCode: allAssignments[0].confirmationCode
+        });
+        console.log(`❌ Driver ID mismatch: ${allAssignments[0].driverId} vs ${req.driver.id}`);
+      }
+      
       return res.status(404).json({
         success: false,
         message: 'Assignment not found or not in correct status'
@@ -432,53 +454,52 @@ const confirmDelivery = async (req, res) => {
     }
 
     // Validate confirmation code
+    console.log(`🔑 Confirmation code validation:`, {
+      expected: assignment.confirmationCode,
+      received: confirmationCode,
+      match: assignment.confirmationCode.toUpperCase() === confirmationCode.toUpperCase()
+    });
+    
     if (assignment.confirmationCode.toUpperCase() !== confirmationCode.toUpperCase()) {
+      console.log('❌ Confirmation code mismatch');
       return res.status(400).json({
         success: false,
         message: 'Invalid confirmation code'
       });
     }
 
-    // Confirm delivery
+    // Confirm delivery - this will also update the Order status and send notifications
     await assignment.confirmDelivery(confirmationCode, {
       notes: deliveryNotes,
       photo: deliveryPhoto
     });
 
-    // Update order status
-    const order = await Order.findById(assignment.orderId);
-    if (order) {
-      order.status = 'Delivered';
-      order.deliveredAt = new Date();
-      await order.save();
+    // Handle subscription and meal plan updates
+    if (assignment.isFirstDelivery && assignment.subscriptionInfo) {
+      const subscription = await Subscription.findById(assignment.subscriptionInfo.subscriptionId);
+      if (subscription && subscription.status === 'pending') {
+        subscription.status = 'active';
+        subscription.activatedAt = new Date();
+        await subscription.save();
 
-      // If this is a first delivery for subscription activation
-      if (assignment.isFirstDelivery && assignment.subscriptionInfo) {
-        const subscription = await Subscription.findById(assignment.subscriptionInfo.subscriptionId);
-        if (subscription && subscription.status === 'pending') {
-          subscription.status = 'active';
-          subscription.activatedAt = new Date();
-          await subscription.save();
-
-          console.log(`Subscription ${subscription._id} activated by delivery confirmation`);
-        }
+        console.log(`Subscription ${subscription._id} activated by delivery confirmation`);
       }
+    }
 
-      // Update meal plan daily delivery status
-      if (assignment.subscriptionInfo && assignment.subscriptionInfo.mealPlanId) {
-        const mealPlan = await MealPlan.findById(assignment.subscriptionInfo.mealPlanId);
-        if (mealPlan && mealPlan.dailyDeliveryStatus) {
-          const today = new Date().toISOString().split('T')[0];
-          const deliveryIndex = mealPlan.dailyDeliveryStatus.findIndex(
-            delivery => delivery.date.toISOString().split('T')[0] === today
-          );
-          
-          if (deliveryIndex > -1) {
-            mealPlan.dailyDeliveryStatus[deliveryIndex].status = 'delivered';
-            mealPlan.dailyDeliveryStatus[deliveryIndex].deliveredAt = new Date();
-            mealPlan.dailyDeliveryStatus[deliveryIndex].driverId = req.driver.id;
-            await mealPlan.save();
-          }
+    // Update meal plan daily delivery status
+    if (assignment.subscriptionInfo && assignment.subscriptionInfo.mealPlanId) {
+      const mealPlan = await MealPlan.findById(assignment.subscriptionInfo.mealPlanId);
+      if (mealPlan && mealPlan.dailyDeliveryStatus) {
+        const today = new Date().toISOString().split('T')[0];
+        const deliveryIndex = mealPlan.dailyDeliveryStatus.findIndex(
+          delivery => delivery.date.toISOString().split('T')[0] === today
+        );
+        
+        if (deliveryIndex > -1) {
+          mealPlan.dailyDeliveryStatus[deliveryIndex].status = 'delivered';
+          mealPlan.dailyDeliveryStatus[deliveryIndex].deliveredAt = new Date();
+          mealPlan.dailyDeliveryStatus[deliveryIndex].driverId = req.driver.id;
+          await mealPlan.save();
         }
       }
     }
@@ -486,10 +507,29 @@ const confirmDelivery = async (req, res) => {
     // Update driver stats and go back online
     const driver = await Driver.findById(req.driver.id);
     if (driver) {
-      await driver.completeDelivery({
-        distance: assignment.totalDistance,
-        earning: assignment.totalEarning
-      });
+      // Update delivery stats
+      driver.deliveryStats.completedDeliveries += 1;
+      driver.deliveryStats.totalDistance += assignment.totalDistance;
+      driver.deliveryStats.totalEarnings += assignment.totalEarning;
+      
+      // Update daily stats
+      const today = new Date().toDateString();
+      if (!driver.dailyStats || driver.dailyStats.date !== today) {
+        driver.dailyStats = {
+          date: today,
+          deliveries: 1,
+          distance: assignment.totalDistance,
+          earnings: assignment.totalEarning
+        };
+      } else {
+        driver.dailyStats.deliveries += 1;
+        driver.dailyStats.distance += assignment.totalDistance;
+        driver.dailyStats.earnings += assignment.totalEarning;
+      }
+      
+      // Set driver back to online after delivery
+      driver.status = 'online';
+      await driver.save();
     }
 
     res.json({
@@ -716,6 +756,58 @@ const verifyToken = async (req, res) => {
   }
 };
 
+// @desc    Update driver profile
+// @route   PUT /api/driver/profile
+// @access  Private
+const updateDriverProfile = async (req, res) => {
+  try {
+    const driverId = req.driver.id;
+    const updates = req.body;
+
+    // Fields that the driver is allowed to update
+    const allowedUpdates = ['fullName', 'phone', 'vehicleInfo', 'isAvailable'];
+
+    const driver = await Driver.findById(driverId);
+
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found'
+      });
+    }
+
+    // Filter out any updates that are not allowed
+    Object.keys(updates).forEach(key => {
+      if (allowedUpdates.includes(key)) {
+        if (key === 'vehicleInfo' && typeof updates[key] === 'object') {
+          driver[key] = { ...driver[key], ...updates[key] };
+        } else {
+          driver[key] = updates[key];
+        }
+      }
+    });
+
+    const updatedDriver = await driver.save();
+
+    const driverResponse = updatedDriver.toObject();
+    delete driverResponse.password;
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: driverResponse
+    });
+
+  } catch (error) {
+    console.error('Update driver profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating profile',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   registerDriver,
   loginDriver,
@@ -730,5 +822,6 @@ module.exports = {
   getDeliveryHistory,
   getDailyStats,
   goOnline,
-  goOffline
+  goOffline,
+  updateDriverProfile
 };

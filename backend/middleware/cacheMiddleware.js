@@ -13,11 +13,8 @@ const cache = (ttlSeconds = 300, keyGenerator = null) => {
       const cachedResponse = await cacheService.get(cacheKey);
       
       if (cachedResponse) {
-        console.log(`🎯 Cache HIT: ${cacheKey}`);
         return res.json(cachedResponse);
       }
-      
-      console.log(`⭕ Cache MISS: ${cacheKey}`);
       
       // Store original json method
       const originalJson = res.json;
@@ -27,7 +24,6 @@ const cache = (ttlSeconds = 300, keyGenerator = null) => {
         // Only cache successful responses
         if (data && data.success !== false && res.statusCode < 400) {
           cacheService.set(cacheKey, data, ttlSeconds);
-          console.log(`💾 Cached response: ${cacheKey}`);
         }
         
         // Call original json method

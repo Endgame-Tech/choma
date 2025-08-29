@@ -50,7 +50,7 @@ api.interceptors.request.use((config) => {
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ 2FA API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`);
+    // console.log(`✅ 2FA API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`);
     return response;
   },
   (error) => {

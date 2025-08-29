@@ -71,7 +71,6 @@ class LocationService {
       };
 
       await this.saveCurrentLocation();
-      console.log('📍 Current location updated:', this.currentLocation);
       
       return this.currentLocation;
     } catch (error) {
@@ -113,7 +112,6 @@ class LocationService {
   async startLocationTracking(callback) {
     try {
       if (this.isTracking) {
-        console.log('Location tracking already active');
         return;
       }
 
@@ -136,8 +134,6 @@ class LocationService {
           };
           
           this.saveCurrentLocation();
-          console.log('📍 Location updated:', this.currentLocation);
-          
           if (callback) {
             callback(this.currentLocation);
           }
@@ -145,7 +141,6 @@ class LocationService {
       );
 
       this.isTracking = true;
-      console.log('📍 Location tracking started');
     } catch (error) {
       console.error('Error starting location tracking:', error);
       throw error;

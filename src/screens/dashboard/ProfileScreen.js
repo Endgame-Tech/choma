@@ -144,7 +144,6 @@ const ProfileScreen = ({ navigation, route }) => {
       // Rate limit the initial data loading
       const now = Date.now();
       if (now - lastDataLoad > dataLoadCooldown) {
-        console.log("📱 Loading initial profile data...");
         setLastDataLoad(now);
 
         // Load data in batches to prevent rate limiting
@@ -154,9 +153,6 @@ const ProfileScreen = ({ navigation, route }) => {
         setTimeout(() => fetchUserAchievements(), 700);
         setTimeout(() => fetchNotificationPreferences(), 900);
       } else {
-        console.log(
-          "🚫 Profile data loading rate limited, using cached data..."
-        );
       }
     }
     loadProfileImage();
@@ -197,14 +193,9 @@ const ProfileScreen = ({ navigation, route }) => {
 
   const loadProfileImage = async () => {
     try {
-      console.log("🖼️ Loading profile image for user:", user?.email);
-      console.log("🖼️ User profile image:", user?.profileImage);
-      console.log("🖼️ Full user object:", JSON.stringify(user, null, 2));
 
       // First check if user has a profile image from registration
       if (user?.profileImage) {
-        console.log("✅ Found user profile image:", user.profileImage);
-        console.log("✅ Setting profile image without network test");
         setProfileImage(user.profileImage);
         return;
       }
@@ -212,14 +203,11 @@ const ProfileScreen = ({ navigation, route }) => {
       // Fall back to AsyncStorage for locally stored images
       const storedImage = await AsyncStorage.getItem("profileImage");
       if (storedImage) {
-        console.log("✅ Found stored profile image:", storedImage);
         setProfileImage(storedImage);
       } else {
-        console.log("ℹ️ No profile image found, will show initials");
         setProfileImage(null);
       }
     } catch (error) {
-      console.error("Error loading profile image:", error);
       setProfileImage(null);
     }
   };
@@ -232,25 +220,16 @@ const ProfileScreen = ({ navigation, route }) => {
       const lastUpdate = refreshProfileImage.lastUpdate || 0;
       const cooldown = 2000; // 2 seconds minimum between image refreshes
 
-      if (now - lastUpdate < cooldown) {
-        console.log("� Profile image refresh rate limited, skipping...");
-        return;
-      }
 
       refreshProfileImage.lastUpdate = now;
 
-      console.log("�🔄 Force refreshing profile image from database...");
       const result = await updateProfile();
       if (result.success) {
-        console.log("✅ Profile refreshed, reloading image...");
         await loadProfileImage();
       } else if (result.rateLimited) {
-        console.log("⏱️ Profile image refresh rate limited by server");
       } else {
-        console.log("❌ Failed to refresh profile:", result.message);
       }
     } catch (error) {
-      console.error("❌ Error refreshing profile image:", error);
     }
   };
 

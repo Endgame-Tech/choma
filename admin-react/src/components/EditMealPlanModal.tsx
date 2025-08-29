@@ -1,18 +1,19 @@
 import React from 'react'
 import { useState, useEffect } from 'react'
-import { type MealPlan } from '../services/mealApi'
+import type { MealPlan as ApiMealPlan } from '../services/mealApi'
+import type { MealPlan as UiMealPlan } from '../types'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 
 interface EditMealPlanModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (planData: Partial<MealPlan>) => Promise<void>
-  mealPlan: MealPlan
+  onSubmit: (planData: Partial<ApiMealPlan>) => Promise<void>
+  mealPlan: UiMealPlan
 }
 
 const targetAudiences = [
   'Fitness',
-  'Professional', 
+  'Professional',
   'Family',
   'Wellness',
   'Weight Loss',
@@ -35,18 +36,21 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
 
   const [submitting, setSubmitting] = useState(false)
 
+  // Narrow the incoming mealPlan (UI type) to a record for safe runtime checks
+  const mealPlanRec = mealPlan as unknown as Record<string, unknown>
+
   // Update form data when meal plan changes
   useEffect(() => {
     if (mealPlan) {
       setFormData({
-        planName: mealPlan.planName || '',
-        description: mealPlan.description || '',
-        coverImage: mealPlan.coverImage || '',
-        durationWeeks: mealPlan.durationWeeks?.toString() || '4',
-        targetAudience: mealPlan.targetAudience || 'Family',
-        mealTypes: mealPlan.mealTypes || ['breakfast', 'lunch', 'dinner'],
-        planFeatures: mealPlan.planFeatures?.join(', ') || '',
-        adminNotes: mealPlan.adminNotes || ''
+        planName: typeof mealPlanRec.planName === 'string' ? mealPlanRec.planName as string : '',
+        description: typeof mealPlanRec.description === 'string' ? mealPlanRec.description as string : '',
+        coverImage: typeof mealPlanRec.coverImage === 'string' ? mealPlanRec.coverImage as string : '',
+        durationWeeks: typeof mealPlanRec.durationWeeks === 'number' ? String(mealPlanRec.durationWeeks as number) : (typeof mealPlanRec.durationWeeks === 'string' ? mealPlanRec.durationWeeks as string : '4'),
+        targetAudience: typeof mealPlanRec.targetAudience === 'string' ? mealPlanRec.targetAudience as string : 'Family',
+        mealTypes: Array.isArray(mealPlanRec.mealTypes) ? (mealPlanRec.mealTypes as string[]) : ['breakfast', 'lunch', 'dinner'],
+        planFeatures: Array.isArray(mealPlanRec.planFeatures) ? (mealPlanRec.planFeatures as string[]).join(', ') : (typeof mealPlanRec.planFeatures === 'string' ? mealPlanRec.planFeatures as string : ''),
+        adminNotes: typeof mealPlanRec.adminNotes === 'string' ? mealPlanRec.adminNotes as string : ''
       })
     }
   }, [mealPlan])
@@ -78,7 +82,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.planName || !formData.description) {
       alert('Please fill in all required fields')
       return
@@ -91,7 +95,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
 
     setSubmitting(true)
     try {
-      const planData: Partial<MealPlan> = {
+      const planData: Partial<ApiMealPlan> = {
         planName: formData.planName,
         description: formData.description,
         coverImage: formData.coverImage,
@@ -141,17 +145,16 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-neutral-100">Current Status</h3>
-                  <p className="text-sm text-gray-600 dark:text-neutral-300">Last updated: {new Date(mealPlan.updatedAt).toLocaleString()}</p>
+                  <p className="text-sm text-gray-600 dark:text-neutral-300">Last updated: {mealPlanRec.updatedAt ? new Date(String(mealPlanRec.updatedAt)).toLocaleString() : '—'}</p>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    mealPlan.isPublished ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${mealPlan.isPublished ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
                     {mealPlan.isPublished ? 'Published' : 'Draft'}
                   </span>
                   <div className="text-sm text-gray-600">
-                    <div>Current Price: {formatCurrency(mealPlan.totalPrice)}</div>
-                    <div>Meals Assigned: {mealPlan.assignmentCount || 0}</div>
+                    <div>Current Price: {formatCurrency(Number(mealPlanRec.totalPrice ?? 0))}</div>
+                    <div>Meals Assigned: {Number(mealPlanRec.assignmentCount ?? 0)}</div>
                   </div>
                 </div>
               </div>
@@ -205,9 +208,9 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                   <div className="mt-2 flex space-x-4">
                     <div>
                       <div className="text-xs text-gray-500 mb-1">Current Image</div>
-                      <img 
-                        src={mealPlan.coverImage} 
-                        alt="Current plan cover" 
+                      <img
+                        src={mealPlan.coverImage}
+                        alt="Current plan cover"
                         className="h-20 w-28 object-cover rounded-lg"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none'
@@ -216,9 +219,9 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                     </div>
                     <div>
                       <div className="text-xs text-gray-500 mb-1">New Image Preview</div>
-                      <img 
-                        src={formData.coverImage} 
-                        alt="New plan cover preview" 
+                      <img
+                        src={formData.coverImage}
+                        alt="New plan cover preview"
                         className="h-20 w-28 object-cover rounded-lg border-2 border-blue-200"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none'
@@ -293,11 +296,10 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                   ].map(mealType => (
                     <label
                       key={mealType.id}
-                      className={`flex items-center space-x-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        formData.mealTypes.includes(mealType.id)
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                          : 'border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 hover:border-gray-300 dark:hover:border-neutral-500 text-gray-700 dark:text-neutral-200'
-                      }`}
+                      className={`flex items-center space-x-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all ${formData.mealTypes.includes(mealType.id)
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 hover:border-gray-300 dark:hover:border-neutral-500 text-gray-700 dark:text-neutral-200'
+                        }`}
                     >
                       <input
                         type="checkbox"
@@ -311,7 +313,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-neutral-400 mt-2">
-                  Selected: {formData.mealTypes.length} meal type{formData.mealTypes.length !== 1 ? 's' : ''} 
+                  Selected: {formData.mealTypes.length} meal type{formData.mealTypes.length !== 1 ? 's' : ''}
                   {formData.mealTypes.length > 0 && (
                     <span className="ml-1">
                       ({formData.mealTypes.map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ')})
@@ -340,7 +342,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-orange-600">
-                      {mealPlan.nutritionInfo?.avgCaloriesPerDay > 0 ? mealPlan.nutritionInfo.avgCaloriesPerDay : '—'}
+                      {mealPlan.nutritionInfo && typeof mealPlan.nutritionInfo.avgCaloriesPerDay === 'number' && mealPlan.nutritionInfo.avgCaloriesPerDay > 0 ? mealPlan.nutritionInfo.avgCaloriesPerDay : '—'}
                     </div>
                     <div className="text-gray-600 dark:text-neutral-300">Avg Cal/Day</div>
                   </div>

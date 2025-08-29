@@ -76,7 +76,6 @@ class WebSocketService {
           if (settled) return;
           settled = true;
           clearTimeout(connectionTimeout);
-          console.log('🔗 Connected to delivery service');
           this.reconnectAttempts = 0;
           resolve();
         });
@@ -95,7 +94,7 @@ class WebSocketService {
         });
 
         this.socket.on('disconnect', (reason) => {
-          console.log('🔌 Disconnected:', reason);
+          console.log('🔌 Disconnected:', reason)
           
           if (reason === 'io server disconnect' || reason === 'io client disconnect') {
             // Server or client initiated disconnect - don't auto reconnect

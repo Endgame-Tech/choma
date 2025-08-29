@@ -45,25 +45,22 @@ export const emailService = {
   // Send chef acceptance email
   async sendChefAcceptanceEmail(data: ChefAcceptanceEmailData): Promise<boolean> {
     try {
-      const emailTemplate = this.generateChefAcceptanceTemplate(data.chefName)
-      
+      const emailTemplate = this.generateChefAcceptanceTemplate(data.chefName);
+
       const emailData: EmailData = {
         to: data.chefEmail,
-        subject: 'Welcome to Choma - Your Chef Application Has Been Approved! 🎉',
+        subject: 'Welcome to Choma!',
         html: emailTemplate
-      }
+      };
 
-      // For now, we'll use a mock implementation
-      // In production, this would call your backend email service
-      console.log('Sending chef acceptance email:', emailData)
-      
+      console.log('Sending chef acceptance email:', emailData);
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      return true
+      return true;
     } catch (error) {
-      console.error('Failed to send chef acceptance email:', error)
-      return false
+      console.error('Failed to send chef acceptance email:', error);
+      return false;
     }
   },
 

@@ -17,7 +17,6 @@ class DiscountService {
     try {
       
       if (!user || !mealPlan) {
-        console.log("❌ DISCOUNT SERVICE: Missing user or meal plan data");
         return { discountPercent: 0, discountAmount: 0, reason: 'No user or meal plan data' };
       }
 
@@ -41,11 +40,8 @@ class DiscountService {
         // First check if this rule applies to this meal plan
         const mealPlanEligibility = this.checkMealPlanEligibility(mealPlan, rule);
         if (!mealPlanEligibility.eligible) {
-          console.log(`❌ Rule "${rule.name}" not applicable to meal plan: ${mealPlanEligibility.reason}`);
           continue;
         }
-        
-        console.log(`✅ Rule "${rule.name}" applicable to meal plan`);
 
         // Handle universal discounts without user activity
         if (rule.targetSegment === 'all_users') {
@@ -59,14 +55,11 @@ class DiscountService {
         
         // For user-specific discounts, try to get user activity but don't fail if it doesn't work
         try {
-          console.log("📊 DISCOUNT SERVICE: Fetching user activity for user-specific discount:", userId);
           const userActivity = await this.getUserActivity(userId);
-          console.log("📊 DISCOUNT SERVICE: Retrieved user activity:", userActivity);
           
           // Then check user eligibility
           const eligibility = await this.checkDiscountEligibility(user, userActivity, rule);
           if (eligibility.eligible) {
-            console.log(`🎉 User-specific discount found: ${rule.name}`);
             applicableDiscounts.push({
               ...rule,
               eligibilityReason: eligibility.reason,
@@ -128,7 +121,6 @@ class DiscountService {
 
     try {
       const result = await apiService.getMealPlanDiscountRules(mealPlanId);
-      console.log("🔍 getMealPlanDiscountRules API result:", result);
       
       if (result.success && result.data) {
         this.discountRulesCache.set(cacheKey, {
@@ -138,10 +130,7 @@ class DiscountService {
         return result.data; // Return just the data array
       }
 
-      // Fallback: get global discount rules if meal plan specific rules not found
-      console.log("🔍 Falling back to global discount rules");
       const globalResult = await apiService.getGlobalDiscountRules();
-      console.log("🔍 Global discount rules result:", globalResult);
       
       if (globalResult.success && globalResult.data) {
         return globalResult.data; // Return just the data array
@@ -215,14 +204,9 @@ class DiscountService {
    * @returns {Object} Eligibility result
    */
   checkMealPlanEligibility(mealPlan, discountRule) {
-    console.log("🔍 MEAL PLAN ELIGIBILITY CHECK:");
-    console.log("🔍 Meal Plan ID:", mealPlan.id || mealPlan._id);
-    console.log("🔍 Rule applicable meal plans:", discountRule.applicableMealPlans);
-    console.log("🔍 Rule applicable categories:", discountRule.applicableCategories);
     
     // If no meal plan restrictions specified, rule applies to all meal plans
     if (!discountRule.applicableMealPlans || discountRule.applicableMealPlans.length === 0) {
-      console.log("✅ ELIGIBILITY: Applies to all meal plans (empty restrictions)");
       return { eligible: true, reason: 'Applies to all meal plans' };
     }
 
@@ -230,7 +214,6 @@ class DiscountService {
     
     // Check if meal plan is in the allowed list
     if (discountRule.applicableMealPlans.includes(mealPlanId)) {
-      console.log("✅ ELIGIBILITY: Meal plan specifically included");
       return { eligible: true, reason: `Specifically configured for this meal plan` };
     }
 

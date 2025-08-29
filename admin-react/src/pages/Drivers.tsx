@@ -6,9 +6,7 @@ import {
   XCircleIcon,
   ClockIcon,
   TruckIcon,
-  MapPinIcon,
   StarIcon,
-  CurrencyDollarIcon,
   PhoneIcon,
   EnvelopeIcon,
   IdentificationIcon,
@@ -44,8 +42,11 @@ const Drivers: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const [currentPage, _setCurrentPage] = useState(1);
+  const [_selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  // prevent eslint "assigned but never used" for prefixed variables
+  void _setCurrentPage;
+  void _selectedDriver;
   const [updating, setUpdating] = useState<string | null>(null);
 
   // Confirmation modal state
@@ -69,7 +70,7 @@ const Drivers: React.FC = () => {
     type: 'warning'
   });
 
-  const { toasts, removeToast, success, error, warning } = useToast();
+  const { toasts, removeToast, success, error } = useToast();
 
   const { data: driversData, loading, error: apiError, refetch } = useCachedApi(
     () => {
@@ -149,9 +150,13 @@ const Drivers: React.FC = () => {
       setSelectedDriver(null);
       setConfirmationModal(prev => ({ ...prev, isOpen: false }));
       success(`Driver status updated to ${newStatus} successfully`);
-    } catch (error: any) {
-      console.error('Error updating driver status:', error);
-      error(`Failed to update driver status: ${error.message}`);
+    } catch (err: unknown) {
+      console.error('Error updating driver status:', err);
+      if (err instanceof Error) {
+        error(`Failed to update driver status: ${err.message}`);
+      } else {
+        error('Failed to update driver status: Unknown error');
+      }
     } finally {
       setUpdating(null);
     }
@@ -167,9 +172,13 @@ const Drivers: React.FC = () => {
       setSelectedDriver(null);
       setConfirmationModal(prev => ({ ...prev, isOpen: false }));
       success('Driver deleted successfully');
-    } catch (error: any) {
-      console.error('Error deleting driver:', error);
-      error(`Failed to delete driver: ${error.message}`);
+    } catch (err: unknown) {
+      console.error('Error deleting driver:', err);
+      if (err instanceof Error) {
+        error(`Failed to delete driver: ${err.message}`);
+      } else {
+        error('Failed to delete driver: Unknown error');
+      }
     } finally {
       setUpdating(null);
     }
@@ -213,8 +222,9 @@ const Drivers: React.FC = () => {
     }
   }
 
-  const drivers = driversData?.data || [];
-  const summary = driversData?.summary || {};
+  const typedDriversData = driversData as DriverApiResponse | undefined;
+  const drivers = typedDriversData?.data || [];
+  const summary = typedDriversData?.summary || {};
 
   if (apiError) {
     return (
@@ -304,9 +314,9 @@ const Drivers: React.FC = () => {
                 {filterType.charAt(0).toUpperCase() + filterType.slice(1)} Drivers
                 {filterType !== 'all' && summary && (
                   <span className="ml-2 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded-full">
-                    {filterType === 'pending' && summary.pending || 
-                     filterType === 'approved' && summary.approved || 
-                     filterType === 'suspended' && summary.suspended || 0}
+                    {filterType === 'pending' && summary.pending ||
+                      filterType === 'approved' && summary.approved ||
+                      filterType === 'suspended' && summary.suspended || 0}
                   </span>
                 )}
               </button>
@@ -477,7 +487,7 @@ const Drivers: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <PermissionGate permission="drivers" action="manage">
+                <PermissionGate module="drivers" action="manage">
                   <div className="p-6 pt-0 flex flex-wrap gap-2">
                     {driver.accountStatus === 'pending' && (
                       <>
@@ -497,7 +507,7 @@ const Drivers: React.FC = () => {
                         </button>
                       </>
                     )}
-                    
+
                     {driver.accountStatus === 'approved' && (
                       <button
                         onClick={() => showConfirmation('suspended', driver)}
@@ -507,7 +517,7 @@ const Drivers: React.FC = () => {
                         Suspend
                       </button>
                     )}
-                    
+
                     {driver.accountStatus === 'suspended' && (
                       <button
                         onClick={() => showConfirmation('approved', driver)}
@@ -615,7 +625,7 @@ const Drivers: React.FC = () => {
                         {new Date(driver.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <PermissionGate permission="drivers" action="manage">
+                        <PermissionGate module="drivers" action="manage">
                           <div className="flex items-center justify-end space-x-2">
                             {driver.accountStatus === 'pending' && (
                               <>
@@ -635,7 +645,7 @@ const Drivers: React.FC = () => {
                                 </button>
                               </>
                             )}
-                            
+
                             {driver.accountStatus === 'approved' && (
                               <button
                                 onClick={() => showConfirmation('suspended', driver)}
@@ -645,7 +655,7 @@ const Drivers: React.FC = () => {
                                 Suspend
                               </button>
                             )}
-                            
+
                             {driver.accountStatus === 'suspended' && (
                               <button
                                 onClick={() => showConfirmation('approved', driver)}
@@ -681,11 +691,10 @@ const Drivers: React.FC = () => {
           <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl max-w-md w-full">
             <div className="p-6">
               <div className="flex items-center mb-4">
-                <div className={`rounded-full p-2 mr-3 ${
-                  confirmationModal.type === 'danger' ? 'bg-red-100 dark:bg-red-900/30' :
-                  confirmationModal.type === 'warning' ? 'bg-yellow-100 dark:bg-yellow-900/30' :
-                  'bg-green-100 dark:bg-green-900/30'
-                }`}>
+                <div className={`rounded-full p-2 mr-3 ${confirmationModal.type === 'danger' ? 'bg-red-100 dark:bg-red-900/30' :
+                    confirmationModal.type === 'warning' ? 'bg-yellow-100 dark:bg-yellow-900/30' :
+                      'bg-green-100 dark:bg-green-900/30'
+                  }`}>
                   {confirmationModal.type === 'danger' ? (
                     <XCircleIcon className={`h-6 w-6 ${confirmationModal.type === 'danger' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'}`} />
                   ) : confirmationModal.type === 'warning' ? (
@@ -713,11 +722,10 @@ const Drivers: React.FC = () => {
                 <button
                   onClick={performAction}
                   disabled={updating !== null}
-                  className={`flex-1 px-4 py-2 text-white font-medium rounded-lg transition-colors disabled:opacity-50 ${
-                    confirmationModal.type === 'danger' ? 'bg-red-600 hover:bg-red-700' :
-                    confirmationModal.type === 'warning' ? 'bg-yellow-600 hover:bg-yellow-700' :
-                    'bg-green-600 hover:bg-green-700'
-                  }`}
+                  className={`flex-1 px-4 py-2 text-white font-medium rounded-lg transition-colors disabled:opacity-50 ${confirmationModal.type === 'danger' ? 'bg-red-600 hover:bg-red-700' :
+                      confirmationModal.type === 'warning' ? 'bg-yellow-600 hover:bg-yellow-700' :
+                        'bg-green-600 hover:bg-green-700'
+                    }`}
                 >
                   {updating !== null ? 'Processing...' : confirmationModal.confirmText}
                 </button>
