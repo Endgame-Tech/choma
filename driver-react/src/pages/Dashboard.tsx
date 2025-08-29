@@ -24,11 +24,11 @@ const Dashboard: React.FC = () => {
   } = useWebSocket();
 
   const [driver, setDriver] = useState<Driver | null>(null);
-  const { assignments, loading: assignmentsLoading } = useDelivery();
+  const { assignments, refreshAssignments } = useDelivery();
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications] = useState<any[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<DeliveryAssignment | null>(null);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
 
@@ -138,8 +138,6 @@ const Dashboard: React.FC = () => {
     setShowAssignmentModal(false);
     setSelectedAssignment(null);
   };
-
-  const { refreshAssignments } = useDelivery();
 
   const handleAssignmentUpdate = async (updatedAssignment: DeliveryAssignment) => {
     // Refresh assignments from context

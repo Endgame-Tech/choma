@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  TruckIcon,
+import {
   EyeIcon,
   EyeSlashIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import logo from "../assets/logo.svg";
 
 const Register: React.FC = () => {
   const { register } = useAuth();
@@ -40,7 +40,7 @@ const Register: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -92,11 +92,11 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
-    
+
     try {
       const registerData = {
         fullName: formData.fullName.trim(),
@@ -112,7 +112,7 @@ const Register: React.FC = () => {
       };
 
       const response = await register(registerData);
-      
+
       if (response.success) {
         setRegistrationComplete(true);
       } else {
@@ -133,11 +133,11 @@ const Register: React.FC = () => {
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
               <CheckCircleIcon className="h-10 w-10 text-green-600" />
             </div>
-            
+
             <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
               Registration Successful!
             </h2>
-            
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <div className="flex">
                 <ExclamationTriangleIcon className="h-5 w-5 text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
@@ -151,11 +151,11 @@ const Register: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <p className="text-gray-600 mb-6">
               You'll receive a notification once your account is approved. This usually takes 1-2 business days.
             </p>
-            
+
             <Link
               to="/login"
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
@@ -172,8 +172,10 @@ const Register: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center">
-            <TruckIcon className="h-12 w-12 text-primary-600" />
+          <div className="flex justify-center">
+            <div className="">
+              <img src={logo} alt="Choma Logo" className="lg:w-24 lg:h-24 w-16 h-16" />
+            </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Join Choma Drivers
@@ -415,8 +417,8 @@ const Register: React.FC = () => {
           <div className="text-center">
             <span className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link 
-                to="/login" 
+              <Link
+                to="/login"
                 className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
               >
                 Sign in here
