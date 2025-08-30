@@ -4006,18 +4006,47 @@ exports.bulkCreateMeals = async (req, res) => {
     const createdMeals = [];
     const errors = [];
 
-    for (let i = 0; i < meals.length; i++) {
-      try {
-        const meal = new Meal(meals[i]);
-        await meal.save();
-        createdMeals.push(meal);
-      } catch (error) {
-        errors.push({
-          index: i,
-          meal: meals[i],
-          error: error.message,
-        });
-      }
+    // Process meals in batches of 10 to avoid timeouts
+    const batchSize = 10;
+    for (let i = 0; i < meals.length; i += batchSize) {
+      const batch = meals.slice(i, i + batchSize);
+      
+      const batchPromises = batch.map(async (mealData, batchIndex) => {
+        try {
+          const meal = new Meal(mealData);
+          await meal.save();
+          return { success: true, meal, index: i + batchIndex };
+        } catch (error) {
+          return { 
+            success: false, 
+            error: error.message, 
+            meal: mealData, 
+            index: i + batchIndex 
+          };
+        }
+      });
+
+      const batchResults = await Promise.allSettled(batchPromises);
+      
+      batchResults.forEach((result, batchIndex) => {
+        if (result.status === 'fulfilled') {
+          if (result.value.success) {
+            createdMeals.push(result.value.meal);
+          } else {
+            errors.push({
+              index: result.value.index,
+              meal: result.value.meal,
+              error: result.value.error,
+            });
+          }
+        } else {
+          errors.push({
+            index: i + batchIndex,
+            meal: batch[batchIndex],
+            error: result.reason?.message || 'Unknown error',
+          });
+        }
+      });
     }
 
     res.json({

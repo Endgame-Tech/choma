@@ -5,7 +5,7 @@ class KeepAliveService {
   constructor() {
     this.pingInterval = null;
     this.pingUrl = process.env.RENDER_EXTERNAL_URL || process.env.RENDER_SERVICE_URL;
-    this.pingFrequency = 14 * 60 * 1000; // 14 minutes (before 15min sleep)
+    this.pingFrequency = 10 * 60 * 1000; // 10 minutes (before 15min sleep)
     this.isEnabled = process.env.NODE_ENV === 'production' && !!this.pingUrl;
     this.consecutiveFailures = 0;
     this.maxFailures = 3;
