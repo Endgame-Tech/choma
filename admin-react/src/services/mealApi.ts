@@ -212,6 +212,15 @@ export const mealsApi = {
   async bulkUpdateAvailability(mealIds: string[], isAvailable: boolean) {
     const response = await api.put('/meals/bulk/availability', { mealIds, isAvailable })
     return response.data
+  },
+
+  // Delete duplicate meals
+  async deleteDuplicateMeals() {
+    // Use a longer timeout for this potentially heavy operation
+    const response = await api.delete('/meals/duplicates', { 
+      timeout: 120000 // 2 minutes timeout for duplicate deletion
+    })
+    return response.data
   }
 }
 

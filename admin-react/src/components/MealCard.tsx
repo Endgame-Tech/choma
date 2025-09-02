@@ -28,22 +28,22 @@ const MealCard: React.FC<MealCardProps> = ({
     onSelect,
     isSelected
 }) => {
-    // Calculate proper earnings and pricing like in the modals
+    // Calculate proper earnings and pricing using new model
     const calculateEarnings = () => {
-        const ingredients = meal.pricing?.ingredients || 0;
         const cookingCosts = meal.pricing?.cookingCosts || 0;
         const packaging = meal.pricing?.packaging || 0;
-        const platformFee = meal.pricing?.platformFee || 0;
 
-        const totalCosts = ingredients + cookingCosts + packaging;
-        const profit = totalCosts * 0.4; // 40% profit
-        const totalPrice = totalCosts + profit + platformFee; // Recalculated total price including platform fee
+        // Platform fee = 20% of cooking cost
+        const platformFee = cookingCosts * 0.2;
 
-        // Chef gets: ingredients + cooking cost + 50% of profit
-        const chefEarnings = ingredients + cookingCosts + (profit * 0.5);
+        // Total price = cooking cost + packaging + platform fee
+        const totalPrice = cookingCosts + packaging + platformFee;
 
-        // Choma gets: platform fee + packaging + 50% of profit
-        const chomaEarnings = platformFee + packaging + (profit * 0.5);
+        // Chef gets: cooking cost only
+        const chefEarnings = cookingCosts;
+
+        // Choma gets: platform fee + packaging
+        const chomaEarnings = platformFee + packaging;
 
         return {
             chefEarnings,

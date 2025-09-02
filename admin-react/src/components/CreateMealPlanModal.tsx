@@ -119,7 +119,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto max-h-[70vh]">
-          <div className="p-6 space-y-6">
+          <div className="p-6 ">
             {/* Important Note */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
               <div className="flex items-start">
@@ -134,7 +134,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
             </div>
 
             {/* Basic Information */}
-            <div className="space-y-4">
+            <div className="">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                   Plan Name *

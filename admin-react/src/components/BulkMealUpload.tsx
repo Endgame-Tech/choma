@@ -13,9 +13,8 @@ interface BulkMealUploadProps {
 interface ExcelMealData {
   name: string
   description?: string
-  ingredients: number // Ingredients cost - user inputs this
   packaging: number
-  platformFee: number
+  cookingCosts: number
   category?: string
   calories?: number
   protein?: number
@@ -24,7 +23,7 @@ interface ExcelMealData {
   fiber?: number
   sugar?: number
   weight?: number
-  ingredientsList?: string // Ingredients list (different from cost)
+  ingredientsList?: string // Ingredients list text
   preparationTime?: number
   allergens?: string
   tags?: string
@@ -45,10 +44,10 @@ interface ProcessedMealData {
   name: string
   description: string
   pricing: {
-    ingredients: number
+    ingredients: number // Always 0 in new model
     cookingCosts: number
     packaging: number
-    platformFee: number
+    platformFee: number // Auto-calculated
     totalCosts: number
     profit: number
     totalPrice: number
@@ -238,17 +237,12 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
         errors.push({ row: rowNum, field: 'Meal Name', message: 'Meal name is required', value: meal.name })
       }
 
-      if (!meal.ingredients || isNaN(meal.ingredients) || meal.ingredients <= 0) {
-        errors.push({ row: rowNum, field: 'Ingredients', message: 'Valid ingredients cost is required (must be > 0)', value: meal.ingredients })
-      }
-
-
       if (!meal.packaging || isNaN(meal.packaging) || meal.packaging <= 0) {
         errors.push({ row: rowNum, field: 'Packaging', message: 'Valid packaging cost is required (must be > 0)', value: meal.packaging })
       }
 
-      if (!meal.platformFee || isNaN(meal.platformFee) || meal.platformFee < 0) {
-        errors.push({ row: rowNum, field: 'Platform Fee', message: 'Valid platform fee is required (must be >= 0)', value: meal.platformFee })
+      if (!meal.cookingCosts || isNaN(meal.cookingCosts) || meal.cookingCosts <= 0) {
+        errors.push({ row: rowNum, field: 'Cooking Costs', message: 'Valid cooking costs is required (must be > 0)', value: meal.cookingCosts })
       }
 
       // Optional field validations - Case insensitive category check
@@ -290,40 +284,35 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
 
   const convertExcelDataToMealFormat = (excelData: ExcelMealData[]) => {
     return excelData.map(meal => {
-      const ingredients = Number(meal.ingredients) || 0
       const packaging = Number(meal.packaging) || 0
-      const platformFee = Number(meal.platformFee) || 0
-      const preparationTime = Number(meal.preparationTime) || 0
+      const cookingCosts = Number(meal.cookingCosts) || 0
+      const preparationTime = Number(meal.preparationTime) || 30
 
-      // Auto-detect complexity level from prep time and ingredients cost
-      // Use medium complexity as default since detectComplexityLevel was removed
-      const complexityLevel = 'medium'
+      // Platform fee = 20% of cooking cost
+      const platformFee = cookingCosts * 0.2
 
-      // Calculate cooking costs automatically
-      const cookingCosts = calculateCookingCost(preparationTime, complexityLevel)
+      // Calculate new pricing model
+      // Total cost = cooking cost + packaging
+      const totalCosts = cookingCosts + packaging
 
-      // Calculate total costs and pricing
-      // Total cost = ingredients + cooking + packaging (delivery calculated at checkout)
-      const totalCosts = ingredients + cookingCosts + packaging
-      
-      // Profit = 40% of total cost
-      const profit = totalCosts * 0.4
-      
-      // Final price = total cost + profit + platform fee
-      const totalPrice = totalCosts + profit + platformFee
+      // No separate profit calculation in new model
+      const profit = 0
+
+      // Final price = cooking cost + packaging + platform fee
+      const totalPrice = cookingCosts + packaging + platformFee
 
       // Calculate revenue splits
-      // Chef gets: ingredients + cooking cost + 50% of profit
-      const chefEarnings = ingredients + cookingCosts + (profit * 0.5)
-      
-      // Choma gets: platform fee + packaging + 50% of profit
-      const chomaEarnings = platformFee + packaging + (profit * 0.5)
+      // Chef gets: cooking cost only
+      const chefEarnings = cookingCosts
+
+      // Choma gets: platform fee + packaging
+      const chomaEarnings = platformFee + packaging
 
       return {
         name: meal.name?.trim() || '',
         description: meal.description?.trim() || '',
         pricing: {
-          ingredients,
+          ingredients: 0, // No longer used in new model
           cookingCosts,
           packaging,
           platformFee,
@@ -333,7 +322,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
           chefEarnings,
           chomaEarnings,
           // Add the fields backend validation expects
-          basePrice: ingredients,
+          basePrice: cookingCosts, // Chef's base earnings
           chefFee: chefEarnings
         },
         nutrition: {
@@ -348,7 +337,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
         category: normalizeCategoryCase(meal.category || 'Lunch'),
         ingredients: meal.ingredientsList?.trim() || '',
         preparationTime: preparationTime,
-        complexityLevel: complexityLevel as 'low' | 'medium' | 'high',
+        complexityLevel: 'medium' as 'low' | 'medium' | 'high', // Default since we're not auto-calculating
         allergens: meal.allergens ? meal.allergens.split(',').map(a => a.trim()).filter(a => a) : [],
         tags: meal.tags ? meal.tags.split(',').map(t => t.trim()).filter(t => t) : [],
         isAvailable: meal.isAvailable ? ['TRUE', 'true', '1'].includes(meal.isAvailable.toString()) : true,
@@ -397,9 +386,8 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
           const headerMapping: { [key: string]: keyof ExcelMealData } = {
             'Meal Name': 'name',
             'Description': 'description',
-            'Ingredients (₦)': 'ingredients',
             'Packaging (₦)': 'packaging',
-            'Platform Fee (₦)': 'platformFee',
+            'Cooking Costs (₦)': 'cookingCosts',
             'Category': 'category',
             'Calories': 'calories',
             'Protein (g)': 'protein',
@@ -512,23 +500,6 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
     }
   }
 
-  // Cooking cost calculation functions (copied from CreateMealModal)
-  const calculateCookingCost = (preparationTimeMinutes: number, complexityLevel: string = 'medium'): number => {
-    if (!preparationTimeMinutes || preparationTimeMinutes <= 0) {
-      return 0
-    }
-
-    const hours = preparationTimeMinutes / 60
-    const gasCost = hours * 300
-    let utensilCost = complexityLevel === 'low' ? 50 : complexityLevel === 'high' ? 100 : 75
-    const labourCost = hours * 1200
-    let baseCookingCost = gasCost + utensilCost + labourCost
-    let multiplier = complexityLevel === 'low' ? 0.8 : complexityLevel === 'high' ? 1.3 : 1.0
-
-    const result = baseCookingCost * multiplier
-    return Math.round(isNaN(result) ? 0 : result)
-  }
-
   // Process validated meals for upload
   const handleConfirmAddMeals = async () => {
     try {
@@ -536,9 +507,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
 
       // The meals are already fully processed by convertExcelDataToMealFormat
       // Just need to add the top-level fields that backend expects
-      const processedMeals = validatedMeals.map((meal, index) => {
-        console.log(`Processing meal ${index + 1}:`, meal.name)
-        console.log('Meal pricing object:', meal.pricing)
+      const processedMeals = validatedMeals.map((meal) => {
 
         const finalMeal = {
           ...meal,
@@ -643,7 +612,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed m-0 inset-0 bg-black bg-opacity-50 flex items-center justify-center  z-50">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
@@ -668,7 +637,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
                 <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
                   <li>Download the Excel template below</li>
                   <li>Fill in your meal data following the column headers exactly</li>
-                  <li>Required columns: Meal Name, Ingredients, Packaging, Platform Fee, Preparation Time</li>
+                  <li>Required columns: Meal Name, Packaging (₦), Cooking Costs (₦)</li>
                   <li>Optional columns: Description, nutrition, ingredient, and metadata fields</li>
                   <li>Use TRUE/FALSE for Available column</li>
                   <li>Cooking costs are automatically calculated based on preparation time and complexity level</li>
@@ -729,7 +698,7 @@ export default function BulkMealUpload({ isOpen, onClose, onSuccess }: BulkMealU
 
           {/* Confirmation Screen */}
           {showConfirmation && (
-            <div className="space-y-4">
+            <div className="">
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center mb-2">
                   <CheckCircleIcon className="h-6 w-6 text-blue-600 mr-2" />

@@ -563,7 +563,7 @@ const BulkAdminOperations: React.FC<BulkAdminOperationsProps> = ({
             <p className="text-gray-600 dark:text-gray-300 mb-4">
               Send a message to {selectedAdmins.length} admin{selectedAdmins.length !== 1 ? 's' : ''}
             </p>
-            <div className="space-y-4 mb-6">
+            <div className="mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Subject

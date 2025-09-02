@@ -298,7 +298,7 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSu
           {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto p-6">
             {/* Basic Information */}
-            <div className="space-y-4 mb-6">
+            <div className="mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Role Name *

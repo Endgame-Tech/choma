@@ -50,39 +50,39 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex flex-col w-64 bg-choma-brown dark:bg-choma-black shadow-lg transition-colors duration-200">
-        <div className="flex items-center h-16 px-6 border-b border-choma-orange/20">
-          <h1 className="text-xl font-semibold font-heading text-choma-white">
+      <div className="hidden lg:flex flex-col w-64 xl:w-72 bg-choma-brown dark:bg-choma-black shadow-lg transition-colors duration-200 min-h-screen">
+        <div className="flex items-center h-16 px-4 xl:px-6 border-b border-choma-orange/20">
+          <h1 className="text-lg xl:text-xl font-semibold font-heading text-choma-white truncate">
             <span className="text-choma-orange">choma</span> Admin
           </h1>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-3 xl:px-4 py-4 xl:py-6 space-y-1 xl:space-y-2 overflow-y-auto">
           {allowedNavigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
               className={({ isActive }) =>
-                `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${isActive
+                `flex items-center px-3 xl:px-4 py-2 xl:py-3 text-xs xl:text-sm font-medium rounded-lg xl:rounded-xl transition-all duration-200 ${isActive
                   ? 'bg-choma-orange text-choma-brown shadow-lg transform scale-105'
                   : 'text-choma-white/80 hover:bg-choma-white/10 hover:text-choma-white hover:transform hover:scale-105'
                 }`
               }
             >
-              <item.icon className="w-5 h-5 mr-3" />
-              {item.name}
+              <item.icon className="w-4 h-4 xl:w-5 xl:h-5 mr-2 xl:mr-3 flex-shrink-0" />
+              <span className="truncate">{item.name}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-choma-orange/20">
+        <div className="px-3 xl:px-6 py-3 xl:py-4 bg-choma-brown border-t border-choma-orange/20 flex-shrink-0">
           {currentAdmin && (
-            <div className="mb-3 text-center">
-              <p className="text-xs text-choma-white/80 font-medium">
+            <div className="mb-2 xl:mb-3 text-center">
+              <p className="text-xs text-choma-white/80 font-medium truncate">
                 {currentAdmin.firstName} {currentAdmin.lastName}
               </p>
-              <p className="text-xs text-choma-white/60">
+              <p className="text-xs text-choma-white/60 truncate">
                 {currentAdmin.role.name}
                 {currentAdmin.isAlphaAdmin && (
                   <span className="ml-1 px-1 py-0.5 bg-choma-orange/20 text-choma-orange rounded text-[10px]">
@@ -92,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </p>
             </div>
           )}
-          <p className="text-xs text-choma-white/60 text-center">
+          <p className="text-xs text-choma-white/60 text-center hidden xl:block">
             © {new Date().getFullYear()} Choma. All rights reserved.
           </p>
         </div>
@@ -100,46 +100,46 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Mobile sidebar */}
       <div className={`lg:hidden fixed inset-y-0 left-0 z-30 w-64 bg-choma-brown dark:bg-choma-black shadow-lg transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-choma-orange/20">
-          <h1 className="text-xl font-semibold font-heading text-choma-white">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-choma-orange/20">
+          <h1 className="text-lg font-semibold font-heading text-choma-white truncate">
             <span className="text-choma-orange">choma</span> Admin
           </h1>
           <button
             onClick={onClose}
-            className="p-2 text-choma-white/80 hover:text-choma-white transition-colors"
+            className="p-2 text-choma-white/80 hover:text-choma-white transition-colors flex-shrink-0"
             aria-label="Close menu"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {allowedNavigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
               onClick={onClose}
               className={({ isActive }) =>
-                `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${isActive
+                `flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${isActive
                   ? 'bg-choma-orange text-choma-brown shadow-lg'
                   : 'text-choma-white/80 hover:bg-choma-white/10 hover:text-choma-white'
                 }`
               }
             >
-              <item.icon className="w-5 h-5 mr-3" />
-              {item.name}
+              <item.icon className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="truncate">{item.name}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-choma-orange/20">
+        <div className="px-4 py-3 border-t border-choma-orange/20 flex-shrink-0">
           {currentAdmin && (
-            <div className="mb-3 text-center">
-              <p className="text-xs text-choma-white/80 font-medium">
+            <div className="mb-2 text-center">
+              <p className="text-xs text-choma-white/80 font-medium truncate">
                 {currentAdmin.firstName} {currentAdmin.lastName}
               </p>
-              <p className="text-xs text-choma-white/60">
+              <p className="text-xs text-choma-white/60 truncate">
                 {currentAdmin.role.name}
                 {currentAdmin.isAlphaAdmin && (
                   <span className="ml-1 px-1 py-0.5 bg-choma-orange/20 text-choma-orange rounded text-[10px]">
@@ -149,9 +149,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </p>
             </div>
           )}
-          <p className="text-xs text-choma-white/60 text-center">
-            © {new Date().getFullYear()} Choma. All rights reserved.
-          </p>
         </div>
       </div>
     </>

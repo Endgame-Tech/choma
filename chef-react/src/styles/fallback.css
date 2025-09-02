@@ -317,7 +317,7 @@ button:disabled {
 
 /* Min height */
 .min-h-screen { min-height: 100vh; }
-.min-h-\\[100px\\] { min-height: 100px; }
+.min-h-100px { min-height: 100px; }
 
 /* Z-index */
 .z-50 { z-index: 50; }

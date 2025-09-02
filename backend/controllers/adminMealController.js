@@ -236,7 +236,6 @@ exports.createMealPlan = async (req, res) => {
           mealImages,
           mealPlan.planId
         );
-
       }
 
       // Update meal plan with Cloudinary URLs
@@ -305,7 +304,6 @@ exports.updateMealPlan = async (req, res) => {
         updates.planImageUrl &&
         updates.planImageUrl.startsWith("data:image/")
       ) {
-
         // Delete old image if exists
         if (
           currentMealPlan.planImageUrl &&
@@ -330,7 +328,6 @@ exports.updateMealPlan = async (req, res) => {
 
       // Upload new meal images if provided
       if (updates.mealImages && Object.keys(updates.mealImages).length > 0) {
-
         // Delete old meal images that are being replaced
         for (const [mealKey, newImage] of Object.entries(updates.mealImages)) {
           if (newImage && newImage.startsWith("data:image/")) {
@@ -1165,7 +1162,9 @@ exports.deleteMeal = async (req, res) => {
     // Recalculate the total price of the affected meal plans
     if (force && assignmentCount > 0) {
       const assignments = await MealPlanAssignment.find({ mealIds: id });
-      const mealPlanIds = [...new Set(assignments.map(a => a.mealPlanId.toString()))];
+      const mealPlanIds = [
+        ...new Set(assignments.map((a) => a.mealPlanId.toString())),
+      ];
 
       for (const mealPlanId of mealPlanIds) {
         const mealPlan = await MealPlan.findById(mealPlanId);
@@ -1911,26 +1910,26 @@ exports.bulkCreateMeals = async (req, res) => {
     const batchSize = 10;
     for (let i = 0; i < meals.length; i += batchSize) {
       const batch = meals.slice(i, i + batchSize);
-      
+
       const batchPromises = batch.map(async (mealData, batchIndex) => {
         try {
           const meal = new Meal(mealData);
           await meal.save();
           return { success: true, meal, index: i + batchIndex };
         } catch (error) {
-          return { 
-            success: false, 
-            error: error.message, 
-            meal: mealData, 
-            index: i + batchIndex 
+          return {
+            success: false,
+            error: error.message,
+            meal: mealData,
+            index: i + batchIndex,
           };
         }
       });
 
       const batchResults = await Promise.allSettled(batchPromises);
-      
+
       batchResults.forEach((result, batchIndex) => {
-        if (result.status === 'fulfilled') {
+        if (result.status === "fulfilled") {
           if (result.value.success) {
             createdMeals.push(result.value.meal);
           } else {
@@ -1944,7 +1943,7 @@ exports.bulkCreateMeals = async (req, res) => {
           errors.push({
             index: i + batchIndex,
             meal: batch[batchIndex],
-            error: result.reason?.message || 'Unknown error',
+            error: result.reason?.message || "Unknown error",
           });
         }
       });
@@ -2017,17 +2016,19 @@ exports.bulkUpdateMealAvailability = async (req, res) => {
 // Get a simplified list of meal plans for admin UI
 exports.getMealPlanListForAdmin = async (req, res) => {
   try {
-    const mealPlans = await MealPlan.find({ isActive: true }).select('_id planName name').lean();
+    const mealPlans = await MealPlan.find({ isActive: true })
+      .select("_id planName name")
+      .lean();
     res.json({
       success: true,
       data: mealPlans,
     });
   } catch (err) {
-    console.error('Get meal plan list for admin error:', err);
+    console.error("Get meal plan list for admin error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch meal plan list',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      message: "Failed to fetch meal plan list",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -2035,17 +2036,131 @@ exports.getMealPlanListForAdmin = async (req, res) => {
 // Get all unique meal plan categories
 exports.getMealPlanCategories = async (req, res) => {
   try {
-    const categories = await MealPlan.distinct('category');
+    const categories = await MealPlan.distinct("category");
     res.json({
       success: true,
-      data: categories.filter(c => c), // Filter out null/empty categories
+      data: categories.filter((c) => c), // Filter out null/empty categories
     });
   } catch (err) {
-    console.error('Get meal plan categories error:', err);
+    console.error("Get meal plan categories error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch meal plan categories',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      message: "Failed to fetch meal plan categories",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+};
+
+// ============= DUPLICATE MANAGEMENT =============
+exports.deleteDuplicateMeals = async (req, res) => {
+  try {
+    console.log("🔍 Starting duplicate meal detection...");
+
+    const duplicateGroups = await Meal.aggregate([
+      {
+        $group: {
+          _id: {
+            name: "$name",
+            totalPrice: "$pricing.totalPrice",
+          },
+          meals: { $push: { id: "$_id", createdAt: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $match: { count: { $gt: 1 } },
+      },
+    ]);
+
+    console.log(`📊 Found ${duplicateGroups.length} duplicate groups`);
+
+    if (duplicateGroups.length === 0) {
+      return res.json({
+        success: true,
+        message: "No duplicate meals found",
+        data: {
+          duplicateGroupsFound: 0,
+          mealsDeleted: 0,
+          assignmentsUpdated: 0,
+        },
+      });
+    }
+
+    let totalDeleted = 0;
+    let totalAssignmentsUpdated = 0;
+    const deletionLog = [];
+
+    console.log("🗑️  Starting duplicate deletion process...");
+
+    for (let i = 0; i < duplicateGroups.length; i++) {
+      const group = duplicateGroups[i];
+      const { meals } = group;
+
+      // Progress logging for large operations
+      if (i % 10 === 0) {
+        console.log(
+          `📈 Processing group ${i + 1}/${duplicateGroups.length} (${Math.round(
+            (i / duplicateGroups.length) * 100
+          )}%)`
+        );
+      }
+
+      // Sort by creation date to keep the oldest (first created)
+      meals.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      const keepMeal = meals[0]; // Keep the first/oldest meal
+      const duplicatesToDelete = meals.slice(1); // Delete the rest
+
+      for (const duplicate of duplicatesToDelete) {
+        try {
+          // Update meal plan assignments to reference the kept meal
+          const assignmentUpdateResult = await MealPlanAssignment.updateMany(
+            { mealIds: duplicate.id },
+            { $set: { "mealIds.$": keepMeal.id } }
+          );
+
+          // Delete the duplicate meal
+          await Meal.findByIdAndDelete(duplicate.id);
+
+          totalDeleted++;
+          totalAssignmentsUpdated += assignmentUpdateResult.modifiedCount;
+
+          deletionLog.push({
+            deletedMealId: duplicate.id,
+            keptMealId: keepMeal.id,
+            mealName: group._id.name,
+            assignmentsUpdated: assignmentUpdateResult.modifiedCount,
+          });
+        } catch (deleteError) {
+          console.error(
+            `❌ Error deleting duplicate meal ${duplicate.id}:`,
+            deleteError
+          );
+          // Continue with next duplicate instead of failing entirely
+        }
+      }
+    }
+
+    console.log(
+      `✅ Duplicate deletion completed: ${totalDeleted} meals deleted, ${totalAssignmentsUpdated} assignments updated`
+    );
+
+    res.json({
+      success: true,
+      message: `Successfully deleted ${totalDeleted} duplicate meals and updated ${totalAssignmentsUpdated} meal plan assignments`,
+      data: {
+        duplicateGroupsFound: duplicateGroups.length,
+        mealsDeleted: totalDeleted,
+        assignmentsUpdated: totalAssignmentsUpdated,
+        deletionLog,
+      },
+    });
+  } catch (error) {
+    console.error("Delete duplicate meals error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete duplicate meals",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };

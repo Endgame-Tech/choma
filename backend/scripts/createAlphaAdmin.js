@@ -3,7 +3,7 @@ const Admin = require('../models/Admin');
 require('dotenv').config();
 
 // MongoDB connection string
-const MONGODB_URI = 'mongodb+srv://getchoma:VQB2HRyxTTCis2RN@choma.tlmjami.mongodb.net/choma?retryWrites=true&w=majority&appName=Choma';
+const MONGODB_URI = 'mongodb+srv://chomaDev:65dHyGGsQ2Zhshld@chomadev.gmea24c.mongodb.net/chomaDev?retryWrites=true&w=majority&appName=chomaDev';
 
 // Alpha Admin credentials
 const ALPHA_ADMIN_DATA = {

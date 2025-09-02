@@ -32,7 +32,7 @@ class SocketService implements SocketServiceInterface {
   public socket: Socket | null = null;
   public isConnected: boolean = false;
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 5;
+  private maxReconnectAttempts: number = 10; // Increased from 5 to 10
   private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private eventCallbacks: Map<string, ((data: unknown) => void)[]> = new Map();
 

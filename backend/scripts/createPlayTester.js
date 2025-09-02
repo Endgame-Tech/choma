@@ -7,6 +7,23 @@ const Customer = require("../models/Customer");
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 
+// Lightweight CLI arg parsing to support overriding the Mongo URI when needed
+// Usage examples:
+//   node backend/scripts/createPlayTester.js [email] [password]
+//   node backend/scripts/createPlayTester.js [email] [password] --mongo-uri "mongodb://..."
+//   node backend/scripts/createPlayTester.js --mongo-uri "mongodb://..."
+const argv = process.argv.slice(2);
+for (let i = 0; i < argv.length; i++) {
+  const a = argv[i];
+  if (a === "--mongo-uri" || a === "--mongodb-uri" || a === "-m") {
+    const val = argv[i + 1];
+    if (val) {
+      process.env.MONGODB_URI = val;
+      i += 1; // skip next token
+    }
+  }
+}
+
 /**
  * Usage:
  *   node backend/scripts/createPlayTester.js [email] [password]

@@ -121,7 +121,7 @@ const Meals: React.FC = () => {
   const handleCreateMeal = async (mealData: Partial<Meal>) => {
     try {
       await mealsApi.createMeal(mealData)
-      
+
       // Log activity
       if (currentAdmin) {
         await activityLogger.logMealAction(
@@ -133,7 +133,7 @@ const Meals: React.FC = () => {
           { mealName: mealData.name, category: mealData.category }
         );
       }
-      
+
       await fetchMeals()
       setCreateModalOpen(false)
     } catch (err) {
@@ -157,7 +157,7 @@ const Meals: React.FC = () => {
 
     try {
       await mealsApi.updateMeal(selectedMeal._id, mealData)
-      
+
       // Log activity
       if (currentAdmin) {
         await activityLogger.logMealAction(
@@ -169,7 +169,7 @@ const Meals: React.FC = () => {
           { mealName: selectedMeal.name, updatedFields: Object.keys(mealData) }
         );
       }
-      
+
       await fetchMeals()
       setEditModalOpen(false)
       setSelectedMeal(null)
@@ -203,7 +203,7 @@ const Meals: React.FC = () => {
         setConfirmationModal(prev => ({ ...prev, loading: true }))
         try {
           await mealsApi.deleteMeal(id)
-          
+
           // Log activity
           if (currentAdmin) {
             await activityLogger.logMealAction(
@@ -215,7 +215,7 @@ const Meals: React.FC = () => {
               { mealName }
             );
           }
-          
+
           await fetchMeals()
           setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
         } catch (err: unknown) {
@@ -276,7 +276,7 @@ const Meals: React.FC = () => {
         setConfirmationModal(prev => ({ ...prev, loading: true }))
         try {
           await mealsApi.bulkUpdateAvailability(selectedMeals, isAvailable)
-          
+
           // Log activity
           if (currentAdmin) {
             await activityLogger.logMealAction(
@@ -288,7 +288,7 @@ const Meals: React.FC = () => {
               { mealCount: selectedMeals.length, isAvailable, mealIds: selectedMeals }
             );
           }
-          
+
           setSelectedMeals([])
           await fetchMeals()
           setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
@@ -301,15 +301,75 @@ const Meals: React.FC = () => {
               currentAdmin.email,
               'BULK_AVAILABILITY',
               undefined,
-              { 
-                mealCount: selectedMeals.length, 
-                isAvailable, 
-                successful: false, 
-                errorMessage: err instanceof Error ? err.message : 'Unknown error' 
+              {
+                mealCount: selectedMeals.length,
+                isAvailable,
+                successful: false,
+                errorMessage: err instanceof Error ? err.message : 'Unknown error'
               }
             );
           }
           alert(`Failed to update availability: ${err instanceof Error ? err.message : 'Unknown error'}`)
+          setConfirmationModal(prev => ({ ...prev, loading: false }))
+        }
+      },
+      loading: false
+    })
+  }
+
+  const handleDeleteDuplicates = async () => {
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Delete Duplicate Meals',
+      message: 'This will find meals with the same name and pricing, keep the oldest copy, and delete all duplicates. Meal plan assignments will be updated automatically. This action cannot be undone.\n\nNote: This operation may take up to 2 minutes for large databases.',
+      type: 'warning',
+      confirmText: 'Delete Duplicates',
+      onConfirm: async () => {
+        try {
+          setConfirmationModal(prev => ({ ...prev, loading: true }))
+          setLoading(true)
+
+          console.log('🔄 Starting duplicate deletion process...')
+          const result = await mealsApi.deleteDuplicateMeals()
+
+          if (currentAdmin) {
+            await activityLogger.logActivity({
+              action: 'DELETE_DUPLICATE_MEALS',
+              adminId: currentAdmin._id || '',
+              adminName: `${currentAdmin.firstName} ${currentAdmin.lastName}`,
+              adminEmail: currentAdmin.email,
+              module: 'meals',
+              details: {
+                duplicateGroupsFound: (result as any).data?.duplicateGroupsFound || 0,
+                mealsDeleted: (result as any).data?.mealsDeleted || 0,
+                assignmentsUpdated: (result as any).data?.assignmentsUpdated || 0
+              },
+              successful: true
+            })
+          }
+
+          // Refresh meals list
+          await fetchMeals()
+          setSelectedMeals([])
+          setConfirmationModal({ isOpen: false, title: '', message: '', type: 'info', confirmText: 'Confirm', onConfirm: () => { }, loading: false })
+
+          // Show success message with details
+          const resultData = (result as any)
+          alert(`✅ ${resultData.message}\n\nDetails:\n- ${resultData.data?.duplicateGroupsFound || 0} duplicate groups found\n- ${resultData.data?.mealsDeleted || 0} meals deleted\n- ${resultData.data?.assignmentsUpdated || 0} assignments updated`)
+
+        } catch (error: any) {
+          console.error('Delete duplicates error:', error)
+
+          // Handle specific error types
+          if (error?.code === 'ECONNABORTED') {
+            alert('⏱️ The operation is taking longer than expected. Please check the backend logs and try again in a few minutes.')
+          } else if (error?.response?.status === 500) {
+            alert('❌ Server error occurred during duplicate deletion. Please check the backend logs and try again.')
+          } else {
+            alert('❌ Failed to delete duplicate meals. Please try again.')
+          }
+        } finally {
+          setLoading(false)
           setConfirmationModal(prev => ({ ...prev, loading: false }))
         }
       },
@@ -333,7 +393,7 @@ const Meals: React.FC = () => {
           for (const mealId of selectedMeals) {
             await mealsApi.deleteMeal(mealId)
           }
-          
+
           // Log activity
           if (currentAdmin) {
             await activityLogger.logMealAction(
@@ -345,7 +405,7 @@ const Meals: React.FC = () => {
               { mealCount: selectedMeals.length, mealIds: selectedMeals }
             );
           }
-          
+
           setSelectedMeals([])
           await fetchMeals()
           setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
@@ -482,7 +542,17 @@ const Meals: React.FC = () => {
               Bulk Upload
             </button>
           </PermissionGate>
-          
+
+          <PermissionGate module="meals" action="delete">
+            <button
+              onClick={handleDeleteDuplicates}
+              className="inline-flex items-center px-4 py-2 bg-yellow-600 dark:bg-yellow-700 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 dark:hover:bg-yellow-800 transition-colors"
+            >
+              <i className="fi fi-sr-duplicate mr-2"></i>
+              Delete Duplicates
+            </button>
+          </PermissionGate>
+
           <PermissionGate module="meals" action="create">
             <button
               onClick={() => setCreateModalOpen(true)}
@@ -589,7 +659,7 @@ const Meals: React.FC = () => {
                   Enable Selected
                 </button>
               </PermissionGate>
-              
+
               <PermissionGate module="meals" action="manageAvailability">
                 <button
                   onClick={() => handleBulkAvailabilityUpdate(false)}
@@ -599,7 +669,7 @@ const Meals: React.FC = () => {
                   Disable Selected
                 </button>
               </PermissionGate>
-              
+
               <PermissionGate module="meals" action="delete">
                 <button
                   onClick={handleBulkDelete}
@@ -609,7 +679,7 @@ const Meals: React.FC = () => {
                   Delete Selected
                 </button>
               </PermissionGate>
-              
+
               <button
                 onClick={() => setSelectedMeals([])}
                 className="text-sm text-gray-600 dark:text-neutral-300 hover:text-gray-800 dark:hover:text-neutral-100 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -756,10 +826,9 @@ const Meals: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {(() => {
                           const {
-                            ingredients = 0,
                             cookingCosts = 0,
-                            totalCosts = 0,
-                            profit = 0,
+                            packaging = 0,
+                            platformFee = 0,
                             totalPrice = 0,
                             chefEarnings = 0,
                             chomaEarnings = 0
@@ -769,13 +838,10 @@ const Meals: React.FC = () => {
                             <div className="text-sm text-gray-900 dark:text-neutral-100">
                               <div className="font-medium">{formatCurrency(totalPrice)}</div>
                               <div className="text-xs text-gray-500 dark:text-neutral-300">
-                                Ingredients: {formatCurrency(ingredients)} + Cooking: {formatCurrency(cookingCosts)}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-neutral-300">
-                                Costs: {formatCurrency(totalCosts)} + Profit: {formatCurrency(profit)}
+                                Cooking: {formatCurrency(cookingCosts)} + Packaging: {formatCurrency(packaging)} + Platform Fee (20%): {formatCurrency(platformFee)}
                               </div>
                               <div className="text-xs text-blue-600 dark:text-blue-300 mt-1">
-                                Chef: {formatCurrency(chefEarnings)} | Choma: {formatCurrency(chomaEarnings)}
+                                Chef: {formatCurrency(chefEarnings)} (Cooking Only) | Choma: {formatCurrency(chomaEarnings)} (Platform + Packaging)
                               </div>
                             </div>
                           );
@@ -838,7 +904,7 @@ const Meals: React.FC = () => {
                               <i className="fi fi-sr-pencil"></i>
                             </button>
                           </PermissionGate>
-                          
+
                           <PermissionGate module="meals" action="delete">
                             <button
                               onClick={() => handleDeleteMeal(meal._id)}
