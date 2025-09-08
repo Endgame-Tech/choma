@@ -51,16 +51,25 @@ const SettingsScreen = ({ navigation }) => {
       } catch (biometricError) {
         console.warn("Could not load biometric settings:", biometricError);
       }
-      
+
       // Load other settings using SettingsService with fallbacks
-      const notifications = await SettingsService.getSetting('NOTIFICATIONS', true);
-      const autoDownload = await SettingsService.getSetting('AUTO_DOWNLOAD', true);
-      const dataCollection = await SettingsService.getSetting('DATA_COLLECTION', false);
+      const notifications = await SettingsService.getSetting(
+        "NOTIFICATIONS",
+        true
+      );
+      const autoDownload = await SettingsService.getSetting(
+        "AUTO_DOWNLOAD",
+        true
+      );
+      const dataCollection = await SettingsService.getSetting(
+        "DATA_COLLECTION",
+        false
+      );
 
       setSettings({
         notifications,
         biometricAuth: biometricEnabled,
-        autoDownload, 
+        autoDownload,
         dataCollection,
       });
     } catch (error) {
@@ -79,7 +88,7 @@ const SettingsScreen = ({ navigation }) => {
     if (loading) return;
 
     setLoading(true);
-    
+
     try {
       if (setting === "darkMode") {
         toggleTheme();
@@ -102,11 +111,11 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleBiometricToggle = async () => {
     const currentValue = settings.biometricAuth;
-    
+
     if (!currentValue) {
       // Enabling biometric auth
       const availability = await biometricAuthService.isAvailable();
-      
+
       if (!availability.available) {
         showError("Biometric Authentication", availability.reason);
         return;
@@ -114,10 +123,10 @@ const SettingsScreen = ({ navigation }) => {
 
       // Test biometric authentication
       const authResult = await biometricAuthService.authenticateForSettings();
-      
+
       if (authResult.success) {
         await biometricAuthService.setBiometricEnabled(true);
-        setSettings(prev => ({ ...prev, biometricAuth: true }));
+        setSettings((prev) => ({ ...prev, biometricAuth: true }));
         showInfo("Success", "Biometric authentication enabled successfully!");
       } else {
         showError("Authentication Failed", authResult.error);
@@ -129,7 +138,7 @@ const SettingsScreen = ({ navigation }) => {
         "Are you sure you want to disable biometric authentication?",
         async () => {
           await biometricAuthService.setBiometricEnabled(false);
-          setSettings(prev => ({ ...prev, biometricAuth: false }));
+          setSettings((prev) => ({ ...prev, biometricAuth: false }));
           showInfo("Success", "Biometric authentication disabled.");
         }
       );
@@ -138,7 +147,7 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleNotificationsToggle = async () => {
     const newValue = !settings.notifications;
-    
+
     try {
       // Update notification preferences
       const result = await updateNotificationPreferences({
@@ -149,12 +158,12 @@ const SettingsScreen = ({ navigation }) => {
       });
 
       if (result.success) {
-        setSettings(prev => ({ ...prev, notifications: newValue }));
+        setSettings((prev) => ({ ...prev, notifications: newValue }));
         await SettingsService.setSetting("NOTIFICATIONS", newValue);
-        
+
         showInfo(
           "Notifications " + (newValue ? "Enabled" : "Disabled"),
-          newValue 
+          newValue
             ? "You'll receive push notifications for orders and updates."
             : "Push notifications have been disabled."
         );
@@ -168,29 +177,29 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleDataCollectionToggle = async () => {
     const newValue = !settings.dataCollection;
-    
+
     showConfirm(
       newValue ? "Enable Data Collection" : "Disable Data Collection",
-      newValue 
+      newValue
         ? "Allow us to collect anonymous usage data to improve the app experience?"
         : "Are you sure you want to disable data collection? This may limit our ability to improve the app.",
       async () => {
         try {
           // Update privacy settings using PrivacyService
           const result = await PrivacyService.updatePrivacySettings({
-            allowDataCollection: newValue
+            allowDataCollection: newValue,
           });
-          
+
           if (result.success) {
-            setSettings(prev => ({ ...prev, dataCollection: newValue }));
+            setSettings((prev) => ({ ...prev, dataCollection: newValue }));
             await SettingsService.setSetting("DATA_COLLECTION", newValue);
-            
+
             // Log privacy action
             await PrivacyService.logPrivacyAction(
-              newValue ? 'data_collection_enabled' : 'data_collection_disabled',
-              { source: 'settings_screen' }
+              newValue ? "data_collection_enabled" : "data_collection_disabled",
+              { source: "settings_screen" }
             );
-            
+
             showInfo(
               "Data Collection " + (newValue ? "Enabled" : "Disabled"),
               newValue
@@ -209,12 +218,12 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleAutoDownloadToggle = async () => {
     const newValue = !settings.autoDownload;
-    
-    setSettings(prev => ({ ...prev, autoDownload: newValue }));
+
+    setSettings((prev) => ({ ...prev, autoDownload: newValue }));
     await SettingsService.setSetting("AUTO_DOWNLOAD", newValue);
-    
+
     showInfo(
-      "Auto-download " + (newValue ? "Enabled" : "Disabled"), 
+      "Auto-download " + (newValue ? "Enabled" : "Disabled"),
       newValue
         ? "Images will be automatically downloaded on WiFi."
         : "Images will only be downloaded when you tap them."
@@ -253,32 +262,35 @@ const SettingsScreen = ({ navigation }) => {
       () => {},
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Visit Website", 
+        {
+          text: "Visit Website",
           onPress: () => {
             // Use PrivacyService to get the website URL
             const websiteUrl = PrivacyService.getWebsiteUrl();
             Linking.openURL(websiteUrl).catch(() => {
               showInfo("Website", "Visit us at: " + websiteUrl);
             });
-          }
+          },
         },
-        { 
-          text: "Privacy Settings", 
+        {
+          text: "Privacy Settings",
           onPress: () => {
             try {
               navigation.navigate("PrivacySecurity");
             } catch {
               // If PrivacySecurity screen doesn't exist, show info
               showInfo(
-                "Privacy Settings", 
-                "• Data Collection: " + (settings.dataCollection ? "Enabled" : "Disabled") + 
-                "\n• Notifications: " + (settings.notifications ? "Enabled" : "Disabled") +
-                "\n• Auto-download: " + (settings.autoDownload ? "Enabled" : "Disabled")
+                "Privacy Settings",
+                "• Data Collection: " +
+                  (settings.dataCollection ? "Enabled" : "Disabled") +
+                  "\n• Notifications: " +
+                  (settings.notifications ? "Enabled" : "Disabled") +
+                  "\n• Auto-download: " +
+                  (settings.autoDownload ? "Enabled" : "Disabled")
               );
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -290,14 +302,14 @@ const SettingsScreen = ({ navigation }) => {
       () => {},
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Visit Website", 
+        {
+          text: "Visit Website",
           onPress: () => {
             const websiteUrl = PrivacyService.getWebsiteUrl();
             Linking.openURL(websiteUrl).catch(() => {
               showInfo("Website", "Visit us at: " + websiteUrl);
             });
-          }
+          },
         },
         {
           text: "App Info",
@@ -306,8 +318,8 @@ const SettingsScreen = ({ navigation }) => {
               "App Information",
               "Choma - Healthy Meal Delivery\nVersion 1.0.0\n\nFor terms and conditions, visit our website.\n\n© 2024 Choma. All rights reserved."
             );
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -318,42 +330,43 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const handleContactUs = () => {
-    showConfirm(
-      "Contact Us",
-      "How would you like to get in touch?",
-      () => {},
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Email", 
-          onPress: () => Linking.openURL("mailto:support@choma.app")
-        },
-        { 
-          text: "Phone", 
-          onPress: () => Linking.openURL("tel:+2341234567890")
-        },
-        { 
-          text: "WhatsApp", 
-          onPress: () => Linking.openURL("https://wa.me/2341234567890")
-        }
-      ]
-    );
+    showConfirm("Contact Us", "How would you like to get in touch?", () => {}, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Email",
+        onPress: () => Linking.openURL("mailto:support@choma.app"),
+      },
+      {
+        text: "Phone",
+        onPress: () => Linking.openURL("tel:+2341234567890"),
+      },
+      {
+        text: "WhatsApp",
+        onPress: () => Linking.openURL("https://wa.me/2341234567890"),
+      },
+    ]);
   };
 
   const handleRateApp = () => {
     const storeUrl = Platform.select({
       ios: "https://apps.apple.com/app/choma/id1234567890",
-      android: "https://play.google.com/store/apps/details?id=com.choma.app",
-      default: "https://choma.app"
+      android: "https://play.google.com/store/apps/details?id=com.getchoma.app",
+      default: "https://choma.app",
     });
 
     Linking.openURL(storeUrl).catch(() => {
-      showInfo("Rate Choma", "Thank you for using Choma! Please search for 'Choma' in your app store to rate us.");
+      showInfo(
+        "Rate Choma",
+        "Thank you for using Choma! Please search for 'Choma' in your app store to rate us."
+      );
     });
   };
 
   const handleCheckUpdates = async () => {
-    showInfo("Updates", "You have the latest version of Choma!\n\nVersion 1.0.0");
+    showInfo(
+      "Updates",
+      "You have the latest version of Choma!\n\nVersion 1.0.0"
+    );
   };
 
   const renderSettingItem = (
@@ -395,10 +408,7 @@ const SettingsScreen = ({ navigation }) => {
     onPress,
     color = colors.text
   ) => (
-    <TouchableOpacity 
-      style={styles(colors).actionItem} 
-      onPress={onPress}
-    >
+    <TouchableOpacity style={styles(colors).actionItem} onPress={onPress}>
       <View style={styles(colors).settingIcon}>
         <Ionicons name={icon} size={20} color={color} />
       </View>
@@ -642,7 +652,7 @@ const styles = (colors) =>
       borderRadius: THEME.borderRadius.medium,
       borderWidth: 1,
       borderColor: colors.border,
-      overflow: 'hidden',
+      overflow: "hidden",
     },
     settingItem: {
       flexDirection: "row",

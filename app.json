@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Choma",
-    "slug": "Choma",
+    "slug": "choma",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -54,7 +54,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.choma.app",
-      "versionCode": 1,
+      "versionCode": 4,
       "googleServicesFile": "./google-services.json",
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "intentFilters": [
