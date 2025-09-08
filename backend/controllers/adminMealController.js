@@ -398,6 +398,9 @@ exports.updateMealPlan = async (req, res) => {
       });
     }
 
+    // Recalculate totals and nutrition after updates
+    await mealPlan.updateCalculatedFields();
+
     res.json({
       success: true,
       message: "Meal plan updated successfully",
@@ -1413,6 +1416,9 @@ exports.updateMealPlanV2 = async (req, res) => {
         message: "Meal plan not found",
       });
     }
+
+    // Recalculate totals and nutrition in case assignments or related data changed
+    await mealPlan.updateCalculatedFields();
 
     res.json({
       success: true,
