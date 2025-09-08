@@ -4,6 +4,7 @@ import { mealPlansApi, type MealPlan as ApiMealPlan, type MealPlanFilters } from
 import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
 import CreateMealPlanModal from '../components/CreateMealPlanModal'
 import EditMealPlanModal from '../components/EditMealPlanModal'
+import DuplicateMealPlanModal from '../components/DuplicateMealPlanModal'
 import MealPlanScheduler from '../components/MealPlanScheduler'
 import MealPlanCard from '../components/MealPlanCard'
 import type { MealPlan as UiMealPlan } from '../types'
@@ -37,8 +38,10 @@ const MealPlans: React.FC = () => {
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
   const [schedulerModalOpen, setSchedulerModalOpen] = useState(false)
   const [selectedMealPlan, setSelectedMealPlan] = useState<UiMealPlan | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   // View mode toggle
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
@@ -183,6 +186,36 @@ const MealPlans: React.FC = () => {
     }
   }
 
+  const handleDuplicateMealPlan = (plan: UiMealPlan) => {
+    setSelectedMealPlan(plan)
+    setDuplicateModalOpen(true)
+  }
+
+  const handleDuplicateSubmit = async (newPlanName: string, modifications?: any) => {
+    if (!selectedMealPlan) return
+
+    setIsLoading(true)
+    try {
+      await mealPlansApi.duplicateMealPlan(selectedMealPlan._id, newPlanName, modifications)
+      await fetchMealPlans()
+      setDuplicateModalOpen(false)
+      setSelectedMealPlan(null)
+      // Show success feedback
+      const successEvent = new CustomEvent('show-notification', {
+        detail: {
+          type: 'success',
+          message: `Meal plan "${newPlanName}" has been created successfully!`
+        }
+      })
+      window.dispatchEvent(successEvent)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to duplicate meal plan'
+      throw new Error(errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -280,7 +313,7 @@ const MealPlans: React.FC = () => {
           <PermissionGate module="mealPlans" action="create">
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-choma-brown dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
             >
               <i className="fi fi-sr-plus mr-2"></i>
               Create Meal Plan
@@ -405,6 +438,7 @@ const MealPlans: React.FC = () => {
                 setSchedulerModalOpen(true)
               } : undefined}
               onTogglePublish={hasPermission('mealPlans', 'publish') ? handleTogglePublish : undefined}
+              onDuplicate={hasPermission('mealPlans', 'create') ? handleDuplicateMealPlan : undefined}
               onSelect={handleSelectMealPlan}
               isSelected={selectedMealPlans.includes(plan._id)}
             />
@@ -602,6 +636,19 @@ const MealPlans: React.FC = () => {
                           </button>
                         </PermissionGate>
 
+                        {/* Duplicate Button */}
+                        <PermissionGate module="mealPlans" action="create">
+                          <button
+                            onClick={() => handleDuplicateMealPlan(plan)}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900/30 hover:bg-gray-200 dark:hover:bg-gray-900/50 transition-colors"
+                            title="Duplicate meal plan"
+                            aria-label={`Duplicate ${plan.planName}`}
+                          >
+                            <i className="fi fi-sr-copy mr-1"></i>
+                            Duplicate
+                          </button>
+                        </PermissionGate>
+
                         {/* Delete Button */}
                         <PermissionGate module="mealPlans" action="delete">
                           <button
@@ -683,6 +730,19 @@ const MealPlans: React.FC = () => {
             }}
             mealPlan={(apiPlanMap[selectedMealPlan?._id ?? ''] as ApiMealPlan) || (mealPlans.find(p => p._id === selectedMealPlan?._id) as unknown as ApiMealPlan) || (selectedMealPlan as unknown as ApiMealPlan)}
             onUpdate={fetchMealPlans}
+          />
+
+          <DuplicateMealPlanModal
+            isOpen={duplicateModalOpen}
+            onClose={() => {
+              if (!isLoading) {
+                setDuplicateModalOpen(false)
+                setSelectedMealPlan(null)
+              }
+            }}
+            onSubmit={handleDuplicateSubmit}
+            mealPlan={selectedMealPlan}
+            isLoading={isLoading}
           />
         </>
       )}

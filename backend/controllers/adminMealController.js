@@ -655,7 +655,7 @@ exports.exportMealPlanData = async (req, res) => {
   }
 };
 
-// Duplicate meal plan
+// Duplicate meal plan (V2 with MealPlanAssignment system)
 exports.duplicateMealPlan = async (req, res) => {
   try {
     const { id } = req.params;
@@ -675,35 +675,44 @@ exports.duplicateMealPlan = async (req, res) => {
       _id: undefined,
       planId: undefined, // Let the pre-save hook generate this
       planName: newPlanName || `${originalPlan.planName} (Copy)`,
-      createdDate: new Date(),
-      lastModified: new Date(),
-      sampleMeals: [], // Will be created separately
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isPublished: false, // Always create duplicates as drafts
+      totalPrice: 0, // Will be recalculated after assignments are copied
       ...modifications,
     });
 
     await duplicatePlan.save();
 
-    // Duplicate associated daily meals if they exist
-    if (originalPlan.sampleMeals && originalPlan.sampleMeals.length > 0) {
-      const originalMeals = await DailyMeal.find({
-        _id: { $in: originalPlan.sampleMeals },
-      });
-      const duplicatedMeals = [];
+    // Duplicate meal plan assignments (V2 system)
+    const originalAssignments = await MealPlanAssignment.find({ 
+      mealPlanId: id 
+    });
 
-      for (const meal of originalMeals) {
-        const duplicatedMeal = new DailyMeal({
-          ...meal.toObject(),
+    if (originalAssignments.length > 0) {
+      const duplicatedAssignments = [];
+      
+      for (const assignment of originalAssignments) {
+        const duplicatedAssignment = new MealPlanAssignment({
+          ...assignment.toObject(),
           _id: undefined,
-          mealId: undefined, // Will be auto-generated
-          mealPlans: [duplicatePlan._id],
+          assignmentId: undefined, // Will be auto-generated
+          mealPlanId: duplicatePlan._id,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         });
 
-        const savedMeal = await duplicatedMeal.save();
-        duplicatedMeals.push(savedMeal._id);
+        const savedAssignment = await duplicatedAssignment.save();
+        duplicatedAssignments.push(savedAssignment);
       }
 
-      duplicatePlan.sampleMeals = duplicatedMeals;
-      await duplicatePlan.save();
+      // Recalculate total price and nutrition info for the duplicate
+      await duplicatePlan.updateCalculatedFields();
+    }
+
+    // Apply any final modifications after assignments are copied
+    if (modifications.isPublished && originalAssignments.length > 0) {
+      await duplicatePlan.publish();
     }
 
     res.status(201).json({

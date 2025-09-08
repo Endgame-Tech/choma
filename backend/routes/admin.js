@@ -210,6 +210,7 @@ router.put("/meal-plans/:id", adminMealController.updateMealPlanV2);
 router.delete("/meal-plans/:id", adminMealController.deleteMealPlanV2);
 router.put("/meal-plans/:id/publish", adminMealController.publishMealPlan);
 router.put("/meal-plans/:id/unpublish", adminMealController.unpublishMealPlan);
+router.post("/meal-plans/:id/duplicate", adminMealController.duplicateMealPlan);
 
 // Meal Assignment System
 router.get(

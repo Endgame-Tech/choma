@@ -313,6 +313,15 @@ export const mealPlansApi = {
     const params = week ? `?week=${week}` : ''
     const response = await api.get(`/meal-plans/${id}/schedule${params}`)
     return response.data
+  },
+
+  // Duplicate meal plan
+  async duplicateMealPlan(id: string, newPlanName?: string, modifications?: Partial<MealPlan>) {
+    const response = await api.post(`/meal-plans/${id}/duplicate`, {
+      newPlanName,
+      modifications
+    })
+    return response.data
   }
 }
 

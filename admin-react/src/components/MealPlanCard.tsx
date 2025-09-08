@@ -8,7 +8,8 @@ import {
     FiClock,
     FiDollarSign,
     FiEyeOff,
-    FiGlobe
+    FiGlobe,
+    FiCopy
 } from 'react-icons/fi';
 
 interface MealPlanCardProps {
@@ -17,6 +18,7 @@ interface MealPlanCardProps {
     onDelete?: (id: string) => void;
     onSchedule?: (mealPlan: MealPlan) => void;
     onTogglePublish?: (mealPlan: MealPlan) => void;
+    onDuplicate?: (mealPlan: MealPlan) => void;
     onSelect?: (id: string) => void;
     isSelected?: boolean;
 }
@@ -37,6 +39,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
     onDelete,
     onSchedule,
     onTogglePublish,
+    onDuplicate,
     onSelect,
     isSelected
 }) => {
@@ -191,6 +194,15 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
                             title="Edit Meal Plan"
                         >
                             <FiEdit className="w-4 h-4" />
+                        </button>
+                    )}
+                    {onDuplicate && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDuplicate(mealPlan); }}
+                            className="p-1.5 bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900/30 shadow-md"
+                            title="Duplicate Meal Plan"
+                        >
+                            <FiCopy className="w-4 h-4" />
                         </button>
                     )}
                     {onDelete && (
