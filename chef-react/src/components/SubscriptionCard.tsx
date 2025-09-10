@@ -6,11 +6,8 @@ import {
   Star,
   TrendingUp,
   ChefHat,
-  MapPin,
-  Phone,
   Mail,
   AlertTriangle,
-  CheckCircle,
   ArrowRight,
   MoreVertical
 } from 'lucide-react';
@@ -158,6 +155,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           <button
             onClick={() => setShowActions(!showActions)}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title="Show actions"
           >
             <MoreVertical size={16} />
           </button>

@@ -3,14 +3,11 @@ import { chefSubscriptionsApi } from '../services/api';
 import {
   Clock,
   ChefHat,
-  Calendar,
-  MapPin,
   Users,
   CheckCircle,
   AlertCircle,
   Play,
   Pause,
-  RotateCcw,
   Timer,
   Zap,
   ArrowRight,
@@ -74,6 +71,13 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
     fetchActiveBatches();
   }, []);
 
+  // Log activeBatches for development purposes
+  useEffect(() => {
+    if (activeBatches.length > 0) {
+      console.log('Active batches updated:', activeBatches.length);
+    }
+  }, [activeBatches]);
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (timerActive && preparationTimer > 0) {
@@ -116,36 +120,23 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'text-gray-600 bg-gray-100';
-      case 'in_progress':
-        return 'text-blue-600 bg-blue-100';
-      case 'completed':
-        return 'text-green-600 bg-green-100';
-      case 'paused':
-        return 'text-yellow-600 bg-yellow-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
-  };
+
 
   const startBatchPreparation = async (batch: BatchGroup) => {
     try {
-      const data = await chefSubscriptionsApi.startBatchPreparation(batch._id);
-      
+      await chefSubscriptionsApi.startBatchPreparation(batch._id);
+
       setSelectedBatch(batch);
       setPreparationTimer(batch.totalPreparationTime * 60); // Convert to seconds
       setTimerActive(true);
-      
+
       const newActiveBatch: ActiveBatch = {
         batchId: batch._id,
         startedAt: new Date().toISOString(),
@@ -154,10 +145,10 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
         estimatedCompletion: new Date(Date.now() + batch.totalPreparationTime * 60 * 1000).toISOString(),
         meals: batch.meals
       };
-      
+
       setActiveBatches(prev => [...prev, newActiveBatch]);
       onScheduleBatch(newActiveBatch);
-      
+
       // Remove from available batches
       setAvailableBatches(prev => prev.filter(b => b._id !== batch._id));
     } catch (err) {
@@ -175,14 +166,14 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
 
   const handleBatchCompletion = async () => {
     if (!selectedBatch) return;
-    
+
     try {
       await chefSubscriptionsApi.completeBatchPreparation(selectedBatch._id);
-      
+
       setActiveBatches(prev => prev.filter(b => b.batchId !== selectedBatch._id));
       setSelectedBatch(null);
       setPreparationTimer(0);
-      
+
       await fetchBatchOpportunities();
     } catch (err) {
       console.error('Failed to complete batch preparation:', err);
@@ -191,15 +182,15 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
 
   const cancelBatchPreparation = async () => {
     if (!selectedBatch) return;
-    
+
     try {
       await chefSubscriptionsApi.cancelBatchPreparation(selectedBatch._id);
-      
+
       setActiveBatches(prev => prev.filter(b => b.batchId !== selectedBatch._id));
       setSelectedBatch(null);
       setPreparationTimer(0);
       setTimerActive(false);
-      
+
       await fetchBatchOpportunities();
     } catch (err) {
       console.error('Failed to cancel batch preparation:', err);
@@ -249,7 +240,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
             Optimize your cooking workflow with batch preparation
           </p>
         </div>
-        
+
         {selectedBatch && (
           <div className="flex items-center gap-2">
             <div className="bg-blue-100 dark:bg-blue-800 px-4 py-2 rounded-lg">
@@ -260,17 +251,21 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
                 </span>
               </div>
             </div>
-            
+
             <button
               onClick={timerActive ? pauseBatchPreparation : resumeBatchPreparation}
               className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title={timerActive ? 'Pause batch preparation' : 'Resume batch preparation'}
+              aria-label={timerActive ? 'Pause batch preparation' : 'Resume batch preparation'}
             >
               {timerActive ? <Pause size={16} /> : <Play size={16} />}
             </button>
-            
+
             <button
               onClick={cancelBatchPreparation}
               className="p-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-lg hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+              title="Cancel batch preparation"
+              aria-label="Cancel batch preparation"
             >
               <X size={16} />
             </button>
@@ -290,7 +285,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
                 {selectedBatch.count} meals • Est. {selectedBatch.estimatedTimeSaving}min saved
               </p>
             </div>
-            
+
             <div className="text-right">
               <p className="text-2xl font-bold text-blue-600">
                 {Math.round(((selectedBatch.totalPreparationTime * 60 - preparationTimer) / (selectedBatch.totalPreparationTime * 60)) * 100)}%
@@ -298,7 +293,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
               <p className="text-xs text-gray-500">Complete</p>
             </div>
           </div>
-          
+
           {/* Progress Bar */}
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-4">
             <div
@@ -308,10 +303,10 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
               }}
             ></div>
           </div>
-          
+
           {/* Meal Progress */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {selectedBatch.meals.slice(0, 3).map((meal, index) => (
+            {selectedBatch.meals.slice(0, 3).map((meal) => (
               <div key={meal._id} className="bg-white dark:bg-gray-800 p-3 rounded-lg border">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
@@ -326,7 +321,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
                 </div>
               </div>
             ))}
-            
+
             {selectedBatch.meals.length > 3 && (
               <div className="flex items-center justify-center text-sm text-gray-500">
                 +{selectedBatch.meals.length - 3} more
@@ -341,7 +336,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           Available Batch Opportunities
         </h3>
-        
+
         {availableBatches.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <ChefHat size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
@@ -368,7 +363,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
                       {batch.count} similar meals
                     </p>
                   </div>
-                  
+
                   <div className="text-right">
                     <div className="flex items-center gap-1 text-green-600 mb-1">
                       <Zap size={16} />
@@ -384,7 +379,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
                     <Clock size={14} />
                     <span>Start: {batch.recommendedStartTime}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <Timer size={14} />
                     <span>Duration: {batch.totalPreparationTime} minutes</span>
@@ -407,7 +402,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
                       </span>
                     </div>
                   ))}
-                  
+
                   {batch.meals.length > 2 && (
                     <p className="text-xs text-gray-500 text-center">
                       +{batch.meals.length - 2} more meals

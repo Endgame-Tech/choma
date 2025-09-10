@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { mealsApi, type Meal } from '../services/mealApi'
 import { useNotifications } from '../contexts/NotificationContext'
 import * as XLSX from 'xlsx'
@@ -26,7 +26,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
   // Filter meals based on search and category
   const filteredMeals = allMeals.filter(meal => {
     const matchesSearch = meal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         meal.category?.toLowerCase().includes(searchTerm.toLowerCase())
+      meal.category?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = !categoryFilter || meal.category === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -44,8 +44,8 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
 
   const handleSelectAll = () => {
     setSelectedMeals(
-      selectedMeals.length === filteredMeals.length 
-        ? [] 
+      selectedMeals.length === filteredMeals.length
+        ? []
         : filteredMeals.map(meal => meal._id)
     )
   }
@@ -65,7 +65,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
     try {
       // Get selected meals data
       const selectedMealData = allMeals.filter(meal => selectedMeals.includes(meal._id))
-      
+
       // Prepare data for Excel with all editable fields
       const excelData = selectedMealData.map(meal => ({
         'Meal ID': meal._id,
@@ -80,7 +80,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
         'Available': meal.isAvailable ? 'Yes' : 'No',
         'Admin Notes': meal.adminNotes || '',
         'Chef Notes': meal.chefNotes || '',
-        
+
         // Pricing
         'Ingredients Cost': meal.pricing?.ingredients || 0,
         'Cooking Costs': meal.pricing?.cookingCosts || 0,
@@ -91,7 +91,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
         'Total Price': meal.pricing?.totalPrice || 0,
         'Chef Earnings': meal.pricing?.chefEarnings || 0,
         'Choma Earnings': meal.pricing?.chomaEarnings || 0,
-        
+
         // Nutrition
         'Calories': meal.nutrition?.calories || 0,
         'Protein (g)': meal.nutrition?.protein || 0,
@@ -133,7 +133,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
 
       // Download file
       XLSX.writeFile(wb, filename)
-      
+
       showToast({
         title: 'Export successful',
         message: `Downloaded Excel file with ${selectedMeals.length} meals. Make your changes and upload it back.`,
@@ -141,7 +141,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
         severity: 'success',
         duration: 5000
       })
-      
+
       setStep('upload')
     } catch (error) {
       console.error('Export error:', error)
@@ -165,15 +165,45 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
       // Read the Excel file
       const data = await file.arrayBuffer()
       const workbook = XLSX.read(data, { type: 'array' })
-      
+
       // Get the meals data sheet
       const worksheet = workbook.Sheets['Meals Data']
       if (!worksheet) {
         throw new Error('Could not find "Meals Data" sheet in the uploaded file')
       }
 
-      const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[]
-      
+      type ExcelMealRow = {
+        'Meal ID': string
+        'Meal Name': string
+        'Category': string
+        'Image URL': string
+        'Ingredients': string
+        'Preparation Time (min)': number | string
+        'Complexity Level': string
+        'Allergens (comma-separated)': string
+        'Tags (comma-separated)': string
+        'Available': string
+        'Admin Notes': string
+        'Chef Notes': string
+        'Ingredients Cost': number | string
+        'Cooking Costs': number | string
+        'Packaging Cost': number | string
+        'Platform Fee': number | string
+        'Total Costs': number | string
+        'Profit': number | string
+        'Total Price': number | string
+        'Chef Earnings': number | string
+        'Choma Earnings': number | string
+        'Calories': number | string
+        'Protein (g)': number | string
+        'Carbs (g)': number | string
+        'Fat (g)': number | string
+        'Fiber (g)': number | string
+        'Sugar (g)': number | string
+        'Weight (g)': number | string
+      }
+      const jsonData = XLSX.utils.sheet_to_json<ExcelMealRow>(worksheet)
+
       if (jsonData.length === 0) {
         throw new Error('No data found in the uploaded file')
       }
@@ -181,7 +211,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
       // Process updates and detect potential duplicates
       const updates: Array<{ id: string; data: Partial<Meal> }> = []
       const nameConflicts: string[] = []
-      
+
       for (const row of jsonData) {
         const mealId = row['Meal ID']
         if (!mealId) continue
@@ -192,13 +222,13 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
 
         // Build update object with only changed fields
         const updateData: Partial<Meal> = {}
-        
+
         // Basic fields
         if (row['Meal Name'] !== originalMeal.name) {
           // Check for potential name conflicts with other meals
           const newName = row['Meal Name']
-          const conflictingMeal = allMeals.find(m => 
-            m._id !== mealId && 
+          const conflictingMeal = allMeals.find(m =>
+            m._id !== mealId &&
             m.name.toLowerCase() === newName.toLowerCase()
           )
           if (conflictingMeal) {
@@ -219,7 +249,10 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
           updateData.preparationTime = Number(row['Preparation Time (min)'])
         }
         if (row['Complexity Level'] !== originalMeal.complexityLevel) {
-          updateData.complexityLevel = row['Complexity Level']
+          const allowedLevels = ['low', 'medium', 'high'] as const
+          type ComplexityLevel = typeof allowedLevels[number]
+          const newLevel = row['Complexity Level']?.toLowerCase() as ComplexityLevel
+          updateData.complexityLevel = allowedLevels.includes(newLevel) ? newLevel : undefined
         }
         if (row['Admin Notes'] !== originalMeal.adminNotes) {
           updateData.adminNotes = row['Admin Notes']
@@ -246,52 +279,52 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
         }
 
         // Pricing updates
-        const pricingUpdates: any = {}
-        const pricingFields = [
-          'ingredients', 'cookingCosts', 'packaging', 'platformFee', 
+        const pricingUpdates: Record<string, number> = {}
+        const pricingFields: Array<keyof NonNullable<Meal["pricing"]>> = [
+          'ingredients', 'cookingCosts', 'packaging', 'platformFee',
           'totalCosts', 'profit', 'totalPrice', 'chefEarnings', 'chomaEarnings'
         ]
-        
+
         for (const field of pricingFields) {
           const excelKey = field === 'ingredients' ? 'Ingredients Cost' :
-                          field === 'cookingCosts' ? 'Cooking Costs' :
-                          field === 'packaging' ? 'Packaging Cost' :
-                          field === 'platformFee' ? 'Platform Fee' :
-                          field === 'totalCosts' ? 'Total Costs' :
-                          field === 'profit' ? 'Profit' :
-                          field === 'totalPrice' ? 'Total Price' :
-                          field === 'chefEarnings' ? 'Chef Earnings' :
+            field === 'cookingCosts' ? 'Cooking Costs' :
+              field === 'packaging' ? 'Packaging Cost' :
+                field === 'platformFee' ? 'Platform Fee' :
+                  field === 'totalCosts' ? 'Total Costs' :
+                    field === 'profit' ? 'Profit' :
+                      field === 'totalPrice' ? 'Total Price' :
+                        field === 'chefEarnings' ? 'Chef Earnings' :
                           field === 'chomaEarnings' ? 'Choma Earnings' : field
-          
-          const newValue = Number(row[excelKey]) || 0
-          if (newValue !== (originalMeal.pricing?.[field as keyof typeof originalMeal.pricing] || 0)) {
+
+          const newValue = Number((row as Record<string, string | number>)[excelKey]) || 0
+          if (newValue !== (originalMeal.pricing?.[field] || 0)) {
             pricingUpdates[field] = newValue
           }
         }
-        
+
         if (Object.keys(pricingUpdates).length > 0) {
           updateData.pricing = { ...originalMeal.pricing, ...pricingUpdates }
         }
 
         // Nutrition updates
-        const nutritionUpdates: any = {}
-        const nutritionFields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'weight']
-        
+        const nutritionUpdates: Record<string, number> = {}
+        const nutritionFields: Array<keyof NonNullable<Meal['nutrition']>> = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'weight']
+
         for (const field of nutritionFields) {
           const excelKey = field === 'protein' ? 'Protein (g)' :
-                          field === 'carbs' ? 'Carbs (g)' :
-                          field === 'fat' ? 'Fat (g)' :
-                          field === 'fiber' ? 'Fiber (g)' :
-                          field === 'sugar' ? 'Sugar (g)' :
-                          field === 'weight' ? 'Weight (g)' :
-                          field === 'calories' ? 'Calories' : field
-          
-          const newValue = Number(row[excelKey]) || 0
-          if (newValue !== (originalMeal.nutrition?.[field as keyof typeof originalMeal.nutrition] || 0)) {
+            field === 'carbs' ? 'Carbs (g)' :
+              field === 'fat' ? 'Fat (g)' :
+                field === 'fiber' ? 'Fiber (g)' :
+                  field === 'sugar' ? 'Sugar (g)' :
+                    field === 'weight' ? 'Weight (g)' :
+                      field === 'calories' ? 'Calories' : field
+
+          const newValue = Number((row as Record<string, string | number>)[excelKey]) || 0
+          if (newValue !== (originalMeal.nutrition?.[field] || 0)) {
             nutritionUpdates[field] = newValue
           }
         }
-        
+
         if (Object.keys(nutritionUpdates).length > 0) {
           updateData.nutrition = { ...originalMeal.nutrition, ...nutritionUpdates }
         }
@@ -338,7 +371,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
         })
       } catch (error) {
         console.error('Bulk update error:', error)
-        
+
         // If bulk update fails, fall back to individual updates
         showToast({
           title: 'Bulk update failed',
@@ -346,7 +379,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
           type: 'meal_update',
           severity: 'warning'
         })
-        
+
         let successCount = 0
         let errorCount = 0
         const errors: string[] = []
@@ -388,12 +421,12 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
             duration: 7000
           })
         }
-        
+
         if (successCount === 0) {
           return // Don't close modal if no updates succeeded
         }
       }
-      
+
       onSuccess()
       onClose()
 
@@ -439,6 +472,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300"
             disabled={loading}
+            title="Close"
           >
             <i className="fi fi-sr-cross text-xl"></i>
           </button>
@@ -453,18 +487,18 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
               </div>
               <span className="text-sm font-medium">Select Meals</span>
             </div>
-            
+
             <div className="flex-1 h-0.5 bg-gray-200 dark:bg-neutral-700"></div>
-            
+
             <div className={`flex items-center space-x-2 ${step === 'export' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-neutral-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step === 'export' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400'}`}>
                 2
               </div>
               <span className="text-sm font-medium">Download Excel</span>
             </div>
-            
+
             <div className="flex-1 h-0.5 bg-gray-200 dark:bg-neutral-700"></div>
-            
+
             <div className={`flex items-center space-x-2 ${step === 'upload' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-neutral-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step === 'upload' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400'}`}>
                 3
@@ -479,7 +513,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
           {step === 'select' && (
             <div className="p-6 space-y-4 flex flex-col min-h-0">
               <div className="text-sm text-gray-600 dark:text-neutral-300">
-                Select the meals you want to update. You'll download an Excel file with their current data, make your changes, and upload it back.
+                Select the meals you want to update. You&apos;ll download an Excel file with their current data, make your changes, and upload it back.
               </div>
 
               {/* Search and Filter */}
@@ -532,11 +566,10 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
                 {filteredMeals.map(meal => (
                   <div
                     key={meal._id}
-                    className={`flex items-center p-3 rounded-lg border transition-colors cursor-pointer ${
-                      selectedMeals.includes(meal._id)
+                    className={`flex items-center p-3 rounded-lg border transition-colors cursor-pointer ${selectedMeals.includes(meal._id)
                         ? 'border-blue-300 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/20'
                         : 'border-gray-200 bg-white dark:border-neutral-700 dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700'
-                    }`}
+                      }`}
                     onClick={() => handleSelectMeal(meal._id)}
                   >
                     <input
@@ -579,7 +612,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
                 Ready to Download Excel File
               </h3>
               <p className="text-gray-600 dark:text-neutral-300">
-                You've selected {selectedMeals.length} meals. Click the button below to download an Excel file with their current data.
+                You&apos;ve selected {selectedMeals.length} meals. Click the button below to download an Excel file with their current data.
               </p>
               <div className="space-y-2">
                 <button
@@ -661,7 +694,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
           >
             Cancel
           </button>
-          
+
           <div className="flex space-x-3">
             {step === 'select' && (
               <button
@@ -672,7 +705,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
                 Continue ({selectedMeals.length} selected)
               </button>
             )}
-            
+
             {(step === 'export' || step === 'upload') && (
               <button
                 onClick={() => setStep('select')}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCachedApi } from '../../hooks/useCachedApi';
 import { CACHE_DURATIONS } from '../../services/cacheService';
 import { api } from '../../services/api';
@@ -51,10 +51,10 @@ const ChefWorkloadDashboard: React.FC = () => {
     error: chefsError,
     refetch: refetchChefs
   } = useCachedApi(
-    () => api.get<ChefWorkload[]>(`/chefs/workload?timeframe=${selectedTimeFrame}&area=${selectedArea}&sort=${sortBy}`),
+    () => Promise.resolve(api.get<ChefWorkload[]>(`/chefs/workload?timeframe=${selectedTimeFrame}&area=${selectedArea}&sort=${sortBy}`)),
     {
       cacheKey: `chef-workload-${selectedTimeFrame}-${selectedArea}-${sortBy}`,
-      cacheDuration: CACHE_DURATIONS.CHEF_WORKLOAD,
+      cacheDuration: CACHE_DURATIONS.CHEFS,
       immediate: true
     }
   );
@@ -65,10 +65,10 @@ const ChefWorkloadDashboard: React.FC = () => {
     loading: requestsLoading,
     refetch: refetchRequests
   } = useCachedApi(
-    () => api.get<ChefReassignmentRequest[]>('/chefs/reassignment-requests'),
+    () => Promise.resolve(api.get<ChefReassignmentRequest[]>('/chefs/reassignment-requests')),
     {
       cacheKey: 'chef-reassignment-requests',
-      cacheDuration: CACHE_DURATIONS.SHORT,
+      cacheDuration: CACHE_DURATIONS.NOTIFICATIONS,
       immediate: true
     }
   );
@@ -89,19 +89,7 @@ const ChefWorkloadDashboard: React.FC = () => {
     }
   };
 
-  const handleAssignChef = async (chefId: string, subscriptionId: string) => {
-    try {
-      await api.post('/chefs/assign', {
-        chefId,
-        subscriptionId,
-        assignedBy: 'admin'
-      });
-      refetchChefs();
-      refetchRequests();
-    } catch (error) {
-      console.error('Failed to assign chef:', error);
-    }
-  };
+  // Removed unused function - handleAssignChef
 
   const handleReassignmentAction = async (requestId: string, action: 'approve' | 'reject', newChefId?: string) => {
     try {
@@ -128,8 +116,8 @@ const ChefWorkloadDashboard: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="text-red-600 dark:text-red-400 text-lg mb-2">Error loading chef workload data</div>
-          <div className="text-sm text-gray-600 dark:text-neutral-200">{chefsError?.message || 'Unknown error'}</div>
-          <button 
+          <div className="text-sm text-gray-600 dark:text-neutral-200">{typeof chefsError === 'string' ? chefsError : (chefsError as Error)?.message || 'Unknown error'}</div>
+          <button
             onClick={refetchChefs}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
@@ -157,7 +145,7 @@ const ChefWorkloadDashboard: React.FC = () => {
         <div className="flex gap-3">
           <select
             value={selectedTimeFrame}
-            onChange={(e) => setSelectedTimeFrame(e.target.value as any)}
+            onChange={(e) => setSelectedTimeFrame(e.target.value as 'today' | 'week' | 'month')}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
           >
             <option value="today">Today</option>
@@ -179,7 +167,7 @@ const ChefWorkloadDashboard: React.FC = () => {
 
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'workload' | 'rating' | 'efficiency')}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
           >
             <option value="workload">Workload</option>
@@ -237,13 +225,12 @@ const ChefWorkloadDashboard: React.FC = () => {
 
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full ${
-                    chef.workloadScore > 85
+                  className={`h-2 rounded-full ${chef.workloadScore > 85
                       ? 'bg-red-500'
                       : chef.workloadScore > 65
-                      ? 'bg-yellow-500'
-                      : 'bg-green-500'
-                  }`}
+                        ? 'bg-yellow-500'
+                        : 'bg-green-500'
+                    }`}
                   style={{ width: `${Math.min(chef.workloadScore, 100)}%` }}
                 ></div>
               </div>
@@ -287,7 +274,7 @@ const ChefWorkloadDashboard: React.FC = () => {
             </div>
           </div>
         ))}
-        
+
         {(!Array.isArray(chefsWorkload) || chefsWorkload.length === 0) && (
           <div className="col-span-full">
             <div className="text-center py-12 bg-white dark:bg-neutral-800 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
@@ -320,13 +307,12 @@ const ChefWorkloadDashboard: React.FC = () => {
                       {request.customerName}
                     </h4>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        request.priority === 'high'
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${request.priority === 'high'
                           ? 'bg-red-100 text-red-800'
                           : request.priority === 'normal'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
                     >
                       {request.priority} priority
                     </span>

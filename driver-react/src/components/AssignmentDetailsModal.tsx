@@ -123,59 +123,50 @@ const AssignmentDetailsModal: React.FC<AssignmentDetailsModalProps> = ({
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Status</h3>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  assignment.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
-                  assignment.status === 'picked_up' ? 'bg-yellow-100 text-yellow-800' :
-                  assignment.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${assignment.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
+                    assignment.status === 'picked_up' ? 'bg-yellow-100 text-yellow-800' :
+                      assignment.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        'bg-gray-100 text-gray-800'
+                  }`}>
                   {assignment.status.replace('_', ' ').toUpperCase()}
                 </span>
               </div>
 
               {/* Progress Timeline */}
               <div className="flex items-center justify-between">
-                <div className={`flex flex-col items-center ${
-                  ['assigned', 'picked_up', 'delivered'].includes(assignment.status)
+                <div className={`flex flex-col items-center ${['assigned', 'picked_up', 'delivered'].includes(assignment.status)
                     ? 'text-choma-brown' : 'text-gray-400'
-                }`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    ['assigned', 'picked_up', 'delivered'].includes(assignment.status)
-                      ? 'bg-choma-brown text-white' : 'bg-gray-200'
                   }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${['assigned', 'picked_up', 'delivered'].includes(assignment.status)
+                      ? 'bg-choma-brown text-white' : 'bg-gray-200'
+                    }`}>
                     1
                   </div>
                   <span className="text-xs mt-1">Assigned</span>
                 </div>
 
-                <div className={`flex-1 h-1 mx-4 ${
-                  ['picked_up', 'delivered'].includes(assignment.status) ? 'bg-choma-brown' : 'bg-gray-200'
-                }`}></div>
+                <div className={`flex-1 h-1 mx-4 ${['picked_up', 'delivered'].includes(assignment.status) ? 'bg-choma-brown' : 'bg-gray-200'
+                  }`}></div>
 
-                <div className={`flex flex-col items-center ${
-                  ['picked_up', 'delivered'].includes(assignment.status)
+                <div className={`flex flex-col items-center ${['picked_up', 'delivered'].includes(assignment.status)
                     ? 'text-choma-brown' : 'text-gray-400'
-                }`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    ['picked_up', 'delivered'].includes(assignment.status)
-                      ? 'bg-choma-brown text-white' : 'bg-gray-200'
                   }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${['picked_up', 'delivered'].includes(assignment.status)
+                      ? 'bg-choma-brown text-white' : 'bg-gray-200'
+                    }`}>
                     2
                   </div>
                   <span className="text-xs mt-1">Picked Up</span>
                 </div>
 
-                <div className={`flex-1 h-1 mx-4 ${
-                  assignment.status === 'delivered' ? 'bg-choma-brown' : 'bg-gray-200'
-                }`}></div>
+                <div className={`flex-1 h-1 mx-4 ${assignment.status === 'delivered' ? 'bg-choma-brown' : 'bg-gray-200'
+                  }`}></div>
 
-                <div className={`flex flex-col items-center ${
-                  assignment.status === 'delivered' ? 'text-choma-brown' : 'text-gray-400'
-                }`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    assignment.status === 'delivered'
-                      ? 'bg-choma-brown text-white' : 'bg-gray-200'
+                <div className={`flex flex-col items-center ${assignment.status === 'delivered' ? 'text-choma-brown' : 'text-gray-400'
                   }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${assignment.status === 'delivered'
+                      ? 'bg-choma-brown text-white' : 'bg-gray-200'
+                    }`}>
                     3
                   </div>
                   <span className="text-xs mt-1">Delivered</span>
@@ -327,11 +318,10 @@ const AssignmentDetailsModal: React.FC<AssignmentDetailsModalProps> = ({
                 </div>
                 <div>
                   <p className="text-gray-600">Priority</p>
-                  <p className={`font-medium capitalize ${
-                    assignment.priority === 'urgent' ? 'text-red-600' :
-                    assignment.priority === 'high' ? 'text-orange-600' :
-                    'text-gray-900'
-                  }`}>
+                  <p className={`font-medium capitalize ${assignment.priority === 'urgent' ? 'text-red-600' :
+                      assignment.priority === 'high' ? 'text-orange-600' :
+                        'text-gray-900'
+                    }`}>
                     {assignment.priority}
                   </p>
                 </div>
@@ -366,14 +356,20 @@ const AssignmentDetailsModal: React.FC<AssignmentDetailsModalProps> = ({
               <button
                 onClick={() => setShowConfirmationModal(false)}
                 className="text-gray-400 hover:text-gray-600"
+                title="Close"
+                aria-label="Close"
               >
                 <XMarkIcon className="h-6 w-6" />
+                <span className="sr-only">Close</span>
               </button>
             </div>
 
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-2">
                 Enter the confirmation code provided by the customer:
+              </p>
+              <p className="text-xs text-blue-600 mb-2">
+                💡 For first deliveries, you can also use the last 6 digits of the order number
               </p>
               <input
                 type="text"
@@ -402,6 +398,7 @@ const AssignmentDetailsModal: React.FC<AssignmentDetailsModalProps> = ({
               <button
                 onClick={() => setShowConfirmationModal(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                title="Cancel"
               >
                 Cancel
               </button>

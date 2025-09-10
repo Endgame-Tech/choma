@@ -211,7 +211,7 @@ export const earningsApi = {
   },
 
   // Get payment history (using earnings data)
-  async getPaymentHistory(filters: any = {}): Promise<any> {
+  async getPaymentHistory(): Promise<any> {
     const earningsData = await this.getEarnings('current_month')
     // Transform earnings into payment history format
     const payments = earningsData.earnings?.map((earning: any) => ({
@@ -230,7 +230,7 @@ export const earningsApi = {
   },
 
   // Request withdrawal (placeholder - not implemented in backend yet)
-  async requestWithdrawal(amount: number): Promise<any> {
+  async requestWithdrawal(): Promise<any> {
     // Note: This would need to be implemented in the backend
     throw new Error('Withdrawal requests will be available soon. Payouts are processed weekly on Fridays.')
   },
@@ -241,13 +241,13 @@ export const earningsApi = {
   },
 
   // Get earnings history (backward compatibility)
-  async getEarningsHistory(filters: any = {}): Promise<any> {
+  async getEarningsHistory(): Promise<any> {
     return this.getEarnings('current_month')
   },
 
   // Request payout (backward compatibility)
-  async requestPayout(amount: number): Promise<any> {
-    return this.requestWithdrawal(amount)
+  async requestPayout(): Promise<any> {
+    return this.requestWithdrawal()
   },
 
   // Get detailed meal plan for an order

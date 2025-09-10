@@ -57,7 +57,6 @@ const MealPlanViewerModal: React.FC<MealPlanViewerModalProps> = ({
   isOpen,
   onClose,
   orderId,
-  mealPlanName
 }) => {
   const [mealPlanData, setMealPlanData] = useState<MealPlanData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -118,6 +117,7 @@ const MealPlanViewerModal: React.FC<MealPlanViewerModalProps> = ({
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-2xl font-bold p-2"
+              title="Close"
             >
               <X size={24} />
             </button>

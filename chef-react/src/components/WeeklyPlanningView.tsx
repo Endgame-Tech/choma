@@ -6,9 +6,7 @@ import {
   Clock,
   Users,
   ChefHat,
-  MapPin,
   TrendingUp,
-  Calendar,
   CheckCircle,
   AlertCircle,
   Zap
@@ -248,18 +246,21 @@ const WeeklyPlanningView: React.FC<WeeklyPlanningViewProps> = ({ onBatchPrepare 
             <button
               onClick={() => navigateWeek('prev')}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title="Previous week"
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={() => setCurrentWeekStart(new Date())}
               className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title="Go to current week"
             >
               Today
             </button>
             <button
               onClick={() => navigateWeek('next')}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title="Next week"
             >
               <ChevronRight size={20} />
             </button>
@@ -376,7 +377,7 @@ const WeeklyPlanningView: React.FC<WeeklyPlanningViewProps> = ({ onBatchPrepare 
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">
-                            {getMealTimeIcon(meal.mealPlanAssignmentId?.mealTime)}
+                            {getMealTimeIcon(meal.mealPlanAssignmentId?.mealTime ?? '')}
                           </span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">

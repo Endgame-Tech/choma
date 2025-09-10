@@ -60,10 +60,9 @@ const DeliveryMonitoringDashboard: React.FC = () => {
   const {
     data: deliveries,
     loading: deliveriesLoading,
-    error: deliveriesError,
     refetch: refetchDeliveries
   } = useCachedApi(
-    () => api.get<DeliveryStatus[]>(`/deliveries/monitor?date=${selectedDate}&status=${statusFilter}&area=${areaFilter}`),
+    () => Promise.resolve(api.get<DeliveryStatus[]>(`/deliveries/monitor?date=${selectedDate}&status=${statusFilter}&area=${areaFilter}`)),
     {
       cacheKey: `delivery-monitor-${selectedDate}-${statusFilter}-${areaFilter}`,
       cacheDuration: CACHE_DURATIONS.ORDERS,
@@ -77,7 +76,7 @@ const DeliveryMonitoringDashboard: React.FC = () => {
     loading: statsLoading,
     refetch: refetchStats
   } = useCachedApi(
-    () => api.get<DeliveryStats>(`/deliveries/stats?date=${selectedDate}`),
+    () => Promise.resolve(api.get<DeliveryStats>(`/deliveries/stats?date=${selectedDate}`)),
     {
       cacheKey: `delivery-stats-${selectedDate}`,
       cacheDuration: CACHE_DURATIONS.ORDERS,
@@ -202,11 +201,10 @@ const DeliveryMonitoringDashboard: React.FC = () => {
 
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              autoRefresh
+            className={`px-3 py-2 rounded-md text-sm font-medium ${autoRefresh
                 ? 'bg-green-50 text-green-600 border border-green-200'
                 : 'bg-gray-50 text-gray-600 border border-gray-200'
-            }`}
+              }`}
           >
             {autoRefresh ? '🔄 Auto-refresh ON' : '⏸️ Auto-refresh OFF'}
           </button>
@@ -217,56 +215,56 @@ const DeliveryMonitoringDashboard: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
         <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
-            {stats?.total || 0}
+            {stats?.data?.total || 0}
           </div>
           <div className="text-sm text-gray-600 dark:text-neutral-200">Total</div>
         </div>
 
         <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-yellow-600">
-            {stats?.preparing || 0}
+            {stats?.data?.preparing || 0}
           </div>
           <div className="text-sm text-gray-600 dark:text-neutral-200">Preparing</div>
         </div>
 
         <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-green-600">
-            {stats?.ready || 0}
+            {stats?.data?.ready || 0}
           </div>
           <div className="text-sm text-gray-600 dark:text-neutral-200">Ready</div>
         </div>
 
         <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-purple-600">
-            {stats?.outForDelivery || 0}
+            {stats?.data?.outForDelivery || 0}
           </div>
           <div className="text-sm text-gray-600 dark:text-neutral-200">Out for Delivery</div>
         </div>
 
         <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-emerald-600">
-            {stats?.delivered || 0}
+            {stats?.data?.delivered || 0}
           </div>
           <div className="text-sm text-gray-600 dark:text-neutral-200">Delivered</div>
         </div>
 
         <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-red-600">
-            {stats?.overdue || 0}
+            {stats?.data?.overdue || 0}
           </div>
           <div className="text-sm text-gray-600 dark:text-neutral-200">Overdue</div>
         </div>
 
         <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-blue-600">
-            {stats?.onTime ? Math.round((stats.onTime / stats.total) * 100) : 0}%
+            {stats?.data?.onTime ? Math.round((stats.data.onTime / stats.data.total) * 100) : 0}%
           </div>
           <div className="text-sm text-gray-600 dark:text-neutral-200">On Time</div>
         </div>
 
         <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-indigo-600">
-            {stats?.averageDeliveryTime ? formatDuration(stats.averageDeliveryTime) : '-'}
+            {stats?.data?.averageDeliveryTime ? formatDuration(stats.data.averageDeliveryTime) : '-'}
           </div>
           <div className="text-sm text-gray-600 dark:text-neutral-200">Avg Time</div>
         </div>
@@ -276,17 +274,16 @@ const DeliveryMonitoringDashboard: React.FC = () => {
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
         <div className="p-6 border-b border-gray-200 dark:border-neutral-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
-            Live Deliveries ({Array.isArray(deliveries) ? deliveries.length : 0})
+            Live Deliveries ({Array.isArray(deliveries?.data) ? deliveries.data.length : 0})
           </h3>
         </div>
 
         <div className="divide-y divide-gray-200 dark:divide-neutral-700 max-h-96 overflow-y-auto">
-          {Array.isArray(deliveries) && deliveries.length > 0 ? deliveries.map((delivery, index) => (
-            <div 
-              key={delivery?._id || `delivery-${index}`} 
-              className={`p-6 border-l-4 ${getPriorityColor(delivery?.priority || 'medium')} ${
-                delivery?.isOverdue ? 'bg-red-50 dark:bg-red-900/20' : ''
-              }`}
+          {Array.isArray(deliveries?.data) && deliveries.data.length > 0 ? deliveries.data.map((delivery, index) => (
+            <div
+              key={delivery?._id || `delivery-${index}`}
+              className={`p-6 border-l-4 ${getPriorityColor(delivery?.priority || 'medium')} ${delivery?.isOverdue ? 'bg-red-50 dark:bg-red-900/20' : ''
+                }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -325,8 +322,8 @@ const DeliveryMonitoringDashboard: React.FC = () => {
                       <div>
                         <span className="text-gray-600 dark:text-neutral-200">Est. Ready:</span>
                         <span className="font-medium ml-1">
-                          {new Date(delivery?.estimatedReadyTime).toLocaleTimeString('en-US', { 
-                            hour: 'numeric', 
+                          {new Date(delivery?.estimatedReadyTime).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
                             minute: '2-digit'
                           })}
                         </span>
@@ -336,11 +333,11 @@ const DeliveryMonitoringDashboard: React.FC = () => {
 
                   {/* Timeline */}
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    {Array.isArray(delivery?.timeline) && delivery.timeline.length > 0 ? delivery.timeline.slice(-3).map((event, index) => (
+                    {Array.isArray(delivery?.timeline) && delivery.timeline.length > 0 ? delivery.timeline.slice(-3).map((event: DeliveryStatus['timeline'][0], index: number) => (
                       <div key={index} className="flex items-center gap-1">
                         <span>{getStatusIcon(event?.status || 'unknown')}</span>
-                        <span>{new Date(event?.timestamp || new Date()).toLocaleTimeString('en-US', { 
-                          hour: 'numeric', 
+                        <span>{new Date(event?.timestamp || new Date()).toLocaleTimeString('en-US', {
+                          hour: 'numeric',
                           minute: '2-digit'
                         })}</span>
                         {index < delivery.timeline.slice(-3).length - 1 && <span>→</span>}

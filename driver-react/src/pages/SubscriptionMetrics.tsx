@@ -5,7 +5,7 @@ import {
   ChartBarIcon,
   TruckIcon,
   ClockIcon,
-  StarIcon,
+  // StarIcon,
   CurrencyDollarIcon,
   ArrowPathIcon,
   ArrowTrendingUpIcon,

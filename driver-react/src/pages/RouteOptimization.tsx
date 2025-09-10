@@ -3,7 +3,6 @@ import { subscriptionService } from '../services/subscriptionService';
 import { WeeklyScheduleResponse, RouteOptimization as RouteOptimizationType } from '../types';
 import {
   MapPinIcon,
-  ClockIcon,
   LightBulbIcon,
   ArrowPathIcon,
   TruckIcon,

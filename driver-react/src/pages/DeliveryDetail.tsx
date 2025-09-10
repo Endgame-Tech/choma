@@ -174,9 +174,9 @@ const DeliveryDetail: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-gray-900">Delivery Assignment</h1>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${assignment.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
-              assignment.status === 'picked_up' ? 'bg-yellow-100 text-yellow-800' :
-                assignment.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                  'bg-gray-100 text-gray-800'
+            assignment.status === 'picked_up' ? 'bg-yellow-100 text-yellow-800' :
+              assignment.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                'bg-gray-100 text-gray-800'
             }`}>
             {assignment.status.replace('_', ' ').toUpperCase()}
           </span>
@@ -185,10 +185,10 @@ const DeliveryDetail: React.FC = () => {
         {/* Progress Timeline */}
         <div className="flex items-center justify-between mb-6">
           <div className={`flex flex-col items-center ${['assigned', 'picked_up', 'delivered'].includes(assignment.status)
-              ? 'text-primary-600' : 'text-gray-400'
+            ? 'text-primary-600' : 'text-gray-400'
             }`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${['assigned', 'picked_up', 'delivered'].includes(assignment.status)
-                ? 'bg-primary-600 text-white' : 'bg-gray-200'
+              ? 'bg-primary-600 text-white' : 'bg-gray-200'
               }`}>
               1
             </div>
@@ -199,10 +199,10 @@ const DeliveryDetail: React.FC = () => {
             }`}></div>
 
           <div className={`flex flex-col items-center ${['picked_up', 'delivered'].includes(assignment.status)
-              ? 'text-primary-600' : 'text-gray-400'
+            ? 'text-primary-600' : 'text-gray-400'
             }`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${['picked_up', 'delivered'].includes(assignment.status)
-                ? 'bg-primary-600 text-white' : 'bg-gray-200'
+              ? 'bg-primary-600 text-white' : 'bg-gray-200'
               }`}>
               2
             </div>
@@ -215,7 +215,7 @@ const DeliveryDetail: React.FC = () => {
           <div className={`flex flex-col items-center ${assignment.status === 'delivered' ? 'text-primary-600' : 'text-gray-400'
             }`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${assignment.status === 'delivered'
-                ? 'bg-primary-600 text-white' : 'bg-gray-200'
+              ? 'bg-primary-600 text-white' : 'bg-gray-200'
               }`}>
               3
             </div>
@@ -372,8 +372,8 @@ const DeliveryDetail: React.FC = () => {
           <div>
             <p className="text-gray-600">Priority</p>
             <p className={`font-medium capitalize ${assignment.priority === 'urgent' ? 'text-red-600' :
-                assignment.priority === 'high' ? 'text-orange-600' :
-                  'text-gray-900'
+              assignment.priority === 'high' ? 'text-orange-600' :
+                'text-gray-900'
               }`}>
               {assignment.priority}
             </p>
@@ -406,6 +406,9 @@ const DeliveryDetail: React.FC = () => {
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-2">
                 Enter the confirmation code provided by the customer:
+              </p>
+              <p className="text-xs text-blue-600 mb-2">
+                💡 For first deliveries, you can also use the last 6 digits of the order number
               </p>
               <input
                 type="text"

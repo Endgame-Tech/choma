@@ -53,15 +53,13 @@ interface SubscriptionTrends {
 
 const SubscriptionAnalyticsDashboard: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const [selectedMealPlan, setSelectedMealPlan] = useState<string>('all');
 
   // Fetch subscription metrics
   const {
-    data: metrics,
-    loading: metricsLoading,
-    refetch: refetchMetrics
+    data: metricsResponse,
+    loading: metricsLoading
   } = useCachedApi(
-    () => api.get<SubscriptionMetrics>(`/analytics/subscription-metrics?period=${selectedPeriod}`),
+    () => Promise.resolve(api.get<SubscriptionMetrics>(`/analytics/subscription-metrics?period=${selectedPeriod}`)),
     {
       cacheKey: `subscription-metrics-${selectedPeriod}`,
       cacheDuration: CACHE_DURATIONS.ANALYTICS,
@@ -69,13 +67,15 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
     }
   );
 
+  // Extract data from axios response
+  const metrics = metricsResponse?.data;
+
   // Fetch meal plan popularity
   const {
-    data: mealPlanStats,
-    loading: mealPlanLoading,
-    error: mealPlanError
+    data: mealPlanResponse,
+    loading: mealPlanLoading
   } = useCachedApi(
-    () => api.get<MealPlanPopularity[]>(`/analytics/meal-plan-popularity?period=${selectedPeriod}`),
+    () => Promise.resolve(api.get<MealPlanPopularity[]>(`/analytics/meal-plan-popularity?period=${selectedPeriod}`)),
     {
       cacheKey: `meal-plan-popularity-${selectedPeriod}`,
       cacheDuration: CACHE_DURATIONS.ANALYTICS,
@@ -83,13 +83,15 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
     }
   );
 
+  // Extract data from axios response
+  const mealPlanStats = mealPlanResponse?.data;
+
   // Fetch chef performance
   const {
-    data: chefPerformance,
-    loading: chefLoading,
-    error: chefError
+    data: chefResponse,
+    loading: chefLoading
   } = useCachedApi(
-    () => api.get<ChefPerformance[]>(`/analytics/chef-performance?period=${selectedPeriod}`),
+    () => Promise.resolve(api.get<ChefPerformance[]>(`/analytics/chef-performance?period=${selectedPeriod}`)),
     {
       cacheKey: `chef-performance-${selectedPeriod}`,
       cacheDuration: CACHE_DURATIONS.ANALYTICS,
@@ -97,12 +99,14 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
     }
   );
 
+  // Extract data from axios response
+  const chefPerformance = chefResponse?.data;
+
   // Fetch subscription trends
   const {
-    data: trends,
     loading: trendsLoading
   } = useCachedApi(
-    () => api.get<SubscriptionTrends[]>(`/analytics/subscription-trends?period=${selectedPeriod}`),
+    () => Promise.resolve(api.get<SubscriptionTrends[]>(`/analytics/subscription-trends?period=${selectedPeriod}`)),
     {
       cacheKey: `subscription-trends-${selectedPeriod}`,
       cacheDuration: CACHE_DURATIONS.ANALYTICS,
@@ -166,12 +170,11 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
           {['7d', '30d', '90d', '1y'].map((period) => (
             <button
               key={period}
-              onClick={() => setSelectedPeriod(period as any)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedPeriod === period
+              onClick={() => setSelectedPeriod(period as '7d' | '30d' | '90d' | '1y')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedPeriod === period
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               {period.replace('d', ' days').replace('1y', '1 year')}
             </button>
@@ -266,8 +269,8 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
               <div className="text-right">
                 <div className="font-semibold">{metrics?.activeSubscriptions || 0}</div>
                 <div className="text-sm text-gray-500">
-                  {metrics?.totalSubscriptions ? 
-                    formatPercentage((metrics.activeSubscriptions / metrics.totalSubscriptions) * 100) : 
+                  {metrics?.totalSubscriptions ?
+                    formatPercentage((metrics.activeSubscriptions / metrics.totalSubscriptions) * 100) :
                     '0%'
                   }
                 </div>
@@ -282,8 +285,8 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
               <div className="text-right">
                 <div className="font-semibold">{metrics?.pausedSubscriptions || 0}</div>
                 <div className="text-sm text-gray-500">
-                  {metrics?.totalSubscriptions ? 
-                    formatPercentage((metrics.pausedSubscriptions / metrics.totalSubscriptions) * 100) : 
+                  {metrics?.totalSubscriptions ?
+                    formatPercentage((metrics.pausedSubscriptions / metrics.totalSubscriptions) * 100) :
                     '0%'
                   }
                 </div>
@@ -298,8 +301,8 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
               <div className="text-right">
                 <div className="font-semibold">{metrics?.cancelledSubscriptions || 0}</div>
                 <div className="text-sm text-gray-500">
-                  {metrics?.totalSubscriptions ? 
-                    formatPercentage((metrics.cancelledSubscriptions / metrics.totalSubscriptions) * 100) : 
+                  {metrics?.totalSubscriptions ?
+                    formatPercentage((metrics.cancelledSubscriptions / metrics.totalSubscriptions) * 100) :
                     '0%'
                   }
                 </div>

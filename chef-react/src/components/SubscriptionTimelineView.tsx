@@ -2,20 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { chefSubscriptionsApi } from '../services/api';
 import {
   Calendar,
-  Clock,
   CheckCircle,
   Circle,
   PlayCircle,
   ChefHat,
   User,
-  Star,
   TrendingUp,
-  MapPin,
   Phone,
   Mail,
   ArrowLeft,
   AlertTriangle,
-  Target,
   Award
 } from 'lucide-react';
 

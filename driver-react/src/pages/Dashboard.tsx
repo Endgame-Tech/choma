@@ -10,15 +10,13 @@ import {
   Clock,
   DollarSign,
   Bell,
-  Signal,
-  SignalSlash,
   AlertTriangle
 } from 'lucide-react';
 import AssignmentDetailsModal from '../components/AssignmentDetailsModal';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { isConnected, updateDriverStatus } = useWebSocket();
+  const { updateDriverStatus } = useWebSocket();
   const { assignments, refreshAssignments } = useDelivery();
   const [driver, setDriver] = useState<Driver | null>(null);
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
@@ -66,7 +64,7 @@ const Dashboard: React.FC = () => {
   const handleStatusToggle = async () => {
     try {
       setError(null); // Clear any previous errors
-      
+
       if (isOnline) {
         const response = await driverApi.goOffline();
         if (response.success) {
@@ -84,7 +82,7 @@ const Dashboard: React.FC = () => {
         console.log('🟢 Attempting to go online...');
         const response = await driverApi.goOnline();
         console.log('🟢 Go online response:', response);
-        
+
         if (response.success) {
           updateDriverStatus('online');
           setIsOnline(true);
@@ -99,7 +97,7 @@ const Dashboard: React.FC = () => {
           setError(response.message || 'Failed to go online. Please try again.');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling status:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update status. Please try again.';
       setError(errorMessage);
@@ -209,10 +207,10 @@ const Dashboard: React.FC = () => {
                 {driver?.accountStatus === 'pending'
                   ? 'Your application is being reviewed. You\'ll be notified once approved.'
                   : driver?.accountStatus === 'rejected'
-                  ? 'Your account has been rejected. Please contact support for more information.'
-                  : driver?.accountStatus === 'suspended'
-                  ? 'Your account has been suspended. Please contact support immediately.'
-                  : 'Please contact support for more information about your account status.'}
+                    ? 'Your account has been rejected. Please contact support for more information.'
+                    : driver?.accountStatus === 'suspended'
+                      ? 'Your account has been suspended. Please contact support immediately.'
+                      : 'Please contact support for more information about your account status.'}
               </p>
             </div>
           </div>
@@ -324,12 +322,11 @@ const Dashboard: React.FC = () => {
                         <h4 className="font-medium text-gray-900 dark:text-white">#{assignment._id}</h4>
                         <div className="flex items-center space-x-2">
                           <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              assignment.status === 'available' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
-                              assignment.status === 'assigned' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' :
-                              assignment.status === 'picked_up' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
-                              'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100'
-                            }`}
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${assignment.status === 'available' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
+                                assignment.status === 'assigned' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' :
+                                  assignment.status === 'picked_up' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
+                                    'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100'
+                              }`}
                           >
                             {assignment.status.replace('_', ' ').toUpperCase()}
                           </span>
@@ -401,11 +398,10 @@ const Dashboard: React.FC = () => {
                 </div>
                 <button
                   onClick={handleStatusToggle}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm ${
-                    isOnline
+                  className={`px-4 py-2 rounded-lg font-medium text-sm ${isOnline
                       ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-800 dark:text-red-100 dark:hover:bg-red-700'
                       : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-100 dark:hover:bg-green-700'
-                  }`}
+                    }`}
                 >
                   {isOnline ? 'Go Offline' : 'Go Online'}
                 </button>
@@ -420,11 +416,10 @@ const Dashboard: React.FC = () => {
                 <button
                   onClick={handleAvailabilityToggle}
                   disabled={!isOnline}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm disabled:cursor-not-allowed ${
-                    driver?.isAvailable
+                  className={`px-4 py-2 rounded-lg font-medium text-sm disabled:cursor-not-allowed ${driver?.isAvailable
                       ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-800 dark:text-yellow-100 dark:hover:bg-yellow-700'
                       : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-100 dark:hover:bg-green-700'
-                  }`}
+                    }`}
                 >
                   {driver?.isAvailable ? 'Set Unavailable' : 'Set Available'}
                 </button>

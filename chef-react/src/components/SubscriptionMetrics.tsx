@@ -9,11 +9,9 @@ import {
   AlertTriangle,
   DollarSign,
   Users,
-  Calendar,
   Target,
   Award,
   BarChart3,
-  PieChart,
   Activity
 } from 'lucide-react';
 

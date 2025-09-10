@@ -390,6 +390,29 @@ driverAssignmentSchema.methods.generateConfirmationCode = async function () {
       }
     }
 
+    // ADDITIONAL FALLBACK: For orders with specific patterns, use order number
+    // This helps with orders that might not be properly flagged as subscriptions
+    if (order.orderNumber && order.orderNumber.toString().includes("ORD-")) {
+      console.log(
+        "🔍 Checking if this might be a first delivery based on pattern..."
+      );
+
+      // For orders that look like they should use order number confirmation
+      // (This is a safeguard for edge cases)
+      const orderNumber = order.orderNumber.toString();
+      const hasSubscriptionPattern =
+        order.subscription ||
+        order.subscriptionId ||
+        (order.recurringOrder && order.recurringOrder.orderType !== "one-time");
+
+      if (hasSubscriptionPattern) {
+        console.log("🎯 Using order number for suspected subscription order");
+        const code = orderNumber.slice(-6).toUpperCase();
+        this.confirmationCode = code;
+        return code;
+      }
+    }
+
     // ONE-TIME ORDERS: Use existing logic (6-digit random)
     console.log("🍽️ One-time order - using 6-digit random code");
     const code = this.generateRandomCode();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext';
 import { chefSubscriptionsApi } from '../services/api';
 import SubscriptionCard from '../components/SubscriptionCard';
 import WeeklyPlanningView from '../components/WeeklyPlanningView';
@@ -71,7 +71,7 @@ interface DashboardData {
 type ViewMode = 'dashboard' | 'weekly' | 'batch' | 'metrics' | 'timeline';
 
 const SubscriptionDashboard: React.FC = () => {
-  const { chef } = useAuth();
+  // const { chef } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
