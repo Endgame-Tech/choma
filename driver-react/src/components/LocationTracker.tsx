@@ -148,7 +148,7 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
 
       {locationError && (
         <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm">
-          <span className="text-red-800">⚠️ {locationError}</span>
+          <span className="text-red-800"><i className="fi fi-rr-triangle-warning"></i> {locationError}</span>
         </div>
       )}
 
@@ -180,7 +180,7 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
       {!isConnected && (
         <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
           <span className="text-yellow-800">
-            ⚠️ Not connected to server. Location updates will resume when connection is restored.
+            <i className="fi fi-rr-triangle-warning"></i> Not connected to server. Location updates will resume when connection is restored.
           </span>
         </div>
       )}

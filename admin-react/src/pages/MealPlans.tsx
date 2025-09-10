@@ -191,7 +191,7 @@ const MealPlans: React.FC = () => {
     setDuplicateModalOpen(true)
   }
 
-  const handleDuplicateSubmit = async (newPlanName: string, modifications?: any) => {
+  const handleDuplicateSubmit = async (newPlanName: string, modifications?: Record<string, unknown>) => {
     if (!selectedMealPlan) return
 
     setIsLoading(true)

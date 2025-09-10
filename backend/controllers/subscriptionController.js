@@ -1,6 +1,10 @@
 const Subscription = require('../models/Subscription');
 const MealPlan = require('../models/MealPlan');
 const Customer = require('../models/Customer');
+const SubscriptionDelivery = require('../models/SubscriptionDelivery');
+const SubscriptionChefAssignment = require('../models/SubscriptionChefAssignment');
+const MealPlanAssignment = require('../models/MealPlanAssignment');
+const mealProgressionService = require('../services/mealProgressionService');
 
 // Get user's subscriptions
 exports.getUserSubscriptions = async (req, res) => {
@@ -376,6 +380,535 @@ exports.cancelSubscription = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to cancel subscription',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// ==========================================
+// RECURRING DELIVERY ENDPOINTS
+// ==========================================
+
+// Get current meal for subscription
+exports.getSubscriptionCurrentMeal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify subscription belongs to user
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: req.user.id
+    }).populate('mealPlanId');
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found'
+      });
+    }
+
+    // Get current meal using meal progression service
+    const currentMeal = await mealProgressionService.getCurrentMeal(id);
+    
+    res.json({
+      success: true,
+      data: currentMeal
+    });
+  } catch (err) {
+    console.error('❌ Get current meal error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get current meal',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Get chef preparation status for subscription
+exports.getSubscriptionChefStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify subscription belongs to user
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: req.user.id
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found'
+      });
+    }
+
+    // Get today's delivery for this subscription
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todaysDelivery = await SubscriptionDelivery.findOne({
+      subscriptionId: id,
+      scheduledDate: {
+        $gte: today,
+        $lt: tomorrow
+      }
+    }).populate('chefAssignment.chefId', 'fullName');
+
+    if (!todaysDelivery) {
+      return res.json({
+        success: true,
+        data: {
+          status: 'scheduled',
+          message: 'No delivery scheduled for today',
+          chefAssigned: false
+        }
+      });
+    }
+
+    // Calculate estimated ready time based on preparation time
+    let estimatedReadyTime = null;
+    if (todaysDelivery.chefAssignment.startedCookingAt) {
+      const avgPrepTime = 45; // 45 minutes average prep time
+      estimatedReadyTime = new Date(todaysDelivery.chefAssignment.startedCookingAt.getTime() + (avgPrepTime * 60 * 1000));
+    }
+
+    const chefStatus = {
+      status: todaysDelivery.status,
+      chefName: todaysDelivery.chefAssignment.chefId?.fullName,
+      chefAssigned: !!todaysDelivery.chefAssignment.chefId,
+      assignedAt: todaysDelivery.chefAssignment.assignedAt,
+      startedCookingAt: todaysDelivery.chefAssignment.startedCookingAt,
+      estimatedReadyTime,
+      notes: todaysDelivery.chefAssignment.notes
+    };
+
+    res.json({
+      success: true,
+      data: chefStatus
+    });
+  } catch (err) {
+    console.error('❌ Get chef status error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get chef status',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Get next delivery information
+exports.getSubscriptionNextDelivery = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify subscription belongs to user
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: req.user.id
+    }).populate('mealPlanId');
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found'
+      });
+    }
+
+    // Get next delivery from subscription record
+    const nextDelivery = subscription.recurringDelivery?.nextScheduledDelivery;
+
+    if (!nextDelivery) {
+      return res.json({
+        success: true,
+        data: null,
+        message: 'No next delivery scheduled'
+      });
+    }
+
+    // Get next meal assignment if available
+    let nextMealAssignment = null;
+    if (nextDelivery.assignmentId) {
+      nextMealAssignment = await MealPlanAssignment.findById(nextDelivery.assignmentId)
+        .populate('mealIds');
+    }
+
+    // Check for active order for this delivery to get real status
+    let actualStatus = 'scheduled';
+    let activeOrder = null;
+    
+    try {
+      const Order = require('../models/Order');
+      activeOrder = await Order.findOne({
+        userId: req.user.id,
+        subscriptionId: id,
+        deliveryDate: {
+          $gte: new Date(nextDelivery.date.setHours(0, 0, 0, 0)),
+          $lt: new Date(nextDelivery.date.setHours(23, 59, 59, 999))
+        }
+      }).sort({ createdAt: -1 });
+
+      if (activeOrder && activeOrder.orderStatus) {
+        actualStatus = activeOrder.orderStatus;
+        console.log(`📦 Found active order ${activeOrder._id} with status: ${actualStatus}`);
+      }
+    } catch (error) {
+      console.error('Error checking for active order:', error);
+    }
+
+    const deliveryInfo = {
+      date: nextDelivery.date,
+      estimatedTime: nextDelivery.estimatedTime,
+      mealAssignment: nextMealAssignment,
+      status: actualStatus,
+      orderId: activeOrder?._id,
+      trackingId: activeOrder?.trackingId
+    };
+
+    res.json({
+      success: true,
+      data: deliveryInfo
+    });
+  } catch (err) {
+    console.error('❌ Get next delivery error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get next delivery info',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Get meal timeline for subscription
+exports.getSubscriptionMealTimeline = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const daysAhead = parseInt(req.query.days) || 7;
+    
+    // Verify subscription belongs to user
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: req.user.id
+    }).populate('mealPlanId');
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found'
+      });
+    }
+
+    // Get meal progression timeline
+    const timeline = await mealProgressionService.getMealProgressionTimeline(id, daysAhead);
+    
+    res.json({
+      success: true,
+      data: timeline
+    });
+  } catch (err) {
+    console.error('❌ Get meal timeline error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get meal timeline',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Skip a meal delivery
+exports.skipMealDelivery = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { skipDate, reason } = req.body;
+    
+    // Validation
+    if (!skipDate || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Skip date and reason are required'
+      });
+    }
+
+    // Verify subscription belongs to user
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: req.user.id
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found'
+      });
+    }
+
+    // Skip the meal using meal progression service
+    const skipResult = await mealProgressionService.skipMeal(id, skipDate, reason);
+    
+    if (!skipResult) {
+      return res.status(400).json({
+        success: false,
+        message: 'Unable to skip meal for specified date'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Meal delivery skipped successfully',
+      data: { skipDate, reason }
+    });
+  } catch (err) {
+    console.error('❌ Skip meal delivery error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to skip meal delivery',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Update delivery preferences
+exports.updateDeliveryPreferences = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { frequency, timeSlot, daysOfWeek, specialInstructions } = req.body;
+    
+    // Verify subscription belongs to user
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: req.user.id
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found'
+      });
+    }
+
+    // Update delivery preferences
+    const updateData = {};
+    if (frequency) updateData['deliveryPreferences.frequency'] = frequency;
+    if (timeSlot) updateData['recurringDelivery.deliverySchedule.timeSlot'] = timeSlot;
+    if (daysOfWeek) updateData['recurringDelivery.deliverySchedule.daysOfWeek'] = daysOfWeek;
+    if (specialInstructions) updateData['specialInstructions'] = specialInstructions;
+
+    const updatedSubscription = await Subscription.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).populate('mealPlanId');
+
+    res.json({
+      success: true,
+      message: 'Delivery preferences updated successfully',
+      data: updatedSubscription
+    });
+  } catch (err) {
+    console.error('❌ Update delivery preferences error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update delivery preferences',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Get subscription delivery history
+exports.getSubscriptionDeliveryHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const limit = parseInt(req.query.limit) || 30;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+    
+    // Verify subscription belongs to user
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: req.user.id
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found'
+      });
+    }
+
+    // Get delivery history
+    const deliveries = await SubscriptionDelivery.find({
+      subscriptionId: id
+    })
+    .populate('mealAssignment.assignmentId')
+    .populate('chefAssignment.chefId', 'fullName')
+    .populate('driverAssignment.driverId', 'fullName')
+    .sort({ scheduledDate: -1 })
+    .limit(limit)
+    .skip(skip);
+
+    const totalCount = await SubscriptionDelivery.countDocuments({
+      subscriptionId: id
+    });
+
+    res.json({
+      success: true,
+      data: deliveries,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        hasNext: (skip + deliveries.length) < totalCount,
+        hasPrev: page > 1
+      }
+    });
+  } catch (err) {
+    console.error('❌ Get delivery history error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get delivery history',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Request chef reassignment
+exports.requestChefReassignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    // Validation
+    if (!reason || reason.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a detailed reason (minimum 10 characters)'
+      });
+    }
+
+    // Verify subscription belongs to user
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: req.user.id
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found'
+      });
+    }
+
+    // Find current chef assignment
+    const chefAssignment = await SubscriptionChefAssignment.findOne({
+      subscriptionId: id,
+      assignmentStatus: 'active'
+    });
+
+    if (!chefAssignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active chef assignment found'
+      });
+    }
+
+    // Request reassignment using the model method
+    await chefAssignment.requestReassignment('customer', reason.trim());
+
+    res.json({
+      success: true,
+      message: 'Chef reassignment request submitted successfully. Our team will review and respond within 24 hours.',
+      data: {
+        requestId: chefAssignment.assignmentId,
+        reason: reason.trim(),
+        requestedAt: new Date()
+      }
+    });
+  } catch (err) {
+    console.error('❌ Request chef reassignment error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit chef reassignment request',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// Rate a completed delivery
+exports.rateDelivery = async (req, res) => {
+  try {
+    const { deliveryId } = req.params;
+    const { rating, feedback } = req.body;
+    
+    // Validation
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be between 1 and 5'
+      });
+    }
+
+    // Find the delivery and verify it belongs to user's subscription
+    const delivery = await SubscriptionDelivery.findOne({
+      _id: deliveryId,
+      status: 'delivered'
+    }).populate('subscriptionId');
+
+    if (!delivery) {
+      return res.status(404).json({
+        success: false,
+        message: 'Delivered subscription not found'
+      });
+    }
+
+    // Verify the subscription belongs to the user
+    if (delivery.subscriptionId.userId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only rate your own deliveries'
+      });
+    }
+
+    // Update delivery rating
+    delivery.customer.rating = rating;
+    delivery.customer.feedback = feedback?.trim() || '';
+    delivery.customer.ratedAt = new Date();
+    delivery.metrics.customerSatisfaction = rating;
+
+    await delivery.save();
+
+    // Update chef performance metrics if chef was assigned
+    if (delivery.chefAssignment.chefId) {
+      const chefAssignment = await SubscriptionChefAssignment.findOne({
+        subscriptionId: delivery.subscriptionId._id,
+        chefId: delivery.chefAssignment.chefId,
+        assignmentStatus: 'active'
+      });
+
+      if (chefAssignment) {
+        await chefAssignment.updatePerformanceMetrics({
+          rating,
+          onTime: delivery.metrics.onTimeDelivery,
+          preparationTime: delivery.metrics.preparationTime
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Thank you for your feedback! Your rating helps us improve.',
+      data: {
+        deliveryId,
+        rating,
+        feedback: feedback?.trim() || '',
+        ratedAt: new Date()
+      }
+    });
+  } catch (err) {
+    console.error('❌ Rate delivery error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit rating',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }

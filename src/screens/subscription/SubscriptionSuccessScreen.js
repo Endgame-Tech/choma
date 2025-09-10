@@ -55,17 +55,35 @@ const SubscriptionSuccessScreen = ({ route, navigation }) => {
         {mealPlan && (
           <View style={styles(colors).mealPlanCard}>
             <Image 
-              source={mealPlan.image} 
+              source={
+                mealPlan.coverImage
+                  ? { uri: mealPlan.coverImage }
+                  : mealPlan.planImageUrl
+                  ? { uri: mealPlan.planImageUrl }
+                  : mealPlan.image
+                  ? typeof mealPlan.image === "string"
+                    ? { uri: mealPlan.image }
+                    : mealPlan.image
+                  : require("../../assets/images/meal-plans/fitfuel.jpg")
+              }
               style={styles(colors).mealPlanImage}
               resizeMode="cover"
+              defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+              onError={(e) => {
+                console.log('Image failed to load:', e.nativeEvent.error);
+              }}
             />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.7)']}
               style={styles(colors).imageGradient}
             />
             <View style={styles(colors).mealPlanOverlay}>
-              <Text style={styles(colors).mealPlanName}>{mealPlan.name}</Text>
-              <Text style={styles(colors).mealPlanSubtitle}>{mealPlan.subtitle}</Text>
+              <Text style={styles(colors).mealPlanName}>
+                {mealPlan.planName || mealPlan.name || 'Meal Plan'}
+              </Text>
+              <Text style={styles(colors).mealPlanSubtitle}>
+                {mealPlan.description || mealPlan.subtitle || 'Delicious meals delivered to you'}
+              </Text>
             </View>
           </View>
         )}

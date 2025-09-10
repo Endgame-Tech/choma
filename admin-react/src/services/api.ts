@@ -688,3 +688,6 @@ export const discountApi = {
     }
   },
 };
+
+// Export the base API instance for direct use
+export { api };

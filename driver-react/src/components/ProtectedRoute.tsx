@@ -11,23 +11,35 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading: loading, driver } = useAuth();
   const { connect, isConnected } = useWebSocket();
   const [wsConnecting, setWsConnecting] = useState(false);
+  const [skipWebSocket, setSkipWebSocket] = useState(false);
 
-  // Auto-connect WebSocket when user is authenticated
+  // Auto-connect WebSocket when user is authenticated (unless skipped)
   useEffect(() => {
-    if (isAuthenticated && !isConnected && !wsConnecting) {
+    if (isAuthenticated && !isConnected && !wsConnecting && !skipWebSocket) {
       setWsConnecting(true);
+      
+      // Set a timeout to prevent indefinite loading
+      const connectTimeout = setTimeout(() => {
+        setWsConnecting(false);
+        setSkipWebSocket(true); // Auto-skip after timeout
+        console.warn('[WS] WebSocket connection timeout - continuing without WebSocket');
+      }, 3000); // 3 second timeout (reduced from 5)
+      
       connect()
         .then(() => {
-          console.log('🔗 WebSocket connected');
+          console.log('[WS] WebSocket connected');
+          clearTimeout(connectTimeout);
         })
         .catch((error) => {
-          console.error('❌ WebSocket connection failed:', error);
+          console.error('[WS] WebSocket connection failed:', error);
+          clearTimeout(connectTimeout);
+          setSkipWebSocket(true); // Skip on error
         })
         .finally(() => {
           setWsConnecting(false);
         });
     }
-  }, [isAuthenticated, isConnected, wsConnecting, connect]);
+  }, [isAuthenticated, isConnected, wsConnecting, connect, skipWebSocket]);
 
   // Show loading spinner while checking authentication
   if (loading) {
@@ -91,13 +103,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // Show WebSocket connection status if connecting
+  // Show WebSocket connection status if connecting (but allow proceeding)
   if (wsConnecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-pulse rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Connecting to delivery service...</p>
+          <div className="animate-pulse rounded-full h-12 w-12 border-4 border-choma-orange border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 mb-4">Connecting to delivery service...</p>
+          <button
+            onClick={() => {
+              setWsConnecting(false);
+              setSkipWebSocket(true);
+            }}
+            className="px-6 py-2 bg-choma-brown text-white text-sm rounded-lg hover:bg-choma-orange transition-colors"
+          >
+            Continue without real-time updates
+          </button>
         </div>
       </div>
     );

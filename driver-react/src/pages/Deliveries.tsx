@@ -118,7 +118,7 @@ const Deliveries: React.FC = () => {
             <div className="animate-spin p-4 bg-choma-orange/10 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <TruckIcon className="h-8 w-8 text-choma-orange" />
             </div>
-            <div className="text-lg text-gray-600 font-medium">🔄 Loading deliveries...</div>
+            <div className="text-lg text-gray-600 font-medium"><i className="fi fi-rr-refresh"></i> Loading deliveries...</div>
           </div>
         </div>
       </div>
@@ -132,13 +132,13 @@ const Deliveries: React.FC = () => {
           <div className="p-4 bg-red-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <TruckIcon className="h-8 w-8 text-red-600" />
           </div>
-          <h3 className="text-red-800 font-semibold text-lg mb-2">❌ Error loading deliveries</h3>
+          <h3 className="text-red-800 font-semibold text-lg mb-2"><i className="fi fi-rr-cross-circle"></i> Error loading deliveries</h3>
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={refreshAssignments}
             className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105"
           >
-            🔄 Retry
+            <i className="fi fi-rr-refresh"></i> Retry
           </button>
         </div>
       </div>
@@ -161,7 +161,7 @@ const Deliveries: React.FC = () => {
             onClick={refreshAssignments}
             className="px-6 py-3 bg-choma-brown text-choma-white text-sm font-semibold rounded-xl hover:shadow-lg hover:shadow-choma-orange/25 transition-all duration-300 transform hover:scale-105"
           >
-            🔄 Refresh
+            <i className="fi fi-rr-refresh"></i> Refresh
           </button>
         </div>
       </div>
@@ -171,13 +171,13 @@ const Deliveries: React.FC = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter by Status</h3>
         <div className="flex flex-wrap gap-3">
           {([
-            { key: 'all', label: '📋 All', count: statusCounts.all },
-            { key: 'available', label: '🟢 Available', count: statusCounts.available },
-            { key: 'assigned', label: '🔄 Assigned', count: statusCounts.assigned },
-            { key: 'picked_up', label: '📦 Picked Up', count: statusCounts.picked_up },
-            { key: 'delivered', label: '✅ Delivered', count: statusCounts.delivered },
-            { key: 'cancelled', label: '❌ Cancelled', count: statusCounts.cancelled },
-          ] as { key: DeliveryStatus; label: string; count: number }[]).map((filter) => (
+            { key: 'all', label: 'All', icon: 'fi-rr-clipboard-list', count: statusCounts.all },
+            { key: 'available', label: 'Available', icon: 'fi-rr-circle-solid text-green-500', count: statusCounts.available },
+            { key: 'assigned', label: 'Assigned', icon: 'fi-rr-refresh', count: statusCounts.assigned },
+            { key: 'picked_up', label: 'Picked Up', icon: 'fi-rr-box', count: statusCounts.picked_up },
+            { key: 'delivered', label: 'Delivered', icon: 'fi-rr-check-circle', count: statusCounts.delivered },
+            { key: 'cancelled', label: 'Cancelled', icon: 'fi-rr-cross-circle', count: statusCounts.cancelled },
+          ] as { key: DeliveryStatus; label: string; icon: string; count: number }[]).map((filter) => (
             <button
               key={filter.key}
               onClick={() => setStatusFilter(filter.key)}
@@ -187,7 +187,7 @@ const Deliveries: React.FC = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-choma-orange/10 hover:text-choma-brown'
               }`}
             >
-              {filter.label} ({filter.count})
+              <i className={`fi ${filter.icon}`}></i> {filter.label} ({filter.count})
             </button>
           ))}
         </div>
@@ -200,7 +200,7 @@ const Deliveries: React.FC = () => {
             <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="🔍 Search by chef, location, or assignment ID..."
+              placeholder="Search by chef, location, or assignment ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-choma-orange focus:border-choma-orange transition-all duration-300 bg-gray-50 hover:bg-white"
@@ -216,9 +216,9 @@ const Deliveries: React.FC = () => {
               onChange={(e) => setSortBy(e.target.value as 'date' | 'distance' | 'earning')}
               className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-choma-orange focus:border-choma-orange font-medium bg-gray-50 hover:bg-white transition-all duration-300"
             >
-              <option value="date">📅 Sort by Date</option>
-              <option value="distance">📍 Sort by Distance</option>
-              <option value="earning">💰 Sort by Earning</option>
+              <option value="date"><i className="fi fi-rr-calendar"></i> Sort by Date</option>
+              <option value="distance"><i className="fi fi-rr-marker"></i> Sort by Distance</option>
+              <option value="earning"><i className="fi fi-rr-sack-dollar"></i> Sort by Earning</option>
             </select>
           </div>
         </div>
@@ -234,8 +234,8 @@ const Deliveries: React.FC = () => {
             <h3 className="text-xl font-semibold text-gray-900 mb-3">No deliveries found</h3>
             <p className="text-gray-600">
               {searchTerm || statusFilter !== 'all'
-                ? '🔍 Try adjusting your search or filter criteria.'
-                : '🚛 New delivery assignments will appear here when available.'}
+                ? '<i className="fi fi-rr-search"></i> Try adjusting your search or filter criteria.'
+                : '<i className="fi fi-rr-truck-side"></i> New delivery assignments will appear here when available.'}
             </p>
           </div>
         ) : (
@@ -254,11 +254,11 @@ const Deliveries: React.FC = () => {
                       </span>
                       {assignment.priority === 'urgent' && (
                         <span className="px-3 py-1 text-xs font-bold bg-red-100 text-red-800 rounded-full animate-pulse">
-                          🚨 URGENT
+                          <i className="fi fi-rr-siren"></i> URGENT
                         </span>
                       )}
                       <span className="text-sm text-gray-500 font-medium">
-                        🆔 {assignment._id.slice(-8)}
+                        <i className="fi fi-rr-id-badge"></i> {assignment._id.slice(-8)}
                       </span>
                     </div>
                     
@@ -310,19 +310,19 @@ const Deliveries: React.FC = () => {
                       <div className="flex items-center space-x-2 px-2 py-1 bg-gray-50 rounded-lg">
                         <ClockIcon className="h-4 w-4 text-choma-orange" />
                         <span className="font-medium">
-                          📅 {formatDate(assignment.estimatedPickupTime)} ⏰ {formatTime(assignment.estimatedPickupTime)}
+                          <i className="fi fi-rr-calendar"></i> {formatDate(assignment.estimatedPickupTime)} <i className="fi fi-rr-clock"></i> {formatTime(assignment.estimatedPickupTime)}
                         </span>
                       </div>
                       
                       <div className="flex items-center space-x-2 px-2 py-1 bg-gray-50 rounded-lg">
                         <MapPinIcon className="h-4 w-4 text-choma-brown" />
-                        <span className="font-medium">📍 {assignment.totalDistance.toFixed(1)} km</span>
+                        <span className="font-medium"><i className="fi fi-rr-marker"></i> {assignment.totalDistance.toFixed(1)} km</span>
                       </div>
                     </div>
 
                     <div className="text-right px-3 py-1 bg-choma-orange/10 rounded-lg">
                       <p className="font-bold text-choma-brown">
-                        ⏱️ {assignment.estimatedDuration} min
+                        <i className="fi fi-rr-stopwatch"></i> {assignment.estimatedDuration} min
                       </p>
                     </div>
                   </div>
@@ -331,7 +331,7 @@ const Deliveries: React.FC = () => {
                   {assignment.specialInstructions && (
                     <div className="mt-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border-l-4 border-choma-orange">
                       <p className="line-clamp-2 text-sm text-choma-brown">
-                        <strong className="text-choma-orange">📝 Note:</strong> {assignment.specialInstructions}
+                        <strong className="text-choma-orange"><i className="fi fi-rr-file-pen"></i> Note:</strong> {assignment.specialInstructions}
                       </p>
                     </div>
                   )}
@@ -355,7 +355,7 @@ const Deliveries: React.FC = () => {
                 {filteredAssignments.length}
               </p>
               <p className="text-sm text-gray-600 font-medium mt-2">
-                {statusFilter === 'all' ? '📋 Total Assignments' : `${statusFilter.replace('_', ' ')} Assignments`}
+                {statusFilter === 'all' ? '<i className="fi fi-rr-clipboard-list"></i> Total Assignments' : `${statusFilter.replace('_', ' ')} Assignments`}
               </p>
             </div>
             
@@ -363,14 +363,14 @@ const Deliveries: React.FC = () => {
               <p className="text-3xl font-bold text-green-600">
                 {formatCurrency(filteredAssignments.reduce((sum, a) => sum + a.totalEarning, 0))}
               </p>
-              <p className="text-sm text-gray-600 font-medium mt-2">💰 Total Earnings</p>
+              <p className="text-sm text-gray-600 font-medium mt-2"><i className="fi fi-rr-sack-dollar"></i> Total Earnings</p>
             </div>
             
             <div className="text-center p-4 bg-gradient-to-br from-choma-brown/10 to-choma-orange/5 rounded-xl hover:shadow-lg transition-all duration-300">
               <p className="text-3xl font-bold text-choma-brown">
                 {filteredAssignments.reduce((sum, a) => sum + a.totalDistance, 0).toFixed(1)} km
               </p>
-              <p className="text-sm text-gray-600 font-medium mt-2">📍 Total Distance</p>
+              <p className="text-sm text-gray-600 font-medium mt-2"><i className="fi fi-rr-marker"></i> Total Distance</p>
             </div>
           </div>
         </div>

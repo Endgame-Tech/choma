@@ -142,6 +142,28 @@ router.get("/subscriptions", adminController.getAllSubscriptions);
 // ============= CHEF MANAGEMENT ROUTES =============
 router.get("/chefs", adminController.getAllChefs);
 router.get("/chefs/stats", adminController.getChefStats);
+
+// ============= CHEF WORKLOAD MANAGEMENT ROUTES =============
+// Chef workload and assignment management (must come before /chefs/:id)
+router.get(
+  "/chefs/workload",
+  cacheMiddleware.chefWorkload,
+  require("../controllers/chefWorkloadController").getChefWorkloads
+);
+router.get(
+  "/chefs/reassignment-requests",
+  cacheMiddleware.short,
+  require("../controllers/chefWorkloadController").getReassignmentRequests
+);
+router.post(
+  "/chefs/assign",
+  require("../controllers/chefWorkloadController").assignChef
+);
+router.post(
+  "/chefs/reassignment-requests/:requestId/:action",
+  require("../controllers/chefWorkloadController").handleReassignmentRequest
+);
+
 router.get("/chefs/:id", adminController.getChefDetails);
 router.put("/chefs/:id/status", adminController.updateChefStatus);
 router.put("/chefs/:id/approve", adminController.approveChef);
@@ -339,5 +361,42 @@ router.use("/2fa", require("./twoFactor"));
 // ============= PROMO BANNERS ROUTES =============
 // Import banner routes (admin endpoints)
 router.use("/banners", require("./banners"));
+
+// ============= RECURRING DELIVERY ANALYTICS ROUTES =============
+// Analytics endpoints for the admin dashboard components
+router.get(
+  "/analytics/subscription-metrics",
+  cacheMiddleware.medium,
+  require("../controllers/recurringDeliveryAnalyticsController").getSubscriptionMetrics
+);
+router.get(
+  "/analytics/meal-plan-popularity", 
+  cacheMiddleware.medium,
+  require("../controllers/recurringDeliveryAnalyticsController").getMealPlanPopularity
+);
+router.get(
+  "/analytics/chef-performance",
+  cacheMiddleware.medium, 
+  require("../controllers/recurringDeliveryAnalyticsController").getChefPerformance
+);
+router.get(
+  "/analytics/subscription-trends",
+  cacheMiddleware.medium,
+  require("../controllers/recurringDeliveryAnalyticsController").getSubscriptionTrends
+);
+
+// ============= RECURRING DELIVERY MONITORING ROUTES =============
+// Live delivery monitoring endpoints
+router.get(
+  "/deliveries/monitor",
+  cacheMiddleware.short,
+  require("../controllers/recurringDeliveryMonitoringController").getLiveDeliveries
+);
+router.get(
+  "/deliveries/stats",
+  cacheMiddleware.short,
+  require("../controllers/recurringDeliveryMonitoringController").getDeliveryStats
+);
+
 
 module.exports = router;

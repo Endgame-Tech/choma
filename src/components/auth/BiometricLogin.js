@@ -128,6 +128,7 @@ const BiometricLogin = ({ onSuccess, onError, style }) => {
 
   return (
     <View style={[styles(colors).container, style]}>
+      <Text style={styles(colors).orText}>or</Text>
       <TouchableOpacity
         style={[
           styles(colors).biometricButton,
@@ -138,7 +139,7 @@ const BiometricLogin = ({ onSuccess, onError, style }) => {
         activeOpacity={0.7}
       >
         {authenticating ? (
-          <ActivityIndicator color={colors.white} size="small" />
+          <ActivityIndicator color={colors.primary} size="small" />
         ) : (
           <Ionicons
             name={getBiometricIcon()}
@@ -147,6 +148,9 @@ const BiometricLogin = ({ onSuccess, onError, style }) => {
           />
         )}
       </TouchableOpacity>
+      <Text style={styles(colors).biometricText}>
+        Sign in with {biometricType}
+      </Text>
     </View>
   );
 };
@@ -177,8 +181,14 @@ const styles = (colors) =>
     orText: {
       fontSize: 14,
       color: colors.textSecondary || "#666666",
-      marginTop: 16,
-      marginBottom: 8,
+      textAlign: "center",
+      marginBottom: 12,
+    },
+    biometricText: {
+      fontSize: 12,
+      color: colors.textSecondary || "#666666",
+      textAlign: "center",
+      marginTop: 8,
     },
     loadingText: {
       fontSize: 14,

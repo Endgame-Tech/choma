@@ -214,6 +214,12 @@ export const mealsApi = {
     return response.data
   },
 
+  // Bulk update meals
+  async bulkUpdateMeals(updates: Array<{ id: string; data: Partial<Meal> }>) {
+    const response = await api.put('/meals/bulk/update', { updates })
+    return response.data
+  },
+
   // Delete duplicate meals
   async deleteDuplicateMeals() {
     // Use a longer timeout for this potentially heavy operation

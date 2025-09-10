@@ -655,11 +655,18 @@ const goOnline = async (req, res) => {
       });
     }
 
-    await driver.goOnline();
+    // Update driver status to online
+    driver.status = 'online';
+    driver.isAvailable = true;
+    await driver.save();
 
     res.json({
       success: true,
-      message: 'You are now online and ready to receive assignments'
+      message: 'You are now online and ready to receive assignments',
+      data: {
+        status: driver.status,
+        isAvailable: driver.isAvailable
+      }
     });
 
   } catch (error) {
@@ -685,11 +692,18 @@ const goOffline = async (req, res) => {
       });
     }
 
-    await driver.goOffline();
+    // Update driver status to offline
+    driver.status = 'offline';
+    driver.isAvailable = false;
+    await driver.save();
 
     res.json({
       success: true,
-      message: 'You are now offline'
+      message: 'You are now offline',
+      data: {
+        status: driver.status,
+        isAvailable: driver.isAvailable
+      }
     });
 
   } catch (error) {

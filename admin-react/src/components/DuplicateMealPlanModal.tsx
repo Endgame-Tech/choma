@@ -19,16 +19,25 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
   const [newPlanName, setNewPlanName] = useState('')
   const [includeAssignments, setIncludeAssignments] = useState(true)
   const [publishImmediately, setPublishImmediately] = useState(false)
+  const [newDurationWeeks, setNewDurationWeeks] = useState<number>(0)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [submitError, setSubmitError] = useState('')
 
   React.useEffect(() => {
     if (isOpen && mealPlan) {
       setNewPlanName(`${mealPlan.planName} (Copy)`)
+      setNewDurationWeeks(mealPlan.durationWeeks || 0)
       setErrors({})
       setSubmitError('')
     }
   }, [isOpen, mealPlan])
+
+  // Calculate recalculated price based on new duration
+  const getRecalculatedPrice = () => {
+    if (!mealPlan || !mealPlan.totalPrice || !mealPlan.durationWeeks) return 0
+    const pricePerWeek = mealPlan.totalPrice / mealPlan.durationWeeks
+    return Math.round(pricePerWeek * newDurationWeeks)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,6 +66,12 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
     if (publishImmediately && mealPlan?.assignmentCount && mealPlan.assignmentCount > 0) {
       modifications.isPublished = true
     }
+
+    // Add duration and price modifications if duration changed
+    if (newDurationWeeks !== mealPlan?.durationWeeks) {
+      modifications.durationWeeks = newDurationWeeks
+      modifications.totalPrice = getRecalculatedPrice()
+    }
     
     try {
       await onSubmit(newPlanName.trim(), modifications)
@@ -71,6 +86,7 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
       setNewPlanName('')
       setIncludeAssignments(true)
       setPublishImmediately(false)
+      setNewDurationWeeks(0)
       setErrors({})
       setSubmitError('')
       onClose()
@@ -146,6 +162,34 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
               </p>
             </div>
 
+            {/* Duration Input */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                Duration (Weeks) *
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="52"
+                value={newDurationWeeks}
+                onChange={(e) => {
+                  const weeks = parseInt(e.target.value) || 0
+                  setNewDurationWeeks(weeks)
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors dark:bg-neutral-800 dark:text-white"
+                placeholder="Enter duration in weeks"
+                disabled={isLoading}
+              />
+              <p className="text-gray-500 dark:text-neutral-400 text-sm mt-1">
+                Original: {mealPlan?.durationWeeks || 0} weeks
+                {newDurationWeeks !== mealPlan?.durationWeeks && (
+                  <span className="text-blue-600 dark:text-blue-400 ml-2">
+                    → Changed to {newDurationWeeks} weeks
+                  </span>
+                )}
+              </p>
+            </div>
+
             {/* Duplication Options */}
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">⚙️ Duplication Options</h3>
@@ -198,34 +242,51 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
             {mealPlan && (
               <div className="bg-gray-50 dark:bg-neutral-700 rounded-lg p-4 mb-6">
                 <h4 className="text-sm font-medium text-gray-700 dark:text-neutral-200 mb-3">
-                  📊 Original Plan Summary
+                  📊 Plan Summary
                 </h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-gray-500 dark:text-neutral-400">Duration:</span>
                     <span className="ml-2 text-gray-900 dark:text-neutral-100">
-                      {mealPlan.durationWeeks} {mealPlan.durationWeeks === 1 ? 'week' : 'weeks'}
+                      {newDurationWeeks} {newDurationWeeks === 1 ? 'week' : 'weeks'}
+                      {newDurationWeeks !== mealPlan.durationWeeks && (
+                        <span className="text-blue-600 dark:text-blue-400 text-xs ml-1">
+                          (was {mealPlan.durationWeeks})
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-neutral-400">Price:</span>
                     <span className="ml-2 text-gray-900 dark:text-neutral-100">
-                      ₦{mealPlan.totalPrice?.toLocaleString() || '0'}
+                      ₦{getRecalculatedPrice().toLocaleString()}
+                      {newDurationWeeks !== mealPlan.durationWeeks && (
+                        <span className="text-blue-600 dark:text-blue-400 text-xs ml-1">
+                          (was ₦{mealPlan.totalPrice?.toLocaleString() || '0'})
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-neutral-400">Status:</span>
                     <span className={`ml-2 ${mealPlan.isPublished ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-neutral-400'}`}>
-                      {mealPlan.isPublished ? 'Published' : 'Draft'}
+                      {publishImmediately ? 'Will be Published' : 'Draft'}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-neutral-400">Meals:</span>
                     <span className="ml-2 text-gray-900 dark:text-neutral-100">
-                      {mealPlan.assignmentCount || 0} assigned
+                      {includeAssignments ? (mealPlan.assignmentCount || 0) : 0} assigned
                     </span>
                   </div>
                 </div>
+                {newDurationWeeks !== mealPlan.durationWeeks && (
+                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                    <div className="text-xs text-blue-700 dark:text-blue-300">
+                      <strong>Price Calculation:</strong> ₦{mealPlan.totalPrice?.toLocaleString() || '0'} ÷ {mealPlan.durationWeeks} weeks × {newDurationWeeks} weeks = ₦{getRecalculatedPrice().toLocaleString()}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

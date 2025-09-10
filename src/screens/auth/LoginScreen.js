@@ -37,6 +37,8 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [canGoBack, setCanGoBack] = useState(true);
+  const [errors, setErrors] = useState({});
+  const [loginAttempts, setLoginAttempts] = useState(0);
 
   // Animation for smooth keyboard transitions
   const [keyboardOffset] = useState(new Animated.Value(0));
@@ -115,18 +117,32 @@ const LoginScreen = ({ navigation }) => {
   }, [keyboardOffset, topSectionOffset]);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      showError("Error", "Please fill in all fields");
-      return;
+    // Clear previous errors
+    setErrors({});
+    
+    // Validation
+    const newErrors = {};
+    
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!email.includes("@") || !email.includes(".")) {
+      newErrors.email = "Please enter a valid email address";
     }
-
-    if (!email.includes("@")) {
-      showError("Error", "Please enter a valid email address");
+    
+    if (!password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
     try {
       setIsLoading(true);
+      setLoginAttempts(prev => prev + 1);
 
       console.log("Attempting login with:", { email: email.trim() });
 
@@ -135,19 +151,44 @@ const LoginScreen = ({ navigation }) => {
       if (result.success) {
         // Store credentials for biometric login
         await storeBiometricCredentials({ email: email.trim(), password });
+        setErrors({});
+        setLoginAttempts(0);
       } else {
-        showError(
-          "Login Error",
-          result.message ||
-            "Unable to log you in. Please check your credentials and try again."
-        );
+        // Set specific error based on response
+        const errorMessage = result.message || result.error || "Login failed";
+        
+        if (errorMessage.toLowerCase().includes('password') || 
+            errorMessage.toLowerCase().includes('credential') ||
+            errorMessage.toLowerCase().includes('invalid') ||
+            result.statusCode === 401) {
+          setErrors({ 
+            password: loginAttempts >= 2 ? "Incorrect password. Check your password and try again." : "Incorrect password",
+            general: loginAttempts >= 2 ? "Multiple failed attempts. Please verify your credentials." : undefined
+          });
+        } else if (errorMessage.toLowerCase().includes('email') || 
+                   errorMessage.toLowerCase().includes('user not found')) {
+          setErrors({ email: "No account found with this email address" });
+        } else if (errorMessage.toLowerCase().includes('network') || 
+                   errorMessage.toLowerCase().includes('connection')) {
+          setErrors({ general: "Network error. Please check your connection and try again." });
+        } else {
+          setErrors({ general: errorMessage });
+        }
+        
+        // Still show alert for serious errors
+        if (loginAttempts >= 2) {
+          showError("Login Failed", "Multiple failed attempts. Please verify your email and password are correct.");
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
-      showError(
-        "Login Error",
-        "Something went wrong. Please check your connection and try again."
-      );
+      setErrors({ 
+        general: "Something went wrong. Please check your connection and try again." 
+      });
+      
+      if (loginAttempts >= 2) {
+        showError("Connection Error", "Unable to connect to our servers. Please try again later.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -214,38 +255,61 @@ const LoginScreen = ({ navigation }) => {
 
             {/* Form inputs */}
             <View style={styles.form}>
-              <View style={styles.inputContainer}>
+              {/* General error message */}
+              {errors.general && (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle" size={16} color="#dc3545" />
+                  <Text style={styles.errorText}>{errors.general}</Text>
+                </View>
+              )}
+
+              <View style={[styles.inputContainer, errors.email && styles.inputContainerError]}>
                 <Ionicons
                   name="mail-outline"
                   size={20}
-                  color="#999"
+                  color={errors.email ? "#dc3545" : "#999"}
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={styles.input}
                   placeholder="Email Address"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={errors.email ? "#dc3545" : "#999"}
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (errors.email) {
+                      setErrors(prev => ({ ...prev, email: null }));
+                    }
+                  }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
               </View>
+              {errors.email && (
+                <View style={styles.fieldErrorContainer}>
+                  <Text style={styles.fieldErrorText}>{errors.email}</Text>
+                </View>
+              )}
 
-              <View style={styles.inputContainer}>
+              <View style={[styles.inputContainer, errors.password && styles.inputContainerError]}>
                 <Ionicons
                   name="lock-closed-outline"
                   size={20}
-                  color="#999"
+                  color={errors.password ? "#dc3545" : "#999"}
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={styles.input}
                   placeholder="Password"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={errors.password ? "#dc3545" : "#999"}
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errors.password) {
+                      setErrors(prev => ({ ...prev, password: null }));
+                    }
+                  }}
                   secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity
@@ -255,10 +319,15 @@ const LoginScreen = ({ navigation }) => {
                   <Ionicons
                     name={showPassword ? "eye-outline" : "eye-off-outline"}
                     size={20}
-                    color="#999"
+                    color={errors.password ? "#dc3545" : "#999"}
                   />
                 </TouchableOpacity>
               </View>
+              {errors.password && (
+                <View style={styles.fieldErrorContainer}>
+                  <Text style={styles.fieldErrorText}>{errors.password}</Text>
+                </View>
+              )}
 
               {/* Sign In Button */}
               <TouchableOpacity
@@ -399,6 +468,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e8e8e8",
   },
+  inputContainerError: {
+    borderColor: "#dc3545",
+    backgroundColor: "#fff5f5",
+  },
   inputIcon: {
     marginRight: 12,
   },
@@ -462,6 +535,32 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 30,
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fee",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#fcc",
+  },
+  errorText: {
+    color: "#dc3545",
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
+  },
+  fieldErrorContainer: {
+    marginTop: -12,
+    marginBottom: 8,
+    paddingHorizontal: 20,
+  },
+  fieldErrorText: {
+    color: "#dc3545",
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
 

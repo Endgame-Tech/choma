@@ -118,17 +118,36 @@ const OrderDetailScreen = ({ route, navigation }) => {
         </View>
 
         {/* Delivery Confirmation Code */}
-        {["completed", "ready", "out for delivery", "preparing"].includes((order.status || order.orderStatus || "").toLowerCase()) && (
+        {["completed", "ready", "out for delivery", "preparing"].includes(
+          (order.status || order.orderStatus || "").toLowerCase()
+        ) && (
           <View style={styles(colors).section}>
-            <Text style={styles(colors).sectionTitle}>Delivery Confirmation</Text>
+            <Text style={styles(colors).sectionTitle}>
+              Delivery Confirmation
+            </Text>
             <View style={styles(colors).confirmationCard}>
               <View style={styles(colors).confirmationHeader}>
-                <Ionicons name="shield-checkmark" size={24} color={colors.primary} />
-                <Text style={styles(colors).confirmationTitle}>Your Delivery Code</Text>
+                <Ionicons
+                  name="shield-checkmark"
+                  size={24}
+                  color={colors.primary}
+                />
+                <Text style={styles(colors).confirmationTitle}>
+                  Your Delivery Code
+                </Text>
               </View>
               <View style={styles(colors).codeContainer}>
                 <Text style={styles(colors).confirmationCode}>
-                  {order.id ? order.id.toString().slice(-6).toUpperCase().padStart(6, '0') : 'N/A'}
+                  {order.deliveryConfirmationCode ||
+                    (order.orderNumber
+                      ? order.orderNumber.toString().slice(-6).toUpperCase()
+                      : order.id
+                      ? order.id
+                          .toString()
+                          .slice(-6)
+                          .toUpperCase()
+                          .padStart(6, "0")
+                      : "N/A")}
                 </Text>
               </View>
               <Text style={styles(colors).confirmationText}>
@@ -139,24 +158,45 @@ const OrderDetailScreen = ({ route, navigation }) => {
         )}
 
         {/* Delivery Tracking - Real order journey */}
-        {!["cancelled"].includes((order.status || order.orderStatus || "").toLowerCase()) && (
+        {!["cancelled"].includes(
+          (order.status || order.orderStatus || "").toLowerCase()
+        ) && (
           <View style={styles(colors).section}>
             <Text style={styles(colors).sectionTitle}>Order Journey</Text>
             <View style={styles(colors).trackingCard}>
               <View style={styles(colors).trackingSteps}>
                 {/* Step 1: Order Confirmed - Always completed */}
-                <View style={[styles(colors).trackingStep, styles(colors).trackingStepCompleted]}>
-                  <View style={[styles(colors).trackingIcon, styles(colors).trackingIconCompleted]}>
+                <View
+                  style={[
+                    styles(colors).trackingStep,
+                    styles(colors).trackingStepCompleted,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles(colors).trackingIcon,
+                      styles(colors).trackingIconCompleted,
+                    ]}
+                  >
                     <Ionicons name="checkmark" size={16} color={colors.white} />
                   </View>
-                  <Text style={styles(colors).trackingLabel}>Order Confirmed</Text>
+                  <Text style={styles(colors).trackingLabel}>
+                    Order Confirmed
+                  </Text>
                 </View>
 
                 {/* Step 2: Preparing - Completed when preparing/processing */}
                 <View
                   style={[
                     styles(colors).trackingStep,
-                    ["preparing", "processing", "completed", "ready", "out for delivery", "delivered"].includes(
+                    [
+                      "preparing",
+                      "processing",
+                      "completed",
+                      "ready",
+                      "out for delivery",
+                      "delivered",
+                    ].includes(
                       (order.status || order.orderStatus || "").toLowerCase()
                     ) && styles(colors).trackingStepCompleted,
                   ]}
@@ -164,7 +204,14 @@ const OrderDetailScreen = ({ route, navigation }) => {
                   <View
                     style={[
                       styles(colors).trackingIcon,
-                      ["preparing", "processing", "completed", "ready", "out for delivery", "delivered"].includes(
+                      [
+                        "preparing",
+                        "processing",
+                        "completed",
+                        "ready",
+                        "out for delivery",
+                        "delivered",
+                      ].includes(
                         (order.status || order.orderStatus || "").toLowerCase()
                       ) && styles(colors).trackingIconCompleted,
                     ]}
@@ -173,22 +220,40 @@ const OrderDetailScreen = ({ route, navigation }) => {
                       name="restaurant"
                       size={16}
                       color={
-                        ["preparing", "processing", "completed", "ready", "out for delivery", "delivered"].includes(
-                          (order.status || order.orderStatus || "").toLowerCase()
+                        [
+                          "preparing",
+                          "processing",
+                          "completed",
+                          "ready",
+                          "out for delivery",
+                          "delivered",
+                        ].includes(
+                          (
+                            order.status ||
+                            order.orderStatus ||
+                            ""
+                          ).toLowerCase()
                         )
                           ? colors.white
                           : colors.textMuted
                       }
                     />
                   </View>
-                  <Text style={styles(colors).trackingLabel}>Chef Preparing</Text>
+                  <Text style={styles(colors).trackingLabel}>
+                    Chef Preparing
+                  </Text>
                 </View>
 
                 {/* Step 3: Ready for Pickup - Completed when chef finished */}
                 <View
                   style={[
                     styles(colors).trackingStep,
-                    ["completed", "ready", "out for delivery", "delivered"].includes(
+                    [
+                      "completed",
+                      "ready",
+                      "out for delivery",
+                      "delivered",
+                    ].includes(
                       (order.status || order.orderStatus || "").toLowerCase()
                     ) && styles(colors).trackingStepCompleted,
                   ]}
@@ -196,7 +261,12 @@ const OrderDetailScreen = ({ route, navigation }) => {
                   <View
                     style={[
                       styles(colors).trackingIcon,
-                      ["completed", "ready", "out for delivery", "delivered"].includes(
+                      [
+                        "completed",
+                        "ready",
+                        "out for delivery",
+                        "delivered",
+                      ].includes(
                         (order.status || order.orderStatus || "").toLowerCase()
                       ) && styles(colors).trackingIconCompleted,
                     ]}
@@ -205,61 +275,94 @@ const OrderDetailScreen = ({ route, navigation }) => {
                       name="checkmark-circle"
                       size={16}
                       color={
-                        ["completed", "ready", "out for delivery", "delivered"].includes(
-                          (order.status || order.orderStatus || "").toLowerCase()
+                        [
+                          "completed",
+                          "ready",
+                          "out for delivery",
+                          "delivered",
+                        ].includes(
+                          (
+                            order.status ||
+                            order.orderStatus ||
+                            ""
+                          ).toLowerCase()
                         )
                           ? colors.white
                           : colors.textMuted
                       }
                     />
                   </View>
-                  <Text style={styles(colors).trackingLabel}>Ready for Pickup</Text>
+                  <Text style={styles(colors).trackingLabel}>
+                    Ready for Pickup
+                  </Text>
                 </View>
 
                 {/* Step 4: Out for Delivery - When driver picks up */}
                 <View
                   style={[
                     styles(colors).trackingStep,
-                    ["out for delivery", "delivered"].includes((order.status || order.orderStatus || "").toLowerCase()) && styles(colors).trackingStepCompleted,
+                    ["out for delivery", "delivered"].includes(
+                      (order.status || order.orderStatus || "").toLowerCase()
+                    ) && styles(colors).trackingStepCompleted,
                   ]}
                 >
                   <View
                     style={[
                       styles(colors).trackingIcon,
-                      ["out for delivery", "delivered"].includes((order.status || order.orderStatus || "").toLowerCase()) && styles(colors).trackingIconCompleted,
+                      ["out for delivery", "delivered"].includes(
+                        (order.status || order.orderStatus || "").toLowerCase()
+                      ) && styles(colors).trackingIconCompleted,
                     ]}
                   >
                     <Ionicons
                       name="car"
                       size={16}
                       color={
-                        ["out for delivery", "delivered"].includes((order.status || order.orderStatus || "").toLowerCase())
+                        ["out for delivery", "delivered"].includes(
+                          (
+                            order.status ||
+                            order.orderStatus ||
+                            ""
+                          ).toLowerCase()
+                        )
                           ? colors.white
                           : colors.textMuted
                       }
                     />
                   </View>
-                  <Text style={styles(colors).trackingLabel}>Out for Delivery</Text>
+                  <Text style={styles(colors).trackingLabel}>
+                    Out for Delivery
+                  </Text>
                 </View>
 
                 {/* Step 5: Delivered */}
                 <View
                   style={[
                     styles(colors).trackingStep,
-                    (order.status || order.orderStatus || "").toLowerCase() === "delivered" && styles(colors).trackingStepCompleted,
+                    (order.status || order.orderStatus || "").toLowerCase() ===
+                      "delivered" && styles(colors).trackingStepCompleted,
                   ]}
                 >
                   <View
                     style={[
                       styles(colors).trackingIcon,
-                      (order.status || order.orderStatus || "").toLowerCase() === "delivered" && styles(colors).trackingIconCompleted,
+                      (
+                        order.status ||
+                        order.orderStatus ||
+                        ""
+                      ).toLowerCase() === "delivered" &&
+                        styles(colors).trackingIconCompleted,
                     ]}
                   >
                     <Ionicons
                       name="home"
                       size={16}
                       color={
-                        (order.status || order.orderStatus || "").toLowerCase() === "delivered"
+                        (
+                          order.status ||
+                          order.orderStatus ||
+                          ""
+                        ).toLowerCase() === "delivered"
                           ? colors.white
                           : colors.textMuted
                       }

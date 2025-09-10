@@ -46,10 +46,10 @@ export const useNotification = () => {
   return context;
 };
 
-export const NotificationProvider = ({ children }) => {
+export const NotificationProvider = ({ children, showToastNotification }) => {
   const [expoPushToken, setExpoPushToken] = useState("");
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(3); // Start with 3 for testing
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [preferences, setPreferences] = useState({
@@ -68,14 +68,36 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     initializeNotifications();
 
-    // Only load notifications if user is authenticated
-    // loadNotifications and loadNotificationPreferences will be called
-    // from AuthContext when user logs in
+    // Load notifications immediately if available
+    // This ensures unread count is visible right away
+    loadNotifications().catch(() => {
+      // Silently fail if not authenticated
+      console.log(
+        "📱 Initial notification load failed - user may not be authenticated"
+      );
+    });
 
     // Set up notification listeners
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
         console.log("📱 Notification received:", notification);
+
+        // Show in-app toast notification
+        if (showToastNotification) {
+          showToastNotification({
+            title: notification.request.content.title,
+            body: notification.request.content.body,
+            type: notification.request.content.data?.type || "info",
+            onPress: (notificationData) => {
+              // Navigate to appropriate screen based on notification type
+              handleNotificationPress(notification.request.content);
+            },
+          });
+        }
+
+        // Increment unread count immediately
+        setUnreadCount((prev) => prev + 1);
+
         // Refresh notifications when a new one is received
         loadNotifications();
       });
@@ -273,10 +295,21 @@ export const NotificationProvider = ({ children }) => {
         });
 
         setNotifications(notifications);
-        setUnreadCount(unreadCount);
+
+        // Calculate unread count from both API response and local count
+        const localUnreadCount = notifications.filter(
+          (n) => !n.isRead && !n.read
+        ).length;
+        const finalUnreadCount = Math.max(unreadCount, localUnreadCount);
+
+        setUnreadCount(finalUnreadCount);
         console.log(
           "✅ Notifications loaded successfully:",
-          notifications.length
+          notifications.length,
+          "Unread count (API/Local/Final):",
+          unreadCount,
+          localUnreadCount,
+          finalUnreadCount
         );
       } else {
         throw new Error(response.message || "Failed to load notifications");
@@ -439,6 +472,23 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
+  // Handle notification press from toast
+  const handleNotificationPress = (notificationContent) => {
+    console.log("🔔 Handling notification press:", notificationContent);
+
+    const data = notificationContent.data || {};
+
+    if (data.notificationId) {
+      // Mark notification as read
+      markAsRead(data.notificationId);
+    }
+
+    // Handle navigation based on notification type
+    if (data.type) {
+      handleNotificationNavigation(data);
+    }
+  };
+
   // Handle notification response (when user taps notification)
   const handleNotificationResponse = (response) => {
     const data = response.notification.request.content.data;
@@ -501,6 +551,8 @@ export const NotificationProvider = ({ children }) => {
     await loadNotifications();
   };
 
+
+
   // Cache notifications for offline access
   useEffect(() => {
     if (notifications.length > 0) {
@@ -531,6 +583,7 @@ export const NotificationProvider = ({ children }) => {
     getNotificationById,
     updateNotificationPreferences,
     initializeNotifications,
+
 
     // Utilities
     handleNotificationResponse,

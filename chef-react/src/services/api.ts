@@ -279,6 +279,82 @@ export const notificationsApi = {
   }
 }
 
+// Chef Subscriptions API
+export const chefSubscriptionsApi = {
+  // Get chef's subscription assignments
+  async getMySubscriptionAssignments(): Promise<any> {
+    const response = await api.get<ApiResponse<any>>('/subscriptions')
+    return handleResponse(response)
+  },
+
+  // Get weekly meal planning view
+  async getWeeklyMealPlan(params: { startDate: string }): Promise<any> {
+    const response = await api.get<ApiResponse<any>>(`/subscriptions/weekly-plan?startDate=${params.startDate}`)
+    return handleResponse(response)
+  },
+
+  // Get subscription timeline
+  async getSubscriptionTimeline(subscriptionId: string): Promise<any> {
+    const response = await api.get<ApiResponse<any>>(`/subscriptions/${subscriptionId}/timeline`)
+    return handleResponse(response)
+  },
+
+  // Update meal status (batch support)
+  async updateMealStatus(assignmentIds: string[], status: string, notes?: string): Promise<any> {
+    const response = await api.put<ApiResponse<any>>('/subscriptions/meal-status', {
+      assignmentIds,
+      status,
+      notes
+    })
+    return handleResponse(response)
+  },
+
+  // Get subscription performance metrics
+  async getSubscriptionMetrics(params: { period: string }): Promise<any> {
+    const response = await api.get<ApiResponse<any>>(`/subscriptions/metrics?period=${params.period}`)
+    return handleResponse(response)
+  },
+
+  // Get batch preparation opportunities
+  async getBatchOpportunities(): Promise<any> {
+    const response = await api.get<ApiResponse<any>>('/subscriptions/batch-opportunities')
+    return handleResponse(response)
+  },
+
+  // Get active batch preparations
+  async getActiveBatches(): Promise<any> {
+    const response = await api.get<ApiResponse<any>>('/subscriptions/active-batches')
+    return handleResponse(response)
+  },
+
+  // Start batch preparation
+  async startBatchPreparation(batchId: string): Promise<any> {
+    const response = await api.post<ApiResponse<any>>(`/subscriptions/batch-preparation/${batchId}/start`)
+    return handleResponse(response)
+  },
+
+  // Complete batch preparation
+  async completeBatchPreparation(batchId: string): Promise<any> {
+    const response = await api.post<ApiResponse<any>>(`/subscriptions/batch-preparation/${batchId}/complete`)
+    return handleResponse(response)
+  },
+
+  // Cancel batch preparation
+  async cancelBatchPreparation(batchId: string): Promise<any> {
+    const response = await api.post<ApiResponse<any>>(`/subscriptions/batch-preparation/${batchId}/cancel`)
+    return handleResponse(response)
+  },
+
+  // Send customer communication
+  async sendCustomerCommunication(subscriptionId: string, messageType: string, content: any): Promise<any> {
+    const response = await api.post<ApiResponse<any>>(`/subscriptions/${subscriptionId}/communicate`, {
+      messageType,
+      content
+    })
+    return handleResponse(response)
+  }
+}
+
 // Health check
 export const healthApi = {
   async check(): Promise<boolean> {

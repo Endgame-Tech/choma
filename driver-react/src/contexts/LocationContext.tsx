@@ -64,7 +64,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       updateLocation(location.latitude, location.longitude);
     }
 
-    console.log('📍 Location updated:', location);
+    console.log('[Location] Location updated:', location);
   };
 
   // Handle position error
@@ -133,7 +133,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       );
       setWatchId(id);
       setIsTracking(true);
-      console.log('🎯 Started location tracking');
+      console.log('[Location] Started location tracking');
     } else {
       setIsTracking(true);
     }
@@ -146,7 +146,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setWatchId(null);
     }
     setIsTracking(false);
-    console.log('⏹️ Stopped location tracking');
+    console.log('[Location] Stopped location tracking');
   };
 
   // Effect to handle watch position changes
@@ -173,7 +173,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     if ('permissions' in navigator) {
       navigator.permissions.query({ name: 'geolocation' }).then((result) => {
         if (result.state === 'granted') {
-          console.log('✅ Geolocation permission granted');
+          console.log('[Location] Geolocation permission granted');
         } else if (result.state === 'denied') {
           setLocationError('Geolocation permission denied');
         }

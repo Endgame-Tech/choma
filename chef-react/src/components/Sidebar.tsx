@@ -8,12 +8,14 @@ import {
   User,
   DollarSign,
   Bell,
-  LogOut
+  LogOut,
+  Calendar
 } from 'lucide-react'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
   { name: 'My Orders', href: '/orders', icon: FileText },
+  { name: 'Subscriptions', href: '/subscriptions', icon: Calendar },
   { name: 'Profile', href: '/profile', icon: User },
   { name: 'Earnings', href: '/earnings', icon: DollarSign },
   { name: 'Notifications', href: '/notifications', icon: Bell },

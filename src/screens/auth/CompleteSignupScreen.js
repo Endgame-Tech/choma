@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,15 +9,16 @@ import {
   ScrollView,
   Platform,
   StatusBar,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../../styles/theme';
-import { THEME } from '../../utils/colors';
-import ChomaLogo from '../../components/ui/ChomaLogo';
-import { useAuth } from '../../context/AuthContext';
-import { useAlert } from '../../contexts/AlertContext';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../../styles/theme";
+import { THEME } from "../../utils/colors";
+import ChomaLogo from "../../components/ui/ChomaLogo";
+import { useAuth } from "../../context/AuthContext";
+import { useAlert } from "../../contexts/AlertContext";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 const CompleteSignupScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -29,7 +30,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
 
   const handleCompleteSignup = async () => {
     if (!userData || !userData.emailVerified) {
-      showError('Error', 'Email verification is required');
+      showError("Error", "Email verification is required");
       navigation.goBack();
       return;
     }
@@ -40,23 +41,29 @@ const CompleteSignupScreen = ({ navigation, route }) => {
       const result = await signup({
         ...userData,
         emailVerified: true,
-        verificationToken: userData.verificationToken
+        verificationToken: userData.verificationToken,
       });
 
       if (result.success) {
         // Account created successfully and user is now authenticated
-        showSuccess('Welcome!', 'Your account has been created successfully');
+        showSuccess("Welcome!", "Your account has been created successfully");
+
+        // Small delay to ensure state is properly updated before navigation
+        setTimeout(() => {
+          // The AuthContext will handle navigation to the appropriate screen
+          // based on authentication state
+        }, 1000);
       } else {
         showError(
-          'Registration Error',
-          result.message || 'Unable to create your account. Please try again.'
+          "Registration Error",
+          result.message || "Unable to create your account. Please try again."
         );
       }
     } catch (error) {
-      console.error('Complete signup error:', error);
+      console.error("Complete signup error:", error);
       showError(
-        'Registration Error',
-        'Something went wrong. Please try again.'
+        "Registration Error",
+        "Something went wrong. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -70,11 +77,12 @@ const CompleteSignupScreen = ({ navigation, route }) => {
           <Ionicons name="alert-circle" size={60} color={colors.error} />
           <Text style={styles(colors).errorTitle}>Something went wrong</Text>
           <Text style={styles(colors).errorText}>
-            Registration data is missing. Please start the registration process again.
+            Registration data is missing. Please start the registration process
+            again.
           </Text>
           <TouchableOpacity
             style={styles(colors).errorButton}
-            onPress={() => navigation.navigate('Signup')}
+            onPress={() => navigation.navigate("Signup")}
           >
             <Text style={styles(colors).errorButtonText}>Start Over</Text>
           </TouchableOpacity>
@@ -89,7 +97,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
 
       <KeyboardAvoidingView
         style={styles(colors).container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView contentContainerStyle={styles(colors).scrollContainer}>
           <View style={styles(colors).content}>
@@ -99,39 +107,56 @@ const CompleteSignupScreen = ({ navigation, route }) => {
               </View>
               <Text style={styles(colors).title}>Almost Done!</Text>
               <Text style={styles(colors).subtitle}>
-                Your email has been verified. Ready to complete your registration?
+                Your email has been verified. Ready to complete your
+                registration?
               </Text>
             </View>
 
             <View style={styles(colors).summaryCard}>
               <View style={styles(colors).summaryHeader}>
-                <Ionicons name="person-circle" size={24} color={colors.primary} />
+                <Ionicons
+                  name="person-circle"
+                  size={24}
+                  color={colors.primary}
+                />
                 <Text style={styles(colors).summaryTitle}>Account Summary</Text>
               </View>
-              
+
               <View style={styles(colors).summaryItem}>
                 <Text style={styles(colors).summaryLabel}>Name</Text>
                 <Text style={styles(colors).summaryValue}>
                   {userData.firstName} {userData.lastName}
                 </Text>
               </View>
-              
+
               <View style={styles(colors).summaryItem}>
                 <Text style={styles(colors).summaryLabel}>Email</Text>
                 <View style={styles(colors).emailContainer}>
-                  <Text style={styles(colors).summaryValue}>{userData.email}</Text>
-                  <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                  <Text style={styles(colors).summaryValue}>
+                    {userData.email}
+                  </Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={colors.success}
+                  />
                 </View>
               </View>
-              
+
               <View style={styles(colors).summaryItem}>
                 <Text style={styles(colors).summaryLabel}>Phone</Text>
-                <Text style={styles(colors).summaryValue}>{userData.phoneNumber}</Text>
+                <Text style={styles(colors).summaryValue}>
+                  {userData.phoneNumber}
+                </Text>
               </View>
-              
+
               <View style={styles(colors).summaryItem}>
-                <Text style={styles(colors).summaryLabel}>Delivery Address</Text>
-                <Text style={styles(colors).summaryValue}>{userData.deliveryAddress}</Text>
+                <Text style={styles(colors).summaryLabel}>
+                  Delivery Address
+                </Text>
+                <Text style={styles(colors).summaryValue}>
+                  {userData.deliveryAddress}
+                </Text>
               </View>
             </View>
 
@@ -147,7 +172,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
                 colors={
                   isLoading
                     ? [colors.textMuted, colors.textMuted]
-                    : ['#652815', '#652815']
+                    : ["#652815", "#652815"]
                 }
                 style={styles(colors).buttonGradient}
               >
@@ -163,10 +188,12 @@ const CompleteSignupScreen = ({ navigation, route }) => {
 
             <View style={styles(colors).footer}>
               <Text style={styles(colors).footerText}>
-                By completing registration, you agree to our{' '}
+                By completing registration, you agree to our{" "}
               </Text>
               <TouchableOpacity>
-                <Text style={styles(colors).footerLink}>Terms & Conditions</Text>
+                <Text style={styles(colors).footerLink}>
+                  Terms & Conditions
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -188,31 +215,31 @@ const styles = (colors) =>
     content: {
       flex: 1,
       paddingHorizontal: 20,
-      justifyContent: 'center',
+      justifyContent: "center",
     },
     logoContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 40,
     },
     logoBackground: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       marginBottom: 20,
     },
     title: {
       fontSize: 28,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 8,
-      textAlign: 'center',
+      textAlign: "center",
     },
     subtitle: {
       fontSize: 16,
       color: colors.textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 22,
     },
     summaryCard: {
@@ -224,13 +251,13 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     summaryHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       marginBottom: 20,
     },
     summaryTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginLeft: 12,
     },
@@ -245,22 +272,22 @@ const styles = (colors) =>
     summaryValue: {
       fontSize: 16,
       color: colors.text,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     emailContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     completeButton: {
       borderRadius: THEME.borderRadius.medium,
-      overflow: 'hidden',
+      overflow: "hidden",
       marginBottom: 20,
     },
     buttonGradient: {
       height: 50,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     completeButtonDisabled: {
       opacity: 0.6,
@@ -268,30 +295,30 @@ const styles = (colors) =>
     completeButtonText: {
       color: colors.white,
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     footer: {
-      alignItems: 'center',
+      alignItems: "center",
     },
     footerText: {
       fontSize: 12,
       color: colors.textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
     },
     footerLink: {
       fontSize: 12,
       color: colors.primary,
-      textDecorationLine: 'underline',
+      textDecorationLine: "underline",
     },
     errorContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       paddingHorizontal: 40,
     },
     errorTitle: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginTop: 20,
       marginBottom: 12,
@@ -299,7 +326,7 @@ const styles = (colors) =>
     errorText: {
       fontSize: 16,
       color: colors.textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 22,
       marginBottom: 30,
     },
@@ -312,7 +339,7 @@ const styles = (colors) =>
     errorButtonText: {
       color: colors.white,
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
   });
 

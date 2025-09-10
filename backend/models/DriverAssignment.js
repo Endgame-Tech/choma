@@ -288,51 +288,136 @@ driverAssignmentSchema.statics.findByConfirmationCode = function (code) {
 
 // Instance methods
 driverAssignmentSchema.methods.generateConfirmationCode = async function () {
-  console.log("🔑 Generating confirmation code for order:", this.orderId);
+  console.log("🔑 Generating confirmation code for delivery:", this.orderId);
 
   try {
-    const DriverAssignment = mongoose.model("DriverAssignment");
-    const existingAssignmentsCount = await DriverAssignment.countDocuments({
-      orderId: this.orderId,
-    });
+    const Order = require("./Order");
+    const Subscription = require("./Subscription");
+    const order = await Order.findById(this.orderId).select(
+      "orderNumber recurringOrder subscriptionId createdAt"
+    );
 
-    // Check if this is the first assignment for the order
-    if (existingAssignmentsCount === 0) {
-      console.log("✅ First delivery for this order. Using order number.");
-      const Order = require("./Order");
-      const order = await Order.findById(this.orderId).select("orderNumber");
+    if (!order) {
+      console.error("❌ Order not found for confirmation code generation");
+      return this.generateRandomCode();
+    }
 
-      if (order && order.orderNumber) {
+    // Check if this is a subscription order
+    if (order.recurringOrder && order.recurringOrder.orderType !== "one-time") {
+      // FIRST DELIVERY: Use last 6 digits of order number (activation code)
+      if (order.recurringOrder.isActivationOrder) {
+        console.log(
+          "🎯 First subscription delivery - using order number last 6 digits"
+        );
         const orderNumber = order.orderNumber.toString();
-        let code = orderNumber.slice(-6).toUpperCase();
-        
-        console.log("🔑 First delivery code from order number:", {
+        const code = orderNumber.slice(-6).toUpperCase();
+
+        console.log("🔑 Activation delivery code:", {
           orderId: this.orderId,
           orderNumber: orderNumber,
-          last6: code,
+          activationCode: code,
+          isActivation: true,
         });
 
         this.confirmationCode = code;
         return code;
-      } else {
-        // Fallback if order or orderNumber not found, though this is unlikely
-        console.log("⚠️ Order number not found for first delivery, falling back to random code.");
       }
-    } else {
-      console.log("🎲 Subsequent delivery for this order. Generating random code.");
-    }
-  } catch (error) {
-    console.error("Error checking for existing assignments, falling back to random code:", error);
-  }
 
-  // Fallback to random code for subsequent deliveries or in case of any error
+      // SUBSEQUENT DELIVERIES: Generate random 4-digit code
+      else if (order.recurringOrder.orderType === "subscription-recurring") {
+        console.log(
+          "🎲 Subsequent subscription delivery - generating 4-digit code"
+        );
+        const code = this.generateRandom4DigitCode();
+
+        console.log("🔑 Recurring delivery code:", {
+          orderId: this.orderId,
+          recurringCode: code,
+          isRecurring: true,
+        });
+
+        this.confirmationCode = code;
+        return code;
+      }
+    }
+
+    // FALLBACK: Check if this is first order for subscription (even if not properly flagged)
+    if (order.subscriptionId) {
+      console.log("🔍 Checking if this is first subscription order...");
+
+      try {
+        const previousOrdersCount = await Order.countDocuments({
+          subscriptionId: order.subscriptionId,
+          createdAt: { $lt: order.createdAt },
+        });
+
+        if (previousOrdersCount === 0) {
+          console.log(
+            "🎯 First subscription order detected - using order number last 6 digits"
+          );
+          const orderNumber = order.orderNumber.toString();
+          const code = orderNumber.slice(-6).toUpperCase();
+
+          console.log("🔑 First subscription delivery code:", {
+            orderId: this.orderId,
+            orderNumber: orderNumber,
+            activationCode: code,
+            isFirstOrder: true,
+            previousOrdersCount,
+          });
+
+          this.confirmationCode = code;
+          return code;
+        } else {
+          console.log(
+            "🔄 Subsequent subscription order - generating 4-digit code"
+          );
+          const code = this.generateRandom4DigitCode();
+
+          console.log("🔑 Subsequent subscription delivery code:", {
+            orderId: this.orderId,
+            recurringCode: code,
+            isSubsequent: true,
+            previousOrdersCount,
+          });
+
+          this.confirmationCode = code;
+          return code;
+        }
+      } catch (countError) {
+        console.error("❌ Error counting previous orders:", countError);
+        // Fall through to one-time order logic
+      }
+    }
+
+    // ONE-TIME ORDERS: Use existing logic (6-digit random)
+    console.log("🍽️ One-time order - using 6-digit random code");
+    const code = this.generateRandomCode();
+    this.confirmationCode = code;
+    return code;
+  } catch (error) {
+    console.error("❌ Error generating confirmation code:", error);
+    return this.generateRandomCode();
+  }
+};
+
+// Generate 4-digit code for recurring deliveries
+driverAssignmentSchema.methods.generateRandom4DigitCode = function () {
+  const chars = "0123456789";
+  let code = "";
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
+
+// Generate 6-digit code for one-time orders
+driverAssignmentSchema.methods.generateRandomCode = function () {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
   for (let i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  this.confirmationCode = code;
-  console.log(`✅ Random confirmation code set: ${code}`);
   return code;
 };
 
@@ -381,9 +466,62 @@ driverAssignmentSchema.methods.confirmPickup = async function (
     pickupPhoto: pickupData.photo || "",
   };
 
-  // NOTE: The logic to update Order status to "Out for Delivery" and send notifications
-  // has been moved to the delivery assignment service, as per new requirements,
-  // to trigger immediately upon driver assignment.
+  // Update the main Order status to "Out for Delivery" when driver confirms pickup
+  const Order = require("./Order");
+  const Notification = require("./Notification");
+  const { cacheService } = require("../config/redis");
+
+  try {
+    console.log(
+      `📦 Updating order ${this.orderId} status to "Out for Delivery" after pickup confirmation`
+    );
+
+    // Update order status to "Out for Delivery"
+    const order = await Order.findById(this.orderId);
+    if (order) {
+      order.orderStatus = "Out for Delivery";
+      order.statusUpdatedAt = new Date();
+      await order.save();
+
+      console.log(`✅ Order ${this.orderId} updated to "Out for Delivery"`);
+
+      // Clear any cached order data to force refresh in mobile app
+      if (cacheService && typeof cacheService.del === "function") {
+        await cacheService.del(`order_${this.orderId}`);
+        await cacheService.del(`user_orders_${order.userId}`);
+        console.log(`🗑️ Cleared cache for order ${this.orderId}`);
+      }
+
+      // Send notification to customer
+      if (Notification && order.userId) {
+        await Notification.create({
+          userId: order.userId,
+          title: "Order Out for Delivery! 🚚",
+          message: `Your order is now out for delivery and on its way to you. Track your delivery in the app.`,
+          type: "delivery_update",
+          data: {
+            orderId: this.orderId,
+            assignmentId: this._id,
+            status: "Out for Delivery",
+            estimatedDeliveryTime: this.estimatedDeliveryTime,
+          },
+        });
+        console.log(
+          `📱 Sent "Out for Delivery" notification to user ${order.userId}`
+        );
+      }
+    } else {
+      console.error(
+        `❌ Order ${this.orderId} not found when confirming pickup`
+      );
+    }
+  } catch (error) {
+    console.error(
+      `❌ Error updating order status after pickup confirmation:`,
+      error
+    );
+    // Don't throw error to avoid breaking the pickup confirmation
+  }
 
   return this.save();
 };

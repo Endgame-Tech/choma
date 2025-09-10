@@ -144,4 +144,8 @@ router.get('/orders/:orderId/meal-plan', chefAuth, chefController.getMealPlan);
 // GET /api/chef/orders/:orderId/earnings-breakdown - Get earnings breakdown for an order
 router.get('/orders/:orderId/earnings-breakdown', chefAuth, chefController.getOrderEarningsBreakdown);
 
+// ============= SUBSCRIPTION MANAGEMENT ROUTES =============
+// Mount chef subscription routes
+router.use('/subscriptions', require('./chefSubscriptions'));
+
 module.exports = router;

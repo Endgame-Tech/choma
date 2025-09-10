@@ -18,7 +18,7 @@ const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost
 class DriverApiService {
   private api: any;
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
-  private readonly CACHE_DURATION = 10000; // 10 seconds cache
+  private readonly CACHE_DURATION = 300000; // 5 minutes cache
 
   constructor() {
     this.api = axios.create({
@@ -233,7 +233,18 @@ class DriverApiService {
 
   async getDailyStats(date?: string): Promise<ApiResponse<DailyStats>> {
     const queryDate = date || new Date().toISOString().split('T')[0];
-    return this.handleRequest<DailyStats>(this.api.get(`/stats/daily?date=${queryDate}`));
+    const cacheKey = `daily-stats-${queryDate}`;
+    const cached = this.getCachedData(cacheKey);
+    if (cached) {
+      console.log('📁 Using cached daily stats data');
+      return cached;
+    }
+
+    const result = await this.handleRequest<DailyStats>(this.api.get(`/stats/daily?date=${queryDate}`));
+    if (result.success) {
+      this.setCachedData(cacheKey, result);
+    }
+    return result;
   }
 
   async getWeeklyStats(): Promise<ApiResponse> {

@@ -19,6 +19,8 @@ const {
   updateDriverProfile
 } = require('../controllers/driverController');
 
+const driverSubscriptionController = require('../controllers/driverSubscriptionController');
+
 const driverAuth = require('../middleware/driverAuth');
 
 // Validation middleware
@@ -130,6 +132,29 @@ router.get('/history',
 router.get('/stats/daily',
   query('date').optional().isISO8601().withMessage('Date must be in ISO format'),
   getDailyStats
+);
+
+// ============= SUBSCRIPTION MANAGEMENT ROUTES =============
+// Subscription delivery management for drivers
+router.get('/subscription/my-deliveries', driverSubscriptionController.getMySubscriptionDeliveries);
+router.get('/subscription/weekly-schedule',
+  query('startDate').optional().isISO8601().withMessage('Start date must be in ISO format'),
+  driverSubscriptionController.getWeeklyDeliverySchedule
+);
+router.get('/subscription/metrics',
+  query('period').optional().isIn(['7d', '30d', '90d', '1y']).withMessage('Period must be 7d, 30d, 90d, or 1y'),
+  driverSubscriptionController.getSubscriptionMetrics
+);
+router.get('/subscription/customer/:customerId/subscription/:subscriptionId/timeline',
+  param('customerId').isMongoId().withMessage('Invalid customer ID'),
+  param('subscriptionId').isMongoId().withMessage('Invalid subscription ID'),
+  driverSubscriptionController.getCustomerSubscriptionTimeline
+);
+router.put('/subscription/delivery/status',
+  body('assignmentId').isMongoId().withMessage('Invalid assignment ID'),
+  body('status').isIn(['assigned', 'picked_up', 'delivered', 'cancelled']).withMessage('Invalid status'),
+  body('notes').optional().isLength({ max: 500 }).withMessage('Notes too long'),
+  driverSubscriptionController.updateDeliveryStatus
 );
 
 module.exports = router;

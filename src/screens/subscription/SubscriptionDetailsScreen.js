@@ -42,6 +42,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
   useEffect(() => {
     // If a full subscription object was provided via navigation, use it directly.
     if (subscriptionParam) {
+      console.log('🚀 Subscription data from params:', JSON.stringify(subscriptionParam, null, 2));
       setSubscription(subscriptionParam);
       setLoading(false);
 
@@ -81,6 +82,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
       const result = await apiService.getSubscriptionById(subscriptionId);
 
       if (result.success && result.data) {
+        console.log('🚀 Subscription data from API:', JSON.stringify(result.data, null, 2));
         setSubscription(result.data);
 
         // Fetch meal plan details if available
@@ -323,16 +325,24 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
 
             <View style={styles(colors).mealPlanCard}>
               {(() => {
+                // Try multiple image field names used across the app
                 const src =
+                  resolveImageSource(mealPlan.coverImage) ||
+                  resolveImageSource(mealPlan.planImageUrl) ||
                   resolveImageSource(mealPlan.image) ||
                   resolveImageSource(mealPlan.imageUrl) ||
                   (mealPlan.images && resolveImageSource(mealPlan.images[0]));
+                
                 if (src) {
                   return (
                     <Image
                       source={src}
                       style={styles(colors).mealPlanImage}
                       resizeMode="cover"
+                      defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+                      onError={(e) => {
+                        console.log('Meal plan image failed to load:', e.nativeEvent.error);
+                      }}
                     />
                   );
                 }
@@ -362,9 +372,11 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                 style={styles(colors).imageGradient}
               />
               <View style={styles(colors).mealPlanOverlay}>
-                <Text style={styles(colors).mealPlanName}>{mealPlan.name}</Text>
+                <Text style={styles(colors).mealPlanName}>
+                  {mealPlan.planName || mealPlan.name || 'Meal Plan'}
+                </Text>
                 <Text style={styles(colors).mealPlanSubtitle}>
-                  {mealPlan.subtitle}
+                  {mealPlan.description || mealPlan.subtitle || 'Delicious meals delivered to you'}
                 </Text>
               </View>
             </View>
@@ -379,13 +391,18 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Frequency</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.frequency || "N/A"}
+                {subscription.frequency || subscription.selectedFrequency || "Daily"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Duration</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.duration || "N/A"}
+                {subscription.duration 
+                  ? `${subscription.duration} ${subscription.duration === 1 ? 'week' : 'weeks'}`
+                  : subscription.durationWeeks 
+                  ? `${subscription.durationWeeks} ${subscription.durationWeeks === 1 ? 'week' : 'weeks'}`
+                  : "1 week"
+                }
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
@@ -428,13 +445,19 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
               <Text style={styles(colors).detailValue}>
                 {subscription.paymentDate
                   ? formatDate(subscription.paymentDate)
+                  : subscription.createdAt 
+                  ? formatDate(subscription.createdAt)
                   : "N/A"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Reference</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.paymentReference || "N/A"}
+                {subscription.paymentReference || 
+                 subscription.reference || 
+                 subscription.transactionRef ||
+                 (subscription._id && subscription._id.substring(0, 8).toUpperCase()) || 
+                 "N/A"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>

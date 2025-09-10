@@ -12,6 +12,10 @@ import Deliveries from './pages/Deliveries';
 import DeliveryDetail from './pages/DeliveryDetail';
 import Profile from './pages/Profile';
 import Earnings from './pages/Earnings';
+import Subscriptions from './pages/Subscriptions';
+import SubscriptionSchedule from './pages/SubscriptionSchedule';
+import SubscriptionMetrics from './pages/SubscriptionMetrics';
+import RouteOptimization from './pages/RouteOptimization';
 import './index.css';
 
 const App: React.FC = () => {
@@ -63,6 +67,38 @@ const App: React.FC = () => {
                   <ProtectedRoute>
                     <Layout>
                       <Profile />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/subscriptions" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Subscriptions />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/subscriptions/schedule" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <SubscriptionSchedule />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/subscriptions/metrics" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <SubscriptionMetrics />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/subscriptions/routes" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <RouteOptimization />
                     </Layout>
                   </ProtectedRoute>
                 } />

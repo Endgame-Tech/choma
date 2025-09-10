@@ -3,13 +3,16 @@ import { mealsApi, type Meal, type MealFilters } from '../services/mealApi'
 import CreateMealModal from '../components/CreateMealModal'
 import EditMealModal from '../components/EditMealModal'
 import BulkMealUpload from '../components/BulkMealUpload'
+import BulkMealUpdateModal from '../components/BulkMealUpdateModal'
 import MealCard from '../components/MealCard'
 import ConfirmationModal from '../components/ConfirmationModal'
 import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
+import { useNotifications } from '../contexts/NotificationContext'
 import { activityLogger } from '../services/activityLogger'
 
 const Meals: React.FC = () => {
-  const { hasPermission, currentAdmin } = usePermissionCheck();
+  const { hasPermission, currentAdmin } = usePermissionCheck()
+  const { showToast } = useNotifications()
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -25,6 +28,7 @@ const Meals: React.FC = () => {
   const [searchInput, setSearchInput] = useState('')
   const [allMeals, setAllMeals] = useState<Meal[]>([])
   const [filteredMeals, setFilteredMeals] = useState<Meal[]>([])
+  const [allMealsForBulk, setAllMealsForBulk] = useState<Meal[]>([])
 
   // Filters (excluding search since we handle it separately)
   const [filters, setFilters] = useState<MealFilters>({
@@ -39,6 +43,7 @@ const Meals: React.FC = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [bulkUploadModalOpen, setBulkUploadModalOpen] = useState(false)
+  const [bulkUpdateModalOpen, setBulkUpdateModalOpen] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null)
 
   // Selected meals for bulk operations
@@ -65,6 +70,11 @@ const Meals: React.FC = () => {
   useEffect(() => {
     fetchMeals()
   }, [filters.category, filters.isAvailable, filters.page, filters.limit])
+
+  // Load all meals once for bulk operations (no pagination)
+  useEffect(() => {
+    fetchAllMealsForBulk()
+  }, [])
 
   // Handle search with immediate client-side filtering + debounced server search
   useEffect(() => {
@@ -118,6 +128,16 @@ const Meals: React.FC = () => {
     }
   }
 
+  const fetchAllMealsForBulk = async () => {
+    try {
+      // Fetch all meals without pagination for bulk operations
+      const response = await mealsApi.getAllMeals({ limit: 10000 }) as { data: { meals: Meal[], pagination: typeof pagination } }
+      setAllMealsForBulk(response.data.meals)
+    } catch (err) {
+      console.error('Failed to fetch all meals for bulk operations:', err)
+    }
+  }
+
   const handleCreateMeal = async (mealData: Partial<Meal>) => {
     try {
       await mealsApi.createMeal(mealData)
@@ -136,6 +156,12 @@ const Meals: React.FC = () => {
 
       await fetchMeals()
       setCreateModalOpen(false)
+      showToast({
+        title: 'Meal created successfully',
+        message: `"${mealData.name}" has been created.`,
+        type: 'meal_update',
+        severity: 'success'
+      })
     } catch (err) {
       // Log failed activity
       if (currentAdmin) {
@@ -148,7 +174,12 @@ const Meals: React.FC = () => {
           { mealName: mealData.name, successful: false, errorMessage: err instanceof Error ? err.message : 'Unknown error' }
         );
       }
-      alert(`Failed to create meal: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      showToast({
+        title: 'Failed to create meal',
+        message: err instanceof Error ? err.message : 'Unknown error',
+        type: 'meal_update',
+        severity: 'error'
+      })
     }
   }
 
@@ -173,6 +204,12 @@ const Meals: React.FC = () => {
       await fetchMeals()
       setEditModalOpen(false)
       setSelectedMeal(null)
+      showToast({
+        title: 'Meal updated successfully',
+        message: `"${selectedMeal.name}" has been updated.`,
+        type: 'meal_update',
+        severity: 'success'
+      })
     } catch (err) {
       // Log failed activity
       if (currentAdmin) {
@@ -185,7 +222,12 @@ const Meals: React.FC = () => {
           { mealName: selectedMeal.name, successful: false, errorMessage: err instanceof Error ? err.message : 'Unknown error' }
         );
       }
-      alert(`Failed to update meal: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      showToast({
+        title: 'Failed to update meal',
+        message: err instanceof Error ? err.message : 'Unknown error',
+        type: 'meal_update',
+        severity: 'error'
+      })
     }
   }
 
@@ -256,7 +298,12 @@ const Meals: React.FC = () => {
       await mealsApi.toggleMealAvailability(id)
       await fetchMeals()
     } catch (err) {
-      alert(`Failed to toggle availability: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      showToast({
+        title: 'Failed to toggle availability',
+        message: err instanceof Error ? err.message : 'Unknown error',
+        type: 'meal_update',
+        severity: 'error'
+      })
     }
   }
 
@@ -550,6 +597,16 @@ const Meals: React.FC = () => {
             >
               <i className="fi fi-sr-duplicate mr-2"></i>
               Delete Duplicates
+            </button>
+          </PermissionGate>
+
+          <PermissionGate module="meals" action="edit">
+            <button
+              onClick={() => setBulkUpdateModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-purple-600 dark:bg-purple-700 text-white text-sm font-medium rounded-lg hover:bg-purple-700 dark:hover:bg-purple-800 transition-colors"
+            >
+              <i className="fi fi-sr-edit mr-2"></i>
+              Bulk Update
             </button>
           </PermissionGate>
 
@@ -984,6 +1041,17 @@ const Meals: React.FC = () => {
           setBulkUploadModalOpen(false)
           fetchMeals()
         }}
+      />
+
+      <BulkMealUpdateModal
+        isOpen={bulkUpdateModalOpen}
+        onClose={() => setBulkUpdateModalOpen(false)}
+        onSuccess={() => {
+          setBulkUpdateModalOpen(false)
+          fetchMeals()
+          fetchAllMealsForBulk() // Refresh all meals for bulk operations
+        }}
+        allMeals={allMealsForBulk}
       />
 
       {/* Confirmation Modal */}

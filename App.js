@@ -1,53 +1,54 @@
-import 'react-native-get-random-values'; // Must be first import for crypto polyfill
-import 'react-native-gesture-handler';
-import React, { useEffect, useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
-import { LogBox } from 'react-native';
+import "react-native-get-random-values"; // Must be first import for crypto polyfill
+import "react-native-gesture-handler";
+import React, { useEffect, useState } from "react";
+import { StatusBar } from "expo-status-bar";
+import { NavigationContainer } from "@react-navigation/native";
+import { LogBox } from "react-native";
 
 // Suppress development warnings in Expo Go
 if (__DEV__) {
   LogBox.ignoreLogs([
-    'Warning: The provided value \'ms-stream\' is not a valid \'responseType\'.',
-    'Warning: AsyncStorage has been extracted from react-native',
-    'Setting a timer for a long period of time',
-    'Remote debugger is in a background tab',
-    'Possible Unhandled Promise Rejection',
-    'VirtualizedLists should never be nested',
-    'Failed to get push token',
-    'Default FirebaseApp is not initialized',
-    'componentWillReceiveProps has been renamed',
-    'componentWillMount has been renamed',
+    "Warning: The provided value 'ms-stream' is not a valid 'responseType'.",
+    "Warning: AsyncStorage has been extracted from react-native",
+    "Setting a timer for a long period of time",
+    "Remote debugger is in a background tab",
+    "Possible Unhandled Promise Rejection",
+    "VirtualizedLists should never be nested",
+    "Failed to get push token",
+    "Default FirebaseApp is not initialized",
+    "componentWillReceiveProps has been renamed",
+    "componentWillMount has been renamed",
   ]);
 }
-import * as Notifications from 'expo-notifications';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Constants from 'expo-constants';
-import { PaystackProvider } from 'react-native-paystack-webview';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Notifications from "expo-notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import Constants from "expo-constants";
+import { PaystackProvider } from "react-native-paystack-webview";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Context Providers
-import { AuthProvider } from './src/context/AuthContext';
-import { CartProvider } from './src/context/CartContext';
-import { NotificationProvider } from './src/context/NotificationContext';
-import { BookmarkProvider } from './src/context/BookmarkContext';
-import { OfflineProvider } from './src/context/OfflineContext';
-import { ThemeProvider } from './src/styles/theme';
-import { AlertProvider } from './src/contexts/AlertContext';
+import { AuthProvider } from "./src/context/AuthContext";
+import { CartProvider } from "./src/context/CartContext";
+import { NotificationProvider } from "./src/context/NotificationContext";
+import { BookmarkProvider } from "./src/context/BookmarkContext";
+import { OfflineProvider } from "./src/context/OfflineContext";
+import { ThemeProvider } from "./src/styles/theme";
+import { AlertProvider } from "./src/contexts/AlertContext";
+import { ToastProvider } from "./src/contexts/ToastContext";
 
 // Navigation
-import AppNavigator from './src/navigation/AppNavigator';
-import OnboardingScreen from './src/screens/onboarding/OnboardingScreen';
+import AppNavigator from "./src/navigation/AppNavigator";
+import OnboardingScreen from "./src/screens/onboarding/OnboardingScreen";
 
 // Services
-import deepLinking from './src/services/deepLinking';
+import deepLinking from "./src/services/deepLinking";
 
 // Error Boundary
-import ErrorBoundary from './src/components/ErrorBoundary';
+import ErrorBoundary from "./src/components/ErrorBoundary";
 
 // Utils
-import { APP_CONFIG } from './src/utils/constants';
+import { APP_CONFIG } from "./src/utils/constants";
 
 // Configure notifications
 Notifications.setNotificationHandler({
@@ -67,23 +68,25 @@ export default function App() {
     checkFirstLaunch();
     registerForPushNotifications();
     setupNotificationListeners();
-    
+
     // Initialize deep linking
     deepLinking.initialize(navigationRef);
-    
+
     // Development logging removed for production
   }, []);
 
   const checkFirstLaunch = async () => {
     try {
-      const onboardingCompleted = await AsyncStorage.getItem('onboardingCompleted');
+      const onboardingCompleted = await AsyncStorage.getItem(
+        "onboardingCompleted"
+      );
       if (onboardingCompleted === null) {
         setIsFirstLaunch(true);
       } else {
         setIsFirstLaunch(false);
       }
     } catch (error) {
-      console.error('Error checking first launch:', error);
+      console.error("Error checking first launch:", error);
       setIsFirstLaunch(false);
     } finally {
       setIsLoading(false);
@@ -92,21 +95,19 @@ export default function App() {
 
   const registerForPushNotifications = async () => {
     try {
-      // Skip push notifications in development to avoid Firebase errors
-      if (__DEV__) {
-        console.log('🔥 Skipping Firebase push notifications in development mode');
-        return;
-      }
+      // Allow push notifications in development for testing
+      console.log("🔥 Setting up push notifications...");
 
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      if (existingStatus !== 'granted') {
+      if (existingStatus !== "granted") {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
-      if (finalStatus !== 'granted') {
+      if (finalStatus !== "granted") {
         return;
       }
 
@@ -116,8 +117,8 @@ export default function App() {
       }
 
       const token = (await Notifications.getExpoPushTokenAsync()).data;
-      await AsyncStorage.setItem('pushToken', token);
-      
+      await AsyncStorage.setItem("pushToken", token);
+
       // Register token with backend when user logs in
     } catch (error) {
       // Silently handle push notification errors in production
@@ -126,14 +127,17 @@ export default function App() {
 
   const setupNotificationListeners = () => {
     // Handle notifications received while app is running
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      // Handle foreground notification display
-    });
+    const notificationListener = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        // Handle foreground notification display
+      }
+    );
 
     // Handle notification tapped
-    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      handleNotificationResponse(response);
-    });
+    const responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        handleNotificationResponse(response);
+      });
 
     return () => {
       Notifications.removeNotificationSubscription(notificationListener);
@@ -144,13 +148,13 @@ export default function App() {
   const handleNotificationResponse = (response) => {
     const { notification } = response;
     const { data } = notification.request.content;
-    
+
     // Handle deep linking based on notification data
-    if (data?.type === 'order_update') {
+    if (data?.type === "order_update") {
       // Navigate to order details
-    } else if (data?.type === 'meal_plan') {
+    } else if (data?.type === "meal_plan") {
       // Navigate to meal plan
-    } else if (data?.type === 'subscription') {
+    } else if (data?.type === "subscription") {
       // Navigate to subscription
     }
   };
@@ -160,16 +164,22 @@ export default function App() {
   }
 
   // Use the key from APP_CONFIG or fallback to hardcoded
-  const paystackPublicKey = APP_CONFIG.PAYSTACK_PUBLIC_KEY || "pk_test_c90af10dcc748a6c4e3cf481230abadd819037c1";
-  
+  const paystackPublicKey =
+    APP_CONFIG.PAYSTACK_PUBLIC_KEY ||
+    "pk_test_c90af10dcc748a6c4e3cf481230abadd819037c1";
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PaystackProvider
         publicKey={paystackPublicKey} // FIXED: Use 'publicKey' not 'paystackKey' for v5
         currency="NGN" // FIXED: Simplified props for v5
         debug={__DEV__} // FIXED: Use __DEV__ boolean for debug
-        onGlobalSuccess={(res) => {/* Handle success */}}
-        onGlobalCancel={() => {/* Handle cancel */}}
+        onGlobalSuccess={(res) => {
+          /* Handle success */
+        }}
+        onGlobalCancel={() => {
+          /* Handle cancel */
+        }}
         // REMOVED: Old v4 props that don't exist in v5
         // billingEmail, channels, onGlobalError, refParams are not v5 props
       >
@@ -178,24 +188,35 @@ export default function App() {
             <OfflineProvider>
               <AuthProvider>
                 <CartProvider>
-                  <NotificationProvider>
-                    <BookmarkProvider>
-                      <ThemeProvider>
-                        <AlertProvider>
-                          <NavigationContainer ref={navigationRef}>
-                            <StatusBar style="auto" />
-                            <AppNavigator isFirstLaunch={isFirstLaunch} onOnboardingComplete={() => setIsFirstLaunch(false)} />
-                          </NavigationContainer>
-                        </AlertProvider>
-                      </ThemeProvider>
-                    </BookmarkProvider>
-                  </NotificationProvider>
+                  <ToastProvider>
+                    {({ showNotificationToast }) => (
+                      <NotificationProvider
+                        showToastNotification={showNotificationToast}
+                      >
+                        <BookmarkProvider>
+                          <ThemeProvider>
+                            <AlertProvider>
+                              <NavigationContainer ref={navigationRef}>
+                                <StatusBar style="auto" />
+                                <AppNavigator
+                                  isFirstLaunch={isFirstLaunch}
+                                  onOnboardingComplete={() =>
+                                    setIsFirstLaunch(false)
+                                  }
+                                />
+                              </NavigationContainer>
+                            </AlertProvider>
+                          </ThemeProvider>
+                        </BookmarkProvider>
+                      </NotificationProvider>
+                    )}
+                  </ToastProvider>
                 </CartProvider>
               </AuthProvider>
             </OfflineProvider>
           </ErrorBoundary>
         </SafeAreaProvider>
-    </PaystackProvider>
+      </PaystackProvider>
     </GestureHandlerRootView>
   );
 }

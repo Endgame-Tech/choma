@@ -25,7 +25,7 @@ class WebSocketService {
 
   // Get WebSocket URL
   private getSocketUrl(): string {
-  const WEBSOCKET_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
+  const WEBSOCKET_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5001';
   return WEBSOCKET_URL;
   }
 
@@ -62,7 +62,7 @@ class WebSocketService {
         const connectionTimeout = setTimeout(() => {
           if (!settled) {
             settled = true;
-            console.error('❌ WebSocket connection timeout');
+            console.error('[WS] WebSocket connection timeout');
             try {
               this.socket?.disconnect();
             } catch (e) {
@@ -81,11 +81,11 @@ class WebSocketService {
         });
 
         this.socket.on('connected', (data) => {
-          console.log('✅ Driver connection confirmed:', data);
+          console.log('[WS] Driver connection confirmed:', data);
         });
 
         this.socket.on('connect_error', (error) => {
-          console.error('❌ Connection error:', error);
+          console.error('[WS] Connection error:', error);
           if (!settled) {
             settled = true;
             clearTimeout(connectionTimeout);

@@ -880,7 +880,7 @@ const CompleteRegistration: React.FC = () => {
 
       case 3:
         return (
-          <div className="space-y-4 lg:space-y-6">
+          <div className="space-y-4 lg:space-y-6 mt-72">
             <div className="text-left mb-4 lg:mb-6">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Professional Details</h2>
               <p className="text-gray-600 text-sm sm:text-base">Tell us about your culinary expertise</p>
@@ -1132,17 +1132,6 @@ const CompleteRegistration: React.FC = () => {
                     className="mr-2 text-orange-500 focus:ring-orange-500"
                   />
                   <span className="text-sm text-gray-700">I have my own fully equipped kitchen</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    id="canCookAtCustomerLocation"
-                    type="checkbox"
-                    name="kitchenDetails.canCookAtCustomerLocation"
-                    checked={formData.kitchenDetails.canCookAtCustomerLocation}
-                    onChange={handleInputChange}
-                    className="mr-2 text-orange-500 focus:ring-orange-500"
-                  />
-                  <span className="text-sm text-gray-700">I can cook at customer's location</span>
                 </label>
               </div>
             </div>
@@ -1619,7 +1608,7 @@ const CompleteRegistration: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowPrivacyModal(true)}
-                      className="text-orange-600 hover:underline text-sm"
+                      className="text-orange-600 hover:underline text-sm z-[500]"
                     >
                       Read Privacy Policy
                     </button>

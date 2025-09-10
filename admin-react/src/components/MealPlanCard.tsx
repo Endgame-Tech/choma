@@ -60,7 +60,8 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
         return `${months}mo ${remainingWeeks}w`;
     };
 
-    const imageUrl = mealPlan.coverImage ?? 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1000&q=80';
+    const fallbackImageUrl = 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1000&q=80';
+    const imageUrl = mealPlan.coverImage || mealPlan.planImageUrl || fallbackImageUrl;
 
     // Defensive derived stats (use assignments when present, else fallbacks)
     const planTotalDays = (() => {
@@ -181,6 +182,12 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
                     src={imageUrl}
                     alt={mealPlan.planName}
                     className="w-full h-full object-cover rounded-[12px]"
+                    onLoad={() => console.log('✅ Image loaded successfully:', imageUrl)}
+                    onError={(e) => {
+                        console.error('❌ Failed to load image:', imageUrl);
+                        console.log('🔄 Trying fallback image...');
+                        e.currentTarget.src = fallbackImageUrl;
+                    }}
                 />
                 {/* Dark gradient overlay at bottom */}
                 <div className="absolute bottom-[8px] left-[8px] right-[8px] h-[50px] bg-gradient-to-t from-black/80 to-transparent rounded-b-[12px] pointer-events-none"></div>

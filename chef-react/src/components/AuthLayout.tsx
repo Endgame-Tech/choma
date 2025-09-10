@@ -14,9 +14,9 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
   subtitle = "Create a free account and get full access to all features. No credit card needed. Trusted by 4,000 professionals."
 }) => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen ">
       {/* Fixed Header with Logo */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop:blur-md bg-white shadow-sm">
         <div className="px-6 sm:px-8 lg:px-16 py-4">
           <img src={logo} alt="Choma Logo" className="w-12 h-12 sm:w-16 sm:h-16" />
         </div>

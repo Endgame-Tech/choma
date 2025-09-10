@@ -122,6 +122,61 @@ const SubscriptionSchema = new mongoose.Schema({
     totalSpent: { type: Number, default: 0 }
   },
   
+  // Recurring delivery management
+  recurringDelivery: {
+    // Current meal progression in the plan
+    currentMealProgression: {
+      weekNumber: { type: Number, default: 1 },
+      dayOfWeek: { type: Number, default: 1 },
+      mealTime: { type: String, enum: ['breakfast', 'lunch', 'dinner'], default: 'lunch' }
+    },
+    
+    // Last delivered meal tracking
+    lastDeliveredMeal: {
+      assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'MealPlanAssignment' },
+      deliveredAt: Date,
+      weekNumber: Number,
+      dayOfWeek: Number
+    },
+    
+    // Next scheduled delivery
+    nextScheduledDelivery: {
+      date: Date,
+      assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'MealPlanAssignment' },
+      estimatedTime: String // "12:00-13:00"
+    },
+    
+    // Delivery schedule configuration
+    deliverySchedule: {
+      daysOfWeek: [{ 
+        type: Number, 
+        min: 1, 
+        max: 7 
+      }], // Which days to deliver (1=Monday, 7=Sunday)
+      timeSlot: {
+        type: String,
+        enum: ['morning', 'afternoon', 'evening', 'custom'],
+        default: 'afternoon'
+      },
+      customTimeRange: {
+        start: String, // "12:00"
+        end: String    // "14:00"
+      }
+    },
+    
+    // Skip management
+    skippedDays: [{
+      date: Date,
+      reason: String,
+      skippedBy: { type: String, enum: ['customer', 'chef', 'admin'] }
+    }],
+    
+    // Activation status
+    isActivated: { type: Boolean, default: false },
+    activatedAt: Date,
+    activationDeliveryCompleted: { type: Boolean, default: false }
+  },
+  
   createdDate: { type: Date, default: Date.now }
 }, {
   timestamps: true
@@ -174,6 +229,78 @@ SubscriptionSchema.statics.findActiveSubscriptions = function() {
     status: 'active',
     endDate: { $gte: new Date() }
   });
+};
+
+// Static method to find subscriptions ready for next delivery
+SubscriptionSchema.statics.findReadyForDelivery = function() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  return this.find({
+    status: 'active',
+    'recurringDelivery.isActivated': true,
+    'recurringDelivery.nextScheduledDelivery.date': { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    }
+  }).populate('mealPlanId');
+};
+
+// Method to get current meal assignment
+SubscriptionSchema.methods.getCurrentMealAssignment = async function() {
+  const MealPlanAssignment = require('./MealPlanAssignment');
+  const { weekNumber, dayOfWeek, mealTime } = this.recurringDelivery.currentMealProgression;
+  
+  return await MealPlanAssignment.findOne({
+    mealPlanId: this.mealPlanId,
+    weekNumber,
+    dayOfWeek,
+    mealTime
+  }).populate('mealIds');
+};
+
+// Method to advance to next meal
+SubscriptionSchema.methods.advanceToNextMeal = async function() {
+  const MealPlan = require('./MealPlan');
+  const plan = await MealPlan.findById(this.mealPlanId);
+  
+  if (!plan) throw new Error('Meal plan not found');
+  
+  let { weekNumber, dayOfWeek, mealTime } = this.recurringDelivery.currentMealProgression;
+  const mealTypes = this.selectedMealTypes || ['lunch'];
+  
+  // Find next meal time for the day
+  const currentMealIndex = mealTypes.indexOf(mealTime);
+  if (currentMealIndex < mealTypes.length - 1) {
+    // Move to next meal time same day
+    mealTime = mealTypes[currentMealIndex + 1];
+  } else {
+    // Move to first meal of next day
+    mealTime = mealTypes[0];
+    dayOfWeek += 1;
+    
+    if (dayOfWeek > 7) {
+      // Move to next week
+      dayOfWeek = 1;
+      weekNumber += 1;
+      
+      if (weekNumber > plan.durationWeeks) {
+        // Restart meal plan cycle
+        weekNumber = 1;
+      }
+    }
+  }
+  
+  this.recurringDelivery.currentMealProgression = { weekNumber, dayOfWeek, mealTime };
+  return this.save();
+};
+
+// Method to activate subscription after first delivery
+SubscriptionSchema.methods.activate = function() {
+  this.recurringDelivery.isActivated = true;
+  this.recurringDelivery.activatedAt = new Date();
+  this.status = 'active';
+  return this.save();
 };
 
 module.exports = mongoose.model('Subscription', SubscriptionSchema);

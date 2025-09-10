@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "test": "jest --detectOpenHandles --forceExit",
+    "test:watch": "jest --watchAll --detectOpenHandles",
+    "test:coverage": "jest --coverage --detectOpenHandles --forceExit",
     "production": "./scripts/render-start.sh",
     "render-build": "npm install && mkdir -p logs",
     "seed": "node seeders/mealPlanSeeder.js",
@@ -54,6 +57,26 @@
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4",
+    "mongodb-memory-server": "^9.1.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "testMatch": ["<rootDir>/tests/**/*.test.js"],
+    "collectCoverageFrom": [
+      "controllers/**/*.js",
+      "services/**/*.js",
+      "models/**/*.js",
+      "middleware/**/*.js",
+      "routes/**/*.js",
+      "!node_modules/**",
+      "!tests/**",
+      "!coverage/**"
+    ],
+    "coverageReporters": ["text", "lcov", "html"],
+    "testTimeout": 30000
   }
 }

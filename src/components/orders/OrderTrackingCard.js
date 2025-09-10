@@ -143,7 +143,10 @@ const OrderTrackingCard = ({
     const delegationStatus = order?.delegationStatus;
     let rawFinalStatus;
 
-    if (orderStatus === 'Delivered' || orderStatus === 'delivered' || orderStatus === 'Cancelled' || orderStatus === 'cancelled') {
+    // Prioritize delivery statuses (Delivered, Out for Delivery, Cancelled)
+    if (orderStatus === 'Delivered' || orderStatus === 'delivered' || 
+        orderStatus === 'Cancelled' || orderStatus === 'cancelled' ||
+        orderStatus === 'Out for Delivery' || orderStatus === 'out for delivery') {
       rawFinalStatus = orderStatus;
     } else {
       rawFinalStatus = delegationStatus || orderStatus || "";

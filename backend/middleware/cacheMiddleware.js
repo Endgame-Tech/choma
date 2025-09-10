@@ -90,6 +90,9 @@ const cacheMiddleware = {
   // Dashboard stats cache
   dashboardStats: cache(300, keyGenerators.dashboardStats), // 5 minutes
   
+  // Chef workload cache
+  chefWorkload: cache(120), // 2 minutes for workload data
+  
   // Custom cache
   custom: cache
 };

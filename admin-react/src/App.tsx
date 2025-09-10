@@ -24,6 +24,7 @@ import PromoBanners from './pages/PromoBanners'
 import DeliveryPricePage from './pages/DeliveryPricePage'
 import Discounts from './pages/Discounts'
 import Drivers from './pages/Drivers'
+import RecurringDeliveryDashboard from './pages/RecurringDeliveryDashboard'
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -103,6 +104,7 @@ function AppRoutes() {
     { path: '/delivery-prices', element: <ProtectedRoute><DeliveryPricePage /></ProtectedRoute> },
     { path: '/discounts', element: <ProtectedRoute><Discounts /></ProtectedRoute> },
     { path: '/drivers', element: <ProtectedRoute><Drivers /></ProtectedRoute> },
+    { path: '/recurring-deliveries', element: <ProtectedRoute><RecurringDeliveryDashboard /></ProtectedRoute> },
     { path: '*', element: <Navigate to='/' replace /> }
   ]
 

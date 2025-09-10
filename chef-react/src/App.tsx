@@ -15,6 +15,7 @@ import Orders from './pages/Orders'
 import Profile from './pages/Profile'
 import Earnings from './pages/Earnings'
 import Notifications from './pages/Notifications'
+import SubscriptionDashboard from './pages/SubscriptionDashboard'
 import './index.css'
 
 // Protected Route Component
@@ -118,6 +119,11 @@ function AppRoutes() {
       <Route path="/orders" element={
         <ProtectedRoute>
           <Orders />
+        </ProtectedRoute>
+      } />
+      <Route path="/subscriptions" element={
+        <ProtectedRoute>
+          <SubscriptionDashboard />
         </ProtectedRoute>
       } />
       <Route path="/profile" element={

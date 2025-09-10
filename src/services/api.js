@@ -2021,6 +2021,85 @@ class ApiService {
 
     return result;
   }
+
+  // ==========================================
+  // RECURRING DELIVERY API METHODS
+  // ==========================================
+  
+  // Get current meal for subscription
+  async getSubscriptionCurrentMeal(subscriptionId) {
+    console.log("🍽️ Fetching current meal for subscription:", subscriptionId);
+    await this.getStoredToken();
+    return this.request(`/subscriptions/${subscriptionId}/current-meal`);
+  }
+
+  // Get chef preparation status for subscription  
+  async getSubscriptionChefStatus(subscriptionId) {
+    console.log("👨‍🍳 Fetching chef status for subscription:", subscriptionId);
+    await this.getStoredToken();
+    return this.request(`/subscriptions/${subscriptionId}/chef-status`);
+  }
+
+  // Get next delivery information
+  async getSubscriptionNextDelivery(subscriptionId) {
+    console.log("🚚 Fetching next delivery for subscription:", subscriptionId);
+    await this.getStoredToken();
+    return this.request(`/subscriptions/${subscriptionId}/next-delivery`);
+  }
+
+  // Get meal progression timeline
+  async getSubscriptionMealTimeline(subscriptionId, daysAhead = 7) {
+    console.log("📅 Fetching meal timeline for subscription:", subscriptionId);
+    await this.getStoredToken();
+    return this.request(`/subscriptions/${subscriptionId}/meal-timeline?days=${daysAhead}`);
+  }
+
+  // Skip a meal delivery
+  async skipMealDelivery(subscriptionId, skipDate, reason = 'Customer request') {
+    console.log("⏭️ Skipping meal delivery:", { subscriptionId, skipDate, reason });
+    await this.getStoredToken();
+    return this.request(`/subscriptions/${subscriptionId}/skip-meal`, {
+      method: 'POST',
+      body: { skipDate, reason }
+    });
+  }
+
+  // Update subscription delivery preferences
+  async updateDeliveryPreferences(subscriptionId, preferences) {
+    console.log("⚙️ Updating delivery preferences:", subscriptionId);
+    await this.getStoredToken();
+    return this.request(`/subscriptions/${subscriptionId}/delivery-preferences`, {
+      method: 'PUT',
+      body: preferences
+    });
+  }
+
+  // Get subscription delivery history
+  async getSubscriptionDeliveryHistory(subscriptionId, limit = 30) {
+    console.log("📜 Fetching delivery history for subscription:", subscriptionId);
+    await this.getStoredToken();
+    return this.request(`/subscriptions/${subscriptionId}/deliveries?limit=${limit}`);
+  }
+
+  // Request chef reassignment
+  async requestChefReassignment(subscriptionId, reason) {
+    console.log("🔄 Requesting chef reassignment:", { subscriptionId, reason });
+    await this.getStoredToken();
+    return this.request(`/subscriptions/${subscriptionId}/reassign-chef`, {
+      method: 'POST',
+      body: { reason }
+    });
+  }
+
+  // Rate completed delivery
+  async rateDelivery(deliveryId, rating, feedback = '') {
+    console.log("⭐ Rating delivery:", { deliveryId, rating });
+    await this.getStoredToken();
+    return this.request(`/deliveries/${deliveryId}/rate`, {
+      method: 'POST',
+      body: { rating, feedback }
+    });
+  }
 }
 
 // Create and export a single instance

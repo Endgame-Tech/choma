@@ -12,7 +12,8 @@ import {
   XMarkIcon,
   MegaphoneIcon,
   TruckIcon,
-  ReceiptPercentIcon
+  ReceiptPercentIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { usePermissionCheck } from '../contexts/PermissionContext'
 import type { AdminPermissions } from '../types/admin'
@@ -21,16 +22,17 @@ const navigationItems = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, permission: 'dashboard' as keyof AdminPermissions },
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, permission: 'analytics' as keyof AdminPermissions },
   { name: 'Orders', href: '/orders', icon: ClipboardDocumentListIcon, permission: 'orders' as keyof AdminPermissions },
-  { name: 'Chefs', href: '/chefs', icon: UserGroupIcon, permission: 'chefs' as keyof AdminPermissions },
-  { name: 'Users', href: '/users', icon: UsersIcon, permission: 'users' as keyof AdminPermissions },
   { name: 'Customers', href: '/customers', icon: UsersIcon, permission: 'customers' as keyof AdminPermissions },
+  { name: 'Chefs', href: '/chefs', icon: UserGroupIcon, permission: 'chefs' as keyof AdminPermissions },
+  { name: 'Drivers', href: '/drivers', icon: TruckIcon, permission: 'drivers' as keyof AdminPermissions },
+  // { name: 'Users', href: '/users', icon: UsersIcon, permission: 'users' as keyof AdminPermissions },
   { name: 'Meals', href: '/meals', icon: CubeIcon, permission: 'meals' as keyof AdminPermissions },
   { name: 'Meal Plans', href: '/meal-plans', icon: BookOpenIcon, permission: 'mealPlans' as keyof AdminPermissions },
   { name: 'Promo Banners', href: '/promo-banners', icon: MegaphoneIcon, permission: 'banners' as keyof AdminPermissions },
   { name: 'Discounts', href: '/discounts', icon: ReceiptPercentIcon, permission: 'banners' as keyof AdminPermissions },
   // Delivery Prices: permission key is 'deliveryPrices' (see AdminPermissions)
   { name: 'Delivery Prices', href: '/delivery-prices', icon: TruckIcon, permission: 'deliveryPrices' as keyof AdminPermissions },
-  { name: 'Drivers', href: '/drivers', icon: TruckIcon, permission: 'drivers' as keyof AdminPermissions },
+  { name: 'Recurring Deliveries', href: '/recurring-deliveries', icon: ArrowPathIcon, permission: 'orders' as keyof AdminPermissions },
   { name: 'Admin Management', href: '/admin-management', icon: CogIcon, permission: 'adminManagement' as keyof AdminPermissions },
 ]
 

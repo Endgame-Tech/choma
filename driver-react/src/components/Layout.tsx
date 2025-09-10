@@ -11,7 +11,8 @@ import {
   XMarkIcon,
   SignalIcon,
   SignalSlashIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline';
 
 interface LayoutProps {
@@ -37,6 +38,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       href: '/deliveries',
       icon: TruckIcon,
       current: location.pathname.startsWith('/deliveries')
+    },
+    {
+      name: 'Subscriptions',
+      href: '/subscriptions',
+      icon: CalendarDaysIcon,
+      current: location.pathname.startsWith('/subscriptions')
     },
     {
       name: 'Earnings',

@@ -681,7 +681,7 @@ exports.duplicateMealPlan = async (req, res) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       isPublished: false, // Always create duplicates as drafts
-      totalPrice: 0, // Will be recalculated after assignments are copied
+      totalPrice: modifications.totalPrice || originalPlan.totalPrice || 0, // Use modified price if provided
       ...modifications,
     });
 
@@ -709,8 +709,10 @@ exports.duplicateMealPlan = async (req, res) => {
         duplicatedAssignments.push(savedAssignment);
       }
 
-      // Recalculate total price and nutrition info for the duplicate
-      await duplicatePlan.updateCalculatedFields();
+      // Recalculate total price and nutrition info for the duplicate (unless manually set)
+      if (!modifications.totalPrice) {
+        await duplicatePlan.updateCalculatedFields();
+      }
     }
 
     // Apply any final modifications after assignments are copied

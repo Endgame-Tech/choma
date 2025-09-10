@@ -174,3 +174,139 @@ export interface PickupConfirmationData {
   notes?: string;
   photo?: string;
 }
+
+// Subscription types for drivers
+export interface SubscriptionGroup {
+  subscriptionId: {
+    _id: string;
+    status: string;
+    frequency: string;
+    nextDeliveryDate: string;
+    dietaryPreferences: string[];
+  };
+  mealPlan: {
+    _id: string;
+    planName: string;
+    durationWeeks: number;
+    planDescription: string;
+  };
+  customer: {
+    _id: string;
+    fullName: string;
+    phone: string;
+    email: string;
+    profilePicture?: string;
+    preferences?: any;
+  };
+  assignments: DeliveryAssignment[];
+  totalDeliveries: number;
+  relationshipScore: number;
+}
+
+export interface SubscriptionDeliveriesResponse {
+  subscriptionGroups: SubscriptionGroup[];
+  summary: {
+    totalActiveSubscriptions: number;
+    totalDeliveriesToday: number;
+    avgRelationshipScore: number;
+  };
+}
+
+export interface WeeklyDeliverySchedule {
+  date: string;
+  dayName: string;
+  deliveries: DeliveryAssignment[];
+  subscriptionDeliveries: number;
+  oneTimeDeliveries: number;
+}
+
+export interface RouteOptimization {
+  date: string;
+  area: string;
+  deliveries: DeliveryAssignment[];
+  estimatedTimeSaving: number;
+}
+
+export interface WeeklyScheduleResponse {
+  weekStart: string;
+  weekEnd: string;
+  weeklySchedule: WeeklyDeliverySchedule[];
+  routeOptimizations: RouteOptimization[];
+  statistics: {
+    totalDeliveries: number;
+    subscriptionDeliveries: number;
+    oneTimeDeliveries: number;
+    uniqueCustomers: number;
+    routeOptimizations: number;
+    totalDistance: number;
+    totalEarnings: number;
+  };
+}
+
+export interface SubscriptionMetrics {
+  period: string;
+  metrics: {
+    subscription: {
+      totalDeliveries: number;
+      deliveredOrders: number;
+      onTimeRate: number;
+      totalEarnings: number;
+      avgDeliveryTimeMinutes: number;
+      uniqueCustomers: number;
+    };
+    oneTime: {
+      totalDeliveries: number;
+      deliveredOrders: number;
+      onTimeRate: number;
+      totalEarnings: number;
+    };
+    comparison: {
+      subscriptionEarningsPercentage: number;
+      subscriptionDeliveryPercentage: number;
+    };
+  };
+  insights: {
+    customerRetention: 'excellent' | 'good' | 'developing';
+    performanceVsOneTime: 'better' | 'needs_improvement';
+    earningsComparison: 'higher' | 'lower';
+    strengths: string[];
+    improvementAreas: string[];
+    recommendations: Array<{
+      category: string;
+      priority: string;
+      action: string;
+      expectedImpact: string;
+    }>;
+  };
+}
+
+export interface CustomerTimeline {
+  stepNumber: number;
+  weekNumber: number;
+  dayOfWeek: number;
+  dayName: string;
+  mealTime: string;
+  mealTitle: string;
+  mealDescription?: string;
+  isDelivered: boolean;
+  isInProgress: boolean;
+  isUpcoming: boolean;
+  scheduledDeliveryTime?: string;
+  actualDeliveryTime?: string;
+  deliveredBy?: string;
+  deliveryStatus: string;
+  isMyDelivery: boolean;
+}
+
+export interface CustomerTimelineResponse {
+  subscription: any;
+  timeline: CustomerTimeline[];
+  progression: {
+    totalSteps: number;
+    deliveredSteps: number;
+    inProgressSteps: number;
+    progressPercentage: number;
+    myDeliveries: number;
+    relationshipStrength: number;
+  };
+}

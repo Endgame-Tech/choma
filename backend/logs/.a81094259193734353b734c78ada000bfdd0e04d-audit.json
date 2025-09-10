@@ -64,6 +64,16 @@
             "date": 1757326942505,
             "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-09-08.log",
             "hash": "75f103377e7db15591e64973f45d1dd2f23c13db9ae62f8d1e8ef5a6eabcb9aa"
+        },
+        {
+            "date": 1757420409739,
+            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-09-09.log",
+            "hash": "6b2cc2cb8ab3c1ee1194334bbea582f256320bd395821d3328aedcea9089b59c"
+        },
+        {
+            "date": 1757460125949,
+            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-09-10.log",
+            "hash": "268792fec32eb29f62c302e6dd18f6de63c727f768a900eb1d5a0f84453a88e2"
         }
     ],
     "hashType": "sha256"

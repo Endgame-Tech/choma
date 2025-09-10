@@ -52,6 +52,41 @@ const OrderSchema = new mongoose.Schema({
     ref: 'OrderDelegation'
   },
   
+  // Recurring order management
+  recurringOrder: {
+    // Type of order
+    orderType: {
+      type: String,
+      enum: ['one-time', 'subscription-first', 'subscription-recurring'],
+      default: 'one-time'
+    },
+    
+    // Subscription delivery reference
+    subscriptionDeliveryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SubscriptionDelivery'
+    },
+    
+    // Meal progression info
+    mealProgression: {
+      weekNumber: Number,
+      dayOfWeek: Number,
+      mealTime: String,
+      sequenceNumber: Number // 1st, 2nd, 3rd order in subscription
+    },
+    
+    // Activation tracking (for first delivery)
+    isActivationOrder: { type: Boolean, default: false },
+    activationCompleted: { type: Boolean, default: false },
+    activationCode: String, // Last 6 digits for first delivery
+    
+    // Parent subscription reference (already exists but adding for clarity)
+    parentSubscription: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscription'
+    }
+  },
+  
   createdDate: { type: Date, default: Date.now },
   updatedDate: { type: Date, default: Date.now }
 });
@@ -103,5 +138,48 @@ OrderSchema.statics.getChefOrders = function(chefId, status = null) {
     .populate('customer subscription')
     .sort({ chefAssignedDate: -1 });
 };
+
+// Static method to get subscription orders
+OrderSchema.statics.getSubscriptionOrders = function(subscriptionId) {
+  return this.find({
+    $or: [
+      { subscription: subscriptionId },
+      { 'recurringOrder.parentSubscription': subscriptionId }
+    ]
+  }).sort({ createdDate: -1 });
+};
+
+// Method to mark activation as completed
+OrderSchema.methods.completeActivation = async function() {
+  if (!this.recurringOrder.isActivationOrder) {
+    throw new Error('This is not an activation order');
+  }
+  
+  this.recurringOrder.activationCompleted = true;
+  
+  // Activate the parent subscription
+  const Subscription = require('./Subscription');
+  const subscription = await Subscription.findById(this.recurringOrder.parentSubscription);
+  if (subscription) {
+    await subscription.activate();
+  }
+  
+  return this.save();
+};
+
+// Method to generate activation code (last 6 digits of order number)
+OrderSchema.methods.generateActivationCode = function() {
+  if (this.recurringOrder.isActivationOrder && this.orderNumber) {
+    const orderNumber = this.orderNumber.toString();
+    this.recurringOrder.activationCode = orderNumber.slice(-6).toUpperCase();
+    return this.recurringOrder.activationCode;
+  }
+  return null;
+};
+
+// Virtual to check if this is a recurring order
+OrderSchema.virtual('isRecurringOrder').get(function() {
+  return this.recurringOrder.orderType !== 'one-time';
+});
 
 module.exports = mongoose.model('Order', OrderSchema);
