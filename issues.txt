@@ -1,0 +1,91 @@
+Error checking for active order: TypeError: Cannot read properties of undefined (reading 'setHours')
+    at exports.getSubscriptionNextDelivery (C:\dev\choma\backend\controllers\subscriptionController.js:547:44)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+17:50:34 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "6af02j3wo",
+  "method": "GET",
+  "url": "/api/subscriptions/68c16e552961b4df26bb1682/next-delivery",
+  "statusCode": 304,
+  "duration": "456ms",
+  "contentLength": 0
+}
+Error checking for active order: TypeError: Cannot read properties of undefined (reading 'setHours')
+    at exports.getSubscriptionNextDelivery (C:\dev\choma\backend\controllers\subscriptionController.js:547:44)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+17:50:34 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "jchpvzpkg",
+  "method": "GET",
+  "url": "/api/subscriptions/68c18b5257c4ea9ff64fdba4/next-delivery",
+  "statusCode": 304,
+  "duration": "496ms",
+  "contentLength": 0
+}
+Error checking for active order: TypeError: Cannot read properties of undefined (reading 'setHours')
+    at exports.getSubscriptionNextDelivery (C:\dev\choma\backend\controllers\subscriptionController.js:547:44)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+17:50:34 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "wj9r4qxmg",
+  "method": "GET",
+  "url": "/api/subscriptions/68c192091a715d66e3b9db55/next-delivery",
+  "statusCode": 304,
+  "duration": "470ms",
+  "contentLength": 0
+}
+17:50:47 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "7r13nxb6s",
+  "method": "OPTIONS",
+  "url": "/api/driver/assignments/68c195c31a715d66e3b9dfc9/deliver",
+  "ip": "127.0.0.1",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+}
+17:50:48 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "7r13nxb6s",
+  "method": "OPTIONS",
+  "url": "/api/driver/assignments/68c195c31a715d66e3b9dfc9/deliver",
+  "statusCode": 200,
+  "duration": "510ms",
+  "contentLength": "0"
+}
+17:50:48 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "zv7n1dx7x",
+  "method": "PUT",
+  "url": "/api/driver/assignments/68c195c31a715d66e3b9dfc9/deliver",
+  "ip": "127.0.0.1",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+}
+🚚 Driver 68c0ca6fd31fbb0fb313f125 confirming delivery for assignment 68c195c31a715d66e3b9dfc9
+📝 Request body: { confirmationCode: '68OJVX', deliveryNotes: '', deliveryPhoto: '' }
+🔍 Assignment query result: Found
+🔑 Confirmation code validation: {
+  expected: 'XDOIMZ',
+  received: '68OJVX',
+  match: false,
+  orderNumber: 'ORD-1757516312843-KY668OJVX'
+}
+🔍 Checking order number fallback: {
+  orderNumber: 'ORD-1757516312843-KY668OJVX',
+  orderNumberLast6: '68OJVX',
+  receivedCode: '68OJVX',
+  isOrderNumberMatch: true
+}
+✅ Valid using order number last 6 digits - allowing delivery
+Confirm delivery error: Error: Invalid confirmation code
+    at driverAssignmentSchema.methods.confirmDelivery (C:\dev\choma\backend\models\DriverAssignment.js:557:11)
+    at confirmDelivery (C:\dev\choma\backend\controllers\driverController.js:524:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+17:50:49 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "zv7n1dx7x",
+  "method": "PUT",
+  "url": "/api/driver/assignments/68c195c31a715d66e3b9dfc9/deliver",
+  "statusCode": 500,
+  "duration": "1210ms",
+  "contentLength": "78"
+}
+

@@ -323,13 +323,15 @@ class MealProgressionService {
   }
   
   /**
-   * Get meal progression timeline for subscription
+   * Get meal progression timeline for subscription grouped by day
    * @param {string} subscriptionId - Subscription ID
    * @param {number} daysAhead - Number of days to look ahead
-   * @returns {Array} Timeline of upcoming meals
+   * @returns {Array} Timeline of upcoming meals grouped by day
    */
   async getMealProgressionTimeline(subscriptionId, daysAhead = 7) {
     try {
+      console.log('🔍 Getting meal timeline for subscription:', subscriptionId);
+      
       const subscription = await Subscription.findById(subscriptionId)
         .populate('mealPlanId');
         
@@ -337,40 +339,131 @@ class MealProgressionService {
         throw new Error('Subscription not found');
       }
       
+      const assignments = await MealPlanAssignment.find({ 
+        mealPlanId: subscription.mealPlanId._id 
+      })
+      .populate({
+        path: 'mealIds',
+        match: { isActive: true }
+      })
+      .sort({ weekNumber: 1, dayOfWeek: 1, mealTime: 1 });
+      
+      console.log(`📊 Found ${assignments.length} MealPlanAssignment records`);
+      
+      if (assignments.length === 0) {
+        console.log('❌ No meal assignments found');
+        return [];
+      }
+      
+      // Organize meals by week and day
+      const organizeScheduleByWeek = (assignments) => {
+        const schedule = {};
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        assignments.forEach(assignment => {
+          const weekKey = `week${assignment.weekNumber}`;
+          if (!schedule[weekKey]) {
+            schedule[weekKey] = {};
+          }
+          const dayName = dayNames[assignment.dayOfWeek - 1];
+          if (!schedule[weekKey][dayName]) {
+            schedule[weekKey][dayName] = {};
+          }
+          
+          schedule[weekKey][dayName][assignment.mealTime] = {
+            title: assignment.customTitle,
+            description: assignment.customDescription || (assignment.mealIds[0] ? assignment.mealIds[0].description : ''),
+            meals: assignment.mealIds.map(meal => meal?.name || '').join(', '),
+            imageUrl: assignment.imageUrl || (assignment.mealIds[0] ? assignment.mealIds[0].image : '')
+          };
+        });
+        return schedule;
+      };
+      
+      const weeklyMeals = organizeScheduleByWeek(assignments);
+      console.log('✅ Generated weeklyMeals structure with', Object.keys(weeklyMeals).length, 'weeks');
+      
+      // Initialize progression if not set
+      if (!subscription.recurringDelivery || !subscription.recurringDelivery.currentMealProgression) {
+        console.log('⚠️ No meal progression set, initializing defaults');
+        subscription.recurringDelivery = subscription.recurringDelivery || {};
+        subscription.recurringDelivery.currentMealProgression = {
+          weekNumber: 1,
+          dayOfWeek: 1,
+          mealTime: subscription.selectedMealTypes?.[0] || 'lunch'
+        };
+        await subscription.save();
+      }
+      
       const timeline = [];
+      const selectedMealTypes = subscription.selectedMealTypes || ['lunch'];
+      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
       let currentProgression = { ...subscription.recurringDelivery.currentMealProgression };
       
+      console.log('🎯 Starting progression:', currentProgression);
+      console.log('🍽️ Selected meal types:', selectedMealTypes);
+      
       for (let i = 0; i < daysAhead; i++) {
-        const mealAssignment = await MealPlanAssignment.findOne({
-          mealPlanId: subscription.mealPlanId,
-          weekNumber: currentProgression.weekNumber,
-          dayOfWeek: currentProgression.dayOfWeek,
-          mealTime: currentProgression.mealTime
-        }).populate('mealIds');
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + i);
         
-        if (mealAssignment) {
-          const deliveryDate = new Date();
-          deliveryDate.setDate(deliveryDate.getDate() + i);
+        const weekKey = `week${currentProgression.weekNumber}`;
+        const dayName = dayNames[currentProgression.dayOfWeek - 1];
+        const weekData = weeklyMeals[weekKey];
+        const dayData = weekData?.[dayName];
+        
+        console.log(`🔍 Day ${i + 1}: Checking ${weekKey} > ${dayName}`);
+        
+        // Check if this day has any meals for the selected meal types
+        const dayMeals = [];
+        let hasMeals = false;
+        
+        selectedMealTypes.forEach(mealType => {
+          const mealData = dayData?.[mealType];
+          if (mealData && mealData.title) {
+            hasMeals = true;
+            dayMeals.push({
+              mealTime: mealType,
+              title: mealData.title,
+              description: mealData.description,
+              meals: mealData.meals,
+              imageUrl: mealData.imageUrl
+            });
+          }
+        });
+        
+        // Only add days that have meal assignments
+        if (hasMeals) {
+          console.log(`✅ Found ${dayMeals.length} meals for ${dayName}`);
           
           timeline.push({
             date: deliveryDate,
             dayIndex: i,
-            mealAssignment: await this.formatMealResponse(mealAssignment, subscription, {
-              progressionInfo: currentProgression
-            })
+            dayName: dayName,
+            weekNumber: currentProgression.weekNumber,
+            dayOfWeek: currentProgression.dayOfWeek,
+            meals: dayMeals,
+            // Summary info for the day
+            dayTitle: `${dayName} - Week ${currentProgression.weekNumber}`,
+            mealCount: dayMeals.length,
+            // Primary image (use first meal's image)
+            imageUrl: dayMeals[0]?.imageUrl || null
           });
+        } else {
+          console.log(`⚠️ No meals found for ${dayName} - skipping day`);
         }
         
-        // Calculate next progression for timeline
-        currentProgression = await this.calculateNextMealProgression({
-          ...subscription.toObject(),
-          recurringDelivery: {
-            ...subscription.recurringDelivery,
-            currentMealProgression: currentProgression
+        // Advance to next day
+        currentProgression.dayOfWeek = currentProgression.dayOfWeek % 7 + 1;
+        if (currentProgression.dayOfWeek === 1) {
+          currentProgression.weekNumber++;
+          // Cycle back to week 1 if exceeded plan duration
+          if (currentProgression.weekNumber > subscription.mealPlanId.durationWeeks) {
+            currentProgression.weekNumber = 1;
           }
-        });
+        }
       }
       
+      console.log(`✅ Generated timeline with ${timeline.length} days (only showing days with meals)`);
       return timeline;
       
     } catch (error) {

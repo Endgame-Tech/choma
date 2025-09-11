@@ -134,9 +134,13 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       startDate.setTime(today.getTime());
     }
 
+    // Normalize dates to midnight to avoid time-of-day issues
+    const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startDateNormalized = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+
     const daysDiff = Math.max(
       0,
-      Math.floor((today - startDate) / (1000 * 60 * 60 * 24))
+      Math.floor((todayNormalized - startDateNormalized) / (1000 * 60 * 60 * 24))
     );
     const currentDay = Math.max(1, daysDiff + 1);
     const currentWeek = Math.max(1, Math.ceil(currentDay / 7));
@@ -323,9 +327,14 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     const startDate = new Date(
       subscription.startDate || subscription.createdAt || today
     );
+
+    // Normalize dates to midnight to avoid time-of-day issues
+    const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startDateNormalized = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+
     const daysDiff = Math.max(
       0,
-      Math.floor((today - startDate) / (1000 * 60 * 60 * 24))
+      Math.floor((todayNormalized - startDateNormalized) / (1000 * 60 * 60 * 24))
     );
     const currentDay = Math.max(1, daysDiff + 1);
 
@@ -425,7 +434,7 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       activeOpacity={0.9}
     >
       <LinearGradient
-        colors={["#4A90E2", "#357ABD"]}
+        colors={["#F7AE1A", "#1b1b1b"]}
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { dashboardApi, ordersApi } from '../services/api'
 import type { ChefDashboardStats, Order } from '../types'
+import NextAssignments from '../components/NextAssignments'
 import {
   AlertTriangle,
   FileText,
@@ -306,6 +307,11 @@ const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Next Assignments Section */}
+      <div className="mt-8">
+        <NextAssignments />
       </div>
     </div>
   )

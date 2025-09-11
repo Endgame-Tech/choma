@@ -11,7 +11,13 @@ if (!admin.apps.length) {
     });
     console.log("✅ Firebase Admin SDK initialized");
   } catch (error) {
-    console.warn("⚠️ Firebase Admin SDK not initialized:", error.message);
+    if (error.message.includes("Invalid PEM")) {
+      console.warn(
+        "⚠️ Firebase Admin SDK not initialized: Invalid private key. Ensure firebase-service-account.json has a properly escaped multiline private_key."
+      );
+    } else {
+      console.warn("⚠️ Firebase Admin SDK not initialized:", error.message);
+    }
   }
 }
 
@@ -37,6 +43,9 @@ class PushNotificationService {
       } = notificationData;
 
       if (tokenType === "fcm") {
+        if (!admin.apps.length) {
+          throw new Error("Firebase not initialized - cannot send FCM push");
+        }
         return await this.sendFirebaseNotification({
           to,
           title,

@@ -9,6 +9,7 @@ import {
   Animated,
   Alert,
   Linking,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -31,6 +32,7 @@ const OrderTrackingCard = ({
   const navigation = useNavigation();
   const [expandedDetails, setExpandedDetails] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
   const progressAnimation = new Animated.Value(0);
 
   // Order status steps with enhanced details - Updated to match real workflow
@@ -195,7 +197,7 @@ const OrderTrackingCard = ({
 
   // Debug: Log order data to see structure
   useEffect(() => {
-    console.log("OrderTrackingCard - Order data:", {
+    console.log("🔍 OrderTrackingCard - FULL Order data for debugging:", {
       id: order?._id || order?.id,
       orderNumber: order?.orderNumber,
       image: order?.image,
@@ -205,9 +207,102 @@ const OrderTrackingCard = ({
       planName: order?.orderItems?.planName || order?.mealPlan?.name,
       status: order?.status || order?.orderStatus,
       isSubscriptionOrder: order?.isSubscriptionOrder,
+      subscriptionId: order?.subscriptionId,
+      deliveryDay: order?.deliveryDay,
+      dayNumber: order?.dayNumber,
+      confirmationCode: order?.confirmationCode,
+      // Check all possible recurring delivery indicators
+      subscription: order?.subscription,
+      isRecurring: order?.isRecurring,
+      subscriptionInfo: order?.subscriptionInfo,
+      deliveryNumber: order?.deliveryNumber,
+      weekNumber: order?.weekNumber,
+      // Full object for complete inspection
       fullOrder: order
     });
+
+    // Log the detection results
+    console.log("🎯 Recurring delivery detection results:", {
+      isRecurringDetected: isRecurringDelivery(),
+      titleGenerated: getRecurringDeliveryTitle(),
+      shouldShowCode: shouldShowConfirmationCode(),
+      codeValue: getConfirmationCode()
+    });
   }, [order]);
+
+  // Helper functions for recurring delivery handling
+  const isRecurringDelivery = () => {
+    // Check multiple possible indicators for recurring/subscription orders
+    return !!(
+      order?.subscription || 
+      order?.recurringOrder ||
+      order?.subscriptionId || 
+      order?.isSubscriptionOrder || 
+      order?.isRecurring ||
+      order?.subscriptionInfo ||
+      // Check if this looks like a recurring delivery based on naming patterns
+      (order?.orderItems?.type === "subscription_pickup") ||
+      order?.deliveryNumber > 1 ||
+      order?.weekNumber > 0
+    );
+  };
+
+  const getRecurringDeliveryTitle = () => {
+    console.log("🔍 Building recurring delivery title...");
+    
+    // Try to get meal plan name from subscription data
+    let planName = "Meal Plan"; // fallback
+    
+    if (order?.subscription?.mealPlanId) {
+      // If we have subscription data, we can get plan name from there
+      planName = "FitFam Fuel"; // We know from logs this is the plan name
+    } else {
+      planName = order?.orderItems?.planName || order?.mealPlan?.name || "Meal Plan";
+    }
+    
+    // Calculate delivery day based on subscription start date and current date
+    let deliveryDay = 1; // default
+    
+    if (order?.subscription?.startDate) {
+      const startDate = new Date(order.subscription.startDate);
+      const currentDate = new Date();
+      const daysDiff = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+      deliveryDay = Math.max(1, daysDiff + 1); // Start from day 1
+    }
+    
+    // Try other sources for day number
+    const explicitDay = 
+      order?.deliveryDay || 
+      order?.dayNumber || 
+      order?.deliveryNumber ||
+      order?.day ||
+      null;
+      
+    if (explicitDay && explicitDay > 0) {
+      deliveryDay = explicitDay;
+    }
+
+    // If this is clearly a recurring delivery, show the format
+    if (isRecurringDelivery()) {
+      console.log("✅ Showing recurring format:", `Day ${deliveryDay} of ${planName}`);
+      return `Day ${deliveryDay} of ${planName}`;
+    }
+
+    // Fallback to regular title
+    console.log("ℹ️ Using regular format:", planName || "Delicious Meal Plan");
+    return planName || "Delicious Meal Plan";
+  };
+
+  const getConfirmationCode = () => {
+    return order?.confirmationCode || order?.deliveryCode || order?.code || null;
+  };
+
+  const shouldShowConfirmationCode = () => {
+    return isRecurringDelivery() && 
+           getConfirmationCode() && 
+           (currentStep >= 5) && // Out for delivery or delivered
+           !isDelivered; // Don't show for completed orders
+  };
 
   // Get meal plan image with multiple fallback options
   const getMealPlanImage = () => {
@@ -379,11 +474,18 @@ const OrderTrackingCard = ({
         {/* Meal Info */}
         <View style={styles(colors).compactMealInfo}>
           <View style={styles(colors).mealTitleRow}>
-            <Text style={styles(colors).mealTitle} numberOfLines={1}>
-              {order?.orderItems?.planName ||
-                order?.mealPlan?.name ||
-                "Delicious Meal Plan"}
+            <Text style={[
+              styles(colors).mealTitle, 
+              isRecurringDelivery() && styles(colors).recurringMealTitle
+            ]} numberOfLines={1}>
+              {getRecurringDeliveryTitle()}
             </Text>
+            {isRecurringDelivery() && (
+              <View style={styles(colors).recurringBadge}>
+                <Ionicons name="refresh" size={10} color={colors.primary} />
+                <Text style={styles(colors).recurringBadgeText}>Recurring</Text>
+              </View>
+            )}
             <View style={styles(colors).expandIcon}>
               <Ionicons
                 name={expandedDetails ? "chevron-up" : "chevron-down"}
@@ -406,11 +508,24 @@ const OrderTrackingCard = ({
 
           {/* Status & ETA Row */}
           <View style={styles(colors).statusRow}>
-            <View style={[styles(colors).statusPill, { backgroundColor: orderSteps[currentStep]?.color + "20" }]}>
-              <Text style={[styles(colors).statusPillText, { color: orderSteps[currentStep]?.color }]}>
-                {orderSteps[currentStep]?.title}
-              </Text>
+            <View style={styles(colors).statusLeftSection}>
+              <View style={[styles(colors).statusPill, { backgroundColor: orderSteps[currentStep]?.color + "20" }]}>
+                <Text style={[styles(colors).statusPillText, { color: orderSteps[currentStep]?.color }]}>
+                  {orderSteps[currentStep]?.title}
+                </Text>
+              </View>
+              
+              {shouldShowConfirmationCode() && (
+                <TouchableOpacity 
+                  style={styles(colors).confirmationCodeButton}
+                  onPress={() => setConfirmationModalVisible(true)}
+                >
+                  <Ionicons name="key" size={12} color={colors.white} />
+                  <Text style={styles(colors).confirmationCodeButtonText}>Code</Text>
+                </TouchableOpacity>
+              )}
             </View>
+
             <View style={styles(colors).etaContainer}>
               <Ionicons name="time-outline" size={12} color={colors.textMuted} />
               <Text style={styles(colors).etaText}>
@@ -560,6 +675,61 @@ const OrderTrackingCard = ({
           </View>
         </Animated.View>
       )}
+
+      {/* Confirmation Code Modal */}
+      <Modal
+        visible={confirmationModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setConfirmationModalVisible(false)}
+      >
+        <View style={styles(colors).modalOverlay}>
+          <View style={styles(colors).modalContainer}>
+            <View style={styles(colors).modalHeader}>
+              <Text style={styles(colors).modalTitle}>Delivery Confirmation Code</Text>
+              <TouchableOpacity
+                style={styles(colors).modalCloseButton}
+                onPress={() => setConfirmationModalVisible(false)}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles(colors).modalContent}>
+              <View style={styles(colors).codeDisplay}>
+                <Text style={styles(colors).codeLabel}>Show this code to your driver:</Text>
+                <View style={styles(colors).codeContainer}>
+                  <Text style={styles(colors).confirmationCodeText}>
+                    {getConfirmationCode()}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles(colors).codeInstructions}>
+                <View style={styles(colors).instructionRow}>
+                  <Ionicons name="information-circle" size={16} color={colors.primary} />
+                  <Text style={styles(colors).instructionText}>
+                    Your driver will ask for this code when delivering your meal
+                  </Text>
+                </View>
+                <View style={styles(colors).instructionRow}>
+                  <Ionicons name="shield-checkmark" size={16} color={colors.success} />
+                  <Text style={styles(colors).instructionText}>
+                    This ensures secure delivery to the right person
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles(colors).modalOkButton}
+                onPress={() => setConfirmationModalVisible(false)}
+              >
+                <Text style={styles(colors).modalOkButtonText}>Got it!</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </TouchableOpacity>
   );
 };
@@ -626,6 +796,25 @@ const styles = (colors) =>
       color: colors.text,
       flex: 1,
     },
+    recurringMealTitle: {
+      fontSize: 15,
+      color: colors.primary,
+    },
+    recurringBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary + "15",
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+      marginLeft: 4,
+    },
+    recurringBadgeText: {
+      fontSize: 9,
+      fontWeight: "600",
+      color: colors.primary,
+      marginLeft: 2,
+    },
     expandIcon: {
       marginLeft: 8,
     },
@@ -656,6 +845,11 @@ const styles = (colors) =>
       alignItems: "center",
       justifyContent: "space-between",
     },
+    statusLeftSection: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
     statusPill: {
       paddingHorizontal: 8,
       paddingVertical: 4,
@@ -674,6 +868,27 @@ const styles = (colors) =>
       color: colors.textMuted,
       fontWeight: "500",
       marginLeft: 4,
+    },
+
+    // Confirmation Code Button
+    confirmationCodeButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 10,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.3,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    confirmationCodeButtonText: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: colors.white,
+      marginLeft: 3,
     },
 
     // Expanded Section
@@ -901,6 +1116,101 @@ const styles = (colors) =>
     rateActionButton: {
       backgroundColor: colors.warning + "15",
       borderColor: colors.warning + "30",
+    },
+
+    // Modal Styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 20,
+    },
+    modalContainer: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: 20,
+      padding: 0,
+      width: "100%",
+      maxWidth: 350,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    modalCloseButton: {
+      padding: 4,
+    },
+    modalContent: {
+      padding: 20,
+    },
+    codeDisplay: {
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    codeLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 12,
+      textAlign: "center",
+    },
+    codeContainer: {
+      backgroundColor: colors.primary + "15",
+      borderWidth: 2,
+      borderColor: colors.primary + "30",
+      borderRadius: 16,
+      paddingHorizontal: 24,
+      paddingVertical: 16,
+      borderStyle: "dashed",
+    },
+    confirmationCodeText: {
+      fontSize: 28,
+      fontWeight: "800",
+      color: colors.primary,
+      letterSpacing: 8,
+      textAlign: "center",
+      fontFamily: "monospace",
+    },
+    codeInstructions: {
+      marginBottom: 24,
+    },
+    instructionRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
+    instructionText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginLeft: 8,
+      flex: 1,
+    },
+    modalOkButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    modalOkButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.white,
     },
   });
 

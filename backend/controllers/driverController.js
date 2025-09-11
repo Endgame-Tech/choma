@@ -5,6 +5,7 @@ const DriverAssignment = require("../models/DriverAssignment");
 const Order = require("../models/Order");
 const Subscription = require("../models/Subscription");
 const MealPlan = require("../models/MealPlan");
+const driverAssignmentService = require("../services/driverAssignmentService");
 const { validationResult } = require("express-validator");
 
 // Generate JWT token
@@ -243,11 +244,42 @@ const getAvailableAssignments = async (req, res) => {
 
     console.log("Current assignments found:", currentAssignments.length);
 
-    // If driver has active assignment, return only that
+    // If driver has active assignment, return only that with package labels
     if (currentAssignments.length > 0) {
+      // Enrich with package labels and customer info
+      const enrichedCurrentAssignments = await Promise.all(
+        currentAssignments.map(async (assignment) => {
+          const assignmentObj = assignment.toObject();
+          
+          // Get customer phone number from order
+          const Order = require('../models/Order');
+          const order = await Order.findById(assignment.orderId).populate('customer', 'fullName phone email');
+          
+          if (order && order.customer) {
+            assignmentObj.customerInfo = {
+              fullName: order.customer.fullName,
+              phone: order.customer.phone,
+              email: order.customer.email
+            };
+          }
+          
+          // Get package label from chef assignment if this is a subscription pickup
+          if (assignment.subscriptionInfo && assignment.subscriptionInfo.subscriptionId) {
+            const SubscriptionChefAssignment = require('../models/SubscriptionChefAssignment');
+            const chefAssignment = await SubscriptionChefAssignment.findOne({
+              driverAssignmentId: assignment._id
+            }).select('packageLabelId');
+            
+            assignmentObj.packageLabelId = chefAssignment?.packageLabelId || null;
+          }
+          
+          return assignmentObj;
+        })
+      );
+      
       return res.json({
         success: true,
-        data: currentAssignments,
+        data: enrichedCurrentAssignments,
       });
     }
 
@@ -282,6 +314,39 @@ const getAvailableAssignments = async (req, res) => {
       }
 
       console.log("Available assignments found:", availableAssignments.length);
+      
+      // Enrich available assignments with customer info and package labels
+      const enrichedAvailableAssignments = await Promise.all(
+        availableAssignments.map(async (assignment) => {
+          const assignmentObj = assignment.toObject();
+          
+          // Get customer phone number from order
+          const order = await Order.findById(assignment.orderId).populate('customer', 'fullName phone email');
+          
+          if (order && order.customer) {
+            assignmentObj.customerInfo = {
+              fullName: order.customer.fullName,
+              phone: order.customer.phone,
+              email: order.customer.email
+            };
+          }
+          
+          // Get package label from chef assignment if this is a subscription pickup
+          if (assignment.subscriptionInfo && assignment.subscriptionInfo.subscriptionId) {
+            const SubscriptionChefAssignment = require('../models/SubscriptionChefAssignment');
+            const chefAssignment = await SubscriptionChefAssignment.findOne({
+              driverAssignmentId: assignment._id
+            }).select('packageLabelId');
+            
+            assignmentObj.packageLabelId = chefAssignment?.packageLabelId || null;
+          }
+          
+          return assignmentObj;
+        })
+      );
+      
+      availableAssignments = enrichedAvailableAssignments;
+      
     } catch (assignmentError) {
       console.error("Error fetching assignments:", assignmentError);
       availableAssignments = [];
@@ -517,14 +582,11 @@ const confirmDelivery = async (req, res) => {
     }
 
     // Confirm delivery - this will also update the Order status and send notifications
-    // Use the actual confirmation code that was validated (could be from fallback)
-    const validatedCode = isValidCode
-      ? confirmationCode
-      : assignment.confirmationCode;
-    await assignment.confirmDelivery(validatedCode, {
+    // Skip validation since we already validated above (including fallback logic)
+    await assignment.confirmDelivery(confirmationCode, {
       notes: deliveryNotes,
       photo: deliveryPhoto,
-    });
+    }, true); // skipValidation = true
 
     // Handle subscription and meal plan updates
     if (assignment.isFirstDelivery && assignment.subscriptionInfo) {
@@ -884,6 +946,89 @@ const updateDriverProfile = async (req, res) => {
   }
 };
 
+/**
+ * Update assignment status (used by unified subscription service and driver app)
+ */
+const updateAssignmentStatus = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array(),
+      });
+    }
+
+    const { id: assignmentId } = req.params;
+    const { status, notes, location, photo } = req.body;
+    const driverId = req.driver?.id;
+
+    // Verify this assignment belongs to the authenticated driver
+    const assignment = await DriverAssignment.findOne({
+      _id: assignmentId,
+      driverId: driverId
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Assignment not found or not assigned to you",
+      });
+    }
+
+    // Validate status transitions
+    const validTransitions = {
+      'assigned': ['picked_up', 'cancelled'],
+      'picked_up': ['out_for_delivery', 'cancelled'],
+      'out_for_delivery': ['delivered', 'cancelled'],
+      'delivered': [], // Final state
+      'cancelled': [] // Final state
+    };
+
+    if (!validTransitions[assignment.status]?.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot transition from ${assignment.status} to ${status}`,
+      });
+    }
+
+    // Update assignment status using the service
+    const result = await driverAssignmentService.updateAssignmentStatus(
+      assignmentId,
+      status,
+      {
+        notes,
+        location,
+        photo,
+        driverId
+      }
+    );
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    // Return success response with updated assignment
+    res.json({
+      success: true,
+      message: `Assignment status updated to ${status}`,
+      data: result.assignment,
+    });
+
+  } catch (error) {
+    console.error("Update assignment status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update assignment status",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerDriver,
   loginDriver,
@@ -900,4 +1045,5 @@ module.exports = {
   goOnline,
   goOffline,
   updateDriverProfile,
+  updateAssignmentStatus,
 };

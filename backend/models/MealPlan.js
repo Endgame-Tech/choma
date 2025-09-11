@@ -113,6 +113,12 @@ const MealPlanSchema = new mongoose.Schema({
   totalReviews: {
     type: Number,
     default: 0
+  },
+  
+  // Weekly meal structure for current system compatibility
+  weeklyMeals: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   }
 });
 

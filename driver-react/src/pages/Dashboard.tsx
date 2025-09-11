@@ -13,6 +13,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import AssignmentDetailsModal from '../components/AssignmentDetailsModal';
+import NextDeliveries from '../components/NextDeliveries';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -478,6 +479,11 @@ const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Next Deliveries Section */}
+      <div className="mt-8">
+        <NextDeliveries />
       </div>
 
       {/* Assignment Details Modal */}

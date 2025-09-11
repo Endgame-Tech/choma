@@ -299,6 +299,17 @@ export const chefSubscriptionsApi = {
     return handleResponse(response)
   },
 
+  // Update subscription meal status
+  async updateSubscriptionMealStatus(data: {
+    subscriptionAssignmentId: string;
+    mealType: string;
+    status: string;
+    notes?: string;
+  }): Promise<any> {
+    const response = await api.put<ApiResponse<any>>('/subscriptions/subscription-meal-status', data)
+    return handleResponse(response)
+  },
+
   // Update meal status (batch support)
   async updateMealStatus(assignmentIds: string[], status: string, notes?: string): Promise<any> {
     const response = await api.put<ApiResponse<any>>('/subscriptions/meal-status', {

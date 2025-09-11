@@ -2,13 +2,20 @@ import React, { useState } from 'react';
 import ChefWorkloadDashboard from '../components/recurring-delivery/ChefWorkloadDashboard';
 import DeliveryMonitoringDashboard from '../components/recurring-delivery/DeliveryMonitoringDashboard';
 import SubscriptionAnalyticsDashboard from '../components/recurring-delivery/SubscriptionAnalyticsDashboard';
+import UnifiedSubscriptionDashboard from '../components/subscription-management/UnifiedSubscriptionDashboard';
 
-type ActiveTab = 'analytics' | 'monitoring' | 'chefs';
+type ActiveTab = 'management' | 'analytics' | 'monitoring' | 'chefs';
 
 const RecurringDeliveryDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('analytics');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('management');
 
   const tabs = [
+    {
+      id: 'management' as const,
+      name: 'Next Deliveries',
+      icon: 'fi fi-sr-calendar-clock',
+      description: 'Manage upcoming deliveries'
+    },
     {
       id: 'analytics' as const,
       name: 'Analytics',
@@ -31,6 +38,8 @@ const RecurringDeliveryDashboard: React.FC = () => {
 
   const renderActiveComponent = () => {
     switch (activeTab) {
+      case 'management':
+        return <UnifiedSubscriptionDashboard />;
       case 'analytics':
         return <SubscriptionAnalyticsDashboard />;
       case 'monitoring':
@@ -38,7 +47,7 @@ const RecurringDeliveryDashboard: React.FC = () => {
       case 'chefs':
         return <ChefWorkloadDashboard />;
       default:
-        return <SubscriptionAnalyticsDashboard />;
+        return <UnifiedSubscriptionDashboard />;
     }
   };
 

@@ -1935,13 +1935,16 @@ Your meal plan has been updated with fresh options.`;
 
       {/* Fixed Background Image for Parallax */}
       <View style={styles(colors).fixedBackground}>
-        {user?.profileImage ? (
+        {profileImage || user?.profileImage ? (
           <Image
-            source={{ uri: user.profileImage }}
+            source={{ uri: profileImage || user.profileImage }}
             style={styles(colors).parallaxImage}
             onError={(error) => {
               console.log("❌ Background image failed to load:", error);
-              console.log("❌ Image URL was:", user.profileImage);
+              console.log(
+                "❌ Image URL was:",
+                profileImage || user.profileImage
+              );
             }}
             onLoad={() => {
               console.log("✅ Background image loaded successfully");
@@ -1970,7 +1973,7 @@ Your meal plan has been updated with fresh options.`;
           style={[
             styles(colors).backgroundOverlay,
             // Reduce overlay opacity when profile image is present
-            user?.profileImage && {
+            (profileImage || user?.profileImage) && {
               backgroundColor: "rgba(0, 0, 0, 0.1)",
             },
           ]}

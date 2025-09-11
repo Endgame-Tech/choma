@@ -108,7 +108,9 @@ export const useWebSocket = (): UseWebSocketReturn => {
   useEffect(() => {
     const token = localStorage.getItem('driverToken');
     if (token && !isConnected) {
-      connect().catch(console.error);
+      connect().catch(error => {
+        console.warn('WebSocket connection failed, continuing without real-time features:', error.message);
+      });
     }
 
     // Update status periodically (reduced frequency)

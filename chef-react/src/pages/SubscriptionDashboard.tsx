@@ -81,6 +81,18 @@ const SubscriptionDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchSubscriptionData();
+    
+    // Listen for refresh events from child components
+    const handleRefreshEvent = (event: CustomEvent) => {
+      console.log('📡 Received refresh event:', event.detail);
+      fetchSubscriptionData();
+    };
+    
+    window.addEventListener('refreshSubscriptionData', handleRefreshEvent as EventListener);
+    
+    return () => {
+      window.removeEventListener('refreshSubscriptionData', handleRefreshEvent as EventListener);
+    };
   }, []);
 
   const fetchSubscriptionData = async () => {

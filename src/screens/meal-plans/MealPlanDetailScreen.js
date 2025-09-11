@@ -38,6 +38,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   const [quantity, setQuantity] = useState(1);
   const [mealPlanDetails, setMealPlanDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Enhanced meal modal states
+  const [mealModalVisible, setMealModalVisible] = useState(false);
+  const [selectedMealData, setSelectedMealData] = useState(null);
+  const [availableMeals, setAvailableMeals] = useState([]);
+  const [currentMealIndex, setCurrentMealIndex] = useState(0);
+
+  // Legacy image modal states (keeping for compatibility)
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedImageName, setSelectedImageName] = useState("");
@@ -49,27 +57,99 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   // Animation states for smooth expand/collapse
   const animationValues = useRef({}).current;
 
-  // Open image gallery
+  // Open image gallery (legacy function)
   const openImageGallery = (imageUri, mealName) => {
     setSelectedImage(imageUri);
     setSelectedImageName(mealName || "Meal Image");
     setImageModalVisible(true);
   };
 
+  // Open enhanced meal modal with swipe functionality
+  const openMealModal = (dayData, initialMealType) => {
+    const meals = [
+      {
+        type: "breakfast",
+        icon: "🌅",
+        label: "Breakfast",
+        title: dayData.breakfast,
+        description: dayData.breakfastDescription || dayData.breakfast,
+        image: dayData.breakfastImage,
+        nutrition: {
+          calories: 450, // These could come from mealPlanDetails.nutritionInfo
+          protein: "25g",
+          carbs: "45g",
+          fat: "15g",
+          fiber: "8g",
+        },
+      },
+      {
+        type: "lunch",
+        icon: "☀️",
+        label: "Lunch",
+        title: dayData.lunch,
+        description: dayData.lunchDescription || dayData.lunch,
+        image: dayData.lunchImage,
+        nutrition: {
+          calories: 550,
+          protein: "30g",
+          carbs: "50g",
+          fat: "18g",
+          fiber: "10g",
+        },
+      },
+      {
+        type: "dinner",
+        icon: "🌙",
+        label: "Dinner",
+        title: dayData.dinner,
+        description: dayData.dinnerDescription || dayData.dinner,
+        image: dayData.dinnerImage,
+        nutrition: {
+          calories: 500,
+          protein: "28g",
+          carbs: "40g",
+          fat: "20g",
+          fiber: "9g",
+        },
+      },
+    ].filter(
+      (meal) =>
+        meal.title !== "Breakfast not specified" &&
+        meal.title !== "Lunch not specified" &&
+        meal.title !== "Dinner not specified"
+    );
+
+    const initialIndex = meals.findIndex(
+      (meal) => meal.type === initialMealType
+    );
+
+    setAvailableMeals(meals);
+    setCurrentMealIndex(initialIndex >= 0 ? initialIndex : 0);
+    setSelectedMealData(meals[initialIndex >= 0 ? initialIndex : 0]);
+    setMealModalVisible(true);
+  };
+
   // Handle share functionality
   const handleShare = async () => {
     try {
       const planName = mealPlanDetails?.planName || bundle?.name || "Meal Plan";
-      const duration = mealPlanDetails?.durationWeeks 
-        ? `${mealPlanDetails.durationWeeks} week${mealPlanDetails.durationWeeks !== 1 ? 's' : ''}` 
+      const duration = mealPlanDetails?.durationWeeks
+        ? `${mealPlanDetails.durationWeeks} week${
+            mealPlanDetails.durationWeeks !== 1 ? "s" : ""
+          }`
         : "4 weeks";
       const price = mealPlanDetails?.basePrice || bundle?.price || 25000;
-      const calories = mealPlanDetails?.nutritionInfo?.avgCaloriesPerDay || "N/A";
-      const protein = mealPlanDetails?.nutritionInfo?.totalProtein 
-        ? Math.round(mealPlanDetails.nutritionInfo.totalProtein / (mealPlanDetails.durationWeeks * 7)) + "g"
+      const calories =
+        mealPlanDetails?.nutritionInfo?.avgCaloriesPerDay || "N/A";
+      const protein = mealPlanDetails?.nutritionInfo?.totalProtein
+        ? Math.round(
+            mealPlanDetails.nutritionInfo.totalProtein /
+              (mealPlanDetails.durationWeeks * 7)
+          ) + "g"
         : "N/A";
 
-      const shareMessage = `🍽️ Check out this amazing meal plan: ${planName}!\n\n` +
+      const shareMessage =
+        `🍽️ Check out this amazing meal plan: ${planName}!\n\n` +
         `⏱️ Duration: ${duration}\n` +
         `💰 Price: ₦${price.toLocaleString()}\n` +
         `🔥 Avg Calories/Day: ${calories}\n` +
@@ -82,11 +162,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       });
 
       if (result.action === Share.sharedAction) {
-        console.log('✅ Meal plan shared successfully');
+        console.log("✅ Meal plan shared successfully");
       }
     } catch (error) {
-      console.error('❌ Error sharing meal plan:', error);
-      Alert.alert('Error', 'Unable to share meal plan. Please try again.');
+      console.error("❌ Error sharing meal plan:", error);
+      Alert.alert("Error", "Unable to share meal plan. Please try again.");
     }
   };
 
@@ -372,7 +452,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   );
 
   // Enhanced meal card for horizontal slider (similar to popular meal plans)
-  const renderMealSliderCard = (meal) => {
+  const renderMealSliderCard = (meal, dayData) => {
     const defaultImage = require("../../assets/images/meal-plans/fitfuel.jpg");
     const imageSource = meal.image
       ? typeof meal.image === "string"
@@ -383,7 +463,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     return (
       <TouchableOpacity
         style={styles(colors).mealSliderCard}
-        onPress={() => openImageGallery(meal.image, meal.label)}
+        onPress={() =>
+          openMealModal(dayData, meal.type || meal.label.toLowerCase())
+        }
         activeOpacity={0.8}
       >
         <View style={styles(colors).mealSliderImageContainer}>
@@ -455,18 +537,21 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     // Prepare meal data for horizontal slider
     const meals = [
       {
+        type: "breakfast",
         icon: "🌅",
         label: "Breakfast",
         description: dayData.breakfastDescription || dayData.breakfast,
         image: dayData.breakfastImage,
       },
       {
+        type: "lunch",
         icon: "☀️",
         label: "Lunch",
         description: dayData.lunchDescription || dayData.lunch,
         image: dayData.lunchImage,
       },
       {
+        type: "dinner",
         icon: "🌙",
         label: "Dinner",
         description: dayData.dinnerDescription || dayData.dinner,
@@ -535,7 +620,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   keyExtractor={(item) => item.label}
                   renderItem={({ item }) => (
                     <View style={styles(colors).mealCardWrapper}>
-                      {renderMealSliderCard(item)}
+                      {renderMealSliderCard(item, dayData)}
                     </View>
                   )}
                   showsHorizontalScrollIndicator={false}
@@ -574,7 +659,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         {expandedDay !== dayData.day && (
           <View style={styles(colors).mealPreviewContainer}>
             {dayData.breakfast !== "Breakfast not specified" && (
-              <View style={styles(colors).mealPreview}>
+              <TouchableOpacity
+                style={styles(colors).mealPreview}
+                onPress={() => openMealModal(dayData, "breakfast")}
+                activeOpacity={0.7}
+              >
                 <Text style={styles(colors).mealIcon}>🌅</Text>
                 <Text style={styles(colors).mealPreviewText} numberOfLines={1}>
                   {dayData.breakfast}
@@ -587,10 +676,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     />
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             )}
             {dayData.lunch !== "Lunch not specified" && (
-              <View style={styles(colors).mealPreview}>
+              <TouchableOpacity
+                style={styles(colors).mealPreview}
+                onPress={() => openMealModal(dayData, "lunch")}
+                activeOpacity={0.7}
+              >
                 <Text style={styles(colors).mealIcon}>☀️</Text>
                 <Text style={styles(colors).mealPreviewText} numberOfLines={1}>
                   {dayData.lunch}
@@ -603,10 +696,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     />
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             )}
             {dayData.dinner !== "Dinner not specified" && (
-              <View style={styles(colors).mealPreview}>
+              <TouchableOpacity
+                style={styles(colors).mealPreview}
+                onPress={() => openMealModal(dayData, "dinner")}
+                activeOpacity={0.7}
+              >
                 <Text style={styles(colors).mealIcon}>🌙</Text>
                 <Text style={styles(colors).mealPreviewText} numberOfLines={1}>
                   {dayData.dinner}
@@ -619,7 +716,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     />
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -727,14 +824,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               style={styles(colors).quantityButton}
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
             >
-              <Ionicons name="remove" size={20} color={'#FFFFFF'} />
+              <Ionicons name="remove" size={20} color={"#FFFFFF"} />
             </TouchableOpacity>
             <Text style={styles(colors).quantityText}>{quantity}</Text>
             <TouchableOpacity
               style={styles(colors).quantityButton}
               onPress={() => setQuantity(quantity + 1)}
             >
-              <Ionicons name="add" size={20} color={'#FFFFFF'} />
+              <Ionicons name="add" size={20} color={"#FFFFFF"} />
             </TouchableOpacity>
           </View>
 
@@ -820,7 +917,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   ₦{discountInfo.originalPrice.toLocaleString()}
                 </Text>
                 <View style={styles(colors).discountPill}>
-                  <Ionicons name="gift-outline" size={18} color={colors.primary} />
+                  <Ionicons
+                    name="gift-outline"
+                    size={18}
+                    color={colors.primary}
+                  />
                   <Text style={styles(colors).discountPillText}>
                     Up to {discountInfo.discountPercent}% Off
                   </Text>
@@ -863,11 +964,21 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             <Text style={styles(colors).sectionTitle}>
               Nutrition Information
             </Text>
-            
+
             {/* Calories Overview Cards */}
             <View style={styles(colors).nutritionOverviewRow}>
-              <View style={[styles(colors).nutritionOverviewCard, { backgroundColor: colors.primary + '15' }]}>
-                <View style={[styles(colors).nutritionOverviewIcon, { backgroundColor: colors.primary + '25' }]}>
+              <View
+                style={[
+                  styles(colors).nutritionOverviewCard,
+                  { backgroundColor: colors.primary + "15" },
+                ]}
+              >
+                <View
+                  style={[
+                    styles(colors).nutritionOverviewIcon,
+                    { backgroundColor: colors.primary + "25" },
+                  ]}
+                >
                   <Text style={styles(colors).nutritionOverviewEmoji}>🔥</Text>
                 </View>
                 <Text style={styles(colors).nutritionOverviewValue}>
@@ -877,9 +988,23 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   Total Calories
                 </Text>
               </View>
-              
-              <View style={[styles(colors).nutritionOverviewCard, { backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}>
-                <View style={[styles(colors).nutritionOverviewIcon, { backgroundColor: colors.secondary + '25' }]}>
+
+              <View
+                style={[
+                  styles(colors).nutritionOverviewCard,
+                  {
+                    backgroundColor: colors.secondary + "15",
+                    borderWidth: 1,
+                    borderColor: colors.primary + "30",
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles(colors).nutritionOverviewIcon,
+                    { backgroundColor: colors.secondary + "25" },
+                  ]}
+                >
                   <Text style={styles(colors).nutritionOverviewEmoji}>👌</Text>
                 </View>
                 <Text style={styles(colors).nutritionOverviewValue}>
@@ -895,56 +1020,88 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             <Text style={styles(colors).nutritionSubtitle}>Daily Average</Text>
             <View style={styles(colors).nutritionCardsContainer}>
               <View style={styles(colors).nutritionCard}>
-                <View style={[styles(colors).nutritionCardIcon, { backgroundColor: '#FF6B6B20' }]}>
+                <View
+                  style={[
+                    styles(colors).nutritionCardIcon,
+                    { backgroundColor: "#FF6B6B20" },
+                  ]}
+                >
                   <Text style={styles(colors).nutritionCardEmoji}>🥩</Text>
                 </View>
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
-                    {mealPlanDetails.nutritionInfo.totalProtein ? 
-                      Math.round(mealPlanDetails.nutritionInfo.totalProtein / (mealPlanDetails.durationWeeks * 7)) + "g" : 
-                      "N/A"}
+                    {mealPlanDetails.nutritionInfo.totalProtein
+                      ? Math.round(
+                          mealPlanDetails.nutritionInfo.totalProtein /
+                            (mealPlanDetails.durationWeeks * 7)
+                        ) + "g"
+                      : "N/A"}
                   </Text>
                   <Text style={styles(colors).nutritionCardLabel}>Protein</Text>
                 </View>
               </View>
 
               <View style={styles(colors).nutritionCard}>
-                <View style={[styles(colors).nutritionCardIcon, { backgroundColor: '#4ECDC420' }]}>
+                <View
+                  style={[
+                    styles(colors).nutritionCardIcon,
+                    { backgroundColor: "#4ECDC420" },
+                  ]}
+                >
                   <Text style={styles(colors).nutritionCardEmoji}>🌽</Text>
                 </View>
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
-                    {mealPlanDetails.nutritionInfo.totalCarbs ? 
-                      Math.round(mealPlanDetails.nutritionInfo.totalCarbs / (mealPlanDetails.durationWeeks * 7)) + "g" : 
-                      "N/A"}
+                    {mealPlanDetails.nutritionInfo.totalCarbs
+                      ? Math.round(
+                          mealPlanDetails.nutritionInfo.totalCarbs /
+                            (mealPlanDetails.durationWeeks * 7)
+                        ) + "g"
+                      : "N/A"}
                   </Text>
                   <Text style={styles(colors).nutritionCardLabel}>Carbs</Text>
                 </View>
               </View>
 
               <View style={styles(colors).nutritionCard}>
-                <View style={[styles(colors).nutritionCardIcon, { backgroundColor: '#FFE66D20' }]}>
+                <View
+                  style={[
+                    styles(colors).nutritionCardIcon,
+                    { backgroundColor: "#FFE66D20" },
+                  ]}
+                >
                   <Text style={styles(colors).nutritionCardEmoji}>🥑</Text>
                 </View>
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
-                    {mealPlanDetails.nutritionInfo.totalFat ? 
-                      Math.round(mealPlanDetails.nutritionInfo.totalFat / (mealPlanDetails.durationWeeks * 7)) + "g" : 
-                      "N/A"}
+                    {mealPlanDetails.nutritionInfo.totalFat
+                      ? Math.round(
+                          mealPlanDetails.nutritionInfo.totalFat /
+                            (mealPlanDetails.durationWeeks * 7)
+                        ) + "g"
+                      : "N/A"}
                   </Text>
                   <Text style={styles(colors).nutritionCardLabel}>Fat</Text>
                 </View>
               </View>
 
               <View style={styles(colors).nutritionCard}>
-                <View style={[styles(colors).nutritionCardIcon, { backgroundColor: '#95E1D320' }]}>
+                <View
+                  style={[
+                    styles(colors).nutritionCardIcon,
+                    { backgroundColor: "#95E1D320" },
+                  ]}
+                >
                   <Text style={styles(colors).nutritionCardEmoji}>🥗</Text>
                 </View>
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
-                    {mealPlanDetails.nutritionInfo.totalFiber ? 
-                      Math.round(mealPlanDetails.nutritionInfo.totalFiber / (mealPlanDetails.durationWeeks * 7)) + "g" : 
-                      "N/A"}
+                    {mealPlanDetails.nutritionInfo.totalFiber
+                      ? Math.round(
+                          mealPlanDetails.nutritionInfo.totalFiber /
+                            (mealPlanDetails.durationWeeks * 7)
+                        ) + "g"
+                      : "N/A"}
                   </Text>
                   <Text style={styles(colors).nutritionCardLabel}>Fiber</Text>
                 </View>
@@ -952,20 +1109,26 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             </View>
 
             {/* Total Values Summary */}
-            <Text style={styles(colors).nutritionSubtitle}>Total Plan Values</Text>
+            <Text style={styles(colors).nutritionSubtitle}>
+              Total Plan Values
+            </Text>
             <View style={styles(colors).nutritionSummaryCard}>
               <View style={styles(colors).nutritionSummaryRow}>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
                     {mealPlanDetails.nutritionInfo.totalProtein || "N/A"}g
                   </Text>
-                  <Text style={styles(colors).nutritionSummaryLabel}>Protein</Text>
+                  <Text style={styles(colors).nutritionSummaryLabel}>
+                    Protein
+                  </Text>
                 </View>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
                     {mealPlanDetails.nutritionInfo.totalCarbs || "N/A"}g
                   </Text>
-                  <Text style={styles(colors).nutritionSummaryLabel}>Carbs</Text>
+                  <Text style={styles(colors).nutritionSummaryLabel}>
+                    Carbs
+                  </Text>
                 </View>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
@@ -977,7 +1140,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   <Text style={styles(colors).nutritionSummaryValue}>
                     {mealPlanDetails.nutritionInfo.totalFiber || "N/A"}g
                   </Text>
-                  <Text style={styles(colors).nutritionSummaryLabel}>Fiber</Text>
+                  <Text style={styles(colors).nutritionSummaryLabel}>
+                    Fiber
+                  </Text>
                 </View>
               </View>
             </View>
@@ -1036,6 +1201,182 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Enhanced Meal Detail Modal with Swipe */}
+      <Modal
+        visible={mealModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setMealModalVisible(false)}
+      >
+        <View style={styles(colors).mealModalOverlay}>
+          <View style={styles(colors).mealModalContainer}>
+            {/* Header */}
+            <View style={styles(colors).mealModalHeaderParent}>
+              <View style={styles(colors).mealModalHeader}>
+                <TouchableOpacity
+                  style={styles(colors).mealModalCloseButton}
+                  onPress={() => setMealModalVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color={colors.white} />
+                </TouchableOpacity>
+
+                {/* Meal Type Indicator */}
+                <View style={styles(colors).mealTypeIndicator}>
+                  <Text style={styles(colors).mealTypeIcon}>
+                    {selectedMealData?.icon}
+                  </Text>
+                  <Text style={styles(colors).mealTypeLabel}>
+                    {selectedMealData?.label}
+                  </Text>
+                </View>
+
+                {/* Swipe Indicators */}
+                <View style={styles(colors).swipeIndicators}>
+                  {availableMeals.map((_, index) => (
+                    <View
+                      key={index}
+                      style={[
+                        styles(colors).swipeIndicator,
+                        index === currentMealIndex &&
+                          styles(colors).swipeIndicatorActive,
+                      ]}
+                    />
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            {/* Swipeable Content */}
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(event) => {
+                const newIndex = Math.round(
+                  event.nativeEvent.contentOffset.x / width
+                );
+                setCurrentMealIndex(newIndex);
+                setSelectedMealData(availableMeals[newIndex]);
+              }}
+              contentOffset={{ x: currentMealIndex * width, y: 0 }}
+              style={styles(colors).mealSwipeContainer}
+            >
+              {availableMeals.map((meal, index) => (
+                <View key={index} style={styles(colors).mealSlide}>
+                  {/* Full Screen Meal Image */}
+                  <View style={styles(colors).mealImageContainer}>
+                    <Image
+                      source={
+                        meal.image
+                          ? { uri: meal.image }
+                          : require("../../assets/images/meal-plans/fitfuel.jpg")
+                      }
+                      style={styles(colors).mealFullImage}
+                      resizeMode="cover"
+                    />
+
+                    {/* Gradient Overlay */}
+                    <LinearGradient
+                      colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.8)"]}
+                      style={styles(colors).mealImageGradient}
+                    />
+                  </View>
+
+                  {/* Meal Information Overlay */}
+                  <View style={styles(colors).mealInfoOverlay}>
+                    <ScrollView
+                      style={styles(colors).mealInfoScroll}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {/* Meal Title */}
+                      <Text style={styles(colors).mealModalTitle}>
+                        {meal.title}
+                      </Text>
+
+                      {/* Meal Description */}
+                      <Text style={styles(colors).mealModalDescription}>
+                        {meal.description}
+                      </Text>
+
+                      {/* Nutrition Information */}
+                      <View style={styles(colors).nutritionContainer}>
+                        <Text style={styles(colors).nutritionTitle}>
+                          Nutrition Facts
+                        </Text>
+
+                        <View style={styles(colors).nutritionGrid}>
+                          <View style={styles(colors).nutritionItem}>
+                            <Text style={styles(colors).nutritionValue}>
+                              {meal.nutrition?.calories || "450"}
+                            </Text>
+                            <Text style={styles(colors).nutritionLabel}>
+                              Calories
+                            </Text>
+                          </View>
+
+                          <View style={styles(colors).nutritionItem}>
+                            <Text style={styles(colors).nutritionValue}>
+                              {meal.nutrition?.protein || "25g"}
+                            </Text>
+                            <Text style={styles(colors).nutritionLabel}>
+                              Protein
+                            </Text>
+                          </View>
+
+                          <View style={styles(colors).nutritionItem}>
+                            <Text style={styles(colors).nutritionValue}>
+                              {meal.nutrition?.carbs || "45g"}
+                            </Text>
+                            <Text style={styles(colors).nutritionLabel}>
+                              Carbs
+                            </Text>
+                          </View>
+
+                          <View style={styles(colors).nutritionItem}>
+                            <Text style={styles(colors).nutritionValue}>
+                              {meal.nutrition?.fat || "15g"}
+                            </Text>
+                            <Text style={styles(colors).nutritionLabel}>
+                              Fat
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Additional Nutrition Details */}
+                        <View style={styles(colors).additionalNutrition}>
+                          <View style={styles(colors).nutritionRow}>
+                            <Text style={styles(colors).nutritionRowLabel}>
+                              Fiber
+                            </Text>
+                            <Text style={styles(colors).nutritionRowValue}>
+                              {meal.nutrition?.fiber || "8g"}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      {/* Swipe Instructions */}
+                      {availableMeals.length > 1 && (
+                        <View style={styles(colors).swipeInstructions}>
+                          <Ionicons
+                            name="swap-horizontal"
+                            size={20}
+                            color={colors.textMuted}
+                          />
+                          <Text style={styles(colors).swipeInstructionsText}>
+                            Swipe to view other meals
+                          </Text>
+                        </View>
+                      )}
+                    </ScrollView>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       {/* Image Gallery Modal */}
       <Modal
@@ -1291,7 +1632,6 @@ const styles = (colors) =>
     featureItem: {
       flexDirection: "row",
       alignItems: "center",
-      
     },
     featureIcon: {
       width: 48,
@@ -1817,6 +2157,194 @@ const styles = (colors) =>
       fontWeight: "500",
       flexShrink: 1,
       minWidth: 0,
+    },
+
+    // Enhanced Meal Modal Styles
+    mealModalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.95)",
+    },
+    mealModalContainer: {
+      flex: 1,
+      backgroundColor: "transparent",
+    },
+    mealModalHeaderParent: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      // paddingHorizontal: 20,
+      width: "100%",
+      position: "absolute",
+      bottom: "53%",
+      left: 0,
+      right: 0,
+      zIndex: 10,
+    },
+    mealModalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      width: "95%",
+      alignItems: "center",
+      backgroundColor: colors.background,
+      borderRadius: 50,
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+    },
+    mealModalCloseButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "#1b1b1b",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    mealTypeIndicator: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderRadius: 20,
+    },
+    mealTypeIcon: {
+      fontSize: 20,
+      marginRight: 8,
+    },
+    mealTypeLabel: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.white,
+    },
+    swipeIndicators: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    swipeIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: "rgba(255, 255, 255, 0.3)",
+    },
+    swipeIndicatorActive: {
+      backgroundColor: colors.primary,
+      width: 12,
+    },
+    mealSwipeContainer: {
+      flex: 1,
+    },
+    mealSlide: {
+      width: width,
+      height: height,
+      position: "relative",
+    },
+    mealImageContainer: {
+      width: "100%",
+      height: height * 0.65, // Slightly adjusted to account for fixed overlay
+      position: "relative",
+    },
+    mealFullImage: {
+      width: "100%",
+      height: "100%",
+    },
+    mealImageGradient: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 200, // Increased gradient height for better transition
+    },
+    mealInfoOverlay: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 40,
+      height: height * 0.53, // Fixed height instead of maxHeight
+    },
+    mealInfoScroll: {
+      flex: 1,
+    },
+    mealModalTitle: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 12,
+      textAlign: "center",
+    },
+    mealModalDescription: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      lineHeight: 24,
+      marginBottom: 20,
+      textAlign: "center",
+    },
+    nutritionContainer: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: THEME.borderRadius.large,
+      padding: 20,
+      marginBottom: 20,
+    },
+    nutritionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 15,
+      textAlign: "center",
+    },
+    nutritionGrid: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 15,
+    },
+    nutritionItem: {
+      alignItems: "center",
+      flex: 1,
+    },
+    nutritionValue: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.primary,
+      marginBottom: 4,
+    },
+    nutritionLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    additionalNutrition: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 15,
+    },
+    nutritionRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    nutritionRowLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    nutritionRowValue: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    swipeInstructions: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 15,
+      paddingVertical: 10,
+    },
+    swipeInstructionsText: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginLeft: 8,
     },
   });
 

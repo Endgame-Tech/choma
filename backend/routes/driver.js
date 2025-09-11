@@ -122,6 +122,15 @@ router.put('/assignments/:id/deliver',
   confirmDelivery
 );
 
+// New route for updating assignment status
+router.put('/assignments/:id/status',
+  param('id').isMongoId().withMessage('Invalid assignment ID'),
+  body('status').isIn(['picked_up', 'out_for_delivery', 'delivered', 'cancelled']).withMessage('Invalid status'),
+  body('notes').optional().isLength({ max: 1000 }).withMessage('Notes too long'),
+  body('location').optional().isObject().withMessage('Location must be an object'),
+  require('../controllers/driverController').updateAssignmentStatus
+);
+
 // History and stats
 router.get('/history',
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
@@ -137,6 +146,21 @@ router.get('/stats/daily',
 // ============= SUBSCRIPTION MANAGEMENT ROUTES =============
 // Subscription delivery management for drivers
 router.get('/subscription/my-deliveries', driverSubscriptionController.getMySubscriptionDeliveries);
+router.get('/subscription/pickup-assignments', driverSubscriptionController.getMyPickupAssignments);
+router.post('/subscription/confirm-pickup', [
+  body('assignmentId').isMongoId().withMessage('Invalid assignment ID'),
+  body('notes').optional().isString().trim(),
+  body('location.lat').optional().isFloat({ min: -90, max: 90 }).withMessage('Invalid latitude'),
+  body('location.lng').optional().isFloat({ min: -180, max: 180 }).withMessage('Invalid longitude')
+], driverSubscriptionController.confirmPickup);
+
+router.post('/subscription/confirm-delivery', [
+  body('assignmentId').isMongoId().withMessage('Invalid assignment ID'),
+  body('pickupCode').optional().isString().isLength({ min: 4, max: 4 }).withMessage('Pickup code must be 4 digits'),
+  body('notes').optional().isString().trim(),
+  body('location.lat').optional().isFloat({ min: -90, max: 90 }).withMessage('Invalid latitude'),
+  body('location.lng').optional().isFloat({ min: -180, max: 180 }).withMessage('Invalid longitude')
+], driverSubscriptionController.confirmDelivery);
 router.get('/subscription/weekly-schedule',
   query('startDate').optional().isISO8601().withMessage('Start date must be in ISO format'),
   driverSubscriptionController.getWeeklyDeliverySchedule

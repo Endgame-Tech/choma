@@ -23,7 +23,7 @@ const App: React.FC = () => {
     <AuthProvider>
       <LocationProvider>
         <DeliveryProvider>
-          <Router>
+          <Router future={{ v7_relativeSplatPath: true }}>
             <div className="min-h-screen bg-gray-50">
               <Routes>
                 {/* Auth Routes */}

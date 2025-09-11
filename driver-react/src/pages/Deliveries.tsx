@@ -260,6 +260,11 @@ const Deliveries: React.FC = () => {
                       <span className="text-sm text-gray-500 font-medium">
                         <i className="fi fi-rr-id-badge"></i> {assignment._id.slice(-8)}
                       </span>
+                      {assignment.packageLabelId && (
+                        <span className="px-2 py-1 text-xs font-mono font-bold bg-blue-100 text-blue-800 rounded border">
+                          📦 {assignment.packageLabelId}
+                        </span>
+                      )}
                     </div>
                     
                     <div className="flex items-center space-x-3">

@@ -12,6 +12,110 @@ const notificationService = require('./notificationService');
 class DriverSubscriptionService {
 
   /**
+   * Get pickup assignments for driver
+   * Returns list of pending pickups from chefs
+   */
+  async getPickupAssignments(driverId) {
+    try {
+      console.log(`📦 Getting pickup assignments for driver: ${driverId}`);
+
+      // Get pending pickup assignments
+      const pickupAssignments = await DriverAssignment.find({
+        driverId,
+        status: { $in: ['assigned', 'picked_up'] },
+        'subscriptionInfo.subscriptionId': { $exists: true }
+      })
+      .sort({ estimatedPickupTime: 1 })
+      .lean();
+
+      // Enrich pickup assignments with package labels from chef assignments
+      const enrichedAssignments = await Promise.all(
+        pickupAssignments.map(async (assignment) => {
+          // Get package label from chef assignment
+          const SubscriptionChefAssignment = require('../models/SubscriptionChefAssignment');
+          const chefAssignment = await SubscriptionChefAssignment.findOne({
+            driverAssignmentId: assignment._id
+          }).select('packageLabelId');
+          
+          return {
+            ...assignment,
+            packageLabelId: chefAssignment?.packageLabelId || null,
+            urgencyLevel: this.calculatePickupUrgency(assignment),
+            estimatedDuration: this.estimatePickupDuration(assignment),
+            customerType: assignment.confirmationCode ? 'returning' : 'new',
+            pickupInstructions: this.generatePickupInstructions(assignment)
+          };
+        })
+      );
+
+      return {
+        success: true,
+        data: {
+          pickupAssignments: enrichedAssignments,
+          totalAssignments: enrichedAssignments.length,
+          urgentPickups: enrichedAssignments.filter(a => a.urgencyLevel === 'high').length
+        }
+      };
+
+    } catch (error) {
+      console.error('❌ Error getting pickup assignments:', error);
+      return {
+        success: false,
+        message: 'Failed to get pickup assignments',
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Calculate pickup urgency based on timing and customer type
+   */
+  calculatePickupUrgency(assignment) {
+    const now = new Date();
+    const pickupTime = new Date(assignment.estimatedPickupTime);
+    const minutesUntilPickup = (pickupTime - now) / (1000 * 60);
+
+    if (minutesUntilPickup < 15) return 'high';
+    if (minutesUntilPickup < 45) return 'medium';
+    return 'low';
+  }
+
+  /**
+   * Estimate pickup duration including travel and wait time
+   */
+  estimatePickupDuration(assignment) {
+    const basePickupTime = 10; // 10 minutes base pickup time
+    const travelTime = 15; // Estimated travel time to pickup location
+    
+    return basePickupTime + travelTime;
+  }
+
+  /**
+   * Generate pickup instructions for driver
+   */
+  generatePickupInstructions(assignment) {
+    const instructions = [];
+    
+    instructions.push(`Pick up meals for ${assignment.customerId.fullName}`);
+    
+    if (assignment.confirmationCode) {
+      instructions.push(`Customer pickup code: ${assignment.confirmationCode}`);
+    } else {
+      instructions.push(`First-time customer - no pickup code needed`);
+    }
+    
+    if (assignment.metadata?.totalMeals) {
+      instructions.push(`Total meals: ${assignment.metadata.totalMeals}`);
+    }
+    
+    if (assignment.customerId.phone) {
+      instructions.push(`Customer phone: ${assignment.customerId.phone}`);
+    }
+    
+    return instructions;
+  }
+
+  /**
    * Route Optimization Engine
    * Identifies and optimizes delivery routes for subscription customers
    */

@@ -94,6 +94,14 @@ export interface DeliveryAssignment {
     deliveryDay: number;
     isActivationDelivery: boolean;
   };
+  // Package coordination with chef
+  packageLabelId?: string;
+  // Customer information for driver contact
+  customerInfo?: {
+    fullName: string;
+    phone: string;
+    email: string;
+  };
 }
 
 // Auth types

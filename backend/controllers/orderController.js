@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Customer = require('../models/Customer');
 const MealPlan = require('../models/MealPlan');
+const DriverAssignment = require('../models/DriverAssignment');
 const NotificationService = require('../services/notificationService');
 
 // Get user's orders
@@ -22,10 +23,46 @@ exports.getUserOrders = async (req, res) => {
 
     console.log(`📋 Found ${orders.length} orders for user ${req.user.id}`);
 
+    // Enhance orders with driver assignment data (including confirmation codes)
+    const enhancedOrders = await Promise.all(
+      orders.map(async (order) => {
+        try {
+          // Find driver assignment for this order
+          const driverAssignment = await DriverAssignment.findOne({ orderId: order._id })
+            .populate('driverId', 'fullName phone')
+            .lean();
+
+          const orderObj = order.toObject();
+          
+          if (driverAssignment) {
+            // Add driver assignment data to order
+            orderObj.driverAssignment = {
+              _id: driverAssignment._id,
+              confirmationCode: driverAssignment.confirmationCode,
+              status: driverAssignment.status,
+              driver: driverAssignment.driverId,
+              pickupLocation: driverAssignment.pickupLocation,
+              deliveryLocation: driverAssignment.deliveryLocation,
+              estimatedPickupTime: driverAssignment.estimatedPickupTime,
+              estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime
+            };
+            
+            // Also add confirmation code directly to order for easier access
+            orderObj.confirmationCode = driverAssignment.confirmationCode;
+          }
+          
+          return orderObj;
+        } catch (error) {
+          console.error(`Error enhancing order ${order._id}:`, error);
+          return order.toObject();
+        }
+      })
+    );
+
     res.json({
       success: true,
-      data: orders,
-      count: orders.length
+      data: enhancedOrders,
+      count: enhancedOrders.length
     });
   } catch (err) {
     console.error('Get user orders error:', err);
@@ -53,10 +90,46 @@ exports.getUserAssignedOrders = async (req, res) => {
 
     console.log(`🍳 Found ${orders.length} assigned orders for user ${req.user.id}`);
 
+    // Enhance orders with driver assignment data (including confirmation codes)
+    const enhancedOrders = await Promise.all(
+      orders.map(async (order) => {
+        try {
+          // Find driver assignment for this order
+          const driverAssignment = await DriverAssignment.findOne({ orderId: order._id })
+            .populate('driverId', 'fullName phone')
+            .lean();
+
+          const orderObj = order.toObject();
+          
+          if (driverAssignment) {
+            // Add driver assignment data to order
+            orderObj.driverAssignment = {
+              _id: driverAssignment._id,
+              confirmationCode: driverAssignment.confirmationCode,
+              status: driverAssignment.status,
+              driver: driverAssignment.driverId,
+              pickupLocation: driverAssignment.pickupLocation,
+              deliveryLocation: driverAssignment.deliveryLocation,
+              estimatedPickupTime: driverAssignment.estimatedPickupTime,
+              estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime
+            };
+            
+            // Also add confirmation code directly to order for easier access
+            orderObj.confirmationCode = driverAssignment.confirmationCode;
+          }
+          
+          return orderObj;
+        } catch (error) {
+          console.error(`Error enhancing order ${order._id}:`, error);
+          return order.toObject();
+        }
+      })
+    );
+
     res.json({
       success: true,
-      data: orders,
-      count: orders.length
+      data: enhancedOrders,
+      count: enhancedOrders.length
     });
   } catch (err) {
     console.error('Get user assigned orders error:', err);
@@ -87,10 +160,42 @@ exports.getOrderById = async (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      data: order
-    });
+    // Enhance order with driver assignment data (including confirmation code)
+    try {
+      const driverAssignment = await DriverAssignment.findOne({ orderId: order._id })
+        .populate('driverId', 'fullName phone')
+        .lean();
+
+      const orderObj = order.toObject();
+      
+      if (driverAssignment) {
+        // Add driver assignment data to order
+        orderObj.driverAssignment = {
+          _id: driverAssignment._id,
+          confirmationCode: driverAssignment.confirmationCode,
+          status: driverAssignment.status,
+          driver: driverAssignment.driverId,
+          pickupLocation: driverAssignment.pickupLocation,
+          deliveryLocation: driverAssignment.deliveryLocation,
+          estimatedPickupTime: driverAssignment.estimatedPickupTime,
+          estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime
+        };
+        
+        // Also add confirmation code directly to order for easier access
+        orderObj.confirmationCode = driverAssignment.confirmationCode;
+      }
+
+      res.json({
+        success: true,
+        data: orderObj
+      });
+    } catch (error) {
+      console.error(`Error enhancing order ${id}:`, error);
+      res.json({
+        success: true,
+        data: order
+      });
+    }
   } catch (err) {
     console.error('Get order by ID error:', err);
     res.status(500).json({

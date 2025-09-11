@@ -14,6 +14,313 @@ const mongoose = require('mongoose');
 class DriverSubscriptionController {
 
   /**
+   * Get driver's pickup assignments
+   * Returns pending pickups from chefs when meals are ready
+   */
+  async getMyPickupAssignments(req, res) {
+    try {
+      const driverId = req.driver.id;
+      
+      console.log('📦 Getting pickup assignments for driver:', driverId);
+
+      // Use the service layer
+      const driverSubscriptionService = require('../services/driverSubscriptionService');
+      const result = await driverSubscriptionService.getPickupAssignments(driverId);
+
+      if (result.success) {
+        res.json({
+          success: true,
+          data: result.data,
+          message: `Found ${result.data.totalAssignments} pickup assignments`
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: result.message,
+          error: result.error
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ Error getting pickup assignments:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get pickup assignments',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Confirm pickup of meals from chef
+   */
+  async confirmPickup(req, res) {
+    try {
+      const driverId = req.driver.id;
+      const { assignmentId, notes, location } = req.body;
+
+      console.log('📦 Confirming pickup for assignment:', assignmentId);
+
+      // Find the assignment
+      const assignment = await DriverAssignment.findOne({
+        _id: assignmentId,
+        driverId,
+        assignmentType: 'subscription_pickup',
+        status: 'assigned'
+      });
+
+      if (!assignment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Pickup assignment not found or already picked up'
+        });
+      }
+
+      // Update assignment status
+      assignment.status = 'picked_up';
+      assignment.pickedUpAt = new Date();
+      assignment.actualPickupTime = new Date();
+      assignment.driverNotes = notes;
+
+      if (location) {
+        assignment.pickupLocation.actualCoordinates = {
+          lat: location.lat,
+          lng: location.lng
+        };
+      }
+
+      await assignment.save();
+
+      // Notify customer that driver has picked up their meals
+      await this.notifyCustomerPickupConfirmed(assignment);
+
+      res.json({
+        success: true,
+        data: {
+          assignment,
+          message: 'Pickup confirmed successfully'
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error confirming pickup:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to confirm pickup',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Confirm delivery to customer with pickup code verification
+   */
+  async confirmDelivery(req, res) {
+    try {
+      const driverId = req.driver.id;
+      const { assignmentId, pickupCode, notes, location } = req.body;
+
+      console.log('📦 Confirming delivery for assignment:', assignmentId);
+
+      // Find the assignment
+      const assignment = await DriverAssignment.findOne({
+        _id: assignmentId,
+        driverId,
+        assignmentType: 'subscription_pickup',
+        status: 'picked_up'
+      }).populate('customerId', 'fullName phone');
+
+      if (!assignment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Assignment not found or not in pickup state'
+        });
+      }
+
+      // Verify pickup code for returning customers
+      if (assignment.confirmationCode) {
+        if (!pickupCode || pickupCode !== assignment.confirmationCode) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid pickup code. Please verify with customer.'
+          });
+        }
+      }
+
+      // Update assignment status
+      assignment.status = 'delivered';
+      assignment.deliveredAt = new Date();
+      assignment.actualDeliveryTime = new Date();
+      assignment.deliveryNotes = notes;
+
+      if (location) {
+        assignment.deliveryLocation.actualCoordinates = {
+          lat: location.lat,
+          lng: location.lng
+        };
+      }
+
+      await assignment.save();
+
+      // Calculate earnings for this delivery
+      const earnings = this.calculateDeliveryEarnings(assignment);
+
+      // Update driver's daily earnings
+      await this.updateDriverEarnings(driverId, earnings);
+
+      // Notify customer of successful delivery
+      await this.notifyCustomerDeliveryCompleted(assignment);
+
+      res.json({
+        success: true,
+        data: {
+          assignment,
+          earnings,
+          message: 'Delivery confirmed successfully'
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error confirming delivery:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to confirm delivery',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Notify customer that driver has picked up meals
+   */
+  async notifyCustomerPickupConfirmed(assignment) {
+    try {
+      const notificationService = require('../services/notificationService');
+      const Customer = require('../models/Customer');
+      
+      const customer = await Customer.findById(assignment.customerId);
+      if (!customer) return;
+
+      const notification = {
+        title: '🚚 Your meals are on the way!',
+        body: 'Driver has picked up your meals and is heading to you now.',
+        data: {
+          type: 'pickup_confirmed',
+          assignmentId: assignment._id.toString(),
+          estimatedDeliveryTime: assignment.estimatedDeliveryTime
+        }
+      };
+
+      // Send push notification
+      if (customer.deviceTokens && customer.deviceTokens.length > 0) {
+        await notificationService.sendPushNotification(
+          customer.deviceTokens,
+          notification.title,
+          notification.body,
+          notification.data
+        );
+      }
+
+      // Send SMS
+      if (customer.phone) {
+        const smsMessage = `Your meals are on the way! Expected delivery in ${Math.round((new Date(assignment.estimatedDeliveryTime) - new Date()) / (1000 * 60))} minutes.`;
+        await notificationService.sendSMS(customer.phone, smsMessage);
+      }
+
+    } catch (error) {
+      console.error('❌ Error notifying customer pickup confirmed:', error);
+    }
+  }
+
+  /**
+   * Notify customer of successful delivery
+   */
+  async notifyCustomerDeliveryCompleted(assignment) {
+    try {
+      const notificationService = require('../services/notificationService');
+      const Customer = require('../models/Customer');
+      
+      const customer = await Customer.findById(assignment.customerId);
+      if (!customer) return;
+
+      const notification = {
+        title: '✅ Delivery completed!',
+        body: 'Your meals have been delivered. Enjoy your meal!',
+        data: {
+          type: 'delivery_completed',
+          assignmentId: assignment._id.toString()
+        }
+      };
+
+      // Send push notification
+      if (customer.deviceTokens && customer.deviceTokens.length > 0) {
+        await notificationService.sendPushNotification(
+          customer.deviceTokens,
+          notification.title,
+          notification.body,
+          notification.data
+        );
+      }
+
+      // Send SMS
+      if (customer.phone) {
+        const smsMessage = `Your meals have been delivered successfully! Enjoy your meal and thank you for choosing Choma.`;
+        await notificationService.sendSMS(customer.phone, smsMessage);
+      }
+
+    } catch (error) {
+      console.error('❌ Error notifying customer delivery completed:', error);
+    }
+  }
+
+  /**
+   * Calculate delivery earnings
+   */
+  calculateDeliveryEarnings(assignment) {
+    const baseEarning = 500; // Base earning in Naira
+    const distanceBonus = 0; // Could calculate based on distance
+    const timeBonus = 0; // Could calculate based on delivery time
+    
+    return {
+      base: baseEarning,
+      distance: distanceBonus,
+      time: timeBonus,
+      total: baseEarning + distanceBonus + timeBonus
+    };
+  }
+
+  /**
+   * Update driver's daily earnings
+   */
+  async updateDriverEarnings(driverId, earnings) {
+    try {
+      const Driver = require('../models/Driver');
+      
+      const driver = await Driver.findById(driverId);
+      if (!driver) return;
+
+      // Update earnings for today
+      const today = new Date().toISOString().split('T')[0];
+      
+      if (!driver.earnings) {
+        driver.earnings = { daily: {}, total: 0 };
+      }
+      
+      if (!driver.earnings.daily[today]) {
+        driver.earnings.daily[today] = 0;
+      }
+      
+      driver.earnings.daily[today] += earnings.total;
+      driver.earnings.total += earnings.total;
+      
+      await driver.save();
+      
+    } catch (error) {
+      console.error('❌ Error updating driver earnings:', error);
+    }
+  }
+
+  /**
    * Get driver's active subscription deliveries
    * Provides comprehensive view of all recurring delivery responsibilities
    */

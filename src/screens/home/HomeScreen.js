@@ -36,11 +36,13 @@ import NotificationTestService from "../../services/notificationTestService";
 import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
 import { useAlert } from "../../contexts/AlertContext";
 import OrderTrackingCard from "../../components/orders/OrderTrackingCard";
+import CompactOrderCard from "../../components/orders/CompactOrderCard";
+import RecurringDeliveryCard from "../../components/orders/RecurringDeliveryCard";
 import SubscriptionCard from "../../components/dashboard/SubscriptionCard";
 import MealProgressionTimeline from "../../components/subscription/MealProgressionTimeline";
 import SubscriptionManagementModal from "../../components/subscription/SubscriptionManagementModal";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const HomeScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
@@ -74,6 +76,12 @@ const HomeScreen = ({ navigation }) => {
   const [showManagementModal, setShowManagementModal] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [showMealTimeline, setShowMealTimeline] = useState(false);
+
+  // Meal modal state
+  const [mealModalVisible, setMealModalVisible] = useState(false);
+  const [selectedMealData, setSelectedMealData] = useState(null);
+  const [currentMealIndex, setCurrentMealIndex] = useState(0);
+  const [availableMeals, setAvailableMeals] = useState([]);
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
@@ -328,6 +336,20 @@ const HomeScreen = ({ navigation }) => {
   const handleMealPress = (meal) => {
     // Handle meal detail view
     console.log("Meal pressed:", meal);
+  };
+
+  // Open meal modal with detailed view
+  const openMealModal = (mealData, allMeals, mealIndex = 0) => {
+    console.log("📱 HomeScreen - Opening meal modal:", {
+      mealData,
+      totalMeals: allMeals?.length,
+      selectedIndex: mealIndex,
+    });
+
+    setSelectedMealData(mealData);
+    setAvailableMeals(allMeals || [mealData]);
+    setCurrentMealIndex(mealIndex);
+    setMealModalVisible(true);
   };
 
   const handleShowMealTimeline = (subscription) => {
@@ -616,6 +638,23 @@ const HomeScreen = ({ navigation }) => {
         fromAPI: apiSubscriptions.length,
         final: enrichedSubscriptions.length,
       });
+
+      // Debug subscription data structure
+      if (enrichedSubscriptions.length > 0) {
+        console.log("\n=== SUBSCRIPTION DATA DEBUG ===");
+        enrichedSubscriptions.forEach((sub, index) => {
+          console.log(`Subscription ${index + 1}:`, {
+            id: sub._id?.slice(-8),
+            startDate: sub.startDate,
+            endDate: sub.endDate,
+            nextDelivery: sub.nextDelivery,
+            status: sub.status,
+            hasMealPlanId: !!sub.mealPlanId,
+            hasWeeklyMeals: !!sub.mealPlanId?.weeklyMeals,
+          });
+        });
+        console.log("=== END SUBSCRIPTION DATA DEBUG ===\n");
+      }
     } catch (error) {
       console.error("❌ Error loading subscriptions:", error);
       setActiveSubscriptions([]);
@@ -699,25 +738,108 @@ const HomeScreen = ({ navigation }) => {
 
         // Convert active subscriptions to virtual orders for tracking
         const subscriptionOrders = activeSubscriptionsList.map(
-          (subscription) => ({
-            _id: `sub_${subscription._id}`,
-            orderNumber:
-              subscription.subscriptionId ||
-              `SUB${subscription._id?.slice(-8)}`,
-            status: "preparing", // Default status for active subscriptions
-            mealPlan: subscription.mealPlanId || {
-              name: "Subscription Meal Plan",
-            },
-            totalAmount: subscription.totalPrice || subscription.price,
-            createdAt: subscription.startDate || subscription.createdAt,
-            estimatedDelivery: subscription.nextDelivery,
-            deliveryAddress:
-              subscription.deliveryAddress || "Your delivery address",
-            paymentMethod: subscription.paymentMethod || "Subscription payment",
-            instructions: "Subscription delivery",
-            quantity: 1,
-            isSubscriptionOrder: true,
-          })
+          (subscription) => {
+            // Calculate delivery day for the subscription
+            let deliveryDay = 1;
+            if (subscription.startDate && subscription.nextDelivery) {
+              const startDate = new Date(subscription.startDate);
+              const nextDelivery = new Date(subscription.nextDelivery);
+
+              // Normalize dates to midnight to avoid time-of-day issues
+              const startDateNormalized = new Date(
+                startDate.getFullYear(),
+                startDate.getMonth(),
+                startDate.getDate()
+              );
+              const nextDeliveryNormalized = new Date(
+                nextDelivery.getFullYear(),
+                nextDelivery.getMonth(),
+                nextDelivery.getDate()
+              );
+
+              const daysDiff = Math.floor(
+                (nextDeliveryNormalized - startDateNormalized) /
+                  (1000 * 60 * 60 * 24)
+              );
+              deliveryDay = Math.max(1, daysDiff + 1);
+              console.log(
+                "📅 HomeScreen Virtual Order Delivery Day Calculation:",
+                {
+                  subscriptionId: subscription._id?.slice(-8),
+                  startDate: subscription.startDate,
+                  nextDelivery: subscription.nextDelivery,
+                  daysDiff,
+                  calculatedDeliveryDay: deliveryDay,
+                }
+              );
+            } else if (subscription.startDate) {
+              const startDate = new Date(subscription.startDate);
+              const currentDate = new Date();
+
+              // Normalize dates to midnight to avoid time-of-day issues
+              const startDateNormalized = new Date(
+                startDate.getFullYear(),
+                startDate.getMonth(),
+                startDate.getDate()
+              );
+              const currentDateNormalized = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                currentDate.getDate()
+              );
+
+              const daysDiff = Math.floor(
+                (currentDateNormalized - startDateNormalized) /
+                  (1000 * 60 * 60 * 24)
+              );
+              deliveryDay = Math.max(1, daysDiff + 1);
+              console.log(
+                "📅 HomeScreen Virtual Order Delivery Day Calculation (current date):",
+                {
+                  subscriptionId: subscription._id?.slice(-8),
+                  startDate: subscription.startDate,
+                  currentDate: currentDate.toISOString(),
+                  startDateNormalized: startDateNormalized.toISOString(),
+                  currentDateNormalized: currentDateNormalized.toISOString(),
+                  daysDiff,
+                  calculatedDeliveryDay: deliveryDay,
+                }
+              );
+            } else {
+              console.log(
+                "📅 HomeScreen Virtual Order - No date info, defaulting to Day 1:",
+                {
+                  subscriptionId: subscription._id?.slice(-8),
+                  hasStartDate: !!subscription.startDate,
+                  hasNextDelivery: !!subscription.nextDelivery,
+                }
+              );
+            }
+
+            return {
+              _id: `sub_${subscription._id}`,
+              orderNumber:
+                subscription.subscriptionId ||
+                `SUB${subscription._id?.slice(-8)}`,
+              status: "preparing", // Default status for active subscriptions
+              mealPlan: subscription.mealPlanId || {
+                name: "Subscription Meal Plan",
+              },
+              totalAmount: subscription.totalPrice || subscription.price,
+              createdAt: subscription.startDate || subscription.createdAt,
+              estimatedDelivery: subscription.nextDelivery,
+              deliveryAddress:
+                subscription.deliveryAddress || "Your delivery address",
+              paymentMethod:
+                subscription.paymentMethod || "Subscription payment",
+              instructions: "Subscription delivery",
+              quantity: 1,
+              isSubscriptionOrder: true,
+              subscription: subscription, // Include the full subscription data
+              deliveryDay: deliveryDay, // Add the calculated delivery day
+              dayNumber: deliveryDay, // Also add as dayNumber for fallback
+            };
+          }
         );
 
         allActiveOrders = [...allActiveOrders, ...subscriptionOrders];
@@ -771,6 +893,170 @@ const HomeScreen = ({ navigation }) => {
     return () => clearInterval(bannerInterval);
   }, [banners?.length]);
 
+  // Helper function to calculate delivery day
+  const getDeliveryDay = (order) => {
+    // Try multiple possible data sources for delivery day
+    if (order?.deliveryDay) {
+      return parseInt(order.deliveryDay);
+    }
+
+    if (order?.dayNumber) {
+      return parseInt(order.dayNumber);
+    }
+
+    // If we have subscription and delivery date info, calculate from that
+    if (order?.subscription?.startDate && order?.deliveryDate) {
+      const startDate = new Date(order.subscription.startDate);
+      const deliveryDate = new Date(order.deliveryDate);
+
+      // Normalize dates to midnight to avoid time-of-day issues
+      const startDateNormalized = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      );
+      const deliveryDateNormalized = new Date(
+        deliveryDate.getFullYear(),
+        deliveryDate.getMonth(),
+        deliveryDate.getDate()
+      );
+
+      const daysDiff = Math.floor(
+        (deliveryDateNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
+      );
+      return Math.max(1, daysDiff + 1);
+    }
+
+    // Fallback to current date calculation if subscription start date exists
+    if (order?.subscription?.startDate) {
+      const startDate = new Date(order.subscription.startDate);
+      const currentDate = new Date();
+
+      // Normalize dates to midnight to avoid time-of-day issues
+      const startDateNormalized = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      );
+      const currentDateNormalized = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate()
+      );
+
+      const daysDiff = Math.floor(
+        (currentDateNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
+      );
+      return Math.max(1, daysDiff + 1);
+    }
+
+    // Default to day 1 if no information is available
+    return 1;
+  };
+
+  // Helper function to determine if order is a subscription order (any day)
+  const isSubscriptionOrder = (order) => {
+    return !!(
+      order?.subscription ||
+      order?.recurringOrder ||
+      order?.isSubscriptionOrder ||
+      order?.orderItems?.type === "subscription_pickup"
+    );
+  };
+
+  // Helper function to determine if order is specifically a recurring delivery (Day 2+)
+  const isRecurringDelivery = (order) => {
+    const isSubscription = isSubscriptionOrder(order);
+    const deliveryDay = getDeliveryDay(order);
+
+    // Only Day 2+ are considered "recurring deliveries"
+    // Day 1 is the first/activation delivery and should use CompactOrderCard
+    return isSubscription && deliveryDay > 1;
+  };
+
+  // Render active orders with appropriate card
+  const renderActiveOrder = (order) => {
+    const isSubscription = isSubscriptionOrder(order);
+    const deliveryDay = getDeliveryDay(order);
+    const isRecurring = isRecurringDelivery(order);
+
+    // Enhanced debug logging to understand the actual order data structure
+    console.log("📋 HomeScreen Order FULL DEBUG:", {
+      orderId: order._id?.slice(-8) || order.id?.slice(-8),
+      // Current calculated values
+      isSubscription,
+      deliveryDay,
+      isRecurring,
+      cardType: isRecurring ? "RecurringDeliveryCard" : "CompactOrderCard",
+      // Raw order data inspection
+      orderKeys: Object.keys(order || {}),
+      deliveryDay_raw: order?.deliveryDay,
+      dayNumber_raw: order?.dayNumber,
+      subscription_raw: order?.subscription,
+      recurringOrder_raw: order?.recurringOrder,
+      isSubscriptionOrder_raw: order?.isSubscriptionOrder,
+      orderItems_type: order?.orderItems?.type,
+      orderItems_keys: order?.orderItems ? Object.keys(order.orderItems) : null,
+      // Status information
+      orderStatus: order?.orderStatus,
+      status: order?.status,
+      // Dates
+      createdAt: order?.createdAt,
+      deliveryDate: order?.deliveryDate,
+      subscription_startDate: order?.subscription?.startDate,
+    });
+
+    // Use dedicated RecurringDeliveryCard ONLY for Day 2+ recurring deliveries
+    if (isRecurring) {
+      return (
+        <RecurringDeliveryCard
+          key={order._id || order.id}
+          order={order}
+          onContactSupport={() => navigation.navigate("Support")}
+          onTrackDriver={(driver) => {
+            // Handle driver tracking
+            navigation.navigate("TrackingScreen", {
+              orderId: order._id,
+            });
+          }}
+          style={styles(colors).orderCard}
+        />
+      );
+    }
+
+    // Use compact card for one-time orders and Day 1 first deliveries
+    return (
+      <CompactOrderCard
+        key={order._id || order.id}
+        order={order}
+        onContactSupport={() => navigation.navigate("Support")}
+        onReorder={(order) => {
+          // Handle reorder logic
+          navigation.navigate("MealPlanDetail", {
+            bundle: order.mealPlan,
+          });
+        }}
+        onCancelOrder={(orderId) => {
+          // Handle order cancellation
+          console.log("Cancel order requested:", orderId);
+        }}
+        onRateOrder={(order) => {
+          // Handle order rating
+          navigation.navigate("OrderDetail", {
+            orderId: order._id,
+          });
+        }}
+        onTrackDriver={(driver) => {
+          // Handle driver tracking
+          navigation.navigate("TrackingScreen", {
+            orderId: order._id,
+          });
+        }}
+        style={styles(colors).orderCard}
+      />
+    );
+  };
+
   // Subscription-focused UI components
   const renderActiveOrdersSection = () => {
     if (!activeOrders.length) return null;
@@ -778,36 +1064,7 @@ const HomeScreen = ({ navigation }) => {
     return (
       <View style={styles(colors).activeOrdersSection}>
         <Text style={styles(colors).sectionTitle}>Active Orders</Text>
-        {activeOrders.map((order) => (
-          <OrderTrackingCard
-            key={order._id}
-            order={order}
-            onContactSupport={() => navigation.navigate("Support")}
-            onReorder={(order) => {
-              // Handle reorder logic
-              navigation.navigate("MealPlanDetail", {
-                bundle: order.mealPlan,
-              });
-            }}
-            onCancelOrder={(orderId) => {
-              // Handle order cancellation
-              console.log("Cancel order requested:", orderId);
-            }}
-            onRateOrder={(order) => {
-              // Handle order rating
-              navigation.navigate("OrderDetail", {
-                orderId: order._id,
-              });
-            }}
-            onTrackDriver={(driver) => {
-              // Handle driver tracking
-              navigation.navigate("TrackingScreen", {
-                orderId: order._id,
-              });
-            }}
-            style={styles(colors).orderCard}
-          />
-        ))}
+        {activeOrders.map((order) => renderActiveOrder(order))}
       </View>
     );
   };
@@ -1032,14 +1289,61 @@ const HomeScreen = ({ navigation }) => {
         console.log("⚠️ No weeklyMeals data found in mealPlanId");
         return null;
       }
+
+      // Check if startDate is valid
+      if (!primarySubscription.startDate) {
+        console.log(
+          "⚠️ No startDate found in subscription:",
+          primarySubscription
+        );
+        return null;
+      }
+
       // Calculate subscription day based on start date
       const today = new Date();
       const startDate = new Date(primarySubscription.startDate);
 
+      // Check if startDate is a valid date
+      if (isNaN(startDate.getTime())) {
+        console.log(
+          "⚠️ Invalid startDate in subscription:",
+          primarySubscription.startDate
+        );
+        return null;
+      }
+
+      // Normalize dates to avoid timezone issues - use UTC midnight
+      const todayNormalized = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+      const startDateNormalized = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      );
+
       // Calculate how many days into the subscription we are (starting from day 1)
-      const timeDiff = today.getTime() - startDate.getTime();
+      const timeDiff =
+        todayNormalized.getTime() - startDateNormalized.getTime();
       const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-      const subscriptionDay = daysDiff + 1; // Day 1, 2, 3, etc.
+      const subscriptionDay = Math.max(1, daysDiff + 1); // Day 1, 2, 3, etc. - ensure minimum day 1
+
+      // Debug the day calculation
+      console.log("\n=== DAY CALCULATION DEBUG (HomeScreen) ===");
+      console.log("Today's date:", today.toISOString());
+      console.log("Today normalized:", todayNormalized.toISOString());
+      console.log("Start date:", startDate.toISOString());
+      console.log("Start date normalized:", startDateNormalized.toISOString());
+      console.log(
+        "Subscription startDate from data:",
+        primarySubscription.startDate
+      );
+      console.log("Time difference in ms:", timeDiff);
+      console.log("Days difference:", daysDiff);
+      console.log("Calculated subscription day:", subscriptionDay);
+      console.log("=== END DAY CALCULATION DEBUG ===\n");
 
       // Map subscription day to week and day
       // Day 1-7 = Week 1, Day 8-14 = Week 2, etc.
@@ -1060,6 +1364,15 @@ const HomeScreen = ({ navigation }) => {
         "Sunday",
       ];
       const dayName = dayNames[dayInWeek - 1]; // dayInWeek is 1-7, array is 0-6
+
+      // Debug the week/day mapping
+      console.log("\n=== WEEK/DAY MAPPING DEBUG (HomeScreen) ===");
+      console.log("Subscription day:", subscriptionDay);
+      console.log("Week number:", weekNumber);
+      console.log("Day in week (1-7):", dayInWeek);
+      console.log("Current week number (cycling 1-4):", currentWeekNumber);
+      console.log("Day name:", dayName);
+      console.log("=== END WEEK/DAY MAPPING DEBUG ===\n");
 
       // Get today's meals from the subscription's meal plan
       const weeklyMeals = primarySubscription.mealPlanId?.weeklyMeals || {};
@@ -1285,42 +1598,107 @@ const HomeScreen = ({ navigation }) => {
 
           {/* Dynamic layout: ScrollView for multiple meals, full width for single meal */}
           {availableMeals.length === 1 ? (
-            // Single meal - full width card
+            // Single meal - enhanced full width card
             <View style={styles(colors).singleMealContainer}>
-              {availableMeals.map(([mealType, meal]) => (
-                <TouchableOpacity
-                  key={mealType}
-                  style={styles(colors).fullWidthMealCard}
-                >
-                  <View style={styles(colors).todayMealImageContainer}>
-                    <Image
-                      source={meal.image}
-                      style={styles(colors).todayMealImage}
-                    />
-                    <LinearGradient
-                      colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.7)"]}
-                      style={styles(colors).todayMealOverlay}
-                    >
-                      <View style={styles(colors).mealTimeContainer}>
-                        <Text style={styles(colors).mealTime}>{meal.time}</Text>
-                      </View>
-                      <Text style={styles(colors).mealType}>
-                        {(mealType || "").charAt(0).toUpperCase() +
-                          (mealType || "").slice(1)}
-                      </Text>
-                      <Text
-                        style={styles(colors).todayMealName}
-                        numberOfLines={2}
+              {availableMeals.map(([mealType, meal], index) => {
+                // Create meal data object for modal
+                const mealData = {
+                  title: meal.name,
+                  description: `Delicious ${mealType} meal prepared fresh for you`,
+                  image: meal.image,
+                  icon:
+                    mealType === "breakfast"
+                      ? "🍳"
+                      : mealType === "lunch"
+                      ? "🥗"
+                      : "🍽️",
+                  label: mealType.charAt(0).toUpperCase() + mealType.slice(1),
+                  nutrition: {
+                    calories: meal.calories || "450",
+                    protein: "25g",
+                    carbs: "45g",
+                    fat: "15g",
+                    fiber: "8g",
+                  },
+                };
+
+                return (
+                  <TouchableOpacity
+                    key={mealType}
+                    style={styles(colors).fullWidthMealCard}
+                    activeOpacity={0.8}
+                    onPress={() => openMealModal(mealData, [mealData], 0)}
+                  >
+                    <View style={styles(colors).singleMealImageContainer}>
+                      <Image
+                        source={meal.image}
+                        style={styles(colors).singleMealImage}
+                        resizeMode="cover"
+                      />
+
+                      {/* Enhanced gradient overlay for single meal */}
+                      <LinearGradient
+                        colors={[
+                          "rgba(0, 0, 0, 0)",
+                          "rgba(0, 0, 0, 0.2)",
+                          "rgba(0, 0, 0, 0.8)",
+                        ]}
+                        locations={[0, 0.5, 1]}
+                        style={styles(colors).singleMealOverlay}
                       >
-                        {meal.name}
-                      </Text>
-                      <Text style={styles(colors).mealCalories}>
-                        {meal.calories} cal
-                      </Text>
-                    </LinearGradient>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                        {/* Time badge - positioned at top */}
+                        <View style={styles(colors).singleMealTimeContainer}>
+                          <Ionicons
+                            name="time-outline"
+                            size={14}
+                            color="#1b1b1b"
+                            style={{ marginRight: 4 }}
+                          />
+                          <Text style={styles(colors).singleMealTime}>
+                            {meal.time}
+                          </Text>
+                        </View>
+
+                        {/* Meal content - positioned at bottom */}
+                        <View style={styles(colors).singleMealContent}>
+                          <View style={styles(colors).singleMealHeader}>
+                            <Text style={styles(colors).singleMealType}>
+                              {(mealType || "").charAt(0).toUpperCase() +
+                                (mealType || "").slice(1)}
+                            </Text>
+                            {meal.calories && (
+                              <View style={styles(colors).caloriesBadge}>
+                                <Text style={styles(colors).caloriesText}>
+                                  {meal.calories} cal
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+
+                          <Text
+                            style={styles(colors).singleMealName}
+                            numberOfLines={2}
+                          >
+                            {meal.name}
+                          </Text>
+
+                          {/* Action indicator */}
+                          <View style={styles(colors).mealActionIndicator}>
+                            <Text style={styles(colors).mealActionText}>
+                              Tap for details
+                            </Text>
+                            <Ionicons
+                              name="chevron-forward"
+                              size={16}
+                              color={colors.primary}
+                            />
+                          </View>
+                        </View>
+                      </LinearGradient>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           ) : (
             // Multiple meals - horizontal scroll
@@ -2260,6 +2638,142 @@ const HomeScreen = ({ navigation }) => {
         onDismiss={() => setShowTutorial(false)}
       />
 
+      {/* Enhanced Meal Detail Modal */}
+      <Modal
+        visible={mealModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setMealModalVisible(false)}
+      >
+        <View style={styles(colors).mealModalOverlay}>
+          <View style={styles(colors).mealModalContainer}>
+            {/* Header */}
+            <View style={styles(colors).mealModalHeaderParent}>
+              <View style={styles(colors).mealModalHeader}>
+                <TouchableOpacity
+                  style={styles(colors).mealModalCloseButton}
+                  onPress={() => setMealModalVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color={colors.white} />
+                </TouchableOpacity>
+
+                {/* Meal Type Indicator */}
+                <View style={styles(colors).mealTypeIndicator}>
+                  <Text style={styles(colors).mealTypeIcon}>
+                    {selectedMealData?.icon}
+                  </Text>
+                  <Text style={styles(colors).mealTypeLabel}>
+                    {selectedMealData?.label}
+                  </Text>
+                </View>
+
+                {/* Single meal indicator */}
+                <View style={styles(colors).swipeIndicators}>
+                  <View
+                    style={[
+                      styles(colors).swipeIndicator,
+                      styles(colors).swipeIndicatorActive,
+                    ]}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Meal Content */}
+            <View style={styles(colors).mealSlide}>
+              {/* Full Screen Meal Image */}
+              <View style={styles(colors).mealImageContainer}>
+                <Image
+                  source={
+                    selectedMealData?.image ||
+                    require("../../assets/images/meal-plans/fitfuel.jpg")
+                  }
+                  style={styles(colors).mealFullImage}
+                  resizeMode="cover"
+                />
+
+                {/* Gradient Overlay */}
+                <LinearGradient
+                  colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.8)"]}
+                  style={styles(colors).mealImageGradient}
+                />
+              </View>
+
+              {/* Meal Information Overlay */}
+              <View style={styles(colors).mealInfoOverlay}>
+                <ScrollView
+                  style={styles(colors).mealInfoScroll}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {/* Meal Title */}
+                  <Text style={styles(colors).mealModalTitle}>
+                    {selectedMealData?.title}
+                  </Text>
+
+                  {/* Meal Description */}
+                  <Text style={styles(colors).mealModalDescription}>
+                    {selectedMealData?.description}
+                  </Text>
+
+                  {/* Nutrition Information */}
+                  <View style={styles(colors).nutritionContainer}>
+                    <Text style={styles(colors).nutritionTitle}>
+                      Nutrition Facts
+                    </Text>
+
+                    <View style={styles(colors).nutritionGrid}>
+                      <View style={styles(colors).nutritionItem}>
+                        <Text style={styles(colors).nutritionValue}>
+                          {selectedMealData?.nutrition?.calories || "450"}
+                        </Text>
+                        <Text style={styles(colors).nutritionLabel}>
+                          Calories
+                        </Text>
+                      </View>
+
+                      <View style={styles(colors).nutritionItem}>
+                        <Text style={styles(colors).nutritionValue}>
+                          {selectedMealData?.nutrition?.protein || "25g"}
+                        </Text>
+                        <Text style={styles(colors).nutritionLabel}>
+                          Protein
+                        </Text>
+                      </View>
+
+                      <View style={styles(colors).nutritionItem}>
+                        <Text style={styles(colors).nutritionValue}>
+                          {selectedMealData?.nutrition?.carbs || "45g"}
+                        </Text>
+                        <Text style={styles(colors).nutritionLabel}>Carbs</Text>
+                      </View>
+
+                      <View style={styles(colors).nutritionItem}>
+                        <Text style={styles(colors).nutritionValue}>
+                          {selectedMealData?.nutrition?.fat || "15g"}
+                        </Text>
+                        <Text style={styles(colors).nutritionLabel}>Fat</Text>
+                      </View>
+                    </View>
+
+                    {/* Additional Nutrition Details */}
+                    <View style={styles(colors).additionalNutrition}>
+                      <View style={styles(colors).nutritionRow}>
+                        <Text style={styles(colors).nutritionRowLabel}>
+                          Fiber
+                        </Text>
+                        <Text style={styles(colors).nutritionRowValue}>
+                          {selectedMealData?.nutrition?.fiber || "8g"}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </ScrollView>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Address Change Modal */}
       <Modal
         visible={showAddressModal}
@@ -2849,7 +3363,7 @@ const styles = (colors) =>
       marginTop: 5,
     },
     todayMealCard: {
-      width: 200,
+      width: "100%",
       height: 280,
       marginRight: 15,
       borderRadius: 20,
@@ -3317,19 +3831,102 @@ const styles = (colors) =>
     },
     // Single Meal Layout Styles
     singleMealContainer: {
-      paddingHorizontal: 0,
+      paddingHorizontal: 20,
+      marginBottom: 10,
     },
     fullWidthMealCard: {
-      width: width - 40, // Full width minus section padding
-      height: 200,
-      borderRadius: 16,
+      width: "100%",
+      height: 280, // Increased height for better proportions
+      borderRadius: 20,
       overflow: "hidden",
-      marginHorizontal: 20,
-      elevation: 4,
-      shadowColor: colors.shadow,
+      elevation: 6,
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
-      shadowRadius: 6,
+      shadowRadius: 8,
+      backgroundColor: colors.cardBackground,
+    },
+    singleMealImageContainer: {
+      width: "100%",
+      height: "100%",
+      position: "relative",
+    },
+    singleMealImage: {
+      width: "100%",
+      height: "100%",
+    },
+    singleMealOverlay: {
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      padding: 20,
+      justifyContent: "space-between",
+    },
+    singleMealTimeContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: "rgba(255, 255, 255, 0.95)",
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    singleMealTime: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#1b1b1b",
+    },
+    singleMealContent: {
+      alignSelf: "stretch",
+    },
+    singleMealHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    singleMealType: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.white,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    caloriesBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    caloriesText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.black,
+    },
+    singleMealName: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: colors.white,
+      lineHeight: 28,
+      marginBottom: 12,
+    },
+    mealActionIndicator: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+    },
+    mealActionText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: "500",
+      marginRight: 4,
     },
     orderCard: {
       marginBottom: 12,
@@ -3471,6 +4068,180 @@ const styles = (colors) =>
       flex: 1,
       textAlign: "center",
       fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+    },
+
+    // Enhanced Meal Modal Styles
+    mealModalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.95)",
+    },
+    mealModalContainer: {
+      flex: 1,
+      backgroundColor: "transparent",
+    },
+    mealModalHeaderParent: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      width: "95%",
+      position: "absolute",
+      bottom: "50%",
+      left: 0,
+      right: 0,
+      zIndex: 10,
+    },
+    mealModalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: "#1b1b1b",
+      borderRadius: 50,
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+    },
+    mealModalCloseButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "#1b1b1b",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    mealTypeIndicator: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#1b1b1b",
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+      borderRadius: 20,
+    },
+    mealTypeIcon: {
+      fontSize: 20,
+      marginRight: 8,
+    },
+    mealTypeLabel: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.white,
+    },
+    swipeIndicators: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    swipeIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: "rgba(255, 255, 255, 0.3)",
+    },
+    swipeIndicatorActive: {
+      backgroundColor: colors.primary,
+      width: 12,
+    },
+    mealSlide: {
+      width: width,
+      height: height,
+      position: "relative",
+    },
+    mealImageContainer: {
+      width: "100%",
+      height: height * 0.65,
+      position: "relative",
+    },
+    mealFullImage: {
+      width: "100%",
+      height: "100%",
+    },
+    mealImageGradient: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 200,
+    },
+    mealInfoOverlay: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 40,
+      height: height * 0.53,
+    },
+    mealInfoScroll: {
+      flex: 1,
+    },
+    mealModalTitle: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 12,
+      textAlign: "center",
+    },
+    mealModalDescription: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      lineHeight: 24,
+      marginBottom: 20,
+      textAlign: "center",
+    },
+    nutritionContainer: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: THEME.borderRadius.large,
+      padding: 20,
+      marginBottom: 20,
+    },
+    nutritionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 15,
+      textAlign: "center",
+    },
+    nutritionGrid: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 15,
+    },
+    nutritionItem: {
+      alignItems: "center",
+      flex: 1,
+    },
+    nutritionValue: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.primary,
+      marginBottom: 4,
+    },
+    nutritionLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    additionalNutrition: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 15,
+    },
+    nutritionRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    nutritionRowLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    nutritionRowValue: {
+      fontSize: 14,
       fontWeight: "600",
       color: colors.text,
     },

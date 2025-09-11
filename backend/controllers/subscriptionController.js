@@ -519,7 +519,7 @@ exports.getSubscriptionNextDelivery = async (req, res) => {
     // Get next delivery from subscription record
     const nextDelivery = subscription.recurringDelivery?.nextScheduledDelivery;
 
-    if (!nextDelivery) {
+    if (!nextDelivery || !nextDelivery.date) {
       return res.json({
         success: true,
         data: null,
@@ -544,8 +544,8 @@ exports.getSubscriptionNextDelivery = async (req, res) => {
         userId: req.user.id,
         subscriptionId: id,
         deliveryDate: {
-          $gte: new Date(nextDelivery.date.setHours(0, 0, 0, 0)),
-          $lt: new Date(nextDelivery.date.setHours(23, 59, 59, 999))
+          $gte: new Date(new Date(nextDelivery.date).setHours(0, 0, 0, 0)),
+          $lt: new Date(new Date(nextDelivery.date).setHours(23, 59, 59, 999))
         }
       }).sort({ createdAt: -1 });
 

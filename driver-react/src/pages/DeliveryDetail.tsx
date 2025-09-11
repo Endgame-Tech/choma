@@ -166,6 +166,14 @@ const DeliveryDetail: React.FC = () => {
         <div className="text-right">
           <p className="text-sm text-gray-600">Assignment ID</p>
           <p className="font-mono text-sm text-gray-900">{assignment._id.slice(-8)}</p>
+          {assignment.packageLabelId && (
+            <>
+              <p className="text-sm text-blue-600 mt-2">Package Label</p>
+              <p className="font-mono text-sm font-bold text-blue-800 bg-blue-50 px-2 py-1 rounded border">
+                📦 {assignment.packageLabelId}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -329,6 +337,26 @@ const DeliveryDetail: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {assignment.customerInfo && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm font-medium text-blue-900">Customer Contact</p>
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-blue-700 font-medium">{assignment.customerInfo.fullName}</p>
+              {assignment.customerInfo.phone && (
+                <div className="flex items-center space-x-2">
+                  <PhoneIcon className="h-4 w-4 text-blue-600" />
+                  <a
+                    href={`tel:${assignment.customerInfo.phone}`}
+                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {assignment.customerInfo.phone}
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {assignment.deliveryLocation.instructions && (
           <div className="mt-4 p-3 bg-green-50 rounded-lg">

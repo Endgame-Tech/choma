@@ -25,8 +25,8 @@ class WebSocketService {
 
   // Get WebSocket URL
   private getSocketUrl(): string {
-  const WEBSOCKET_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5001';
-  return WEBSOCKET_URL;
+    const WEBSOCKET_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5001';
+    return WEBSOCKET_URL;
   }
 
   // Connect to WebSocket server
@@ -40,7 +40,8 @@ class WebSocketService {
       const token = localStorage.getItem('driverToken');
       
       if (!token) {
-        reject(new Error('No authentication token found'));
+        console.warn('[WS] No authentication token found - WebSocket disabled');
+        resolve(); // Don't reject, just resolve without connection
         return;
       }
 
@@ -62,15 +63,16 @@ class WebSocketService {
         const connectionTimeout = setTimeout(() => {
           if (!settled) {
             settled = true;
-            console.error('[WS] WebSocket connection timeout');
+            console.warn('[WS] WebSocket connection timeout - continuing without real-time features');
             try {
               this.socket?.disconnect();
             } catch (e) {
               // ignore
             }
-            reject(new Error('WebSocket connection timeout'));
+            // Resolve instead of reject to allow app to continue working without WebSocket
+            resolve();
           }
-        }, 10000); // 10s timeout
+        }, 8000); // 8s timeout
 
         this.socket.on('connect', () => {
           if (settled) return;
@@ -85,11 +87,13 @@ class WebSocketService {
         });
 
         this.socket.on('connect_error', (error) => {
-          console.error('[WS] Connection error:', error);
+          console.warn('[WS] Connection error:', error.message);
           if (!settled) {
             settled = true;
             clearTimeout(connectionTimeout);
-            reject(error);
+            // Resolve instead of reject to allow app to continue working
+            console.info('[WS] Continuing without real-time features');
+            resolve();
           }
         });
 

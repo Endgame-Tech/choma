@@ -257,6 +257,24 @@ class PaymentController {
 
           console.log('Order created from subscription:', order._id);
 
+          // Invalidate user orders cache
+          const { cacheService } = require('../config/redis');
+          if (cacheService && typeof cacheService.del === 'function') {
+            // Clear all variations of user orders cache
+            const cacheKeys = [
+              `user-orders:${customerId}:1:20:`,
+              `user-orders:${customerId}:1:20:Confirmed`,
+              `user-orders:${customerId}:1:20:Pending`,
+              `user:${customerId}:/api/orders:{}`,
+              `user:${customerId}:/api/orders/assigned:{}`
+            ];
+            
+            for (const key of cacheKeys) {
+              await cacheService.del(key);
+            }
+            console.log('🗑️ Cleared order cache for user:', customerId);
+          }
+
           // Send order confirmation notification
           try {
             await NotificationService.notifyOrderConfirmed(customerId, {

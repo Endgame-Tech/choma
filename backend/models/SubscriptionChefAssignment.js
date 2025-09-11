@@ -179,6 +179,17 @@ const SubscriptionChefAssignmentSchema = new mongoose.Schema({
   isPrimary: { type: Boolean, default: true }, // Primary chef for this subscription
   isBackup: { type: Boolean, default: false },  // Backup chef available
   
+  // Driver assignment coordination (for package labeling)
+  driverAssignmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DriverAssignment',
+    description: 'Links to the current driver pickup/delivery assignment'
+  },
+  packageLabelId: {
+    type: String,
+    description: 'Short ID (last 8 chars of driver assignment) for package labeling'
+  },
+  
   // Admin controls
   adminControls: {
     canReassign: { type: Boolean, default: true },
