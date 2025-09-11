@@ -5,11 +5,20 @@ const DailyMeal = require('../models/DailyMeal');
 // Get all meal plans (for mobile - only published)
 exports.getAllMealPlans = async (req, res) => {
   try {
+    // Debug: Log all meal plans with their publication status
+    const allPlans = await MealPlan.find({ isActive: true });
+    console.log('📊 All active meal plans for getAllMealPlans:');
+    allPlans.forEach(plan => {
+      console.log(`  - ${plan.planName}: isPublished=${plan.isPublished}, createdDate=${plan.createdDate}`);
+    });
+
     const mealPlans = await MealPlan.find({ 
       isActive: true,
       isPublished: true  // Only show published plans
     })
       .sort({ sortOrder: 1, createdDate: -1 });
+
+    console.log(`📱 getAllMealPlans returning ${mealPlans.length} published meal plans out of ${allPlans.length} active plans`);
     
     // For each meal plan, get assignments and format for frontend compatibility
     const formattedMealPlans = await Promise.all(
@@ -76,10 +85,19 @@ exports.getAllMealPlans = async (req, res) => {
 // Get popular meal plans (for mobile - only published)
 exports.getPopularMealPlans = async (req, res) => {
   try {
+    // Debug: Log all meal plans with their publication status
+    const allPlans = await MealPlan.find({ isActive: true });
+    console.log('📊 All active meal plans:');
+    allPlans.forEach(plan => {
+      console.log(`  - ${plan.planName}: isPublished=${plan.isPublished}, createdDate=${plan.createdDate}`);
+    });
+
     const mealPlans = await MealPlan.find({ 
       isActive: true,
       isPublished: true  // Only show published plans
     });
+
+    console.log(`📱 Returning ${mealPlans.length} published meal plans out of ${allPlans.length} active plans`);
 
     // Calculate popularity score
     const popularMealPlans = mealPlans.map(plan => {

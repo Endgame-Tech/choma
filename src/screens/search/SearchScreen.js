@@ -148,23 +148,17 @@ const SearchScreen = ({ navigation }) => {
         setSearchHistory(parsedHistory.slice(0, 5)); // Keep only last 5 searches
       }
 
-      // Load popular searches from backend (or fallback to default)
-      try {
-        const response = await apiService.getPopularSearches?.();
-        if (response?.success && Array.isArray(response.data)) {
-          setPopularSearches(response.data);
-        } else {
-          // Fallback popular searches
-          setPopularSearches([
-            "Jollof Rice",
-            "Amala & Ewedu",
-            "Pepper Soup",
-            "Suya",
-            "Pounded Yam",
-          ]);
-        }
-      } catch (error) {
-        console.log("Popular searches not available, using fallback");
+      // Set popular searches to names of popular meal plans
+      if (mealPlans && mealPlans.length > 0) {
+        // Sort by popularity (totalSubscriptions or similar metric)
+        const sortedPlans = [...mealPlans].sort(
+          (a, b) => (b.totalSubscriptions || 0) - (a.totalSubscriptions || 0)
+        );
+        setPopularSearches(
+          sortedPlans.slice(0, 5).map((plan) => plan.planName || plan.name)
+        );
+      } else {
+        // Fallback popular searches
         setPopularSearches([
           "Jollof Rice",
           "Amala & Ewedu",

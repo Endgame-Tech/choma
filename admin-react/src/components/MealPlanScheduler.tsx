@@ -8,13 +8,12 @@ interface MealPlanSchedulerProps {
   isOpen: boolean
   onClose: () => void
   mealPlan: MealPlan
-  onUpdate: () => void
 }
 
 const ALL_MEAL_TIMES = ['breakfast', 'lunch', 'dinner'] as const
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, mealPlan, onUpdate }) => {
+const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, mealPlan }) => {
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedWeek, setSelectedWeek] = useState(1)
@@ -36,13 +35,14 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
     imageUrl: ''
   })
   const [savingAssignment, setSavingAssignment] = useState(false)
+  const [calculatingPrice, setCalculatingPrice] = useState(false)
   // Track the previous meal plan ID to detect updates
   const [prevMealPlanId, setPrevMealPlanId] = useState(mealPlan._id)
   const [weekBeforeUpdate, setWeekBeforeUpdate] = useState<number | null>(null)
   // State to store meal plan with assignments
   const [mealPlanWithAssignments, setMealPlanWithAssignments] = useState<MealPlan>(mealPlan)
 
-  const fetchMealPlanAssignments = async () => {
+  const fetchMealPlanAssignments = async (skipPriceCalculation = false) => {
     try {
       const response = await requestDeduplicationService.deduplicateApiCall(
         `/meal-plans/${mealPlan._id}/assignments`,
@@ -51,21 +51,85 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
       ) as { data: { assignments: MealPlanAssignment[] } }
       const assignments = response.data?.assignments || []
       setMealPlanWithAssignments({ ...mealPlan, assignments })
+
+      // Only calculate price if explicitly requested and we have the required data
+      if (!skipPriceCalculation && availableMeals.length > 0 && assignments.length > 0) {
+        // Calculate and update total price after assignments change
+        await calculateAndUpdateTotalPrice(assignments)
+      }
     } catch (error) {
       console.error('Failed to fetch meal plan assignments:', error)
       setMealPlanWithAssignments({ ...mealPlan, assignments: [] })
     }
   }
 
+  // Function to calculate total price based on assigned meals
+  const calculateAndUpdateTotalPrice = async (assignments: MealPlanAssignment[]) => {
+    try {
+      setCalculatingPrice(true)
+      let totalPrice = 0
+
+      console.log(`💰 Calculating price for meal plan duration: ${mealPlan.durationWeeks} weeks`)
+
+      // Filter assignments to only include meals within the meal plan's duration
+      const validAssignments = assignments.filter(assignment =>
+        assignment.weekNumber <= mealPlan.durationWeeks
+      )
+
+      console.log(`📊 Total assignments: ${assignments.length}, Valid assignments (within ${mealPlan.durationWeeks} weeks): ${validAssignments.length}`)
+
+      // Calculate total cost from valid assigned meals only
+      for (const assignment of validAssignments) {
+        if (assignment.mealIds && Array.isArray(assignment.mealIds)) {
+          for (const mealId of assignment.mealIds) {
+            const meal = availableMeals.find(m => m._id === mealId)
+            if (meal && meal.pricing && typeof meal.pricing.totalPrice === 'number') {
+              totalPrice += meal.pricing.totalPrice
+              console.log(`  📝 Week ${assignment.weekNumber}, Day ${assignment.dayOfWeek}, ${assignment.mealTime}: +₦${meal.pricing.totalPrice} (${meal.name})`)
+            }
+          }
+        }
+      }
+
+      console.log(`💵 Total calculated price: ₦${totalPrice.toLocaleString()}`)
+
+      // Only update if there's a significant difference (avoid floating point issues)
+      const priceDifference = Math.abs(totalPrice - (mealPlan.totalPrice || 0))
+      if (priceDifference > 0.01) { // More than 1 kobo difference
+        console.log(`💰 Updating meal plan price: ₦${mealPlan.totalPrice?.toLocaleString()} → ₦${totalPrice.toLocaleString()}`)
+
+        try {
+          // Update the meal plan with the new total price
+          await mealPlansApi.updateMealPlan(mealPlan._id, { totalPrice })
+
+          // Show success message
+          console.log(`✅ Meal plan price updated successfully to ₦${totalPrice.toLocaleString()}`)
+
+          // REMOVED onUpdate() call to prevent infinite reloading
+          // The price update will be reflected when the user closes the modal or refreshes manually
+        } catch (updateError) {
+          console.error('❌ Failed to update meal plan price:', updateError)
+          // Don't call onUpdate() if the price update failed
+        }
+      } else {
+        console.log('💰 Price unchanged, skipping update')
+      }
+    } catch (error) {
+      console.error('❌ Failed to calculate meal plan price:', error)
+    } finally {
+      setCalculatingPrice(false)
+    }
+  }
+
   useEffect(() => {
     if (isOpen) {
       fetchAvailableMeals()
-      fetchMealPlanAssignments()
+      fetchMealPlanAssignments(true) // Skip price calculation on initial load
       if (selectedWeek > mealPlan.durationWeeks) {
         setSelectedWeek(1)
       }
     }
-  }, [isOpen, mealPlan, selectedWeek])
+  }, [isOpen, mealPlan._id]) // Removed selectedWeek dependency to prevent loops
 
   // Effect to detect meal plan updates and restore week selection
   useEffect(() => {
@@ -81,6 +145,9 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
       setPrevMealPlanId(mealPlan._id)
     }
   }, [mealPlan, prevMealPlanId, weekBeforeUpdate])
+
+  // Effect to calculate price when meals are loaded and assignments exist - REMOVED TO PREVENT LOOPS
+  // This was causing infinite reloading by calling onUpdate() which refreshed the parent component
 
   const fetchAvailableMeals = async () => {
     try {
@@ -127,6 +194,8 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
         })
         setSelectedDay(null)
         setSelectedMealTime(null)
+
+        console.log('✅ Meal assignment saved and price updated successfully')
       } catch (error) {
         console.error('Failed to assign meal:', error)
         alert('Failed to assign meal to plan')
@@ -144,8 +213,11 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
       setWeekBeforeUpdate(selectedWeek)
 
       await mealPlansApi.removeAssignment(mealPlan._id, assignmentId)
-      // Trigger update - week will be restored by useEffect
-      onUpdate()
+
+      // Refresh assignments and recalculate price
+      await fetchMealPlanAssignments()
+
+      console.log('✅ Meal assignment removed and price updated successfully')
     } catch (error) {
       console.error('Failed to remove assignment:', error)
       alert('Failed to remove meal assignment')
@@ -313,7 +385,19 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                   </span>
                 ))}
                 <span className="text-xs text-gray-500 dark:text-neutral-400">({totalSlotsPerWeek} slots per week)</span>
+                <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full font-medium">
+                  💰 Total: {formatCurrency(mealPlan.totalPrice || 0)}
+                </span>
               </div>
+              {/* Price Calculation Indicator */}
+              {calculatingPrice && (
+                <div className="flex items-center space-x-2 mt-2">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
+                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                    💰 Calculating total price...
+                  </span>
+                </div>
+              )}
             </div>
             <button
               onClick={onClose}

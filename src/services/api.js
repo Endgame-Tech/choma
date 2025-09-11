@@ -504,15 +504,19 @@ class ApiService {
   }
 
   // Meal plans methods - real data only
-  async getMealPlans() {
-    console.log("🔄 Fetching meal plans from backend...");
+  async getMealPlans(forceRefresh = false) {
+    console.log("🔄 Fetching meal plans from backend...", forceRefresh ? "(forced refresh)" : "");
     console.log("🌐 API URL:", `${this.baseURL}/mealplans`);
 
     // Test backend health first
     const isHealthy = await this.checkBackendHealth();
     console.log("🏥 Backend health check:", isHealthy ? "PASS" : "FAIL");
 
-    const result = await this.request("/mealplans");
+    // Add cache-busting parameter if force refresh
+    const endpoint = forceRefresh ? `/mealplans?_t=${Date.now()}` : "/mealplans";
+    const result = await this.request(endpoint, {
+      headers: forceRefresh ? { 'Cache-Control': 'no-cache' } : {}
+    });
 
     if (result.success) {
       // Ensure result.data is the backend response and extract the data field
@@ -544,9 +548,14 @@ class ApiService {
     }
   }
 
-  async getPopularMealPlans() {
-    console.log("🔄 Fetching popular meal plans from backend...");
-    const result = await this.request("/mealplans/popular");
+  async getPopularMealPlans(forceRefresh = false) {
+    console.log("🔄 Fetching popular meal plans from backend...", forceRefresh ? "(forced refresh)" : "");
+    
+    // Add cache-busting parameter if force refresh
+    const endpoint = forceRefresh ? `/mealplans/popular?_t=${Date.now()}` : "/mealplans/popular";
+    const result = await this.request(endpoint, {
+      headers: forceRefresh ? { 'Cache-Control': 'no-cache' } : {}
+    });
 
     if (result.success) {
       const backendResponse = result.data;

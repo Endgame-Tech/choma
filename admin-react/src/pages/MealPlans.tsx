@@ -729,7 +729,6 @@ const MealPlans: React.FC = () => {
               setSelectedMealPlan(null)
             }}
             mealPlan={(apiPlanMap[selectedMealPlan?._id ?? ''] as ApiMealPlan) || (mealPlans.find(p => p._id === selectedMealPlan?._id) as unknown as ApiMealPlan) || (selectedMealPlan as unknown as ApiMealPlan)}
-            onUpdate={fetchMealPlans}
           />
 
           <DuplicateMealPlanModal

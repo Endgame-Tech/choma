@@ -6,10 +6,23 @@ if (!admin.apps.length) {
   try {
     // You'll need to add your Firebase service account key
     const serviceAccount = require("../config/firebase-service-account.json");
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    console.log("✅ Firebase Admin SDK initialized");
+
+    // Check if service account has placeholder values
+    if (
+      serviceAccount.private_key_id === "REPLACE_WITH_PRIVATE_KEY_ID" ||
+      serviceAccount.private_key.includes(
+        "REPLACE_WITH_ACTUAL_PRIVATE_KEY_LINES"
+      )
+    ) {
+      console.warn(
+        "⚠️ Firebase Admin SDK not initialized: Service account contains placeholder values"
+      );
+    } else {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      console.log("✅ Firebase Admin SDK initialized");
+    }
   } catch (error) {
     if (error.message.includes("Invalid PEM")) {
       console.warn(

@@ -141,7 +141,7 @@ router.put("/:id/publish", authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const banner = await PromoBanner.findById(id);
-    
+
     if (!banner) {
       return res.status(404).json({
         success: false,
@@ -162,7 +162,9 @@ router.put("/:id/publish", authenticateAdmin, async (req, res) => {
     res.json({
       success: true,
       data: populatedBanner,
-      message: `Banner ${banner.isPublished ? 'published' : 'unpublished'} successfully`,
+      message: `Banner ${
+        banner.isPublished ? "published" : "unpublished"
+      } successfully`,
     });
   } catch (error) {
     console.error("Banner publish toggle error:", error);
@@ -327,7 +329,6 @@ router.post("/", authenticateAdmin, async (req, res) => {
   }
 });
 
-
 // PUT /api/banners/:id - Update banner (admin)
 router.put("/:id", authenticateAdmin, async (req, res) => {
   try {
@@ -422,38 +423,6 @@ router.delete("/:id", authenticateAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete banner",
-    });
-  }
-});
-
-// GET /api/banners/:id/stats - Get banner analytics (admin)
-router.get("/:id/stats", authenticateAdmin, async (req, res) => {
-  try {
-    const banner = await PromoBanner.findById(req.params.id);
-
-    if (!banner) {
-      return res.status(404).json({
-        success: false,
-        message: "Banner not found",
-      });
-    }
-
-    const stats = {
-      impressions: banner.impressions,
-      clicks: banner.clicks,
-      ctr: banner.ctr,
-      isCurrentlyActive: banner.isCurrentlyActive(),
-    };
-
-    res.json({
-      success: true,
-      data: stats,
-    });
-  } catch (err) {
-    console.error("Get banner stats error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch banner stats",
     });
   }
 });

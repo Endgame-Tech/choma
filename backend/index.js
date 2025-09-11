@@ -212,7 +212,11 @@ app.use("/api/orders", require("./routes/orders"));
 app.use("/api/subscriptions", require("./routes/subscriptions"));
 
 // Unified subscription management routes (with general rate limiting)
-app.use("/api/unified-subscriptions", generalLimiter, require("./routes/unifiedSubscriptions"));
+app.use(
+  "/api/unified-subscriptions",
+  generalLimiter,
+  require("./routes/unifiedSubscriptions")
+);
 
 // Payment routes (with payment-specific rate limiting)
 app.use("/api/payments", paymentLimiter, require("./routes/payments"));
@@ -245,7 +249,6 @@ app.use(
 );
 
 // Public discount routes
-app.use("/api/discount-rules", require("./routes/discounts"));
 app.use("/api/discounts", require("./routes/discounts"));
 
 // User routes

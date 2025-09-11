@@ -79,7 +79,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
   }, [activeBatches]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (timerActive && preparationTimer > 0) {
       interval = setInterval(() => {
         setPreparationTimer(prev => {

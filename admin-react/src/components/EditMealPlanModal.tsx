@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import type { MealPlan as ApiMealPlan } from '../services/mealApi'
 import type { MealPlan as UiMealPlan } from '../types'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import { mealPlansApi, mealsApi } from '../services/mealApi'
 
 interface EditMealPlanModalProps {
   isOpen: boolean
@@ -35,6 +36,11 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
   })
 
   const [submitting, setSubmitting] = useState(false)
+  const [recalculatingPrice, setRecalculatingPrice] = useState(false)
+  const [currentPriceInfo, setCurrentPriceInfo] = useState<{
+    price: number;
+    assignmentCount: number;
+  } | null>(null)
 
   // Narrow the incoming mealPlan (UI type) to a record for safe runtime checks
   const mealPlanRec = mealPlan as unknown as Record<string, unknown>
@@ -54,6 +60,61 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
       })
     }
   }, [mealPlan])
+
+  // Calculate current price info based on form duration
+  useEffect(() => {
+    const calculateCurrentPriceInfo = async () => {
+      if (!mealPlan || !isOpen) {
+        setCurrentPriceInfo(null)
+        return
+      }
+
+      try {
+        // Get current assignments for this meal plan
+        const assignmentsResponse = await mealPlansApi.getMealPlanAssignments(mealPlan._id)
+        const assignments = (assignmentsResponse as any).data?.assignments || []
+
+        // Get all available meals to calculate prices
+        const mealsResponse = await mealsApi.getAllMeals({ limit: 1000, isAvailable: true })
+        const availableMeals = (mealsResponse as any).data.meals || []
+
+        // Get the current duration from form data
+        const currentDurationWeeks = parseInt(formData.durationWeeks)
+
+        // Filter assignments to only include meals within the current form duration
+        const validAssignments = assignments.filter((assignment: any) =>
+          assignment.weekNumber <= currentDurationWeeks
+        )
+
+        let totalPrice = 0
+        // Calculate total cost from valid assigned meals only
+        for (const assignment of validAssignments) {
+          if (assignment.mealIds && Array.isArray(assignment.mealIds)) {
+            for (const mealId of assignment.mealIds) {
+              const meal = availableMeals.find((m: { _id: string; pricing?: { totalPrice?: number } }) => m._id === mealId)
+              if (meal && meal.pricing && typeof meal.pricing.totalPrice === 'number') {
+                totalPrice += meal.pricing.totalPrice
+              }
+            }
+          }
+        }
+
+        setCurrentPriceInfo({
+          price: totalPrice,
+          assignmentCount: validAssignments.length
+        })
+      } catch (error) {
+        console.error('Failed to calculate current price info:', error)
+        // Fallback to using the existing meal plan data
+        setCurrentPriceInfo({
+          price: Number(mealPlanRec.totalPrice ?? 0),
+          assignmentCount: Number(mealPlanRec.assignmentCount ?? 0)
+        })
+      }
+    }
+
+    calculateCurrentPriceInfo()
+  }, [isOpen, mealPlan, formData.durationWeeks])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -78,6 +139,60 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
       currency: 'NGN',
       minimumFractionDigits: 0
     }).format(amount)
+  }
+
+  const handleRecalculatePrice = async () => {
+    try {
+      setRecalculatingPrice(true)
+
+      // Get current assignments for this meal plan
+      const assignmentsResponse = await mealPlansApi.getMealPlanAssignments(mealPlan._id)
+      const assignments = (assignmentsResponse as any).data?.assignments || []
+
+      // Get all available meals to calculate prices
+      const mealsResponse = await mealsApi.getAllMeals({ limit: 1000, isAvailable: true })
+      const availableMeals = (mealsResponse as any).data.meals || []
+
+      // Get the current duration from form data
+      const currentDurationWeeks = parseInt(formData.durationWeeks)
+
+      console.log(`💰 Recalculating price for meal plan duration: ${currentDurationWeeks} weeks`)
+
+      // Filter assignments to only include meals within the meal plan's current duration
+      const validAssignments = assignments.filter((assignment: any) =>
+        assignment.weekNumber <= currentDurationWeeks
+      )
+
+      console.log(`📊 Total assignments: ${assignments.length}, Valid assignments (within ${currentDurationWeeks} weeks): ${validAssignments.length}`)
+
+      let totalPrice = 0
+
+      // Calculate total cost from valid assigned meals only
+      for (const assignment of validAssignments) {
+        if (assignment.mealIds && Array.isArray(assignment.mealIds)) {
+          for (const mealId of assignment.mealIds) {
+            const meal = availableMeals.find((m: { _id: string; pricing?: { totalPrice?: number } }) => m._id === mealId)
+            if (meal && meal.pricing && typeof meal.pricing.totalPrice === 'number') {
+              totalPrice += meal.pricing.totalPrice
+              console.log(`  📝 Week ${assignment.weekNumber}, Day ${assignment.dayOfWeek}, ${assignment.mealTime}: +₦${meal.pricing.totalPrice} (${meal.name})`)
+            }
+          }
+        }
+      }
+
+      console.log(`💵 Total calculated price: ₦${totalPrice.toLocaleString()}`)
+
+      // Update the meal plan with the new total price
+      const planData = { totalPrice }
+      await onSubmit(planData)
+
+      alert(`Price recalculated successfully! New total: ${formatCurrency(totalPrice)}`)
+    } catch (error) {
+      console.error('Failed to recalculate price:', error)
+      alert('Failed to recalculate price. Please try again.')
+    } finally {
+      setRecalculatingPrice(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,9 +221,36 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
         adminNotes: formData.adminNotes
       }
 
+      // Check if duration changed - if so, automatically recalculate price
+      const isDurationChanged = parseInt(formData.durationWeeks) !== mealPlan.durationWeeks
+      const isReducingDuration = parseInt(formData.durationWeeks) < mealPlan.durationWeeks
+      const assignmentsToDelete = isReducingDuration && currentPriceInfo
+        ? (Number(mealPlanRec.assignmentCount ?? 0) - currentPriceInfo.assignmentCount)
+        : 0
+
+      // If duration changed, automatically include the recalculated price
+      if (isDurationChanged && currentPriceInfo) {
+        console.log(`💰 Duration changed from ${mealPlan.durationWeeks} to ${formData.durationWeeks} weeks - automatically updating price`)
+        planData.totalPrice = currentPriceInfo.price
+      }
+
       await onSubmit(planData)
+
+      // Provide specific feedback for duration changes
+      if (isDurationChanged) {
+        if (isReducingDuration && assignmentsToDelete > 0) {
+          alert(`Meal plan updated successfully!\n\nDuration reduced from ${mealPlan.durationWeeks} to ${formData.durationWeeks} weeks.\n${assignmentsToDelete} meal assignments beyond week ${formData.durationWeeks} were removed.\nPrice automatically updated to: ${formatCurrency(currentPriceInfo?.price ?? 0)}`)
+        } else if (!isReducingDuration) {
+          alert(`Meal plan updated successfully!\n\nDuration extended from ${mealPlan.durationWeeks} to ${formData.durationWeeks} weeks.\nPrice automatically updated to: ${formatCurrency(currentPriceInfo?.price ?? 0)}\n\nYou can now assign meals to the new weeks.`)
+        } else {
+          alert(`Meal plan updated successfully!\n\nPrice automatically updated to: ${formatCurrency(currentPriceInfo?.price ?? 0)}`)
+        }
+      } else {
+        alert('Meal plan updated successfully!')
+      }
     } catch (error) {
       console.error('Failed to update meal plan:', error)
+      alert('Failed to update meal plan. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -153,9 +295,33 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                     {mealPlan.isPublished ? 'Published' : 'Draft'}
                   </span>
                   <div className="text-sm text-gray-600">
-                    <div>Current Price: {formatCurrency(Number(mealPlanRec.totalPrice ?? 0))}</div>
-                    <div>Meals Assigned: {Number(mealPlanRec.assignmentCount ?? 0)}</div>
+                    <div>Current Price: {formatCurrency(currentPriceInfo?.price ?? Number(mealPlanRec.totalPrice ?? 0))}</div>
+                    <div>Meals Assigned: {currentPriceInfo?.assignmentCount ?? Number(mealPlanRec.assignmentCount ?? 0)}</div>
+                    {parseInt(formData.durationWeeks) !== mealPlan.durationWeeks && (
+                      <div className="text-xs text-blue-600 mt-1">
+                        📊 Showing meals for {formData.durationWeeks} week{parseInt(formData.durationWeeks) !== 1 ? 's' : ''} (current form setting)
+                      </div>
+                    )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleRecalculatePrice}
+                    disabled={recalculatingPrice || submitting}
+                    className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-xs rounded-lg transition-colors flex items-center space-x-1"
+                    title="Recalculate total price based on assigned meals"
+                  >
+                    {recalculatingPrice ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                        <span>Calculating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>💰</span>
+                        <span>Recalculate Price</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
@@ -382,6 +548,22 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                 placeholder="Internal notes about this meal plan..."
               />
             </div>
+
+            {/* Duration Reduction Warning */}
+            {parseInt(formData.durationWeeks) < mealPlan.durationWeeks && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-6">
+                <h3 className="text-red-800 dark:text-red-300 font-medium mb-2">⚠️ Duration Reduction Warning</h3>
+                <p className="text-red-700 dark:text-red-300 text-sm">
+                  Reducing duration from {mealPlan.durationWeeks} to {formData.durationWeeks} week{parseInt(formData.durationWeeks) !== 1 ? 's' : ''} will permanently delete all meal assignments
+                  beyond week {formData.durationWeeks}. This action cannot be undone.
+                </p>
+                {currentPriceInfo && (
+                  <p className="text-red-700 dark:text-red-300 text-xs mt-2">
+                    {(Number(mealPlanRec.assignmentCount ?? 0) - currentPriceInfo.assignmentCount)} assignments will be removed.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Publishing Warning */}
             {mealPlan.isPublished && (

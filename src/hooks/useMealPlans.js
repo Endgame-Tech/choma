@@ -8,7 +8,7 @@ export const useMealPlans = () => {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchMealPlans = useCallback(async (showRefreshing = false) => {
+  const fetchMealPlans = useCallback(async (showRefreshing = false, forceRefresh = false) => {
     try {
       if (showRefreshing) {
         setRefreshing(true);
@@ -17,8 +17,8 @@ export const useMealPlans = () => {
       }
       setError(null);
 
-      console.log('🍽️ Fetching popular meal plans from backend...');
-      const response = await apiService.getPopularMealPlans();
+      console.log('🍽️ Fetching popular meal plans from backend...', forceRefresh ? '(forced refresh)' : '');
+      const response = await apiService.getPopularMealPlans(forceRefresh);
 
       if (response.success) {
         // Transform backend data to match frontend expectations
@@ -63,8 +63,8 @@ export const useMealPlans = () => {
     }
   }, []);
 
-  const refreshMealPlans = useCallback(() => {
-    fetchMealPlans(true);
+  const refreshMealPlans = useCallback((forceRefresh = true) => {
+    fetchMealPlans(true, forceRefresh);
   }, [fetchMealPlans]);
 
   const getMealPlanById = useCallback(async (id) => {
@@ -115,7 +115,8 @@ export const useMealPlans = () => {
     refreshing,
     refreshMealPlans,
     getMealPlanById,
-    refetch: fetchMealPlans
+    refetch: fetchMealPlans,
+    forceRefresh: () => fetchMealPlans(false, true)
   };
 };
 

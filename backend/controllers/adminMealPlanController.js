@@ -1,8 +1,13 @@
-const MealPlan = require('../models/MealPlan');
-const DailyMeal = require('../models/DailyMeal');
-const Subscription = require('../models/Subscription');
-const { uploadMealPlanMainImage, uploadMealImages, deleteImageFromCloudinary, extractPublicIdFromUrl } = require('../utils/imageUpload');
-const mongoose = require('mongoose');
+const MealPlan = require("../models/MealPlan");
+const DailyMeal = require("../models/DailyMeal");
+const Subscription = require("../models/Subscription");
+const {
+  uploadMealPlanMainImage,
+  uploadMealImages,
+  deleteImageFromCloudinary,
+  extractPublicIdFromUrl,
+} = require("../utils/imageUpload");
+const mongoose = require("mongoose");
 
 // ============= ENHANCED MEAL PLAN MANAGEMENT =============
 
@@ -11,42 +16,42 @@ exports.getAllMealPlans = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const search = req.query.search || '';
-    const planType = req.query.planType || '';
+    const search = req.query.search || "";
+    const planType = req.query.planType || "";
     const isActive = req.query.isActive;
-    const sortBy = req.query.sortBy || 'createdAt';
-    const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+    const sortBy = req.query.sortBy || "createdAt";
+    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
     const priceRange = req.query.priceRange; // format: "min,max"
 
     const skip = (page - 1) * limit;
 
     // Build query
     let query = {};
-    
+
     // Search functionality
     if (search) {
       query.$or = [
-        { planName: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { planType: { $regex: search, $options: 'i' } }
+        { planName: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { planType: { $regex: search, $options: "i" } },
       ];
     }
-    
+
     // Filter by plan type
     if (planType) {
       query.planType = planType;
     }
-    
+
     // Filter by active status
     if (isActive !== undefined) {
-      query.isActive = isActive === 'true';
+      query.isActive = isActive === "true";
     }
-    
+
     // Price range filter
     if (priceRange) {
-      const [min, max] = priceRange.split(',').map(Number);
+      const [min, max] = priceRange.split(",").map(Number);
       if (min !== undefined && max !== undefined) {
-        query['pricing.weekly'] = { $gte: min, $lte: max };
+        query["pricing.weekly"] = { $gte: min, $lte: max };
       }
     }
 
@@ -59,59 +64,59 @@ exports.getAllMealPlans = async (req, res) => {
       { $match: query },
       {
         $lookup: {
-          from: 'subscriptions',
-          localField: '_id',
-          foreignField: 'mealPlanId',
-          as: 'subscriptions'
-        }
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "mealPlanId",
+          as: "subscriptions",
+        },
       },
       {
         $lookup: {
-          from: 'dailymeals',
-          localField: '_id',
-          foreignField: 'mealPlan',
-          as: 'dailyMeals'
-        }
+          from: "dailymeals",
+          localField: "_id",
+          foreignField: "mealPlan",
+          as: "dailyMeals",
+        },
       },
       {
         $addFields: {
-          totalSubscriptions: { $size: '$subscriptions' },
+          totalSubscriptions: { $size: "$subscriptions" },
           activeSubscriptions: {
             $size: {
               $filter: {
-                input: '$subscriptions',
-                as: 'sub',
-                cond: { $eq: ['$$sub.status', 'Active'] }
-              }
-            }
+                input: "$subscriptions",
+                as: "sub",
+                cond: { $eq: ["$$sub.status", "Active"] },
+              },
+            },
           },
-          totalDailyMeals: { $size: '$dailyMeals' },
+          totalDailyMeals: { $size: "$dailyMeals" },
           revenue: {
             $sum: {
               $map: {
                 input: {
                   $filter: {
-                    input: '$subscriptions',
-                    as: 'sub',
-                    cond: { $eq: ['$$sub.paymentStatus', 'Paid'] }
-                  }
+                    input: "$subscriptions",
+                    as: "sub",
+                    cond: { $eq: ["$$sub.paymentStatus", "Paid"] },
+                  },
                 },
-                as: 'paidSub',
-                in: '$$paidSub.amount'
-              }
-            }
-          }
-        }
+                as: "paidSub",
+                in: "$$paidSub.amount",
+              },
+            },
+          },
+        },
       },
       {
         $project: {
           subscriptions: 0,
-          dailyMeals: 0
-        }
+          dailyMeals: 0,
+        },
       },
       { $sort: sortObj },
       { $skip: skip },
-      { $limit: limit }
+      { $limit: limit },
     ]);
 
     const total = await MealPlan.countDocuments(query);
@@ -123,23 +128,23 @@ exports.getAllMealPlans = async (req, res) => {
           _id: null,
           totalPlans: { $sum: 1 },
           activePlans: {
-            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] },
           },
           inactivePlans: {
-            $sum: { $cond: [{ $eq: ['$isActive', false] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$isActive", false] }, 1, 0] },
           },
-          averagePrice: { $avg: '$pricing.weekly' }
-        }
-      }
+          averagePrice: { $avg: "$pricing.weekly" },
+        },
+      },
     ]);
 
     const planTypeStats = await MealPlan.aggregate([
       {
         $group: {
-          _id: '$planType',
-          count: { $sum: 1 }
-        }
-      }
+          _id: "$planType",
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     res.json({
@@ -150,7 +155,7 @@ exports.getAllMealPlans = async (req, res) => {
         planTypeStats: planTypeStats.reduce((acc, stat) => {
           acc[stat._id] = stat.count;
           return acc;
-        }, {})
+        }, {}),
       },
       pagination: {
         currentPage: page,
@@ -158,15 +163,15 @@ exports.getAllMealPlans = async (req, res) => {
         totalPlans: total,
         hasNext: page < Math.ceil(total / limit),
         hasPrev: page > 1,
-        limit
-      }
+        limit,
+      },
     });
   } catch (err) {
-    console.error('Get all meal plans error:', err);
+    console.error("Get all meal plans error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch meal plans',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to fetch meal plans",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -179,16 +184,16 @@ exports.getMealPlanDetails = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid meal plan ID'
+        message: "Invalid meal plan ID",
       });
     }
 
     const mealPlan = await MealPlan.findById(id).lean();
-    
+
     if (!mealPlan) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found'
+        message: "Meal plan not found",
       });
     }
 
@@ -199,7 +204,7 @@ exports.getMealPlanDetails = async (req, res) => {
 
     // Get subscriptions for this plan
     const subscriptions = await Subscription.find({ mealPlanId: id })
-      .populate('customer', 'fullName email')
+      .populate("customer", "fullName email")
       .sort({ subscriptionDate: -1 })
       .limit(10)
       .lean();
@@ -212,14 +217,16 @@ exports.getMealPlanDetails = async (req, res) => {
           _id: null,
           totalSubscriptions: { $sum: 1 },
           activeSubscriptions: {
-            $sum: { $cond: [{ $eq: ['$status', 'Active'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "Active"] }, 1, 0] },
           },
           totalRevenue: {
-            $sum: { $cond: [{ $eq: ['$paymentStatus', 'Paid'] }, '$amount', 0] }
+            $sum: {
+              $cond: [{ $eq: ["$paymentStatus", "Paid"] }, "$amount", 0],
+            },
           },
-          averageRating: { $avg: '$rating' }
-        }
-      }
+          averageRating: { $avg: "$rating" },
+        },
+      },
     ]);
 
     res.json({
@@ -232,16 +239,16 @@ exports.getMealPlanDetails = async (req, res) => {
           totalSubscriptions: 0,
           activeSubscriptions: 0,
           totalRevenue: 0,
-          averageRating: 0
-        }
-      }
+          averageRating: 0,
+        },
+      },
     });
   } catch (err) {
-    console.error('Get meal plan details error:', err);
+    console.error("Get meal plan details error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch meal plan details',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to fetch meal plan details",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -258,14 +265,14 @@ exports.createMealPlan = async (req, res) => {
       planFeatures,
       adminNotes,
       coverImage,
-      isActive = true
+      isActive = true,
     } = req.body;
 
     // Validate required fields
     if (!planName || !description) {
       return res.status(400).json({
         success: false,
-        message: 'Plan name and description are required'
+        message: "Plan name and description are required",
       });
     }
 
@@ -273,26 +280,28 @@ exports.createMealPlan = async (req, res) => {
     if (mealTypes && mealTypes.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'At least one meal type must be selected'
+        message: "At least one meal type must be selected",
       });
     }
 
     // Check if plan name already exists
-    const existingPlan = await MealPlan.findOne({ 
-      planName: { $regex: new RegExp(`^${planName}$`, 'i') }
+    const existingPlan = await MealPlan.findOne({
+      planName: { $regex: new RegExp(`^${planName}$`, "i") },
     });
-    
+
     if (existingPlan) {
       return res.status(409).json({
         success: false,
-        message: 'Meal plan with this name already exists'
+        message: "Meal plan with this name already exists",
       });
     }
 
     // Handle main image upload
     let mainImageUrl = null;
     if (req.files && req.files.mainImage) {
-      const uploadResult = await uploadMealPlanMainImage(req.files.mainImage[0]);
+      const uploadResult = await uploadMealPlanMainImage(
+        req.files.mainImage[0]
+      );
       if (uploadResult.success) {
         mainImageUrl = uploadResult.url;
       }
@@ -302,28 +311,28 @@ exports.createMealPlan = async (req, res) => {
     const mealPlan = new MealPlan({
       planName: planName.trim(),
       description: description.trim(),
-      targetAudience: targetAudience || 'Family',
+      targetAudience: targetAudience || "Family",
       durationWeeks: durationWeeks || 4,
-      mealTypes: mealTypes || ['breakfast', 'lunch', 'dinner'],
+      mealTypes: mealTypes || ["breakfast", "lunch", "dinner"],
       planFeatures: planFeatures || [],
-      adminNotes: adminNotes || '',
-      coverImage: coverImage || '',
-      isActive
+      adminNotes: adminNotes || "",
+      coverImage: coverImage || "",
+      isActive,
     });
 
     await mealPlan.save();
 
     res.status(201).json({
       success: true,
-      message: 'Meal plan created successfully',
-      data: mealPlan
+      message: "Meal plan created successfully",
+      data: mealPlan,
     });
   } catch (err) {
-    console.error('Create meal plan error:', err);
+    console.error("Create meal plan error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to create meal plan',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to create meal plan",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -337,7 +346,7 @@ exports.updateMealPlan = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid meal plan ID'
+        message: "Invalid meal plan ID",
       });
     }
 
@@ -345,21 +354,21 @@ exports.updateMealPlan = async (req, res) => {
     if (!existingPlan) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found'
+        message: "Meal plan not found",
       });
     }
 
     // Check if new plan name conflicts with existing plans
     if (updateData.planName && updateData.planName !== existingPlan.planName) {
       const conflictingPlan = await MealPlan.findOne({
-        planName: { $regex: new RegExp(`^${updateData.planName}$`, 'i') },
-        _id: { $ne: id }
+        planName: { $regex: new RegExp(`^${updateData.planName}$`, "i") },
+        _id: { $ne: id },
       });
-      
+
       if (conflictingPlan) {
         return res.status(409).json({
           success: false,
-          message: 'Another meal plan with this name already exists'
+          message: "Another meal plan with this name already exists",
         });
       }
     }
@@ -373,34 +382,96 @@ exports.updateMealPlan = async (req, res) => {
           await deleteImageFromCloudinary(publicId);
         }
       }
-      
+
       // Upload new image
-      const uploadResult = await uploadMealPlanMainImage(req.files.mainImage[0]);
+      const uploadResult = await uploadMealPlanMainImage(
+        req.files.mainImage[0]
+      );
       if (uploadResult.success) {
         updateData.mainImageUrl = uploadResult.url;
+      }
+    }
+
+    // If duration is being changed, handle assignment cleanup and price recalculation
+    if (
+      updateData.durationWeeks &&
+      updateData.durationWeeks !== existingPlan.durationWeeks
+    ) {
+      console.log(
+        `⏱️ Duration changed: ${existingPlan.durationWeeks} → ${updateData.durationWeeks} weeks`
+      );
+
+      const MealPlanAssignment = require("../models/MealPlanAssignment");
+
+      if (updateData.durationWeeks < existingPlan.durationWeeks) {
+        // Duration reduced - remove assignments outside the new duration
+        const assignmentsToRemove = await MealPlanAssignment.find({
+          mealPlanId: id,
+          weekNumber: { $gt: updateData.durationWeeks },
+        });
+
+        if (assignmentsToRemove.length > 0) {
+          await MealPlanAssignment.deleteMany({
+            mealPlanId: id,
+            weekNumber: { $gt: updateData.durationWeeks },
+          });
+
+          console.log(
+            `🗑️ Removed ${assignmentsToRemove.length} assignments outside week ${updateData.durationWeeks}`
+          );
+        }
+      }
+
+      // Recalculate total price for all remaining assignments within the new duration
+      if (!updateData.totalPrice) {
+        // Only recalculate if price wasn't explicitly provided
+        const remainingAssignments = await MealPlanAssignment.find({
+          mealPlanId: id,
+          weekNumber: { $lte: updateData.durationWeeks },
+        });
+
+        let newTotalPrice = 0;
+        const Meal = require("../models/Meal");
+
+        for (const assignment of remainingAssignments) {
+          if (assignment.mealIds && Array.isArray(assignment.mealIds)) {
+            for (const mealId of assignment.mealIds) {
+              const meal = await Meal.findById(mealId);
+              if (meal?.pricing?.totalPrice) {
+                newTotalPrice += meal.pricing.totalPrice;
+              }
+            }
+          }
+        }
+
+        updateData.totalPrice = newTotalPrice;
+        console.log(
+          `💰 Recalculated total price for ${
+            updateData.durationWeeks
+          } weeks: ₦${newTotalPrice.toLocaleString()}`
+        );
       }
     }
 
     // Update timestamp
     updateData.updatedAt = new Date();
 
-    const updatedPlan = await MealPlan.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    const updatedPlan = await MealPlan.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     res.json({
       success: true,
-      message: 'Meal plan updated successfully',
-      data: updatedPlan
+      message: "Meal plan updated successfully",
+      data: updatedPlan,
     });
   } catch (err) {
-    console.error('Update meal plan error:', err);
+    console.error("Update meal plan error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to update meal plan',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to update meal plan",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -414,7 +485,7 @@ exports.deleteMealPlan = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid meal plan ID'
+        message: "Invalid meal plan ID",
       });
     }
 
@@ -422,20 +493,20 @@ exports.deleteMealPlan = async (req, res) => {
     if (!mealPlan) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found'
+        message: "Meal plan not found",
       });
     }
 
     // Check for active subscriptions
     const activeSubscriptions = await Subscription.countDocuments({
       mealPlanId: id,
-      status: 'Active'
+      status: "Active",
     });
 
     if (activeSubscriptions > 0 && !force) {
       return res.status(400).json({
         success: false,
-        message: `Cannot delete meal plan with ${activeSubscriptions} active subscriptions. Use force=true to proceed.`
+        message: `Cannot delete meal plan with ${activeSubscriptions} active subscriptions. Use force=true to proceed.`,
       });
     }
 
@@ -445,11 +516,11 @@ exports.deleteMealPlan = async (req, res) => {
     // Cancel active subscriptions if force delete
     if (force && activeSubscriptions > 0) {
       await Subscription.updateMany(
-        { mealPlanId: id, status: 'Active' },
-        { 
-          status: 'Cancelled',
+        { mealPlanId: id, status: "Active" },
+        {
+          status: "Cancelled",
           cancelledAt: new Date(),
-          cancellationReason: 'Meal plan deleted'
+          cancellationReason: "Meal plan deleted",
         }
       );
     }
@@ -467,19 +538,19 @@ exports.deleteMealPlan = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Meal plan deleted successfully',
+      message: "Meal plan deleted successfully",
       data: {
         deletedPlanId: id,
         deletedPlanName: mealPlan.planName,
-        cancelledSubscriptions: force ? activeSubscriptions : 0
-      }
+        cancelledSubscriptions: force ? activeSubscriptions : 0,
+      },
     });
   } catch (err) {
-    console.error('Delete meal plan error:', err);
+    console.error("Delete meal plan error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete meal plan',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to delete meal plan",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -488,12 +559,18 @@ exports.deleteMealPlan = async (req, res) => {
 exports.duplicateMealPlan = async (req, res) => {
   try {
     const { id } = req.params;
-    const { newName } = req.body;
+    const { newPlanName, modifications } = req.body;
+
+    console.log("🔄 Duplicating meal plan with data:", {
+      id,
+      newPlanName,
+      modifications,
+    });
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid meal plan ID'
+        message: "Invalid meal plan ID",
       });
     }
 
@@ -501,58 +578,122 @@ exports.duplicateMealPlan = async (req, res) => {
     if (!originalPlan) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found'
+        message: "Meal plan not found",
       });
     }
 
     // Check if new name conflicts
-    const duplicateName = newName || `${originalPlan.planName} (Copy)`;
+    const duplicateName = newPlanName || `${originalPlan.planName} (Copy)`;
     const existingPlan = await MealPlan.findOne({
-      planName: { $regex: new RegExp(`^${duplicateName}$`, 'i') }
+      planName: { $regex: new RegExp(`^${duplicateName}$`, "i") },
     });
-    
+
     if (existingPlan) {
       return res.status(409).json({
         success: false,
-        message: 'Meal plan with this name already exists'
+        message: "Meal plan with this name already exists",
       });
     }
 
-    // Create duplicate
-    const duplicatePlan = new MealPlan({
+    // Create base duplicate data
+    const duplicateData = {
       ...originalPlan.toObject(),
       _id: new mongoose.Types.ObjectId(),
       planName: duplicateName,
       isActive: false, // Start as inactive
+      isPublished: false, // Start as unpublished unless explicitly set
       createdAt: new Date(),
-      updatedAt: new Date()
-    });
+      updatedAt: new Date(),
+    };
 
+    // Track if totalPrice was explicitly provided in modifications
+    let explicitPriceProvided = false;
+
+    // Apply modifications if provided
+    if (modifications) {
+      console.log("📊 Applying modifications:", modifications);
+
+      // Handle duration and price changes
+      if (
+        modifications.durationWeeks &&
+        modifications.durationWeeks !== originalPlan.durationWeeks
+      ) {
+        duplicateData.durationWeeks = modifications.durationWeeks;
+        console.log(
+          `⏱️ Duration changed: ${originalPlan.durationWeeks} → ${modifications.durationWeeks} weeks`
+        );
+      }
+
+      if (
+        modifications.totalPrice !== undefined &&
+        modifications.totalPrice !== originalPlan.totalPrice
+      ) {
+        duplicateData.totalPrice = modifications.totalPrice;
+        explicitPriceProvided = true;
+        console.log(
+          `💰 Price updated: ₦${originalPlan.totalPrice?.toLocaleString()} → ₦${modifications.totalPrice.toLocaleString()}`
+        );
+      }
+
+      // Handle publication status
+      if (modifications.isPublished !== undefined) {
+        duplicateData.isPublished = modifications.isPublished;
+        console.log(
+          `📢 Publication status: ${
+            modifications.isPublished ? "Published" : "Draft"
+          }`
+        );
+      }
+
+      // Apply any other modifications
+      Object.keys(modifications).forEach((key) => {
+        if (
+          key !== "durationWeeks" &&
+          key !== "totalPrice" &&
+          key !== "isPublished"
+        ) {
+          duplicateData[key] = modifications[key];
+        }
+      });
+    }
+
+    // Create duplicate plan
+    // Only delete totalPrice if not explicitly provided in modifications
+    if (!explicitPriceProvided) {
+      delete duplicateData.totalPrice;
+    }
+    const duplicatePlan = new MealPlan(duplicateData);
     await duplicatePlan.save();
 
-    // Duplicate daily meals
-    const originalDailyMeals = await DailyMeal.find({ mealPlan: id });
-    if (originalDailyMeals.length > 0) {
-      const duplicateDailyMeals = originalDailyMeals.map(meal => ({
-        ...meal.toObject(),
-        _id: new mongoose.Types.ObjectId(),
-        mealPlan: duplicatePlan._id
-      }));
-      
-      await DailyMeal.insertMany(duplicateDailyMeals);
-    }
+    // Force recalculation of pricing and nutrition fields based on current assignments
+    // This ensures pricing is accurate even if meal assignments are added later
+    console.log("🔄 Recalculating pricing for duplicated meal plan...");
+    await duplicatePlan.updateCalculatedFields();
+
+    console.log("✅ Duplicate meal plan created:", {
+      id: duplicatePlan._id,
+      name: duplicatePlan.planName,
+      duration: duplicatePlan.durationWeeks,
+      price: duplicatePlan.totalPrice,
+      isPublished: duplicatePlan.isPublished,
+      explicitPriceProvided,
+    });
+
+    // Meal assignments will not be duplicated, forcing the user to create them from scratch for the new plan.
+    // This prevents issues with lingering assignments when duration changes.
+    // The updateCalculatedFields() call above ensures pricing will be recalculated when assignments are added.
 
     res.status(201).json({
       success: true,
-      message: 'Meal plan duplicated successfully',
-      data: duplicatePlan
+      message: "Meal plan duplicated successfully",
+      data: duplicatePlan,
     });
   } catch (err) {
-    console.error('Duplicate meal plan error:', err);
+    console.error("Duplicate meal plan error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to duplicate meal plan',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to duplicate meal plan",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -565,7 +706,7 @@ exports.toggleMealPlanStatus = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid meal plan ID'
+        message: "Invalid meal plan ID",
       });
     }
 
@@ -573,47 +714,49 @@ exports.toggleMealPlanStatus = async (req, res) => {
     if (!mealPlan) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found'
+        message: "Meal plan not found",
       });
     }
 
     const newStatus = !mealPlan.isActive;
-    
+
     // If deactivating, check for active subscriptions
     if (!newStatus) {
       const activeSubscriptions = await Subscription.countDocuments({
         mealPlanId: id,
-        status: 'Active'
+        status: "Active",
       });
-      
+
       if (activeSubscriptions > 0) {
         return res.status(400).json({
           success: false,
-          message: `Cannot deactivate meal plan with ${activeSubscriptions} active subscriptions`
+          message: `Cannot deactivate meal plan with ${activeSubscriptions} active subscriptions`,
         });
       }
     }
 
     const updatedPlan = await MealPlan.findByIdAndUpdate(
       id,
-      { 
+      {
         isActive: newStatus,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       { new: true }
     );
 
     res.json({
       success: true,
-      message: `Meal plan ${newStatus ? 'activated' : 'deactivated'} successfully`,
-      data: updatedPlan
+      message: `Meal plan ${
+        newStatus ? "activated" : "deactivated"
+      } successfully`,
+      data: updatedPlan,
     });
   } catch (err) {
-    console.error('Toggle meal plan status error:', err);
+    console.error("Toggle meal plan status error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to toggle meal plan status',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to toggle meal plan status",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -626,7 +769,7 @@ exports.publishMealPlan = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid meal plan ID'
+        message: "Invalid meal plan ID",
       });
     }
 
@@ -634,18 +777,20 @@ exports.publishMealPlan = async (req, res) => {
     if (!mealPlan) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found'
+        message: "Meal plan not found",
       });
     }
 
     // Check if meal plan has assignments
-    const MealPlanAssignment = mongoose.model('MealPlanAssignment');
-    const assignmentCount = await MealPlanAssignment.countDocuments({ mealPlanId: id });
-    
+    const MealPlanAssignment = mongoose.model("MealPlanAssignment");
+    const assignmentCount = await MealPlanAssignment.countDocuments({
+      mealPlanId: id,
+    });
+
     if (assignmentCount === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot publish meal plan without meal assignments'
+        message: "Cannot publish meal plan without meal assignments",
       });
     }
 
@@ -657,15 +802,15 @@ exports.publishMealPlan = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Meal plan published successfully',
-      data: updatedPlan
+      message: "Meal plan published successfully",
+      data: updatedPlan,
     });
   } catch (err) {
-    console.error('Publish meal plan error:', err);
+    console.error("Publish meal plan error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to publish meal plan',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to publish meal plan",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -678,7 +823,7 @@ exports.unpublishMealPlan = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid meal plan ID'
+        message: "Invalid meal plan ID",
       });
     }
 
@@ -686,7 +831,7 @@ exports.unpublishMealPlan = async (req, res) => {
     if (!mealPlan) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found'
+        message: "Meal plan not found",
       });
     }
 
@@ -698,15 +843,15 @@ exports.unpublishMealPlan = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Meal plan unpublished successfully',
-      data: updatedPlan
+      message: "Meal plan unpublished successfully",
+      data: updatedPlan,
     });
   } catch (err) {
-    console.error('Unpublish meal plan error:', err);
+    console.error("Unpublish meal plan error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to unpublish meal plan',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to unpublish meal plan",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -714,20 +859,24 @@ exports.unpublishMealPlan = async (req, res) => {
 // Get meal plan analytics
 exports.getMealPlanAnalytics = async (req, res) => {
   try {
-    const { period = '30d' } = req.query;
-    
+    const { period = "30d" } = req.query;
+
     let dateRange = {};
     const now = new Date();
-    
+
     switch (period) {
-      case '7d':
+      case "7d":
         dateRange = { $gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) };
         break;
-      case '30d':
-        dateRange = { $gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) };
+      case "30d":
+        dateRange = {
+          $gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+        };
         break;
-      case '90d':
-        dateRange = { $gte: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) };
+      case "90d":
+        dateRange = {
+          $gte: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
+        };
         break;
     }
 
@@ -736,64 +885,66 @@ exports.getMealPlanAnalytics = async (req, res) => {
       { $match: { subscriptionDate: dateRange } },
       {
         $group: {
-          _id: '$mealPlanId',
+          _id: "$mealPlanId",
           subscriptions: { $sum: 1 },
           revenue: {
-            $sum: { $cond: [{ $eq: ['$paymentStatus', 'Paid'] }, '$amount', 0] }
-          }
-        }
+            $sum: {
+              $cond: [{ $eq: ["$paymentStatus", "Paid"] }, "$amount", 0],
+            },
+          },
+        },
       },
       {
         $lookup: {
-          from: 'mealplans',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'mealPlan'
-        }
+          from: "mealplans",
+          localField: "_id",
+          foreignField: "_id",
+          as: "mealPlan",
+        },
       },
-      { $unwind: '$mealPlan' },
+      { $unwind: "$mealPlan" },
       { $sort: { subscriptions: -1 } },
-      { $limit: 10 }
+      { $limit: 10 },
     ]);
 
     // Plan type distribution
     const planTypeDistribution = await MealPlan.aggregate([
       {
         $group: {
-          _id: '$planType',
+          _id: "$planType",
           count: { $sum: 1 },
           activeCount: {
-            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
-          }
-        }
-      }
+            $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] },
+          },
+        },
+      },
     ]);
 
     // Revenue by plan
     const revenueByPlan = await Subscription.aggregate([
-      { 
-        $match: { 
+      {
+        $match: {
           subscriptionDate: dateRange,
-          paymentStatus: 'Paid'
-        }
+          paymentStatus: "Paid",
+        },
       },
       {
         $group: {
-          _id: '$mealPlanId',
-          revenue: { $sum: '$amount' },
-          subscriptions: { $sum: 1 }
-        }
+          _id: "$mealPlanId",
+          revenue: { $sum: "$amount" },
+          subscriptions: { $sum: 1 },
+        },
       },
       {
         $lookup: {
-          from: 'mealplans',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'mealPlan'
-        }
+          from: "mealplans",
+          localField: "_id",
+          foreignField: "_id",
+          as: "mealPlan",
+        },
       },
-      { $unwind: '$mealPlan' },
-      { $sort: { revenue: -1 } }
+      { $unwind: "$mealPlan" },
+      { $sort: { revenue: -1 } },
     ]);
 
     res.json({
@@ -802,15 +953,100 @@ exports.getMealPlanAnalytics = async (req, res) => {
         period,
         popularPlans,
         planTypeDistribution,
-        revenueByPlan
-      }
+        revenueByPlan,
+      },
     });
   } catch (err) {
-    console.error('Get meal plan analytics error:', err);
+    console.error("Get meal plan analytics error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch meal plan analytics',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to fetch meal plan analytics",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+};
+
+// Recalculate price for a meal plan based on assigned meals
+exports.recalculateMealPlanPrice = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid meal plan ID",
+      });
+    }
+
+    const mealPlan = await MealPlan.findById(id);
+    if (!mealPlan) {
+      return res.status(404).json({
+        success: false,
+        message: "Meal plan not found",
+      });
+    }
+
+    const MealPlanAssignment = require("../models/MealPlanAssignment");
+    const Meal = require("../models/Meal");
+
+    // Get all assignments for this meal plan within its duration
+    const assignments = await MealPlanAssignment.find({
+      mealPlanId: id,
+      weekNumber: { $lte: mealPlan.durationWeeks },
+    });
+
+    let calculatedPrice = 0;
+    let totalMealsCount = 0;
+
+    for (const assignment of assignments) {
+      if (assignment.mealIds && Array.isArray(assignment.mealIds)) {
+        for (const mealId of assignment.mealIds) {
+          const meal = await Meal.findById(mealId);
+          if (meal?.pricing?.totalPrice) {
+            calculatedPrice += meal.pricing.totalPrice;
+            totalMealsCount++;
+          }
+        }
+      }
+    }
+
+    // Update the meal plan with the calculated price
+    const updatedPlan = await MealPlan.findByIdAndUpdate(
+      id,
+      {
+        totalPrice: calculatedPrice,
+        updatedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    console.log(
+      `💰 Recalculated price for meal plan "${
+        mealPlan.planName
+      }": ₦${calculatedPrice.toLocaleString()} (${totalMealsCount} meals across ${
+        assignments.length
+      } assignments)`
+    );
+
+    res.json({
+      success: true,
+      message: "Meal plan price recalculated successfully",
+      data: {
+        mealPlan: updatedPlan,
+        calculation: {
+          oldPrice: mealPlan.totalPrice,
+          newPrice: calculatedPrice,
+          totalMeals: totalMealsCount,
+          totalAssignments: assignments.length,
+        },
+      },
+    });
+  } catch (err) {
+    console.error("Recalculate meal plan price error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to recalculate meal plan price",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
