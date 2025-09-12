@@ -21,7 +21,25 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
   const [nextDelivery, setNextDelivery] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Early return if subscription is invalid
+  // Debug subscription data structure
+  if (subscription && subscription._id) {
+    console.log("🔍 SubscriptionCard received subscription data:", {
+      id: subscription._id,
+      status: subscription.status,
+      startDate: subscription.startDate,
+      createdAt: subscription.createdAt,
+      mealPlanId: subscription.mealPlanId,
+      planName: subscription.planName,
+    });
+  }
+
+  useEffect(() => {
+    if (subscription?._id) {
+      loadSubscriptionDetails();
+    }
+  }, [subscription?._id]);
+
+  // Early return after hooks - check if subscription is invalid
   if (!subscription || !subscription._id) {
     console.warn(
       "⚠️ SubscriptionCard received invalid subscription:",
@@ -29,22 +47,6 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     );
     return null;
   }
-
-  // Debug subscription data structure
-  console.log("🔍 SubscriptionCard received subscription data:", {
-    id: subscription._id,
-    status: subscription.status,
-    startDate: subscription.startDate,
-    createdAt: subscription.createdAt,
-    mealPlanId: subscription.mealPlanId,
-    planName: subscription.planName,
-  });
-
-  useEffect(() => {
-    if (subscription?._id) {
-      loadSubscriptionDetails();
-    }
-  }, [subscription._id]);
 
   const loadSubscriptionDetails = async () => {
     try {
@@ -135,12 +137,33 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     }
 
     // Normalize dates to midnight to avoid time-of-day issues
-    const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const startDateNormalized = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const todayNormalized = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const startDateNormalized = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
+
+    // Check if first delivery has been completed
+    // Only start counting days after the first delivery is marked as delivered
+    const hasFirstDeliveryCompleted = subscription.firstDeliveryCompleted === true || 
+                                      subscription.status === "active";
+    
+    if (!hasFirstDeliveryCompleted) {
+      // If first delivery hasn't been completed, don't show today's meal yet
+      console.log("🚫 First delivery not completed yet, not showing today's meal");
+      return null;
+    }
 
     const daysDiff = Math.max(
       0,
-      Math.floor((todayNormalized - startDateNormalized) / (1000 * 60 * 60 * 24))
+      Math.floor(
+        (todayNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
+      )
     );
     const currentDay = Math.max(1, daysDiff + 1);
     const currentWeek = Math.max(1, Math.ceil(currentDay / 7));
@@ -270,6 +293,8 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       startDate: subscription.startDate,
       createdAt: subscription.createdAt,
       calculatedStartDate: startDate.toISOString(),
+      hasFirstDeliveryCompleted,
+      subscriptionStatus: subscription.status,
       daysDiff,
       currentDay,
       currentWeek,
@@ -329,12 +354,22 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     );
 
     // Normalize dates to midnight to avoid time-of-day issues
-    const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const startDateNormalized = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const todayNormalized = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const startDateNormalized = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
 
     const daysDiff = Math.max(
       0,
-      Math.floor((todayNormalized - startDateNormalized) / (1000 * 60 * 60 * 24))
+      Math.floor(
+        (todayNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
+      )
     );
     const currentDay = Math.max(1, daysDiff + 1);
 

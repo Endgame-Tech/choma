@@ -23,8 +23,8 @@ import { useAuth } from "../../hooks/useAuth";
 import NotificationIcon from "../../components/ui/NotificationIcon";
 import OrderCardSkeleton from "../../components/dashboard/OrderCardSkeleton";
 import OrderTrackingCard from "../../components/orders/OrderTrackingCard";
-import RecurringDeliveryCard from "../../components/orders/RecurringDeliveryCard";
 import CompactOrderCard from "../../components/orders/CompactOrderCard";
+import RecurringDeliveryCard from "../../components/orders/RecurringDeliveryCard";
 import { useNotification } from "../../context/NotificationContext";
 import { useAlert } from "../../contexts/AlertContext";
 import { useFocusEffect } from "@react-navigation/native";
@@ -79,7 +79,7 @@ const OrdersScreen = ({ navigation }) => {
       const interval = setInterval(() => {
         console.log("🔄 Real-time order update check...");
         loadOrders();
-      }, 30000); // Update every 30 seconds for active orders
+      }, 60000); // Update every 60 seconds for active orders (reduced frequency)
 
       setRealTimeUpdateInterval(interval);
 
@@ -91,14 +91,17 @@ const OrdersScreen = ({ navigation }) => {
         clearInterval(realTimeUpdateInterval);
       }
     };
-  }, [orders.length, orders]);
+  }, [orders.length]); // Remove 'orders' from dependency to prevent refresh loops
 
   // Refresh orders when screen comes into focus (chef status might have changed)
   useFocusEffect(
     React.useCallback(() => {
-      // Refresh orders when user navigates back to this screen
-      loadOrders();
-    }, [])
+      // Only refresh if the screen was previously loaded to avoid double-loading on initial render
+      if (orders.length > 0) {
+        console.log("🔄 Screen focused - refreshing orders...");
+        loadOrders();
+      }
+    }, [orders.length])
   );
 
   // Cleanup intervals on unmount
@@ -174,129 +177,32 @@ const OrdersScreen = ({ navigation }) => {
             })
           : [];
 
-        // Get meal assignments for each subscription to determine real status
-        const subscriptionOrdersPromises = activeSubscriptions.map(
-          async (subscription) => {
-            try {
-              // Try to get meal assignments for this subscription
-              const mealAssignmentsResult = await apiService
-                .get(`/meal-assignments/subscription/${subscription._id}`)
-                .catch(() => ({ success: false, data: null }));
+        // Convert active subscriptions to virtual orders for tracking
+        const subscriptionOrders = activeSubscriptions.map((subscription) => ({
+          _id: `sub_${subscription._id}`,
+          orderNumber:
+            subscription.subscriptionId || `SUB${subscription._id?.slice(-8)}`,
+          status: "preparing", // Default status for active subscriptions
+          orderStatus: "Preparing", // For display
+          mealPlan: subscription.mealPlanId || {
+            name: "Subscription Meal Plan",
+          },
+          orderItems: {
+            planName:
+              subscription.mealPlanId?.planName || "Subscription Meal Plan",
+          },
+          totalAmount: subscription.totalPrice || subscription.price,
+          createdAt: subscription.startDate || subscription.createdAt,
+          estimatedDelivery: subscription.nextDelivery,
+          deliveryAddress:
+            subscription.deliveryAddress || "Your delivery address",
+          paymentMethod: subscription.paymentMethod || "Subscription payment",
+          paymentStatus: subscription.paymentStatus || "Paid",
+          instructions: "Subscription delivery",
+          quantity: 1,
+          isSubscriptionOrder: true,
+        }));
 
-              let realStatus = "preparing"; // Default fallback
-              let displayStatus = "Preparing";
-
-              if (mealAssignmentsResult.success && mealAssignmentsResult.data) {
-                const assignments = Array.isArray(mealAssignmentsResult.data)
-                  ? mealAssignmentsResult.data
-                  : [mealAssignmentsResult.data];
-
-                // Get the latest/most relevant meal assignment status
-                const latestAssignment = assignments
-                  .filter((a) => a && a.status)
-                  .sort(
-                    (a, b) =>
-                      new Date(b.scheduledDate || b.createdAt) -
-                      new Date(a.scheduledDate || a.createdAt)
-                  )[0];
-
-                if (latestAssignment) {
-                  realStatus = latestAssignment.status;
-                  // Map backend statuses to display statuses
-                  switch (latestAssignment.status?.toLowerCase()) {
-                    case "delivered":
-                      displayStatus = "Delivered";
-                      break;
-                    case "ready":
-                    case "out_for_delivery":
-                      displayStatus = "Out for Delivery";
-                      break;
-                    case "preparing":
-                    case "chef_assigned":
-                      displayStatus = "Preparing";
-                      break;
-                    case "cancelled":
-                      displayStatus = "Cancelled";
-                      break;
-                    case "failed":
-                      displayStatus = "Failed";
-                      break;
-                    default:
-                      displayStatus = "Preparing";
-                  }
-                }
-              }
-
-              return {
-                _id: `sub_${subscription._id}`,
-                orderNumber:
-                  subscription.subscriptionId ||
-                  `SUB${subscription._id?.slice(-8)}`,
-                status: realStatus, // Use real status from meal assignments
-                orderStatus: displayStatus, // For display
-                delegationStatus: realStatus, // Add delegationStatus for consistency
-                mealPlan: subscription.mealPlanId || {
-                  name: "Subscription Meal Plan",
-                },
-                orderItems: {
-                  planName:
-                    subscription.mealPlanId?.planName ||
-                    "Subscription Meal Plan",
-                },
-                totalAmount: subscription.totalPrice || subscription.price,
-                createdAt: subscription.startDate || subscription.createdAt,
-                estimatedDelivery: subscription.nextDelivery,
-                deliveryAddress:
-                  subscription.deliveryAddress || "Your delivery address",
-                paymentMethod:
-                  subscription.paymentMethod || "Subscription payment",
-                paymentStatus: subscription.paymentStatus || "Paid",
-                instructions: "Subscription delivery",
-                quantity: 1,
-                isSubscriptionOrder: true,
-              };
-            } catch (error) {
-              console.log(
-                `⚠️ Failed to get meal assignments for subscription ${subscription._id}:`,
-                error
-              );
-              // Fallback to default status
-              return {
-                _id: `sub_${subscription._id}`,
-                orderNumber:
-                  subscription.subscriptionId ||
-                  `SUB${subscription._id?.slice(-8)}`,
-                status: "preparing",
-                orderStatus: "Preparing",
-                delegationStatus: "preparing",
-                mealPlan: subscription.mealPlanId || {
-                  name: "Subscription Meal Plan",
-                },
-                orderItems: {
-                  planName:
-                    subscription.mealPlanId?.planName ||
-                    "Subscription Meal Plan",
-                },
-                totalAmount: subscription.totalPrice || subscription.price,
-                createdAt: subscription.startDate || subscription.createdAt,
-                estimatedDelivery: subscription.nextDelivery,
-                deliveryAddress:
-                  subscription.deliveryAddress || "Your delivery address",
-                paymentMethod:
-                  subscription.paymentMethod || "Subscription payment",
-                paymentStatus: subscription.paymentStatus || "Paid",
-                instructions: "Subscription delivery",
-                quantity: 1,
-                isSubscriptionOrder: true,
-              };
-            }
-          }
-        );
-
-        // Wait for all subscription order processing to complete
-        const subscriptionOrders = await Promise.all(
-          subscriptionOrdersPromises
-        );
         allOrders = [...allOrders, ...subscriptionOrders];
       }
 
@@ -324,9 +230,7 @@ const OrdersScreen = ({ navigation }) => {
           order.orderStatus ||
           ""
         ).toLowerCase();
-        return (
-          status && ["delivered", "ready", "out_for_delivery"].includes(status)
-        );
+        return status && ["delivered"].includes(status);
       }).length;
 
       const cancelledCount = allOrders.filter((order) => {
@@ -338,7 +242,7 @@ const OrdersScreen = ({ navigation }) => {
           order.orderStatus ||
           ""
         ).toLowerCase();
-        return status && ["cancelled", "failed"].includes(status);
+        return status === "cancelled";
       }).length;
 
       setTabs([
@@ -454,112 +358,55 @@ const OrdersScreen = ({ navigation }) => {
     setSelectedOrder(null);
   };
 
-  // Helper function to calculate delivery day
-  const getDeliveryDay = (order) => {
-    // Try multiple possible data sources for delivery day
-    if (order?.deliveryDay) {
-      return parseInt(order.deliveryDay);
-    }
-    
-    if (order?.dayNumber) {
-      return parseInt(order.dayNumber);
-    }
-    
-    // Check if this is an activation order (first delivery)
-    if (order?.recurringOrder?.isActivationOrder === true) {
-      return 1;
-    }
-    
-    // Check order type - "one-time" is usually the first/activation delivery
-    if (order?.recurringOrder?.orderType === "one-time") {
-      return 1;
-    }
-    
-    // Check order type - "subscription-recurring" is usually Day 2+
-    if (order?.recurringOrder?.orderType === "subscription-recurring") {
-      return 2; // Or calculate based on subscription progression
-    }
-    
-    // If we have subscription and delivery date info, calculate from that
-    if (order?.subscription?.startDate && order?.deliveryDate) {
-      const startDate = new Date(order.subscription.startDate);
-      const deliveryDate = new Date(order.deliveryDate);
-      
-      // Normalize dates to midnight to avoid time-of-day issues
-      const startDateNormalized = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-      const deliveryDateNormalized = new Date(deliveryDate.getFullYear(), deliveryDate.getMonth(), deliveryDate.getDate());
-      
-      const daysDiff = Math.floor((deliveryDateNormalized - startDateNormalized) / (1000 * 60 * 60 * 24));
-      return Math.max(1, daysDiff + 1);
-    }
-    
-    // Fallback to current date calculation if subscription start date exists
-    if (order?.subscription?.startDate) {
-      const startDate = new Date(order.subscription.startDate);
-      const currentDate = new Date();
-      
-      // Normalize dates to midnight to avoid time-of-day issues
-      const startDateNormalized = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-      const currentDateNormalized = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-      
-      const daysDiff = Math.floor((currentDateNormalized - startDateNormalized) / (1000 * 60 * 60 * 24));
-      return Math.max(1, daysDiff + 1);
-    }
-    
-    // Default to day 1 if no information is available
-    return 1;
-  };
-
-  // Helper function to determine if order is a subscription order (any day)
-  const isSubscriptionOrder = (order) => {
-    return !!(
-      order?.subscription || 
-      order?.recurringOrder ||
-      order?.isSubscriptionOrder || 
-      order?.orderItems?.type === "subscription_pickup"
-    );
-  };
-
-  // Helper function to determine if order is specifically a recurring delivery (Day 2+)
-  const isRecurringDelivery = (order) => {
-    const isSubscription = isSubscriptionOrder(order);
-    const deliveryDay = getDeliveryDay(order);
-    
-    // Day 1 deliveries should use CompactOrderCard (activation delivery)
-    // Day 2+ should use RecurringDeliveryCard (ongoing recurring deliveries)
-    return isSubscription && deliveryDay > 1;
-  };
-
-  // Render active orders with appropriate card
+  // Render active orders with appropriate card based on order type
   const renderActiveOrder = (order) => {
-    const isSubscription = isSubscriptionOrder(order);
-    const deliveryDay = getDeliveryDay(order);
-    const isRecurring = isRecurringDelivery(order);
-
-    // Debug logging to help understand the logic
-    console.log("📋 OrdersScreen Order FULL DEBUG:", {
-      orderId: order._id?.slice(-8) || order.id?.slice(-8),
-      // Current calculated values
-      isSubscription,
-      deliveryDay,
-      isRecurring,
-      cardType: isRecurring ? "RecurringDeliveryCard (Day 2+)" : "CompactOrderCard (Day 1/OneTime)"
-    });
-    
-    console.log("📋 OrdersScreen Order RAW DATA:", {
-      orderId: order._id?.slice(-8) || order.id?.slice(-8),
-      fullOrder: JSON.stringify(order, null, 2)
+    // Debug logging to see order properties
+    console.log("🔍 Rendering order:", {
+      id: order._id || order.id,
+      isSubscriptionOrder: order.isSubscriptionOrder,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      orderType: order.orderType,
+      recurringOrder: order.recurringOrder,
+      subscription: !!order.subscription,
+      deliveryDay: order.deliveryDay,
+      dayNumber: order.dayNumber,
+      isActivationOrder: order.recurringOrder?.isActivationOrder,
     });
 
-    // Use dedicated RecurringDeliveryCard ONLY for Day 2+ recurring deliveries
-    if (isRecurring) {
+    // Check if this is a subscription order (but not the first delivery)
+    const isSubscriptionOrder =
+      order.isSubscriptionOrder === true ||
+      order.orderNumber?.startsWith("SUB") ||
+      order._id?.startsWith("sub_") ||
+      order.id?.startsWith("sub_") ||
+      order.orderType === "subscription" ||
+      order.recurringOrder !== undefined;
+
+    // Check if this is the first delivery of a subscription
+    const isFirstDelivery =
+      order.recurringOrder?.isActivationOrder === true ||
+      order.recurringOrder?.orderType === "one-time" ||
+      (order.deliveryDay && parseInt(order.deliveryDay) === 1) ||
+      (order.dayNumber && parseInt(order.dayNumber) === 1);
+
+    console.log("📊 Order analysis:", {
+      isSubscriptionOrder,
+      isFirstDelivery,
+      cardType:
+        isSubscriptionOrder && !isFirstDelivery
+          ? "RecurringDeliveryCard"
+          : "CompactOrderCard",
+    });
+
+    // Use RecurringDeliveryCard for subscription orders EXCEPT the first delivery
+    if (isSubscriptionOrder && !isFirstDelivery) {
       return (
         <RecurringDeliveryCard
           key={order._id || order.id}
           order={order}
           onContactSupport={() => navigation.navigate("Support")}
           onTrackDriver={(driver) => {
-            // Handle driver tracking
             console.log("Track driver:", driver);
           }}
           style={{ marginHorizontal: 0, marginBottom: 20 }}
@@ -567,7 +414,9 @@ const OrdersScreen = ({ navigation }) => {
       );
     }
 
-    // Use compact card for Day 1 activation deliveries and one-time orders
+    // Use CompactOrderCard for:
+    // 1. Regular first-time orders (non-subscription)
+    // 2. First delivery of subscription orders
     return (
       <CompactOrderCard
         key={order._id || order.id}
@@ -588,11 +437,9 @@ const OrdersScreen = ({ navigation }) => {
           }
         }}
         onRateOrder={(order) => {
-          // Navigate to rating screen or show rating modal
           console.log("Rate order:", order._id);
         }}
         onTrackDriver={(driver) => {
-          // Handle driver tracking
           console.log("Track driver:", driver);
         }}
         style={{ marginHorizontal: 0, marginBottom: 20 }}
@@ -600,144 +447,71 @@ const OrdersScreen = ({ navigation }) => {
     );
   };
 
-  const renderOrderCard = (order) => (
-    <TouchableOpacity
-      key={order.id}
-      style={styles(colors).orderCard}
-      onPress={async () => {
-        const freshOrder = await getOrderDetails(order);
-        navigation.navigate("OrderDetail", { order: freshOrder });
-      }}
-      activeOpacity={0.9}
-    >
-      {/* Order Header */}
-      <View style={styles(colors).orderHeader}>
-        <Text style={styles(colors).orderTitle}>Your Orders</Text>
-        <View
-          style={[
-            styles(colors).statusBadge,
-            { backgroundColor: order.statusColor },
-          ]}
-        >
-          <Text style={styles(colors).statusText}>{order.statusText}</Text>
-        </View>
-      </View>
+  // Render completed/cancelled orders with appropriate card based on order type
+  const renderOrderCard = (order) => {
+    // Check if this is a subscription order
+    const isSubscriptionOrder =
+      order.isSubscriptionOrder === true ||
+      order.orderNumber?.startsWith("SUB") ||
+      order._id?.startsWith("sub_") ||
+      order.id?.startsWith("sub_") ||
+      order.orderType === "subscription" ||
+      order.recurringOrder !== undefined;
 
-      {/* Order Item */}
-      <View style={styles(colors).orderItem}>
-        <Image source={order.image} style={styles(colors).orderImage} />
-        <View style={styles(colors).orderItemInfo}>
-          <Text style={styles(colors).orderItemName}>{order.planName}</Text>
-          <View style={styles(colors).orderItemMeta}>
-            <Text style={styles(colors).orderItemPrice}>
-              ₦{(order.price || order.totalAmount || 0).toLocaleString()}
-            </Text>
-            <Text style={styles(colors).orderItemCount}>
-              {order.items} Items
-            </Text>
-          </View>
-          <View style={styles(colors).ratingContainer}>
-            <Ionicons name="star" size={14} color={colors.rating} />
-            <Text style={styles(colors).ratingText}>4.8</Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles(colors).reorderButton}>
-          <Ionicons name="repeat" size={16} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+    // Check if this is the first delivery of a subscription
+    const isFirstDelivery =
+      order.recurringOrder?.isActivationOrder === true ||
+      order.recurringOrder?.orderType === "one-time" ||
+      (order.deliveryDay && parseInt(order.deliveryDay) === 1) ||
+      (order.dayNumber && parseInt(order.dayNumber) === 1);
 
-      {/* Order Summary */}
-      <View style={styles(colors).orderSummary}>
-        <View style={styles(colors).summaryRow}>
-          <Text style={styles(colors).summaryLabel}>Order Date</Text>
-          <Text style={styles(colors).summaryValue}>{order.orderDate}</Text>
-        </View>
-        <View style={styles(colors).summaryRow}>
-          <Text style={styles(colors).summaryLabel}>Total Amount</Text>
-          <Text style={styles(colors).summaryValue}>
-            ₦
-            {(
-              order.transaction?.total ||
-              order.totalAmount ||
-              order.price ||
-              0
-            ).toLocaleString()}
-          </Text>
-        </View>
-        <View style={styles(colors).summaryRow}>
-          <Text style={styles(colors).summaryLabel}>Order ID</Text>
-          <Text style={styles(colors).summaryValue}>#{order.id}</Text>
-        </View>
-      </View>
+    // Use RecurringDeliveryCard for subscription orders EXCEPT the first delivery
+    if (isSubscriptionOrder && !isFirstDelivery) {
+      return (
+        <RecurringDeliveryCard
+          key={order._id || order.id}
+          order={order}
+          onContactSupport={() => navigation.navigate("Support")}
+          onTrackDriver={(driver) => {
+            console.log("Track driver:", driver);
+          }}
+          style={{ marginHorizontal: 0, marginBottom: 20 }}
+        />
+      );
+    }
 
-      {/* Action Buttons */}
-      <View style={styles(colors).actionButtons}>
-        {order.status === "paid" && (
-          <TouchableOpacity
-            style={styles(colors).primaryButton}
-            onPress={() => navigation.navigate("Main", { screen: "Home" })}
-          >
-            <Text style={styles(colors).primaryButtonText}>Rate & Review</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Show Cancel button for cancellable statuses */}
-        {(order.status === "wait" || order.status === "processing") && (
-          <TouchableOpacity
-            style={styles(colors).secondaryButton}
-            onPress={() => handleCancelOrder(order)}
-          >
-            <Text style={styles(colors).secondaryButtonText}>Cancel Order</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Show Track Order only for orders being actively prepared or delivered - NOT for completed orders */}
-        {selectedTab === "active" &&
-          [
-            "out_for_delivery",
-            "en_route",
-            "ready",
-            "preparing",
-            "inprogress",
-            "confirmed",
-            "processing",
-          ].includes(
-            (order.status || order.orderStatus || "").toLowerCase()
-          ) && (
-            <TouchableOpacity
-              style={styles(colors).primaryButton}
-              onPress={async () => {
-                const freshOrder = await getOrderDetails(order);
-                navigation.navigate("TrackingScreen", {
-                  orderId: freshOrder._id || freshOrder.id,
-                  trackingId: freshOrder.trackingId || null,
-                  order: freshOrder,
-                });
-              }}
-            >
-              <Text style={styles(colors).primaryButtonText}>Track Order</Text>
-            </TouchableOpacity>
-          )}
-
-        {/* Show "View Details" button for delivered orders */}
-        {["delivered", "cancelled"].includes(
-          (order.status || order.orderStatus || "").toLowerCase()
-        ) && (
-          <TouchableOpacity
-            style={styles(colors).secondaryButton}
-            onPress={async () => {
-              const freshOrder = await getOrderDetails(order);
-              navigation.navigate("OrderDetail", {
-                order: freshOrder,
-              });
-            }}
-          >
-            <Text style={styles(colors).secondaryButtonText}>View Details</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+    // Use CompactOrderCard for:
+    // 1. Regular first-time orders (non-subscription)
+    // 2. First delivery of subscription orders
+    return (
+      <CompactOrderCard
+        key={order._id || order.id}
+        order={order}
+        onContactSupport={() => navigation.navigate("Support")}
+        onReorder={(order) => {
+          // Navigate to meal plan detail for reordering
+          if (order.mealPlan || order.orderItems?.mealPlan) {
+            navigation.navigate("MealPlanDetail", {
+              bundle: order.mealPlan || { _id: order.orderItems?.mealPlan },
+            });
+          }
+        }}
+        onCancelOrder={(orderId) => {
+          const orderToCancel = orders.find((o) => (o._id || o.id) === orderId);
+          if (orderToCancel) {
+            handleCancelOrder(orderToCancel);
+          }
+        }}
+        onRateOrder={(order) => {
+          console.log("Rate order:", order._id);
+        }}
+        onTrackDriver={(driver) => {
+          console.log("Track driver:", driver);
+        }}
+        style={{ marginHorizontal: 0, marginBottom: 20 }}
+      />
+    );
+  };
 
   const renderTabButton = (tab) => (
     <TouchableOpacity
@@ -788,18 +562,13 @@ const OrdersScreen = ({ navigation }) => {
         ).toLowerCase();
 
         if (selectedTab === "active") {
-          return (
-            status && !["cancelled", "delivered", "failed"].includes(status)
-          );
+          return status && !["cancelled", "delivered"].includes(status);
         }
         if (selectedTab === "completed") {
-          return (
-            status &&
-            ["delivered", "ready", "out_for_delivery"].includes(status)
-          );
+          return status && ["delivered"].includes(status);
         }
         if (selectedTab === "cancelled") {
-          return status && ["cancelled", "failed"].includes(status);
+          return status === "cancelled";
         }
         return true;
       })
@@ -1062,144 +831,6 @@ const styles = (colors) =>
     ordersContainer: {
       paddingHorizontal: 20,
       paddingTop: 20,
-    },
-    orderCard: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.large,
-      padding: 20,
-      marginBottom: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
-      ...THEME.shadows.medium,
-    },
-    orderHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 15,
-    },
-    orderTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    statusBadge: {
-      paddingHorizontal: 12,
-      paddingVertical: 4,
-      borderRadius: THEME.borderRadius.medium,
-    },
-    statusText: {
-      fontSize: 12,
-      fontWeight: "bold",
-      color: colors.white,
-    },
-    orderItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 20,
-      paddingBottom: 15,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    orderImage: {
-      width: 70,
-      height: 70,
-      borderRadius: THEME.borderRadius.medium,
-      marginRight: 15,
-    },
-    orderItemInfo: {
-      flex: 1,
-    },
-    orderItemName: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 8,
-    },
-    orderItemMeta: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 5,
-    },
-    orderItemPrice: {
-      fontSize: 16,
-      fontWeight: "bold",
-      color: colors.primary,
-    },
-    orderItemCount: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      fontWeight: "500",
-    },
-    ratingContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    ratingText: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      marginLeft: 4,
-      fontWeight: "500",
-    },
-    reorderButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: `${colors.primary}20`,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    orderSummary: {
-      marginBottom: 20,
-      paddingBottom: 15,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    summaryRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 8,
-    },
-    summaryLabel: {
-      fontSize: 14,
-      color: colors.textSecondary,
-    },
-    summaryValue: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: colors.text,
-    },
-    actionButtons: {
-      flexDirection: "row",
-      gap: 10,
-    },
-    primaryButton: {
-      flex: 1,
-      backgroundColor: colors.primary,
-      paddingVertical: 12,
-      borderRadius: THEME.borderRadius.medium,
-      alignItems: "center",
-    },
-    primaryButtonText: {
-      color: colors.white,
-      fontSize: 14,
-      fontWeight: "600",
-    },
-    secondaryButton: {
-      flex: 1,
-      backgroundColor: colors.background,
-      paddingVertical: 12,
-      borderRadius: THEME.borderRadius.medium,
-      alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.error,
-    },
-    secondaryButtonText: {
-      color: colors.error,
-      fontSize: 14,
-      fontWeight: "600",
     },
     emptyState: {
       flex: 1,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { earningsApi } from '../services/api'
-import type { EarningsData } from '../types'
+import type { EarningsData, PaymentRecord } from '../types'
 import {
   AlertTriangle,
   DollarSign,
@@ -15,6 +15,7 @@ import {
 const Earnings: React.FC = () => {
   const { chef } = useAuth()
   const [earningsData, setEarningsData] = useState<EarningsData | null>(null)
+  const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<'current_week' | 'last_week' | 'current_month'>('current_month')
@@ -30,7 +31,7 @@ const Earnings: React.FC = () => {
 
       // Fetch earnings data using the new API
       const earnings = await earningsApi.getEarnings(selectedPeriod).catch(() => null)
-
+      
       if (earnings) {
         // Transform to legacy format for backward compatibility
         const transformedData = {
@@ -40,11 +41,26 @@ const Earnings: React.FC = () => {
           availableBalance: earnings.summary.totalPaid, // Paid amounts are available
           pendingPayments: earnings.summary.totalPending,
           ordersCompleted: earnings.summary.completedOrders,
-          averageOrderValue: earnings.summary.completedOrders > 0
-            ? earnings.summary.totalEarnings / earnings.summary.completedOrders
+          averageOrderValue: earnings.summary.completedOrders > 0 
+            ? earnings.summary.totalEarnings / earnings.summary.completedOrders 
             : 0
         }
         setEarningsData(transformedData)
+        
+        // Transform earnings to payment history format
+        const payments = earnings.earnings?.map((earning: any) => ({
+          _id: earning.id,
+          chefId: earnings.chef?.id,
+          amount: earning.cookingFee,
+          type: 'earning',
+          status: earning.status,
+          description: `Order completed - ₦${earning.cookingFee.toLocaleString()}`,
+          orderId: earning.orderNumber,
+          createdAt: earning.completedDate,
+          updatedAt: earning.payoutDate || earning.completedDate
+        })) || []
+        
+        setPaymentHistory(payments)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load earnings data')

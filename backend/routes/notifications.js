@@ -1,42 +1,43 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const auth = require("../middleware/auth");
-const NotificationController = require("../controllers/notificationController");
-const { notificationValidations } = require("../middleware/validation");
+const auth = require('../middleware/auth');
+const NotificationController = require('../controllers/notificationController');
+const { notificationValidations } = require('../middleware/validation');
 
 // GET /api/notifications - Get user notifications
-router.get("/", auth, NotificationController.getUserNotifications);
+router.get('/', auth, NotificationController.getUserNotifications);
 
 // GET /api/notifications/unread-count - Get unread notification count
-router.get("/unread-count", auth, NotificationController.getUnreadCount);
+router.get('/unread-count', auth, NotificationController.getUnreadCount);
 
 // GET /api/notifications/preferences - Get notification preferences
-router.get("/preferences", auth, NotificationController.getPreferences);
+router.get('/preferences', auth, NotificationController.getPreferences);
+
+// GET /api/notifications/preferences/settings - Get notification preferences (alias)
+router.get('/preferences/settings', auth, NotificationController.getPreferences);
 
 // GET /api/notifications/stats - Get notification statistics
-router.get("/stats", auth, NotificationController.getNotificationStats);
+router.get('/stats', auth, NotificationController.getNotificationStats);
 
 // PUT /api/notifications/preferences - Update notification preferences
-router.put(
-  "/preferences",
-  auth,
-  notificationValidations.preferences,
-  NotificationController.updatePreferences
-);
+router.put('/preferences', auth, notificationValidations.preferences, NotificationController.updatePreferences);
+
+// PUT /api/notifications/preferences/settings - Update notification preferences (alias)
+router.put('/preferences/settings', auth, notificationValidations.preferences, NotificationController.updatePreferences);
 
 // GET /api/notifications/:id - Get notification by ID
-router.get("/:id", auth, NotificationController.getNotificationById);
+router.get('/:id', auth, NotificationController.getNotificationById);
 
 // PUT /api/notifications/:id/read - Mark notification as read
-router.put("/:id/read", auth, NotificationController.markAsRead);
+router.put('/:id/read', auth, NotificationController.markAsRead);
 
 // PUT /api/notifications/mark-all-read - Mark all notifications as read
-router.put("/mark-all-read", auth, NotificationController.markAllAsRead);
+router.put('/mark-all-read', auth, NotificationController.markAllAsRead);
 
 // DELETE /api/notifications/:id - Delete notification
-router.delete("/:id", auth, NotificationController.deleteNotification);
+router.delete('/:id', auth, NotificationController.deleteNotification);
 
 // DELETE /api/notifications/read/all - Delete all read notifications
-router.delete("/read/all", auth, NotificationController.deleteAllRead);
+router.delete('/read/all', auth, NotificationController.deleteAllRead);
 
 module.exports = router;

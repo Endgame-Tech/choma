@@ -122,14 +122,14 @@ router.put('/assignments/:id/deliver',
   confirmDelivery
 );
 
-// New route for updating assignment status
-router.put('/assignments/:id/status',
-  param('id').isMongoId().withMessage('Invalid assignment ID'),
-  body('status').isIn(['picked_up', 'out_for_delivery', 'delivered', 'cancelled']).withMessage('Invalid status'),
-  body('notes').optional().isLength({ max: 1000 }).withMessage('Notes too long'),
-  body('location').optional().isObject().withMessage('Location must be an object'),
-  require('../controllers/driverController').updateAssignmentStatus
-);
+// TODO: Implement updateAssignmentStatus function in driverController if needed
+// router.put('/assignments/:id/status',
+//   param('id').isMongoId().withMessage('Invalid assignment ID'),
+//   body('status').isIn(['picked_up', 'out_for_delivery', 'delivered', 'cancelled']).withMessage('Invalid status'),
+//   body('notes').optional().isLength({ max: 1000 }).withMessage('Notes too long'),
+//   body('location').optional().isObject().withMessage('Location must be an object'),
+//   require('../controllers/driverController').updateAssignmentStatus
+// );
 
 // History and stats
 router.get('/history',

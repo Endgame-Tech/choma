@@ -1,6 +1,6 @@
-const MealAssignment = require("../models/MealAssignment");
-const RecurringSubscription = require("../models/RecurringSubscription");
-const mongoose = require("mongoose");
+const MealAssignment = require('../models/MealAssignment');
+const RecurringSubscription = require('../models/RecurringSubscription');
+const mongoose = require('mongoose');
 
 const recurringDeliveryMonitoringController = {
   /**
@@ -9,10 +9,10 @@ const recurringDeliveryMonitoringController = {
   async getLiveDeliveries(req, res) {
     try {
       const { date, status, area } = req.query;
-
+      
       // Build match query
       const matchQuery = {};
-
+      
       // Filter by date if provided
       if (date) {
         const targetDate = new Date(date);
@@ -20,10 +20,10 @@ const recurringDeliveryMonitoringController = {
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(targetDate);
         endOfDay.setHours(23, 59, 59, 999);
-
+        
         matchQuery.scheduledDate = {
           $gte: startOfDay,
-          $lte: endOfDay,
+          $lte: endOfDay
         };
       } else {
         // Default to today
@@ -32,148 +32,145 @@ const recurringDeliveryMonitoringController = {
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(today);
         endOfDay.setHours(23, 59, 59, 999);
-
+        
         matchQuery.scheduledDate = {
           $gte: startOfDay,
-          $lte: endOfDay,
+          $lte: endOfDay
         };
       }
-
+      
       // Filter by status if provided and not 'all'
-      if (status && status !== "all") {
-        if (status === "overdue") {
+      if (status && status !== 'all') {
+        if (status === 'overdue') {
           matchQuery.isOverdue = true;
         } else {
           matchQuery.status = status;
         }
       }
-
+      
       // Aggregate deliveries with populated data
       const deliveries = await MealAssignment.aggregate([
         { $match: matchQuery },
         {
           $lookup: {
-            from: "recurringsubscriptions",
-            localField: "subscriptionId",
-            foreignField: "_id",
-            as: "subscription",
-          },
+            from: 'recurringsubscriptions',
+            localField: 'subscriptionId',
+            foreignField: '_id',
+            as: 'subscription'
+          }
         },
-        { $unwind: "$subscription" },
+        { $unwind: '$subscription' },
         {
           $lookup: {
-            from: "users",
-            localField: "subscription.userId",
-            foreignField: "_id",
-            as: "customer",
-          },
+            from: 'users',
+            localField: 'subscription.userId',
+            foreignField: '_id',
+            as: 'customer'
+          }
         },
-        { $unwind: "$customer" },
+        { $unwind: '$customer' },
         {
           $lookup: {
-            from: "mealplans",
-            localField: "subscription.mealPlanId",
-            foreignField: "_id",
-            as: "mealPlan",
-          },
+            from: 'mealplans',
+            localField: 'subscription.mealPlanId',
+            foreignField: '_id',
+            as: 'mealPlan'
+          }
         },
-        { $unwind: "$mealPlan" },
+        { $unwind: '$mealPlan' },
         {
           $lookup: {
-            from: "chefs",
-            localField: "assignedChef",
-            foreignField: "_id",
-            as: "chef",
-          },
+            from: 'chefs',
+            localField: 'assignedChef',
+            foreignField: '_id',
+            as: 'chef'
+          }
         },
-        { $unwind: { path: "$chef", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$chef', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
-            from: "drivers",
-            localField: "assignedDriver",
-            foreignField: "_id",
-            as: "driver",
-          },
+            from: 'drivers',
+            localField: 'assignedDriver',
+            foreignField: '_id',
+            as: 'driver'
+          }
         },
-        { $unwind: { path: "$driver", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$driver', preserveNullAndEmptyArrays: true } },
         {
           $addFields: {
             // Check if delivery is overdue
             isOverdue: {
               $and: [
-                {
-                  $in: ["$status", ["scheduled", "chef_assigned", "preparing"]],
-                },
-                { $lt: ["$scheduledDate", new Date()] },
-              ],
+                { $in: ['$status', ['scheduled', 'chef_assigned', 'preparing']] },
+                { $lt: ['$scheduledDate', new Date()] }
+              ]
             },
             // Extract area from delivery address (simplified)
             deliveryArea: {
               $arrayElemAt: [
-                { $split: ["$subscription.deliverySchedule.address", ","] },
-                -2,
-              ],
-            },
-          },
+                { $split: ['$subscription.deliverySchedule.address', ','] },
+                -2
+              ]
+            }
+          }
         },
         // Filter by area if provided
-        ...(area && area !== "all"
-          ? [
-              {
-                $match: {
-                  deliveryArea: { $regex: area, $options: "i" },
-                },
-              },
-            ]
-          : []),
+        ...(area && area !== 'all' ? [
+          {
+            $match: {
+              deliveryArea: { $regex: area, $options: 'i' }
+            }
+          }
+        ] : []),
         {
           $project: {
             _id: 1,
-            subscriptionId: "$subscription._id",
-            customerName: "$customer.name",
-            customerPhone: "$customer.phone",
-            mealTitle: "$mealPlan.title",
-            mealImage: "$mealPlan.imageUrl",
-            chefName: "$chef.fullName",
-            chefPhone: "$chef.phone",
-            driverName: "$driver.fullName",
-            driverPhone: "$driver.phone",
+            subscriptionId: '$subscription._id',
+            customerName: '$customer.name',
+            customerPhone: '$customer.phone',
+            mealTitle: '$mealPlan.title',
+            mealImage: '$mealPlan.imageUrl',
+            chefName: '$chef.fullName',
+            chefPhone: '$chef.phone',
+            driverName: '$driver.fullName',
+            driverPhone: '$driver.phone',
             status: 1,
             scheduledDate: 1,
-            scheduledTimeSlot: "$subscription.deliverySchedule.timeSlot",
-            deliveryAddress: "$subscription.deliverySchedule.address",
-            coordinates: "$subscription.deliverySchedule.coordinates",
+            scheduledTimeSlot: '$subscription.deliverySchedule.timeSlot',
+            deliveryAddress: '$subscription.deliverySchedule.address',
+            coordinates: '$subscription.deliverySchedule.coordinates',
             estimatedReadyTime: 1,
             actualDeliveryTime: 1,
             isOverdue: 1,
-            priority: { $ifNull: ["$priority", "normal"] },
+            priority: { $ifNull: ['$priority', 'normal'] },
             timeline: {
-              $ifNull: ["$statusHistory", []],
-            },
-          },
+              $ifNull: ['$statusHistory', []]
+            }
+          }
         },
         {
-          $sort: {
+          $sort: { 
             priority: 1, // urgent first
             isOverdue: -1, // overdue first
-            scheduledDate: 1,
-          },
+            scheduledDate: 1 
+          }
         },
         {
-          $limit: 100, // Limit for performance
-        },
+          $limit: 100 // Limit for performance
+        }
       ]);
 
       res.json({
         success: true,
-        data: deliveries,
+        data: deliveries
       });
+
     } catch (error) {
-      console.error("Error fetching live deliveries:", error);
+      console.error('Error fetching live deliveries:', error);
       res.status(500).json({
         success: false,
-        message: "Failed to fetch live delivery data",
-        error: error.message,
+        message: 'Failed to fetch live delivery data',
+        error: error.message
       });
     }
   },
@@ -184,7 +181,7 @@ const recurringDeliveryMonitoringController = {
   async getDeliveryStats(req, res) {
     try {
       const { date } = req.query;
-
+      
       // Determine date range
       let targetDate;
       if (date) {
@@ -192,7 +189,7 @@ const recurringDeliveryMonitoringController = {
       } else {
         targetDate = new Date(); // Today
       }
-
+      
       const startOfDay = new Date(targetDate);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(targetDate);
@@ -204,95 +201,91 @@ const recurringDeliveryMonitoringController = {
           $match: {
             scheduledDate: {
               $gte: startOfDay,
-              $lte: endOfDay,
-            },
-          },
+              $lte: endOfDay
+            }
+          }
         },
         {
           $facet: {
             statusCounts: [
               {
                 $group: {
-                  _id: "$status",
-                  count: { $sum: 1 },
-                },
-              },
+                  _id: '$status',
+                  count: { $sum: 1 }
+                }
+              }
             ],
             overdueCount: [
               {
                 $match: {
                   $and: [
-                    {
-                      status: {
-                        $in: ["scheduled", "chef_assigned", "preparing"],
-                      },
-                    },
-                    { scheduledDate: { $lt: new Date() } },
-                  ],
-                },
+                    { $in: ['$status', ['scheduled', 'chef_assigned', 'preparing']] },
+                    { $lt: ['$scheduledDate', new Date()] }
+                  ]
+                }
               },
-              { $count: "count" },
+              { $count: 'count' }
             ],
             onTimeDeliveries: [
               {
                 $match: {
-                  status: "delivered",
+                  status: 'delivered',
                   actualDeliveryTime: { $exists: true },
-                  scheduledDate: { $exists: true },
-                },
+                  scheduledDate: { $exists: true }
+                }
               },
               {
                 $addFields: {
                   isOnTime: {
-                    $lte: ["$actualDeliveryTime", "$scheduledDate"],
-                  },
-                },
+                    $lte: ['$actualDeliveryTime', '$scheduledDate']
+                  }
+                }
               },
               {
                 $group: {
                   _id: null,
                   totalDelivered: { $sum: 1 },
                   onTimeCount: {
-                    $sum: { $cond: ["$isOnTime", 1, 0] },
-                  },
-                },
-              },
+                    $sum: { $cond: ['$isOnTime', 1, 0] }
+                  }
+                }
+              }
             ],
             averageDeliveryTime: [
               {
                 $match: {
-                  status: "delivered",
+                  status: 'delivered',
                   actualDeliveryTime: { $exists: true },
-                  createdAt: { $exists: true },
-                },
+                  createdAt: { $exists: true }
+                }
               },
               {
                 $addFields: {
                   deliveryDuration: {
                     $divide: [
-                      { $subtract: ["$actualDeliveryTime", "$createdAt"] },
-                      60000, // Convert to minutes
-                    ],
-                  },
-                },
+                      { $subtract: ['$actualDeliveryTime', '$createdAt'] },
+                      60000 // Convert to minutes
+                    ]
+                  }
+                }
               },
               {
                 $group: {
                   _id: null,
-                  averageTime: { $avg: "$deliveryDuration" },
-                },
-              },
-            ],
-          },
-        },
+                  averageTime: { $avg: '$deliveryDuration' }
+                }
+              }
+            ]
+          }
+        }
       ]);
 
       // Process status counts
       const statusCounts = {};
       let total = 0;
-
+      
       if (statsResult.statusCounts) {
-        statsResult.statusCounts.forEach((item) => {
+        statsResult.statusCounts.forEach(item => {
           statusCounts[item._id] = item.count;
           total += item.count;
         });
@@ -314,22 +307,23 @@ const recurringDeliveryMonitoringController = {
         failed: statusCounts.failed || 0,
         overdue: overdueCount,
         onTime: onTimeData.onTimeCount || 0,
-        averageDeliveryTime: Math.round(averageTimeData.averageTime || 0),
+        averageDeliveryTime: Math.round(averageTimeData.averageTime || 0)
       };
 
       res.json({
         success: true,
-        data: stats,
+        data: stats
       });
+
     } catch (error) {
-      console.error("Error fetching delivery stats:", error);
+      console.error('Error fetching delivery stats:', error);
       res.status(500).json({
         success: false,
-        message: "Failed to fetch delivery statistics",
-        error: error.message,
+        message: 'Failed to fetch delivery statistics',
+        error: error.message
       });
     }
-  },
+  }
 };
 
 module.exports = recurringDeliveryMonitoringController;

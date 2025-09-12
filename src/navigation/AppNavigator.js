@@ -1,6 +1,12 @@
 // src/navigation/AppNavigator.js - Modern Dark Theme Update
 import React, { useEffect, useRef } from "react";
-import { View, Animated, StyleSheet, Platform, TouchableOpacity } from "react-native";
+import {
+  View,
+  Animated,
+  StyleSheet,
+  Platform,
+  TouchableOpacity,
+} from "react-native";
 import { BlurView } from "expo-blur";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -69,7 +75,7 @@ const TabIcon = ({ focused, route, color, size, colors }) => {
   const opacityValue = useRef(new Animated.Value(focused ? 1 : 0.7)).current;
   const backgroundOpacity = useRef(new Animated.Value(focused ? 1 : 0)).current;
   const backgroundScale = useRef(new Animated.Value(focused ? 1 : 0.3)).current;
-  
+
   let iconName;
 
   if (route.name === "Home") {
@@ -110,7 +116,7 @@ const TabIcon = ({ focused, route, color, size, colors }) => {
         toValue: focused ? 1 : 0,
         duration: 200,
         useNativeDriver: false, // backgroundColor doesn't support native driver
-      })
+      }),
     ]).start();
   }, [focused, scaleValue, opacityValue, backgroundOpacity, backgroundScale]);
 
@@ -230,7 +236,7 @@ const TabNavigator = () => {
     <Tab.Navigator
       initialRouteName="Home"
       backBehavior="history"
-      sceneContainerStyle={{ backgroundColor: 'transparent' }}
+      sceneContainerStyle={{ backgroundColor: "transparent" }}
       screenOptions={({ route }) => ({
         // Add smooth transitions
         animationEnabled: true,
@@ -239,7 +245,7 @@ const TabNavigator = () => {
         // Enable lazy loading for smoother performance
         lazy: true,
         // Add transition animation type
-        animationTypeForReplace: 'push',
+        animationTypeForReplace: "push",
         tabBarIcon: ({ focused, color, size }) => (
           <TabIcon
             focused={focused}
@@ -258,12 +264,12 @@ const TabNavigator = () => {
           paddingTop: 17,
           height: 80,
           marginHorizontal: 20,
-          marginBottom: 40,
+          bottom: 70,
           borderRadius: 50,
           position: "absolute",
           borderWidth: 1,
           borderColor: "rgba(255, 255, 255, 0.53)", // Always dark border
-          elevation: 0, // Crucial for Android to see through
+          elevation: 6, // Crucial for Android to see through
         },
         // Add smooth tab press animation
         tabBarButton: (props) => (
@@ -274,13 +280,13 @@ const TabNavigator = () => {
               props.style,
               {
                 borderRadius: 50,
-              }
+              },
             ]}
             onPress={(e) => {
               // Add haptic feedback if available
-              if (Platform.OS === 'ios') {
-                require('react-native').Haptics?.impactAsync?.(
-                  require('react-native').Haptics?.ImpactFeedbackStyle?.Light
+              if (Platform.OS === "ios") {
+                require("react-native").Haptics?.impactAsync?.(
+                  require("react-native").Haptics?.ImpactFeedbackStyle?.Light
                 );
               }
               props.onPress?.(e);
@@ -305,32 +311,32 @@ const TabNavigator = () => {
         </View>
       )}
     >
-      <Tab.Screen 
-        name="Home" 
+      <Tab.Screen
+        name="Home"
         component={HomeScreen}
-        options={{ 
-          title: 'Home',
+        options={{
+          title: "Home",
         }}
       />
-      <Tab.Screen 
-        name="Search" 
+      <Tab.Screen
+        name="Search"
         component={SearchScreen}
-        options={{ 
-          title: 'Search',
+        options={{
+          title: "Search",
         }}
       />
-      <Tab.Screen 
-        name="Orders" 
+      <Tab.Screen
+        name="Orders"
         component={OrdersScreen}
-        options={{ 
-          title: 'Orders',
+        options={{
+          title: "Orders",
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
+      <Tab.Screen
+        name="Profile"
         component={ProfileScreen}
-        options={{ 
-          title: 'Profile',
+        options={{
+          title: "Profile",
         }}
       />
     </Tab.Navigator>
@@ -455,6 +461,13 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
         // Main app flow
         <>
           <Stack.Screen name="Main" component={TabNavigator} />
+          <Stack.Screen
+            name="MealPlans"
+            component={MealPlansScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
           <Stack.Screen
             name="MealPlanDetail"
             component={MealPlanDetailScreen}

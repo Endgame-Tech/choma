@@ -6,15 +6,7 @@ const authenticateAdmin = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
 
-    console.log("🔑 ADMIN AUTH DEBUG:", {
-      url: req.originalUrl,
-      hasAuthHeader: !!authHeader,
-      authHeaderStart: authHeader?.substring(0, 25),
-      startsWithBearer: authHeader?.startsWith("Bearer "),
-    });
-
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.log("❌ ADMIN AUTH FAILED: No token or invalid format");
       return res.status(401).json({
         success: false,
         error: "Access denied. No token provided or invalid format.",
@@ -26,16 +18,8 @@ const authenticateAdmin = async (req, res, next) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      console.log("🔑 TOKEN DECODED:", {
-        type: decoded.type,
-        adminId: decoded.adminId,
-        exp: decoded.exp,
-        iat: decoded.iat,
-      });
-
       // Check if it's an admin token
       if (decoded.type !== "admin") {
-        console.log("❌ ADMIN AUTH FAILED: Invalid token type:", decoded.type);
         return res.status(401).json({
           success: false,
           error: "Invalid token type",

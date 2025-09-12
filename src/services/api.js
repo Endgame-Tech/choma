@@ -81,6 +81,41 @@ class ApiService {
     }
   }
 
+  // Initialize API service - load token on app startup
+  async initialize() {
+    try {
+      console.log("🚀 Initializing API service...");
+      const token = await this.getStoredToken();
+      if (token) {
+        console.log("✅ API service initialized with stored token");
+      } else {
+        console.log(
+          "ℹ️ API service initialized without token (unauthenticated)"
+        );
+      }
+      return true;
+    } catch (error) {
+      console.error("❌ Failed to initialize API service:", error);
+      return false;
+    }
+  }
+
+  // Debug method to check current authentication status
+  debugAuthStatus() {
+    console.log("🔍 API Service Auth Debug:");
+    console.log("  - Has token:", !!this.token);
+    console.log(
+      "  - Token preview:",
+      this.token ? this.token.substring(0, 20) + "..." : "none"
+    );
+    console.log("  - User ID:", this.getUserId());
+    return {
+      hasToken: !!this.token,
+      tokenPreview: this.token ? this.token.substring(0, 20) + "..." : "none",
+      userId: this.getUserId(),
+    };
+  }
+
   // Check if backend is available
   async checkBackendHealth() {
     try {
@@ -283,6 +318,16 @@ class ApiService {
             }
           }
 
+          // Don't retry authentication errors (401, 403) or client errors (400-499)
+          if (response.status >= 400 && response.status < 500) {
+            return {
+              success: false,
+              error: errorMessage,
+              status: response.status,
+              offline: false,
+            };
+          }
+
           throw new Error(errorMessage);
         }
 
@@ -433,11 +478,15 @@ class ApiService {
   }
 
   async deleteAccount() {
+    console.log("🗑️ apiService.deleteAccount() called");
     await this.getStoredToken();
 
+    console.log("🗑️ Making DELETE request to /auth/account");
     const result = await this.request("/auth/account", {
       method: "DELETE",
     });
+
+    console.log("🗑️ Delete account API result:", result);
 
     if (result.success) {
       // Clear all local data after successful deletion
@@ -505,7 +554,10 @@ class ApiService {
 
   // Meal plans methods - real data only
   async getMealPlans(forceRefresh = false) {
-    console.log("🔄 Fetching meal plans from backend...", forceRefresh ? "(forced refresh)" : "");
+    console.log(
+      "🔄 Fetching meal plans from backend...",
+      forceRefresh ? "(forced refresh)" : ""
+    );
     console.log("🌐 API URL:", `${this.baseURL}/mealplans`);
 
     // Test backend health first
@@ -513,9 +565,11 @@ class ApiService {
     console.log("🏥 Backend health check:", isHealthy ? "PASS" : "FAIL");
 
     // Add cache-busting parameter if force refresh
-    const endpoint = forceRefresh ? `/mealplans?_t=${Date.now()}` : "/mealplans";
+    const endpoint = forceRefresh
+      ? `/mealplans?_t=${Date.now()}`
+      : "/mealplans";
     const result = await this.request(endpoint, {
-      headers: forceRefresh ? { 'Cache-Control': 'no-cache' } : {}
+      headers: forceRefresh ? { "Cache-Control": "no-cache" } : {},
     });
 
     if (result.success) {
@@ -549,12 +603,17 @@ class ApiService {
   }
 
   async getPopularMealPlans(forceRefresh = false) {
-    console.log("🔄 Fetching popular meal plans from backend...", forceRefresh ? "(forced refresh)" : "");
-    
+    console.log(
+      "🔄 Fetching popular meal plans from backend...",
+      forceRefresh ? "(forced refresh)" : ""
+    );
+
     // Add cache-busting parameter if force refresh
-    const endpoint = forceRefresh ? `/mealplans/popular?_t=${Date.now()}` : "/mealplans/popular";
+    const endpoint = forceRefresh
+      ? `/mealplans/popular?_t=${Date.now()}`
+      : "/mealplans/popular";
     const result = await this.request(endpoint, {
-      headers: forceRefresh ? { 'Cache-Control': 'no-cache' } : {}
+      headers: forceRefresh ? { "Cache-Control": "no-cache" } : {},
     });
 
     if (result.success) {
@@ -829,8 +888,16 @@ class ApiService {
   }
 
   // Banners and promotions methods
-  async getActiveBanners() {
-    return this.request("/banners/active");
+  async getActiveBanners(forceRefresh = false) {
+    // Add cache-busting parameter if force refresh
+    const endpoint = forceRefresh
+      ? `/banners/active?_t=${Date.now()}`
+      : "/banners/active";
+    const result = await this.request(endpoint, {
+      headers: forceRefresh ? { "Cache-Control": "no-cache" } : {},
+    });
+
+    return result;
   }
 
   async trackBannerImpression(bannerId) {
@@ -2034,7 +2101,7 @@ class ApiService {
   // ==========================================
   // RECURRING DELIVERY API METHODS
   // ==========================================
-  
+
   // Get current meal for subscription
   async getSubscriptionCurrentMeal(subscriptionId) {
     console.log("🍽️ Fetching current meal for subscription:", subscriptionId);
@@ -2042,7 +2109,7 @@ class ApiService {
     return this.request(`/subscriptions/${subscriptionId}/current-meal`);
   }
 
-  // Get chef preparation status for subscription  
+  // Get chef preparation status for subscription
   async getSubscriptionChefStatus(subscriptionId) {
     console.log("👨‍🍳 Fetching chef status for subscription:", subscriptionId);
     await this.getStoredToken();
@@ -2060,16 +2127,26 @@ class ApiService {
   async getSubscriptionMealTimeline(subscriptionId, daysAhead = 7) {
     console.log("📅 Fetching meal timeline for subscription:", subscriptionId);
     await this.getStoredToken();
-    return this.request(`/subscriptions/${subscriptionId}/meal-timeline?days=${daysAhead}`);
+    return this.request(
+      `/subscriptions/${subscriptionId}/meal-timeline?days=${daysAhead}`
+    );
   }
 
   // Skip a meal delivery
-  async skipMealDelivery(subscriptionId, skipDate, reason = 'Customer request') {
-    console.log("⏭️ Skipping meal delivery:", { subscriptionId, skipDate, reason });
+  async skipMealDelivery(
+    subscriptionId,
+    skipDate,
+    reason = "Customer request"
+  ) {
+    console.log("⏭️ Skipping meal delivery:", {
+      subscriptionId,
+      skipDate,
+      reason,
+    });
     await this.getStoredToken();
     return this.request(`/subscriptions/${subscriptionId}/skip-meal`, {
-      method: 'POST',
-      body: { skipDate, reason }
+      method: "POST",
+      body: { skipDate, reason },
     });
   }
 
@@ -2077,17 +2154,25 @@ class ApiService {
   async updateDeliveryPreferences(subscriptionId, preferences) {
     console.log("⚙️ Updating delivery preferences:", subscriptionId);
     await this.getStoredToken();
-    return this.request(`/subscriptions/${subscriptionId}/delivery-preferences`, {
-      method: 'PUT',
-      body: preferences
-    });
+    return this.request(
+      `/subscriptions/${subscriptionId}/delivery-preferences`,
+      {
+        method: "PUT",
+        body: preferences,
+      }
+    );
   }
 
   // Get subscription delivery history
   async getSubscriptionDeliveryHistory(subscriptionId, limit = 30) {
-    console.log("📜 Fetching delivery history for subscription:", subscriptionId);
+    console.log(
+      "📜 Fetching delivery history for subscription:",
+      subscriptionId
+    );
     await this.getStoredToken();
-    return this.request(`/subscriptions/${subscriptionId}/deliveries?limit=${limit}`);
+    return this.request(
+      `/subscriptions/${subscriptionId}/deliveries?limit=${limit}`
+    );
   }
 
   // Request chef reassignment
@@ -2095,18 +2180,74 @@ class ApiService {
     console.log("🔄 Requesting chef reassignment:", { subscriptionId, reason });
     await this.getStoredToken();
     return this.request(`/subscriptions/${subscriptionId}/reassign-chef`, {
-      method: 'POST',
-      body: { reason }
+      method: "POST",
+      body: { reason },
     });
   }
 
   // Rate completed delivery
-  async rateDelivery(deliveryId, rating, feedback = '') {
+  async rateDelivery(deliveryId, rating, feedback = "") {
     console.log("⭐ Rating delivery:", { deliveryId, rating });
     await this.getStoredToken();
     return this.request(`/deliveries/${deliveryId}/rate`, {
-      method: 'POST',
-      body: { rating, feedback }
+      method: "POST",
+      body: { rating, feedback },
+    });
+  }
+
+  // Maps and Geocoding services
+  async reverseGeocode(latitude, longitude, language = "en") {
+    console.log("🗺️ Reverse geocoding coordinates:", { latitude, longitude });
+    const params = new URLSearchParams({
+      lat: latitude.toString(),
+      lng: longitude.toString(),
+      language,
+    });
+
+    return this.request(`/maps/geocode/reverse?${params}`, {
+      method: "GET",
+    });
+  }
+
+  async placesAutocomplete(
+    input,
+    sessionToken = null,
+    components = "country:ng",
+    language = "en"
+  ) {
+    console.log("🔍 Places autocomplete for:", input);
+    const params = new URLSearchParams({
+      input,
+      components,
+      language,
+    });
+
+    if (sessionToken) {
+      params.append("sessionToken", sessionToken);
+    }
+
+    return this.request(`/maps/places-autocomplete?${params}`, {
+      method: "GET",
+    });
+  }
+
+  async placeDetails(
+    placeId,
+    sessionToken = null,
+    fields = "formatted_address,geometry,address_components,name,vicinity,types"
+  ) {
+    console.log("📍 Getting place details for:", placeId);
+    const params = new URLSearchParams({
+      placeId,
+      fields,
+    });
+
+    if (sessionToken) {
+      params.append("sessionToken", sessionToken);
+    }
+
+    return this.request(`/maps/place-details?${params}`, {
+      method: "GET",
     });
   }
 }

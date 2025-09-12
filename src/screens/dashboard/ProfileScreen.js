@@ -427,6 +427,14 @@ const ProfileScreen = ({ navigation, route }) => {
       const ordersResult = await apiService.getUserOrders();
       const activities = [];
 
+      console.log("🔍 ACTIVITY DEBUG - Orders API Result:", {
+        success: ordersResult?.success,
+        hasData: !!ordersResult?.data,
+        dataType: typeof ordersResult?.data,
+        isArray: Array.isArray(ordersResult?.data),
+        dataKeys: ordersResult?.data ? Object.keys(ordersResult.data) : null,
+      });
+
       if (ordersResult.success && ordersResult.data) {
         // Handle nested data structure: {data: {data: [orders]}}
         const orders = Array.isArray(ordersResult.data)
@@ -434,6 +442,37 @@ const ProfileScreen = ({ navigation, route }) => {
           : Array.isArray(ordersResult.data.data)
           ? ordersResult.data.data
           : [];
+
+        console.log("🔍 ACTIVITY DEBUG - Extracted Orders:", {
+          ordersCount: orders.length,
+          firstOrder: orders[0]
+            ? {
+                id: orders[0]._id,
+                status: orders[0].status,
+                orderStatus: orders[0].orderStatus,
+                delegationStatus: orders[0].delegationStatus,
+                createdAt: orders[0].createdAt,
+                updatedAt: orders[0].updatedAt,
+                mealPlanId: orders[0].mealPlanId,
+                planName: orders[0].planName,
+                name: orders[0].name,
+              }
+            : null,
+        });
+
+        console.log("📋 Total orders to process:", orders.length);
+        console.log(
+          "📋 Order details:",
+          orders.map((o, i) => ({
+            index: i,
+            id: o._id,
+            status: o.status,
+            orderStatus: o.orderStatus,
+            createdAt: o.createdAt,
+            updatedAt: o.updatedAt,
+            mealPlan: o.mealPlanId?.planName || o.planName || o.name || "Unknown",
+          }))
+        );
 
         // Sort orders by date (most recent first)
         orders.sort(
@@ -463,51 +502,133 @@ const ProfileScreen = ({ navigation, route }) => {
             });
           }
 
-          if (order.status === "delivered") {
+          // Get meal plan name from various possible structures
+          const mealPlanName =
+            order.mealPlanId?.planName ||
+            order.mealPlanId?.name ||
+            order.planName ||
+            order.name ||
+            order.meal?.name ||
+            "Meal Plan";
+
+          const orderStatus = (
+            order.status ||
+            order.orderStatus ||
+            order.delegationStatus ||
+            ""
+          ).toLowerCase();
+
+          console.log(`🔍 ACTIVITY DEBUG - Order ${index + 1}:`, {
+            id: order._id,
+            originalStatus: order.status,
+            originalOrderStatus: order.orderStatus,
+            originalDelegationStatus: order.delegationStatus,
+            normalizedStatus: orderStatus,
+            mealPlanName,
+            dateText,
+          });
+
+          // Create activities for various order statuses
+          let activityAdded = false;
+
+          if (orderStatus === "delivered") {
             activities.push({
               id: `delivery_${order._id}`,
-              title: `Meal delivered - ${
-                order.mealPlanId?.planName ||
-                order.mealPlanId?.name ||
-                "Meal Plan"
-              }`,
+              title: `Meal delivered - ${mealPlanName}`,
               date: dateText,
               type: "delivery",
               icon: "checkmark-circle",
               color: colors.success || "#4CAF50",
               orderId: order._id,
             });
-          } else if (order.status === "out_for_delivery") {
+            activityAdded = true;
+            console.log("✅ Added DELIVERED activity");
+          } else if (orderStatus === "out_for_delivery") {
             activities.push({
               id: `outfordelivery_${order._id}`,
-              title: `Order out for delivery - ${
-                order.mealPlanId?.planName ||
-                order.mealPlanId?.name ||
-                "Meal Plan"
-              }`,
+              title: `Order out for delivery - ${mealPlanName}`,
               date: dateText,
               type: "delivery",
               icon: "car",
               color: colors.warning || "#FF9800",
               orderId: order._id,
             });
+            activityAdded = true;
+            console.log("✅ Added OUT_FOR_DELIVERY activity");
           } else if (
-            order.status === "confirmed" ||
-            order.status === "quality_check"
+            orderStatus === "confirmed" ||
+            orderStatus === "quality_check"
           ) {
             activities.push({
               id: `confirmed_${order._id}`,
-              title: `Order confirmed - ${
-                order.mealPlanId?.planName ||
-                order.mealPlanId?.name ||
-                "Meal Plan"
-              }`,
+              title: `Order confirmed - ${mealPlanName}`,
               date: dateText,
               type: "order",
               icon: "checkmark",
               color: colors.primary || "#4ECDC4",
               orderId: order._id,
             });
+            activityAdded = true;
+            console.log("✅ Added CONFIRMED/QUALITY_CHECK activity");
+          } else if (
+            orderStatus === "pending" ||
+            orderStatus === "processing" ||
+            orderStatus === "preparing" ||
+            orderStatus === "accepted" ||
+            orderStatus === "in progress" ||
+            orderStatus === "assigned" ||
+            orderStatus === "ready" ||
+            orderStatus === "completed"
+          ) {
+            activities.push({
+              id: `processing_${order._id}`,
+              title: `Order is being prepared - ${mealPlanName}`,
+              date: dateText,
+              type: "order",
+              icon: "restaurant",
+              color: colors.warning || "#FF9800",
+              orderId: order._id,
+            });
+            activityAdded = true;
+            console.log("✅ Added PREPARING/PROCESSING activity");
+          } else if (orderStatus === "placed" || orderStatus === "created") {
+            activities.push({
+              id: `placed_${order._id}`,
+              title: `Order placed - ${mealPlanName}`,
+              date: dateText,
+              type: "order",
+              icon: "receipt",
+              color: colors.primary || "#4ECDC4",
+              orderId: order._id,
+            });
+            activityAdded = true;
+            console.log("✅ Added PLACED/CREATED activity");
+          } else if (
+            orderStatus &&
+            !["cancelled", "failed", ""].includes(orderStatus)
+          ) {
+            // Fallback for any other status that's not cancelled or failed
+            activities.push({
+              id: `order_${order._id}`,
+              title: `Order ${orderStatus} - ${mealPlanName}`,
+              date: dateText,
+              type: "order",
+              icon: "time",
+              color: colors.textSecondary || "#666",
+              orderId: order._id,
+            });
+            activityAdded = true;
+            console.log(
+              `✅ Added FALLBACK activity for status: ${orderStatus}`
+            );
+          }
+
+          if (!activityAdded) {
+            console.log(
+              `❌ NO ACTIVITY ADDED for order ${
+                order._id
+              } - Status: "${orderStatus}" (empty: ${orderStatus === ""})`
+            );
           }
 
           // Add subscription activation activity
@@ -530,6 +651,13 @@ const ProfileScreen = ({ navigation, route }) => {
               index === self.findIndex((a) => a.id === activity.id)
           )
           .slice(0, 8);
+
+        console.log("📊 Activities generated:", activities.length);
+        console.log(
+          "📊 Unique activities after filtering:",
+          uniqueActivities.length
+        );
+        console.log("📊 Final activities:", uniqueActivities);
 
         setRecentActivity(uniqueActivities);
         console.log(
@@ -860,14 +988,14 @@ const ProfileScreen = ({ navigation, route }) => {
 
     showInfo("🥗 Nutrition Score", message, [
       { text: "Got it!", style: "default" },
-      ...(nutritionScore > 0
-        ? [
-            {
-              text: "View Details",
-              onPress: () => navigation.navigate("NutritionScreen"), // TODO: Create NutritionScreen
-            },
-          ]
-        : []),
+      // ...(nutritionScore > 0
+      //   ? [
+      //       // {
+      //       //   text: "View Details",
+      //       //   onPress: () => navigation.navigate("NutritionScreen"), // TODO: Create NutritionScreen
+      //       // },
+      //     ]
+      //   : []),
     ]);
   };
 
@@ -1475,7 +1603,7 @@ Your meal plan has been updated with fresh options.`;
             </Text>
             <TouchableOpacity
               style={styles(colors).startSubscriptionButton}
-              onPress={() => navigation.navigate("MealPlansScreen")}
+              onPress={() => navigation.navigate("Home")}
             >
               <Text style={styles(colors).startSubscriptionButtonText}>
                 Browse Meal Plans
@@ -1770,7 +1898,7 @@ Your meal plan has been updated with fresh options.`;
             </Text>
             <TouchableOpacity
               style={styles(colors).startActivityButton}
-              onPress={() => navigation.navigate("MealPlans")}
+              onPress={() => navigation.navigate("Home")}
             >
               <Text style={styles(colors).startActivityButtonText}>
                 Browse Meal Plans
@@ -1935,7 +2063,7 @@ Your meal plan has been updated with fresh options.`;
 
       {/* Fixed Background Image for Parallax */}
       <View style={styles(colors).fixedBackground}>
-        {profileImage || user?.profileImage ? (
+        {user?.profileImage || profileImage ? (
           <Image
             source={{ uri: profileImage || user.profileImage }}
             style={styles(colors).parallaxImage}
@@ -1973,7 +2101,7 @@ Your meal plan has been updated with fresh options.`;
           style={[
             styles(colors).backgroundOverlay,
             // Reduce overlay opacity when profile image is present
-            (profileImage || user?.profileImage) && {
+            user?.profileImage && {
               backgroundColor: "rgba(0, 0, 0, 0.1)",
             },
           ]}
@@ -2535,13 +2663,8 @@ const styles = (colors) =>
       borderRadius: THEME.borderRadius.large,
       padding: 22,
       alignItems: "center",
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: colors.border,
-      shadowColor: colors.shadow || "#000",
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.12,
-      shadowRadius: 5,
-      elevation: 4,
     },
     quickActionText: {
       fontSize: 14,
@@ -2555,12 +2678,12 @@ const styles = (colors) =>
       padding: 28,
       alignItems: "center",
       borderWidth: 2,
-      borderColor: `${colors.primary}30`,
+      borderColor: colors.border,
       shadowColor: colors.shadow || "#000",
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
+      shadowOpacity: 0.0015,
       shadowRadius: 8,
-      elevation: 6,
+      elevation: 4,
     },
     nutritionScoreContainer: {
       flexDirection: "row",
@@ -2791,7 +2914,7 @@ const styles = (colors) =>
       padding: 32,
       alignItems: "center",
       borderWidth: 2,
-      borderColor: `${colors.primary}30`,
+      borderColor: colors.border,
       borderStyle: "dashed",
       shadowColor: colors.shadow || "#000",
       shadowOffset: { width: 0, height: 2 },

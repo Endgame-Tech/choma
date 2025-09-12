@@ -6,31 +6,12 @@ if (!admin.apps.length) {
   try {
     // You'll need to add your Firebase service account key
     const serviceAccount = require("../config/firebase-service-account.json");
-
-    // Check if service account has placeholder values
-    if (
-      serviceAccount.private_key_id === "REPLACE_WITH_PRIVATE_KEY_ID" ||
-      serviceAccount.private_key.includes(
-        "REPLACE_WITH_ACTUAL_PRIVATE_KEY_LINES"
-      )
-    ) {
-      console.warn(
-        "⚠️ Firebase Admin SDK not initialized: Service account contains placeholder values"
-      );
-    } else {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-      console.log("✅ Firebase Admin SDK initialized");
-    }
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    console.log("✅ Firebase Admin SDK initialized");
   } catch (error) {
-    if (error.message.includes("Invalid PEM")) {
-      console.warn(
-        "⚠️ Firebase Admin SDK not initialized: Invalid private key. Ensure firebase-service-account.json has a properly escaped multiline private_key."
-      );
-    } else {
-      console.warn("⚠️ Firebase Admin SDK not initialized:", error.message);
-    }
+    console.warn("⚠️ Firebase Admin SDK not initialized:", error.message);
   }
 }
 
@@ -56,9 +37,6 @@ class PushNotificationService {
       } = notificationData;
 
       if (tokenType === "fcm") {
-        if (!admin.apps.length) {
-          throw new Error("Firebase not initialized - cannot send FCM push");
-        }
         return await this.sendFirebaseNotification({
           to,
           title,

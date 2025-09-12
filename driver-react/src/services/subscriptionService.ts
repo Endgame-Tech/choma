@@ -1,22 +1,11 @@
 import axios from 'axios';
-import {
+import { 
   SubscriptionDeliveriesResponse,
-  WeeklyScheduleResponse,
+  WeeklyScheduleResponse, 
   SubscriptionMetrics,
   CustomerTimelineResponse,
-  ApiResponse
+  ApiResponse 
 } from '../types';
-
-// Extend ImportMeta interface for Vite environment variables
-declare global {
-  interface ImportMetaEnv {
-    readonly VITE_API_URL: string;
-  }
-
-  interface ImportMeta {
-    readonly env: ImportMetaEnv;
-  }
-}
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 

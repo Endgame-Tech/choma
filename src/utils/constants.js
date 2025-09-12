@@ -19,6 +19,9 @@ export const APP_CONFIG = {
     ? "pk_test_c90af10dcc748a6c4e3cf481230abadd819037c1" // Test key
     : "pk_live_your_live_public_key_here", // Live key for production
 
+  // Google Maps Configuration
+  GOOGLE_MAPS_API_KEY: "AIzaSyBBxkH4OxFvVDJ242aIOl7auZ2F4Lcf9fg", // Add your actual API key
+
   // App Settings
   CURRENCY: "NGN",
   CURRENCY_SYMBOL: "₦",

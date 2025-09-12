@@ -17,7 +17,21 @@ router.get("/active", bannerRateLimit, async (req, res) => {
   try {
     const { targetAudience = "all" } = req.query;
 
+    console.log(
+      `🎯 Fetching active banners for targetAudience: ${targetAudience}`
+    );
     const banners = await PromoBanner.getActiveBanners(targetAudience);
+
+    console.log(
+      `✅ Found ${banners.length} active banners:`,
+      banners.map((b) => ({
+        id: b._id,
+        title: b.title,
+        isActive: b.isActive,
+        isPublished: b.isPublished,
+        priority: b.priority,
+      }))
+    );
 
     // Don't automatically track impressions on fetch
     // Impressions should be tracked when banners are actually displayed to users
@@ -423,6 +437,38 @@ router.delete("/:id", authenticateAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete banner",
+    });
+  }
+});
+
+// GET /api/banners/:id/stats - Get banner analytics (admin)
+router.get("/:id/stats", authenticateAdmin, async (req, res) => {
+  try {
+    const banner = await PromoBanner.findById(req.params.id);
+
+    if (!banner) {
+      return res.status(404).json({
+        success: false,
+        message: "Banner not found",
+      });
+    }
+
+    const stats = {
+      impressions: banner.impressions,
+      clicks: banner.clicks,
+      ctr: banner.ctr,
+      isCurrentlyActive: banner.isCurrentlyActive(),
+    };
+
+    res.json({
+      success: true,
+      data: stats,
+    });
+  } catch (err) {
+    console.error("Get banner stats error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch banner stats",
     });
   }
 });

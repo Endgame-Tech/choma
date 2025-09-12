@@ -42,17 +42,24 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
   useEffect(() => {
     // If a full subscription object was provided via navigation, use it directly.
     if (subscriptionParam) {
-      console.log('🚀 Subscription data from params:', JSON.stringify(subscriptionParam, null, 2));
+      console.log(
+        "🚀 Subscription data from params:",
+        JSON.stringify(subscriptionParam, null, 2)
+      );
       setSubscription(subscriptionParam);
       setLoading(false);
 
       // If meal plan is embedded as an object, use it; if it's an id, fetch it.
-      if (subscriptionParam.mealPlan) {
-        if (typeof subscriptionParam.mealPlan === "object") {
-          setMealPlan(subscriptionParam.mealPlan);
+      if (subscriptionParam.mealPlan || subscriptionParam.mealPlanId) {
+        const mealPlanData =
+          subscriptionParam.mealPlan || subscriptionParam.mealPlanId;
+        if (typeof mealPlanData === "object") {
+          console.log("🍽️ Using embedded meal plan:", mealPlanData);
+          setMealPlan(mealPlanData);
         } else {
           // string id
-          fetchMealPlanById(subscriptionParam.mealPlan);
+          console.log("🔍 Fetching meal plan by ID:", mealPlanData);
+          fetchMealPlanById(mealPlanData);
         }
       }
 
@@ -80,25 +87,46 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
 
       // Fetch subscription details
       const result = await apiService.getSubscriptionById(subscriptionId);
+      console.log(
+        "🚀 API Response from getSubscriptionById:",
+        JSON.stringify(result, null, 2)
+      );
 
       if (result.success && result.data) {
-        console.log('🚀 Subscription data from API:', JSON.stringify(result.data, null, 2));
+        console.log(
+          "🚀 Subscription data from API:",
+          JSON.stringify(result.data, null, 2)
+        );
         setSubscription(result.data);
 
         // Fetch meal plan details if available
-        if (result.data.mealPlan) {
+        if (result.data.mealPlan || result.data.mealPlanId) {
+          const mealPlanData = result.data.mealPlan || result.data.mealPlanId;
           const mealPlanId =
-            typeof result.data.mealPlan === "object"
-              ? result.data.mealPlan._id || result.data.mealPlan.id
-              : result.data.mealPlan;
+            typeof mealPlanData === "object"
+              ? mealPlanData._id || mealPlanData.id
+              : mealPlanData;
 
+          console.log("🔍 Fetching meal plan details for ID:", mealPlanId);
           const mealPlanResult = await apiService.getMealPlanById(mealPlanId);
+          console.log(
+            "🍽️ Meal plan result:",
+            JSON.stringify(mealPlanResult, null, 2)
+          );
 
           if (mealPlanResult.success && mealPlanResult.data) {
             setMealPlan(mealPlanResult.data);
+          } else if (typeof mealPlanData === "object") {
+            // Use the embedded meal plan data if API fetch fails
+            console.log("📦 Using embedded meal plan data");
+            setMealPlan(mealPlanData);
           }
         }
       } else {
+        console.error(
+          "❌ Failed to load subscription details:",
+          result.message || "Unknown error"
+        );
         setError("Failed to load subscription details");
       }
     } catch (err) {
@@ -199,7 +227,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
 
   const getPaymentStatusLabel = (status) => {
     switch (status?.toLowerCase()) {
-      case "completed":
+      case "paid":
         return "Paid";
       case "pending":
         return "Pending";
@@ -247,7 +275,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
           </Text>
           <TouchableOpacity
             style={styles(colors).button}
-            onPress={() => navigation.navigate("MealPlansScreen")}
+            onPress={() => navigation.navigate("Home")}
           >
             <Text style={styles(colors).buttonText}>Browse Meal Plans</Text>
           </TouchableOpacity>
@@ -304,7 +332,10 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                 { color: getStatusColor(subscription.status) },
               ]}
             >
-              {subscription.status || "Unknown"}
+              {subscription.status
+                ? subscription.status.charAt(0).toUpperCase() +
+                  subscription.status.slice(1)
+                : "Unknown"}
             </Text>
           </View>
 
@@ -313,26 +344,30 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
               Subscription ID:
             </Text>
             <Text style={styles(colors).subscriptionIdValue}>
-              {subscription._id || subscription.id || "N/A"}
+              {subscription.subscriptionId ||
+                subscription._id?.substring(0, 10).toUpperCase() ||
+                subscription.id?.substring(0, 10).toUpperCase() ||
+                "N/A"}
             </Text>
           </View>
         </View>
 
         {/* Meal Plan Details */}
-        {mealPlan && (
+        {(mealPlan || subscription.mealPlanId) && (
           <View style={styles(colors).section}>
             <Text style={styles(colors).sectionTitle}>Meal Plan</Text>
 
             <View style={styles(colors).mealPlanCard}>
               {(() => {
                 // Try multiple image field names used across the app
+                const planData = mealPlan || subscription.mealPlanId || {};
                 const src =
-                  resolveImageSource(mealPlan.coverImage) ||
-                  resolveImageSource(mealPlan.planImageUrl) ||
-                  resolveImageSource(mealPlan.image) ||
-                  resolveImageSource(mealPlan.imageUrl) ||
-                  (mealPlan.images && resolveImageSource(mealPlan.images[0]));
-                
+                  resolveImageSource(planData.coverImage) ||
+                  resolveImageSource(planData.planImageUrl) ||
+                  resolveImageSource(planData.image) ||
+                  resolveImageSource(planData.imageUrl) ||
+                  (planData.images && resolveImageSource(planData.images[0]));
+
                 if (src) {
                   return (
                     <Image
@@ -341,7 +376,10 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                       resizeMode="cover"
                       defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
                       onError={(e) => {
-                        console.log('Meal plan image failed to load:', e.nativeEvent.error);
+                        console.log(
+                          "Meal plan image failed to load:",
+                          e.nativeEvent.error
+                        );
                       }}
                     />
                   );
@@ -373,10 +411,14 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
               />
               <View style={styles(colors).mealPlanOverlay}>
                 <Text style={styles(colors).mealPlanName}>
-                  {mealPlan.planName || mealPlan.name || 'Meal Plan'}
+                  {(mealPlan || subscription.mealPlanId)?.planName ||
+                    (mealPlan || subscription.mealPlanId)?.name ||
+                    "Meal Plan"}
                 </Text>
                 <Text style={styles(colors).mealPlanSubtitle}>
-                  {mealPlan.description || mealPlan.subtitle || 'Delicious meals delivered to you'}
+                  {(mealPlan || subscription.mealPlanId)?.description ||
+                    (mealPlan || subscription.mealPlanId)?.subtitle ||
+                    "Delicious meals delivered to you"}
                 </Text>
               </View>
             </View>
@@ -391,18 +433,22 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Frequency</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.frequency || subscription.selectedFrequency || "Daily"}
+                {subscription.deliveryPreferences?.frequency ||
+                  subscription.frequency ||
+                  subscription.selectedFrequency ||
+                  "Daily"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Duration</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.duration 
-                  ? `${subscription.duration} ${subscription.duration === 1 ? 'week' : 'weeks'}`
-                  : subscription.durationWeeks 
-                  ? `${subscription.durationWeeks} ${subscription.durationWeeks === 1 ? 'week' : 'weeks'}`
-                  : "1 week"
-                }
+                {subscription.durationWeeks
+                  ? `${subscription.durationWeeks} ${
+                      subscription.durationWeeks === 1 ? "week" : "weeks"
+                    }`
+                  : subscription.duration
+                  ? subscription.duration
+                  : "1 week"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
@@ -445,25 +491,34 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
               <Text style={styles(colors).detailValue}>
                 {subscription.paymentDate
                   ? formatDate(subscription.paymentDate)
-                  : subscription.createdAt 
-                  ? formatDate(subscription.createdAt)
+                  : subscription.createdAt || subscription.createdDate
+                  ? formatDate(
+                      subscription.createdAt || subscription.createdDate
+                    )
                   : "N/A"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Reference</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.paymentReference || 
-                 subscription.reference || 
-                 subscription.transactionRef ||
-                 (subscription._id && subscription._id.substring(0, 8).toUpperCase()) || 
-                 "N/A"}
+                {subscription.paymentReference ||
+                  subscription.reference ||
+                  subscription.transactionId ||
+                  subscription.transactionRef ||
+                  (subscription._id &&
+                    subscription._id.substring(0, 8).toUpperCase()) ||
+                  "N/A"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Amount Paid</Text>
               <Text style={styles(colors).detailValue}>
-                ₦{(subscription.totalPrice || 0).toLocaleString()}
+                ₦
+                {(
+                  subscription.totalPrice ||
+                  subscription.price ||
+                  0
+                ).toLocaleString()}
               </Text>
             </View>
           </View>

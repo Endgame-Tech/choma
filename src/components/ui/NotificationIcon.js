@@ -11,7 +11,7 @@ const NotificationIcon = ({ size = 24, color }) => {
   const navigation = useNavigation();
 
   // Debug logging
-  console.log("📱 NotificationIcon - unreadCount:", unreadCount);
+  // console.log("📱 NotificationIcon - unreadCount:", unreadCount);
 
   // Refresh notifications on mount to ensure unread count is current
   React.useEffect(() => {

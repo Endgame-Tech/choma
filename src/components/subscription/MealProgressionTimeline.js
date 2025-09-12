@@ -8,162 +8,242 @@ import {
   Image,
   RefreshControl,
   ActivityIndicator,
-  Modal,
-  FlatList,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../styles/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { COLORS } from "../../utils/colors";
 import apiService from "../../services/api";
 
+const { width } = Dimensions.get("window");
+
 const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
-  const { colors } = useTheme();
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [orders, setOrders] = useState([]);
-  const [confirmationModalVisible, setConfirmationModalVisible] =
-    useState(false);
-  const [selectedDeliveryCode, setSelectedDeliveryCode] = useState("");
-  const [mealDetailModalVisible, setMealDetailModalVisible] = useState(false);
-  const [selectedDayMeals, setSelectedDayMeals] = useState([]);
 
   useEffect(() => {
     loadTimeline();
-    loadOrders();
   }, [subscriptionId]);
 
   const loadTimeline = async () => {
     try {
       setLoading(true);
+      console.log("🔄 Loading timeline for subscription:", subscriptionId);
+
+      if (!subscriptionId) {
+        console.log("⚠️ No subscription ID provided");
+        setTimeline([]);
+        return;
+      }
+
       const result = await apiService.getSubscriptionMealTimeline(
         subscriptionId,
-        7
+        14 // Show 2 weeks instead of 7 days
       );
 
       console.log("📊 Timeline API result:", result);
 
       if (result.success && result.data) {
-        let timelineData = Array.isArray(result.data.data)
-          ? result.data.data
-          : [];
+        // Handle different possible data structures
+        let timelineData = [];
 
-        console.log("📈 Raw timeline data:", timelineData);
+        if (Array.isArray(result.data)) {
+          timelineData = result.data;
+        } else if (Array.isArray(result.data.data)) {
+          timelineData = result.data.data;
+        } else if (
+          result.data.timeline &&
+          Array.isArray(result.data.timeline)
+        ) {
+          timelineData = result.data.timeline;
+        }
 
-        // Handle new backend response format
-        console.log("📈 Backend response data:", timelineData);
-
-        // The backend now returns days grouped by date with meals array
-        const processedTimeline = timelineData.map((dayItem, index) => {
-          console.log(`🔍 Processing day ${index}:`, {
-            date: dayItem.date,
-            dayName: dayItem.dayName,
-            mealCount: dayItem.mealCount,
-            meals: dayItem.meals
-          });
-
-          // Convert backend meals format to frontend format
-          const convertedMeals = dayItem.meals?.map((meal, mealIndex) => ({
-            date: dayItem.date.split("T")[0], // Normalize date
-            mealAssignment: {
-              _id: `${dayItem.dayName}-${meal.mealTime}-${mealIndex}`,
-              customTitle: meal.title,
-              title: meal.title,
-              description: meal.description,
-              imageUrl: meal.imageUrl,
-              mealTime: meal.mealTime,
-              meals: meal.meals, // Individual meal names
-              weekNumber: dayItem.weekNumber,
-              dayOfWeek: dayItem.dayOfWeek
-            }
-          })) || [];
-
-          return {
-            date: dayItem.date.split("T")[0], // Normalize date
-            dayName: dayItem.dayName,
-            weekNumber: dayItem.weekNumber,
-            dayOfWeek: dayItem.dayOfWeek,
-            meals: convertedMeals,
-            dayIndex: index,
-            mealCount: dayItem.mealCount
-          };
-        });
-
-        console.log("📈 Setting processed timeline data:", processedTimeline);
-        setTimeline(processedTimeline);
+        // Group meals by day
+        const groupedByDay = groupMealsByDay(timelineData);
+        console.log(
+          "📈 Setting grouped timeline data:",
+          groupedByDay.length,
+          "days"
+        );
+        console.log("📋 Grouped timeline:", groupedByDay);
+        setTimeline(groupedByDay);
       } else {
-        console.log("⚠️ No timeline data available, creating fallback data");
-        // Create fallback data when API fails
-        const fallbackData = [
-          {
-            date: new Date().toISOString().split("T")[0],
-            meals: [
-              {
-                date: new Date().toISOString().split("T")[0],
-                mealAssignment: {
-                  imageUrl:
-                    "https://via.placeholder.com/60x40/F7AE1A/FFFFFF?text=Today",
-                  title: "Today's Special",
-                  customTitle: "Mixed Meal",
-                  mealTime: "lunch",
-                  calories: 420,
-                  description: "Delicious daily special",
-                },
-              },
-            ],
-            dayIndex: 0,
-          },
-        ];
-        setTimeline(fallbackData);
+        console.log(
+          "⚠️ No timeline data available:",
+          result.message || "Unknown error"
+        );
+        setTimeline([]);
       }
     } catch (error) {
       console.error("❌ Error loading meal timeline:", error);
-      // Create fallback data when there's an error
-      const fallbackData = [
-        {
-          date: new Date().toISOString().split("T")[0],
-          meals: [
-            {
-              date: new Date().toISOString().split("T")[0],
-              mealAssignment: {
-                imageUrl:
-                  "https://via.placeholder.com/60x40/FF3B30/FFFFFF?text=Error",
-                title: "Sample Meal",
-                customTitle: "Demo Meal",
-                mealTime: "lunch",
-                calories: 350,
-                description: "Sample meal data",
-              },
-            },
-          ],
-          dayIndex: 0,
-        },
-      ];
-      setTimeline(fallbackData);
+      // If API fails, try to load mock data for development
+      if (__DEV__) {
+        console.log("🔧 Loading mock timeline data for development");
+        const mockData = getMockTimelineData();
+        const groupedMock = groupMealsByDay(mockData);
+        setTimeline(groupedMock);
+      } else {
+        setTimeline([]);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const loadOrders = async () => {
-    try {
-      const result = await apiService.getUserOrders();
-      if (result.success && result.data) {
-        const ordersData = Array.isArray(result.data.data)
-          ? result.data.data
-          : Array.isArray(result.data)
-          ? result.data
-          : [];
-        setOrders(ordersData);
-      }
-    } catch (error) {
-      console.error("❌ Error loading orders:", error);
-      setOrders([]);
+  // Group meals by day to show all meals (breakfast, lunch, dinner) in one card per day
+  const groupMealsByDay = (timelineData) => {
+    if (!Array.isArray(timelineData) || timelineData.length === 0) {
+      return [];
     }
+
+    // Group by date
+    const dayGroups = {};
+
+    timelineData.forEach((item) => {
+      const dateKey = new Date(item.date).toDateString();
+
+      if (!dayGroups[dateKey]) {
+        dayGroups[dateKey] = {
+          date: item.date,
+          dayIndex: item.dayIndex,
+          dayName: item.dayName,
+          weekNumber: item.weekNumber,
+          dayOfWeek: item.dayOfWeek,
+          dayType: item.dayType,
+          meals: [],
+          allMeals: [], // Combined meal details
+        };
+      }
+
+      // Add all meals from this timeline item
+      if (item.meals && Array.isArray(item.meals)) {
+        dayGroups[dateKey].meals.push(...item.meals);
+        dayGroups[dateKey].allMeals.push(...item.meals);
+      } else if (item.mealAssignment) {
+        // Handle single meal assignment
+        dayGroups[dateKey].meals.push({
+          mealTime: item.mealAssignment.mealTime,
+          title: item.mealAssignment.customTitle || item.mealAssignment.title,
+          description:
+            item.mealAssignment.customDescription ||
+            item.mealAssignment.description,
+          meals: item.mealAssignment.meals,
+          imageUrl: item.mealAssignment.imageUrl,
+        });
+        dayGroups[dateKey].allMeals.push(item.mealAssignment);
+      }
+    });
+
+    // Convert to array and sort by date
+    const groupedDays = Object.values(dayGroups).sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
+
+    // Ensure each day has proper meal time ordering and combine meal details
+    return groupedDays.map((day) => {
+      const mealTimeOrder = ["breakfast", "lunch", "dinner"];
+      const organizedMeals = {};
+
+      // Organize meals by meal time
+      day.meals.forEach((meal) => {
+        const mealTime = meal.mealTime || "lunch";
+        if (!organizedMeals[mealTime]) {
+          organizedMeals[mealTime] = [];
+        }
+        organizedMeals[mealTime].push(meal);
+      });
+
+      // Create summary of available meals
+      const availableMealTimes = mealTimeOrder.filter(
+        (time) => organizedMeals[time] && organizedMeals[time].length > 0
+      );
+      const totalMealItems = day.meals.reduce(
+        (total, meal) => total + (meal.meals?.length || 1),
+        0
+      );
+
+      return {
+        ...day,
+        organizedMeals,
+        availableMealTimes,
+        totalMealItems,
+        mealSummary: availableMealTimes
+          .map((time) => time.charAt(0).toUpperCase() + time.slice(1))
+          .join(", "),
+        primaryImage: day.meals[0]?.imageUrl || null,
+      };
+    });
+  };
+
+  // Mock data for development/testing
+  const getMockTimelineData = () => {
+    const today = new Date();
+    const mockData = [];
+
+    for (let i = -2; i < 5; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+
+      const dayType = i < 0 ? "past" : i === 0 ? "current" : "future";
+
+      mockData.push({
+        date: date.toISOString(),
+        dayIndex: i,
+        dayName: date.toLocaleDateString("en-US", { weekday: "long" }),
+        weekNumber: 1,
+        dayOfWeek: date.getDay() || 7, // Convert Sunday=0 to Sunday=7
+        dayType: dayType,
+        mealAssignment: {
+          customTitle: `${
+            dayType === "past"
+              ? "Delivered"
+              : dayType === "current"
+              ? "Ready"
+              : "Upcoming"
+          } Meal`,
+          customDescription: `Delicious ${
+            i < 0 ? "delivered" : "prepared"
+          } meal for ${date.toLocaleDateString()}`,
+          mealTime:
+            i % 3 === 0 ? "breakfast" : i % 3 === 1 ? "lunch" : "dinner",
+          imageUrl:
+            "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+          meals: [
+            { name: "Grilled Chicken" },
+            { name: "Steamed Vegetables" },
+            { name: "Brown Rice" },
+          ],
+          weekNumber: 1,
+          dayOfWeek: date.getDay() || 7,
+          delivered: dayType === "past",
+          deliveryStatus:
+            dayType === "past"
+              ? "delivered"
+              : dayType === "current"
+              ? "ready"
+              : "scheduled",
+        },
+        meals: [
+          {
+            mealTime:
+              i % 3 === 0 ? "breakfast" : i % 3 === 1 ? "lunch" : "dinner",
+            title: `Meal ${i + 3}`,
+            description: "Fresh ingredients prepared daily",
+            meals: "Protein + Vegetables + Carbs",
+            imageUrl:
+              "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+          },
+        ],
+      });
+    }
+
+    return mockData;
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([loadTimeline(), loadOrders()]);
+    await loadTimeline();
     setRefreshing(false);
   };
 
@@ -172,1096 +252,839 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
     if (dateObj.toDateString() === today.toDateString()) {
-      return "Today";
+      return {
+        primary: "Today",
+        secondary: dateObj.toLocaleDateString("en-US", { weekday: "long" }),
+      };
     } else if (dateObj.toDateString() === tomorrow.toDateString()) {
-      return "Tomorrow";
+      return {
+        primary: "Tomorrow",
+        secondary: dateObj.toLocaleDateString("en-US", { weekday: "long" }),
+      };
+    } else if (dateObj.toDateString() === yesterday.toDateString()) {
+      return {
+        primary: "Yesterday",
+        secondary: dateObj.toLocaleDateString("en-US", { weekday: "long" }),
+      };
     } else {
-      return dateObj.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
+      return {
+        primary: dateObj.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        secondary: dateObj.toLocaleDateString("en-US", { weekday: "long" }),
+      };
+    }
+  };
+
+  const getMealTypeColor = (mealTime, dayType) => {
+    // Adjust colors based on day type
+    if (dayType === "past") {
+      return ["#95A5A6", "#7F8C8D"]; // Gray for delivered meals
+    } else if (dayType === "current") {
+      // Bright colors for current meal
+      switch (mealTime) {
+        case "breakfast":
+          return ["#FFB347", "#FF8C42"];
+        case "lunch":
+          return ["#4ECDC4", "#44A08D"];
+        case "dinner":
+          return ["#667eea", "#764ba2"];
+        default:
+          return [COLORS.primary, COLORS.secondary];
+      }
+    } else {
+      // Muted colors for future meals
+      switch (mealTime) {
+        case "breakfast":
+          return ["#FFD6A3", "#FFB347"];
+        case "lunch":
+          return ["#A3E4DB", "#4ECDC4"];
+        case "dinner":
+          return ["#B3BDF5", "#667eea"];
+        default:
+          return ["#E8E8E8", "#D0D0D0"];
+      }
+    }
+  };
+
+  const getMealStatusInfo = (item) => {
+    const dayType = item.dayType || "future";
+    const mealAssignment = item.mealAssignment || item.meals?.[0];
+
+    switch (dayType) {
+      case "past":
+        return {
+          statusText: "Delivered",
+          statusIcon: "checkmark-circle",
+          statusColor: "#27AE60",
+          bgColor: "rgba(39, 174, 96, 0.1)",
+        };
+      case "current":
+        return {
+          statusText: "Ready Now",
+          statusIcon: "time",
+          statusColor: "#F39C12",
+          bgColor: "rgba(243, 156, 18, 0.1)",
+        };
+      default:
+        return {
+          statusText: "Scheduled",
+          statusIcon: "calendar",
+          statusColor: "#3498DB",
+          bgColor: "rgba(52, 152, 219, 0.1)",
+        };
     }
   };
 
   const getMealTypeIcon = (mealTime) => {
     switch (mealTime) {
       case "breakfast":
-        return "sunny-outline";
+        return "sunny";
       case "lunch":
-        return "partly-sunny-outline";
+        return "partly-sunny";
       case "dinner":
-        return "moon-outline";
+        return "moon";
       default:
-        return "restaurant-outline";
+        return "restaurant";
     }
   };
 
-  // Get dynamic order status for timeline item
-  const getOrderStatus = (timelineItem) => {
-    // Find matching order for this timeline item
-    const matchingOrder = orders.find((order) => {
-      const orderDate = new Date(order.createdAt || order.deliveryDate);
-      const timelineDate = new Date(timelineItem.date);
-
-      // Check if dates match (within same day)
-      return (
-        orderDate.toDateString() === timelineDate.toDateString() &&
-        order.subscription?._id === subscriptionId
-      );
-    });
-
-    if (!matchingOrder) {
-      // No order exists yet - determine if it should be created
-      const itemDate = new Date(timelineItem.date);
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      if (itemDate.toDateString() === today.toDateString()) {
-        return {
-          status: "ready_to_order",
-          title: "Ready to Order",
-          color: "#34C759",
-          icon: "checkmark-circle",
-          description: "Tap to place your order",
-        };
-      } else if (itemDate > tomorrow) {
-        return {
-          status: "scheduled",
-          title: "Scheduled",
-          color: "#8E8E93",
-          icon: "calendar-outline",
-          description: "Meal scheduled",
-        };
-      } else {
-        return {
-          status: "pending",
-          title: "Pending",
-          color: "#FF9500",
-          icon: "time-outline",
-          description: "Order pending",
-        };
-      }
-    }
-
-    // Order exists - return actual order status
-    const orderStatus = (
-      matchingOrder.status ||
-      matchingOrder.orderStatus ||
-      ""
-    ).toLowerCase();
-
-    switch (orderStatus) {
-      case "delivered":
-        return {
-          status: "delivered",
-          title: "Delivered",
-          color: "#34C759",
-          icon: "checkmark-circle",
-          description: "Meal delivered successfully",
-          order: matchingOrder,
-        };
-      case "out for delivery":
-        return {
-          status: "out_for_delivery",
-          title: "Out for Delivery",
-          color: "#007AFF",
-          icon: "car",
-          description: "Driver is on the way",
-          order: matchingOrder,
-          showCode: true,
-        };
-      case "preparing":
-      case "confirmed":
-        return {
-          status: "preparing",
-          title: "Preparing",
-          color: "#FF9500",
-          icon: "restaurant",
-          description: "Meal being prepared",
-          order: matchingOrder,
-        };
-      case "cancelled":
-        return {
-          status: "cancelled",
-          title: "Cancelled",
-          color: "#FF3B30",
-          icon: "close-circle",
-          description: "Order was cancelled",
-          order: matchingOrder,
-        };
-      default:
-        return {
-          status: "confirmed",
-          title: "Confirmed",
-          color: "#34C759",
-          icon: "checkmark",
-          description: "Order confirmed",
-          order: matchingOrder,
-        };
-    }
+  const getMealProgress = (index, totalItems) => {
+    return ((index + 1) / totalItems) * 100;
   };
-
-  const showDeliveryCode = (order) => {
-    const code =
-      order?.confirmationCode ||
-      order?.deliveryCode ||
-      order?.pickupCode ||
-      "CODE123";
-    setSelectedDeliveryCode(code);
-    setConfirmationModalVisible(true);
-  };
-
-  const showAllMealsForDay = (dayMeals) => {
-    setSelectedDayMeals(dayMeals);
-    setMealDetailModalVisible(true);
-  };
-
-  const getProgressPercentage = (status) => {
-    switch (status) {
-      case "scheduled":
-        return 0;
-      case "ready_to_order":
-        return 10;
-      case "confirmed":
-        return 25;
-      case "preparing":
-        return 50;
-      case "out_for_delivery":
-        return 80;
-      case "delivered":
-        return 100;
-      case "cancelled":
-        return 0;
-      default:
-        return 0;
-    }
-  };
-
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.loadingContainer,
-          { backgroundColor: colors.background },
-        ]}
-      >
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-          Loading meal timeline...
-        </Text>
-      </View>
-    );
-  }
 
   // Ensure timeline is always an array to prevent map() errors
   const safeTimeline = Array.isArray(timeline) ? timeline : [];
 
+  const getProgressInfo = () => {
+    if (safeTimeline.length === 0)
+      return { completed: 0, total: 0, remaining: 0 };
+
+    const pastMeals = safeTimeline.filter(
+      (item) => item.dayType === "past"
+    ).length;
+    const currentMeals = safeTimeline.filter(
+      (item) => item.dayType === "current"
+    ).length;
+    const futureMeals = safeTimeline.filter(
+      (item) => item.dayType === "future"
+    ).length;
+    const totalMeals = safeTimeline.length;
+
+    return {
+      completed: pastMeals,
+      current: currentMeals,
+      remaining: futureMeals,
+      total: totalMeals,
+    };
+  };
+
+  const renderProgressBar = () => {
+    if (safeTimeline.length === 0) return null;
+
+    const progressInfo = getProgressInfo();
+    const completedPercentage =
+      progressInfo.total > 0
+        ? (progressInfo.completed / progressInfo.total) * 100
+        : 0;
+
+    return (
+      <View style={styles.progressContainer}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressTitle}>Meal Progress</Text>
+          <Text style={styles.progressSummary}>
+            {progressInfo.completed} delivered • {progressInfo.remaining}{" "}
+            remaining
+          </Text>
+        </View>
+
+        <View style={styles.progressBar}>
+          <View
+            style={[styles.progressFill, { width: `${completedPercentage}%` }]}
+          />
+        </View>
+
+        <View style={styles.progressStats}>
+          <View style={styles.progressStat}>
+            <View style={[styles.statDot, { backgroundColor: "#27AE60" }]} />
+            <Text style={styles.statText}>
+              {progressInfo.completed} Delivered
+            </Text>
+          </View>
+
+          {progressInfo.current > 0 && (
+            <View style={styles.progressStat}>
+              <View style={[styles.statDot, { backgroundColor: "#F39C12" }]} />
+              <Text style={styles.statText}>{progressInfo.current} Ready</Text>
+            </View>
+          )}
+
+          <View style={styles.progressStat}>
+            <View style={[styles.statDot, { backgroundColor: "#3498DB" }]} />
+            <Text style={styles.statText}>
+              {progressInfo.remaining} Upcoming
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading meal timeline...</Text>
+      </View>
+    );
+  }
+
   if (safeTimeline.length === 0) {
     return (
-      <View
-        style={[styles.emptyContainer, { backgroundColor: colors.background }]}
-      >
-        <Ionicons
-          name="calendar-outline"
-          size={48}
-          color={colors.textSecondary}
-        />
-        <Text style={[styles.emptyTitle, { color: colors.text }]}>
-          No Meals Scheduled
-        </Text>
-        <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-          Your meal timeline will appear here
-        </Text>
+      <View style={styles.emptyContainer}>
+        <LinearGradient
+          colors={["#f8f9fa", "#e9ecef"]}
+          style={styles.emptyGradient}
+        >
+          <Ionicons
+            name="calendar-outline"
+            size={64}
+            color={COLORS.textSecondary}
+          />
+          <Text style={styles.emptyTitle}>No Meals Scheduled</Text>
+          <Text style={styles.emptySubtitle}>
+            Your upcoming meal timeline will appear here once you have an active
+            subscription
+          </Text>
+          <TouchableOpacity style={styles.emptyButton}>
+            <Text style={styles.emptyButtonText}>Browse Meal Plans</Text>
+          </TouchableOpacity>
+        </LinearGradient>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        Meal Timeline
-      </Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.sectionTitle}>Meal Timeline</Text>
+        <TouchableOpacity style={styles.filterButton}>
+          <Ionicons name="filter" size={16} color={COLORS.primary} />
+          <Text style={styles.filterText}>7 Days</Text>
+        </TouchableOpacity>
+      </View>
 
-      {safeTimeline.map((dayItem, index) => {
-        const { date, meals = [] } = dayItem;
-        const isToday = formatDate(date) === "Today";
+      {renderProgressBar()}
 
-        console.log(`🍽️ Rendering day ${index}:`, {
-          date,
-          mealsCount: meals.length,
-          meals,
-        });
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {safeTimeline.map((item, index) => {
+          const dateInfo = formatDate(item.date);
+          const dayType = item.dayType || "future";
+          const mealAssignment = item.mealAssignment || item.meals?.[0] || {};
+          const mealTime =
+            mealAssignment.mealTime || item.meals?.[0]?.mealTime || "lunch";
+          const mealColors = getMealTypeColor(mealTime, dayType);
+          const statusInfo = getMealStatusInfo(item);
+          const isCurrentDay = dayType === "current";
+          const isPastDay = dayType === "past";
 
-        // For display, show the first meal's status or aggregate status
-        const primaryMeal = meals[0];
-        const orderStatus = primaryMeal
-          ? getOrderStatus(primaryMeal)
-          : {
-              status: "scheduled",
-              title: "Scheduled",
-              color: colors.textSecondary,
-              icon: "calendar-outline",
-              description: "Meals scheduled",
-            };
-
-        const progress = getProgressPercentage(orderStatus.status);
-
-        return (
-          <TouchableOpacity
-            key={`${date}-${index}`}
-            style={[
-              styles.timelineItem,
-              isToday && styles.todayItem,
-              index === safeTimeline.length - 1 && styles.lastItem,
-            ]}
-            onPress={() => {
-              if (orderStatus.status === "ready_to_order") {
-                console.log("Ready to place order for:", primaryMeal);
-              } else if (onMealPress && primaryMeal) {
-                // If multiple meals, show modal; if single meal, call onMealPress directly
-                if (meals.length > 1) {
-                  showAllMealsForDay(meals);
-                } else {
-                  onMealPress(primaryMeal.mealAssignment);
-                }
-              }
-            }}
-            activeOpacity={0.7}
-          >
-            {/* Timeline connector */}
-            {index < safeTimeline.length - 1 && (
-              <View
-                style={[
-                  styles.connector,
-                  {
-                    backgroundColor:
-                      orderStatus.status === "delivered"
-                        ? orderStatus.color
-                        : colors.border,
-                  },
-                ]}
-              />
-            )}
-
-            {/* Enhanced Timeline dot with progress */}
-            <View style={styles.timelineDotContainer}>
-              <View
-                style={[
-                  styles.timelineDot,
-                  {
-                    borderColor: orderStatus.color,
-                    backgroundColor: colors.cardBackground,
-                  },
-                  orderStatus.status === "delivered" && {
-                    backgroundColor: orderStatus.color,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name={orderStatus.icon}
-                  size={16}
-                  color={
-                    orderStatus.status === "delivered"
-                      ? "#FFFFFF"
-                      : orderStatus.color
-                  }
-                />
-              </View>
-
-              {/* Progress ring for active orders */}
-              {progress > 0 && progress < 100 && (
-                <View style={styles.progressRing}>
-                  <View
-                    style={[
-                      styles.progressArc,
-                      {
-                        backgroundColor: orderStatus.color,
-                        transform: [{ rotate: `${(progress / 100) * 360}deg` }],
-                      },
-                    ]}
-                  />
-                </View>
-              )}
-            </View>
-
-            {/* Enhanced Content */}
-            <View
+          return (
+            <TouchableOpacity
+              key={`${item.date}-${item.dayIndex || index}`}
               style={[
-                styles.content,
-                {
-                  backgroundColor: colors.cardBackground,
-                  borderColor: colors.border,
-                },
-                isToday && {
-                  borderColor: colors.primary,
-                  borderWidth: 2,
-                  backgroundColor: colors.primary + "15",
-                },
-                orderStatus.status === "delivered" && {
-                  backgroundColor: "#34C759" + "15",
-                  borderColor: "#34C759",
-                },
+                styles.timelineCard,
+                isCurrentDay && styles.todayCard,
+                isPastDay && styles.pastCard,
               ]}
+              onPress={() => onMealPress && onMealPress(mealAssignment)}
+              activeOpacity={0.8}
             >
-              {/* Date header with status */}
-              <View style={styles.dateHeader}>
-                <Text
-                  style={[
-                    styles.dateText,
-                    { color: colors.text },
-                    isToday && {
-                      color: colors.primary,
-                      fontSize: 17,
-                      fontWeight: "700",
-                    },
-                    orderStatus.status === "delivered" && { color: "#34C759" },
-                  ]}
-                >
-                  {formatDate(date)}
-                </Text>
-
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: orderStatus.color + "20" },
-                  ]}
-                >
+              <LinearGradient
+                colors={
+                  isCurrentDay
+                    ? mealColors
+                    : isPastDay
+                    ? ["#f8f9fa", "#e9ecef"]
+                    : ["#ffffff", "#ffffff"]
+                }
+                style={[
+                  styles.cardGradient,
+                  isCurrentDay && styles.todayGradient,
+                  isPastDay && styles.pastGradient,
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                {/* Timeline connector */}
+                {index < safeTimeline.length - 1 && (
                   <View
                     style={[
-                      styles.statusDot,
-                      { backgroundColor: orderStatus.color },
+                      styles.connector,
+                      isCurrentDay && styles.activeConnector,
                     ]}
                   />
-                  <Text
-                    style={[styles.statusText, { color: orderStatus.color }]}
-                  >
-                    {orderStatus.title}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Meals preview */}
-              <View style={styles.mealInfo}>
-                {meals.length > 0 ? (
-                  // Sort meals by meal time order (breakfast, lunch, dinner)
-                  meals
-                    .sort((a, b) => {
-                      const order = { breakfast: 1, lunch: 2, dinner: 3 };
-                      const aOrder =
-                        order[a.mealAssignment?.mealTime?.toLowerCase()] || 999;
-                      const bOrder =
-                        order[b.mealAssignment?.mealTime?.toLowerCase()] || 999;
-                      return aOrder - bOrder;
-                    })
-                    // Show ALL meals for the day (no slice limit)
-                    .map((meal, mealIndex) => (
-                      <View
-                        key={mealIndex}
-                        style={[
-                          styles.mealHeader,
-                          mealIndex > 0 && { marginTop: 8 },
-                        ]}
-                      >
-                        <Image
-                          source={{
-                            uri:
-                              meal.mealAssignment?.imageUrl ||
-                              `https://via.placeholder.com/60x40/F7AE1A/FFFFFF?text=${
-                                meal.mealAssignment?.mealTime
-                                  ?.charAt(0)
-                                  .toUpperCase() || "M"
-                              }`,
-                          }}
-                          style={styles.mealImage}
-                          defaultSource={require("../../assets/images/daily-meals.jpg")}
-                        />
-                        <View style={styles.mealDetails}>
-                          <Text
-                            style={[styles.mealTitle, { color: colors.text }]}
-                          >
-                            {meal.mealAssignment?.customTitle ||
-                              meal.mealAssignment?.title ||
-                              meal.mealAssignment?.mealTime
-                                ?.charAt(0)
-                                .toUpperCase() +
-                                meal.mealAssignment?.mealTime?.slice(1) ||
-                              `Meal ${mealIndex + 1}`}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.mealSubtitle,
-                              { color: colors.textSecondary },
-                            ]}
-                          >
-                            {meal.mealAssignment?.mealTime
-                              ?.charAt(0)
-                              .toUpperCase() +
-                              meal.mealAssignment?.mealTime?.slice(1) ||
-                              "Meal"}{" "}
-                            •{" "}
-                            {mealIndex === 0
-                              ? orderStatus.description
-                              : "Scheduled"}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.mealCount,
-                              { color: colors.textSecondary },
-                            ]}
-                          >
-                            {meal.mealAssignment?.calories || "---"} cal
-                          </Text>
-                        </View>
-
-                        {/* Meal type icon */}
-                        <View
-                          style={[
-                            styles.mealTypeIcon,
-                            { backgroundColor: colors.primary + "20" },
-                          ]}
-                        >
-                          <Ionicons
-                            name={getMealTypeIcon(
-                              meal.mealAssignment?.mealTime
-                            )}
-                            size={16}
-                            color={colors.primary}
-                          />
-                        </View>
-
-                        {/* Action button for specific statuses */}
-                        {mealIndex === 0 && orderStatus.showCode && (
-                          <TouchableOpacity
-                            style={[
-                              styles.actionButton,
-                              { backgroundColor: colors.primary },
-                            ]}
-                            onPress={() => showDeliveryCode(orderStatus.order)}
-                          >
-                            <Ionicons name="key" size={14} color="#FFFFFF" />
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    ))
-                ) : (
-                  // Fallback when no meals data
-                  <View style={styles.mealHeader}>
-                    <Image
-                      source={{
-                        uri: "https://via.placeholder.com/60x40/F7AE1A/FFFFFF?text=Meal",
-                      }}
-                      style={styles.mealImage}
-                      defaultSource={require("../../assets/images/daily-meals.jpg")}
-                    />
-                    <View style={styles.mealDetails}>
-                      <Text style={[styles.mealTitle, { color: colors.text }]}>
-                        Scheduled Meal
-                      </Text>
-                      <Text
-                        style={[
-                          styles.mealSubtitle,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        {orderStatus.description}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.mealCount,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        --- cal
-                      </Text>
-                    </View>
-                  </View>
                 )}
 
-                {/* Show total meals count if more than 1 */}
-                {meals.length > 1 && (
-                  <View style={styles.moreMealsIndicator}>
+                {/* Left side - Date and icon */}
+                <View style={styles.leftSection}>
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      isCurrentDay && styles.todayIcon,
+                      isPastDay && styles.pastIcon,
+                    ]}
+                  >
+                    <Ionicons
+                      name={
+                        isPastDay
+                          ? "checkmark-circle"
+                          : getMealTypeIcon(mealTime)
+                      }
+                      size={24}
+                      color={
+                        isCurrentDay
+                          ? "#FFFFFF"
+                          : isPastDay
+                          ? "#27AE60"
+                          : mealColors[0]
+                      }
+                    />
+                  </View>
+
+                  <View style={styles.dateSection}>
                     <Text
-                      style={[styles.moreMealsText, { color: colors.primary }]}
+                      style={[
+                        styles.primaryDate,
+                        isCurrentDay && styles.todayText,
+                        isPastDay && styles.pastText,
+                      ]}
                     >
-                      Total: {meals.length} meal{meals.length !== 1 ? "s" : ""} for this day
+                      {dateInfo.primary}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.secondaryDate,
+                        isCurrentDay && styles.todaySubText,
+                        isPastDay && styles.pastSubText,
+                      ]}
+                    >
+                      {dateInfo.secondary}
                     </Text>
                   </View>
-                )}
-              </View>
-
-              {/* Order details for active orders */}
-              {orderStatus.order && (
-                <View
-                  style={[
-                    styles.orderDetails,
-                    { borderTopColor: colors.border },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.orderNumber,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Order #{orderStatus.order.orderNumber || "CHM001"}
-                  </Text>
                 </View>
-              )}
-            </View>
-          </TouchableOpacity>
-        );
-      })}
 
-      {/* Confirmation Code Modal */}
-      <Modal
-        visible={confirmationModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setConfirmationModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContainer,
-              { backgroundColor: colors.modalBackground },
-            ]}
-          >
-            <View
-              style={[styles.modalHeader, { borderBottomColor: colors.border }]}
-            >
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Delivery Code
-              </Text>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => setConfirmationModalVisible(false)}
-              >
-                <Ionicons name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
+                {/* Right side - Meal details */}
+                <View style={styles.rightSection}>
+                  <View style={styles.mealImageContainer}>
+                    <Image
+                      source={{
+                        uri:
+                          mealAssignment.imageUrl ||
+                          item.imageUrl ||
+                          item.meals?.[0]?.imageUrl ||
+                          "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+                      }}
+                      style={[
+                        styles.mealImage,
+                        isPastDay && styles.pastMealImage,
+                      ]}
+                      defaultSource={require("../../assets/images/daily-meals.jpg")}
+                    />
+                    <View style={styles.imageOverlay}>
+                      <Text style={styles.mealCount}>
+                        {mealAssignment.meals?.length ||
+                          item.meals?.length ||
+                          item.mealCount ||
+                          3}
+                      </Text>
+                    </View>
 
-            <View style={styles.modalContent}>
-              <View style={styles.codeDisplay}>
-                <Text
-                  style={[styles.codeLabel, { color: colors.textSecondary }]}
-                >
-                  Show this code to your driver:
-                </Text>
-                <View
-                  style={[
-                    styles.codeContainer,
-                    {
-                      backgroundColor: colors.primary + "15",
-                      borderColor: colors.primary + "30",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.confirmationCodeText,
-                      { color: colors.primary },
-                    ]}
-                  >
-                    {selectedDeliveryCode}
-                  </Text>
-                </View>
-              </View>
+                    {/* Delivery status overlay */}
+                    {isPastDay && (
+                      <View style={styles.deliveredBadge}>
+                        <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                      </View>
+                    )}
+                  </View>
 
-              <TouchableOpacity
-                style={[
-                  styles.modalOkButton,
-                  { backgroundColor: colors.primary },
-                ]}
-                onPress={() => setConfirmationModalVisible(false)}
-              >
-                <Text style={styles.modalOkButtonText}>Got it!</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* All Meals for Day Modal */}
-      <Modal
-        visible={mealDetailModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setMealDetailModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.fullModalContainer,
-              { backgroundColor: colors.modalBackground },
-            ]}
-          >
-            <View
-              style={[styles.modalHeader, { borderBottomColor: colors.border }]}
-            >
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                All Meals ({selectedDayMeals.length} items)
-              </Text>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => setMealDetailModalVisible(false)}
-              >
-                <Ionicons name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-
-            <FlatList
-              data={selectedDayMeals}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ padding: 16 }}
-              keyExtractor={(item, index) => `meal-${index}`}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item, index }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.mealDetailCard,
-                    {
-                      backgroundColor: colors.cardBackground,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  onPress={() => {
-                    setMealDetailModalVisible(false);
-                    if (onMealPress) {
-                      onMealPress(item.mealAssignment);
-                    }
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Image
-                    source={{
-                      uri:
-                        item.mealAssignment?.imageUrl ||
-                        "https://via.placeholder.com/100x80",
-                    }}
-                    style={styles.mealDetailImage}
-                    defaultSource={require("../../assets/images/daily-meals.jpg")}
-                  />
-
-                  <View style={styles.mealDetailInfo}>
+                  <View style={styles.mealDetailsSection}>
                     <Text
-                      style={[styles.mealDetailTitle, { color: colors.text }]}
+                      style={[
+                        styles.mealTitle,
+                        isCurrentDay && styles.todayText,
+                        isPastDay && styles.pastText,
+                      ]}
                     >
-                      {item.mealAssignment?.customTitle ||
-                        item.mealAssignment?.title ||
+                      {mealAssignment.customTitle ||
+                        mealAssignment.title ||
+                        item.dayTitle ||
                         `${
-                          item.mealAssignment?.mealTime
-                            ?.charAt(0)
-                            .toUpperCase() +
-                            item.mealAssignment?.mealTime?.slice(1) || "Meal"
-                        } ${index + 1}`}
+                          mealTime?.charAt(0).toUpperCase() + mealTime?.slice(1)
+                        } Meal`}
                     </Text>
 
                     <Text
                       style={[
-                        styles.mealDetailDescription,
-                        { color: colors.textSecondary },
+                        styles.mealDescription,
+                        isCurrentDay && styles.todaySubText,
+                        isPastDay && styles.pastSubText,
                       ]}
                     >
-                      {item.mealAssignment?.description ||
-                        "Delicious and nutritious meal"}
+                      {mealAssignment.customDescription ||
+                        mealAssignment.description ||
+                        item.meals?.[0]?.description ||
+                        `Week ${item.weekNumber || 1} • Day ${
+                          item.dayOfWeek || 1
+                        }`}
                     </Text>
 
-                    <View style={styles.mealDetailMeta}>
-                      <View style={styles.mealMetaItem}>
+                    {/* Status badges */}
+                    <View style={styles.badgeContainer}>
+                      {/* Delivery status badge */}
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          { backgroundColor: statusInfo.bgColor },
+                        ]}
+                      >
                         <Ionicons
-                          name="flame"
-                          size={14}
-                          color={colors.primary}
+                          name={statusInfo.statusIcon}
+                          size={12}
+                          color={statusInfo.statusColor}
                         />
                         <Text
                           style={[
-                            styles.mealMetaText,
-                            { color: colors.textSecondary },
+                            styles.badgeText,
+                            { color: statusInfo.statusColor },
                           ]}
                         >
-                          {item.mealAssignment?.calories || "---"} cal
+                          {statusInfo.statusText}
                         </Text>
                       </View>
 
-                      <View style={styles.mealMetaItem}>
-                        <Ionicons
-                          name="time"
-                          size={14}
-                          color={colors.primary}
-                        />
+                      {/* Meal count badge */}
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          {
+                            backgroundColor: isCurrentDay
+                              ? "rgba(255,255,255,0.2)"
+                              : isPastDay
+                              ? "rgba(39, 174, 96, 0.1)"
+                              : "#f0f0f0",
+                          },
+                        ]}
+                      >
                         <Text
                           style={[
-                            styles.mealMetaText,
-                            { color: colors.textSecondary },
+                            styles.badgeText,
+                            {
+                              color: isCurrentDay
+                                ? "#FFFFFF"
+                                : isPastDay
+                                ? "#27AE60"
+                                : COLORS.textSecondary,
+                            },
                           ]}
                         >
-                          {item.mealAssignment?.prepTime || "15"} mins
-                        </Text>
-                      </View>
-
-                      <View style={styles.mealMetaItem}>
-                        <Ionicons
-                          name="restaurant"
-                          size={14}
-                          color={colors.primary}
-                        />
-                        <Text
-                          style={[
-                            styles.mealMetaText,
-                            { color: colors.textSecondary },
-                          ]}
-                        >
-                          {item.mealAssignment?.mealTime || "Meal"}
+                          {mealAssignment.meals?.length ||
+                            item.meals?.length ||
+                            item.mealCount ||
+                            3}{" "}
+                          items
                         </Text>
                       </View>
                     </View>
                   </View>
+                </View>
 
+                {/* Action arrow */}
+                <View style={styles.actionSection}>
                   <Ionicons
                     name="chevron-forward"
                     size={20}
-                    color={colors.textSecondary}
+                    color={
+                      isCurrentDay
+                        ? "#FFFFFF"
+                        : isPastDay
+                        ? "#27AE60"
+                        : COLORS.textSecondary
+                    }
                   />
-                </TouchableOpacity>
-              )}
-              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            />
-          </View>
-        </View>
-      </Modal>
-    </ScrollView>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          );
+        })}
+
+        {/* View more section */}
+        <TouchableOpacity style={styles.viewMoreSection}>
+          <LinearGradient
+            colors={["#f8f9fa", "#e9ecef"]}
+            style={styles.viewMoreGradient}
+          >
+            <Ionicons name="calendar" size={24} color={COLORS.primary} />
+            <Text style={styles.viewMoreTitle}>View Full Timeline</Text>
+            <Text style={styles.viewMoreSubtitle}>
+              See all upcoming meals and plan ahead
+            </Text>
+            <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
+          </LinearGradient>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
+    backgroundColor: "#f8f9fa",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#ffffff",
+  },
+  sectionTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: "#f0f0f0",
+  },
+  filterText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 4,
+  },
+  progressContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  progressTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  progressSummary: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: "#e9ecef",
+    borderRadius: 2,
+    marginBottom: 12,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: COLORS.primary,
+    borderRadius: 2,
+  },
+  progressStats: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  progressStat: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  statDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statText: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: "600",
+  },
+  progressText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
+  },
+  scrollContainer: {
+    flex: 1,
+    paddingTop: 16,
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 40,
+    paddingVertical: 60,
+    backgroundColor: "#f8f9fa",
   },
   loadingText: {
-    fontSize: 14,
-    marginTop: 12,
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    marginTop: 16,
+    fontWeight: "500",
   },
   emptyContainer: {
     flex: 1,
+    margin: 16,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  emptyGradient: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 60,
+    paddingVertical: 80,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginTop: 16,
+    color: COLORS.textPrimary,
+    fontSize: 22,
+    fontWeight: "700",
+    marginTop: 24,
+    marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
-    marginTop: 8,
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 32,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 24,
-    marginTop: 8,
+  emptyButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
   },
-  timelineItem: {
-    flexDirection: "row",
-    marginBottom: 24,
+  emptyButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  timelineCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: "hidden",
     position: "relative",
-  },
-  todayItem: {
-    // Enhanced styling for today's item
-  },
-  lastItem: {
-    marginBottom: 12,
-  },
-  connector: {
-    position: "absolute",
-    left: 19,
-    top: 50,
-    width: 2,
-    height: 40,
-  },
-  timelineDotContainer: {
-    position: "relative",
-    marginRight: 12,
-  },
-  timelineDot: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 3,
-    alignItems: "center",
-    justifyContent: "center",
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
-  progressRing: {
+  todayCard: {
+    elevation: 6,
+    shadowOpacity: 0.2,
+  },
+  pastCard: {
+    opacity: 0.8,
+  },
+  cardGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    minHeight: 100,
+  },
+  todayGradient: {
+    // Gradient colors handled by LinearGradient component
+  },
+  pastGradient: {
+    // Gradient colors handled by LinearGradient component
+  },
+  connector: {
     position: "absolute",
-    top: -2,
-    left: -2,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: "transparent",
-    overflow: "hidden",
+    left: 45,
+    top: 100,
+    width: 3,
+    height: 32,
+    backgroundColor: "#e9ecef",
+    zIndex: 1,
   },
-  progressArc: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "50%",
-    height: "100%",
-    transformOrigin: "right center",
+  activeConnector: {
+    backgroundColor: COLORS.primary,
   },
-  content: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 16,
+  leftSection: {
+    alignItems: "center",
+    marginRight: 16,
+  },
+  iconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    borderWidth: 1,
   },
-  dateHeader: {
+  todayIcon: {
+    backgroundColor: "rgba(255,255,255,0.3)",
+  },
+  dateSection: {
+    alignItems: "center",
+  },
+  primaryDate: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+    marginBottom: 2,
+  },
+  secondaryDate: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: COLORS.textSecondary,
+  },
+  todayText: {
+    color: "#ffffff",
+  },
+  todaySubText: {
+    color: "rgba(255,255,255,0.8)",
+  },
+  pastIcon: {
+    backgroundColor: "rgba(39, 174, 96, 0.1)",
+  },
+  pastText: {
+    color: "#27AE60",
+  },
+  pastSubText: {
+    color: "rgba(39, 174, 96, 0.8)",
+  },
+  pastMealImage: {
+    opacity: 0.8,
+  },
+  deliveredBadge: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    backgroundColor: "#27AE60",
+    borderRadius: 8,
+    padding: 2,
+  },
+  rightSection: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
   },
-  dateText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-  mealInfo: {
-    marginBottom: 8,
-  },
-  mealHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+  mealImageContainer: {
+    position: "relative",
+    marginRight: 16,
   },
   mealImage: {
-    width: 60,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 12,
+    width: 80,
+    height: 60,
+    borderRadius: 12,
   },
-  mealDetails: {
+  imageOverlay: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  mealCount: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  mealDetailsSection: {
     flex: 1,
   },
   mealTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
-  mealSubtitle: {
+  mealDescription: {
     fontSize: 13,
-    marginBottom: 2,
-  },
-  mealCount: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  mealTypeIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
-    marginRight: 4,
-  },
-  moreMealsIndicator: {
-    alignItems: "center",
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.1)",
-  },
-  moreMealsText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
-  },
-  orderDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 12,
-    borderTopWidth: 1,
-  },
-  orderNumber: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  orderAmount: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  modalContainer: {
-    borderRadius: 16,
-    width: "100%",
-    maxWidth: 400,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-  },
-  fullModalContainer: {
-    borderRadius: 16,
-    width: "100%",
-    height: "80%",
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 20,
-    borderBottomWidth: 1,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  modalCloseButton: {
-    padding: 4,
-  },
-  modalContent: {
-    padding: 20,
-  },
-  codeDisplay: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  codeLabel: {
-    fontSize: 14,
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  codeContainer: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-  },
-  confirmationCodeText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    letterSpacing: 2,
-  },
-  modalOkButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  modalOkButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  // Meal detail modal styles
-  mealDetailCard: {
-    flexDirection: "row",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  mealDetailImage: {
-    width: 80,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 16,
-  },
-  mealDetailInfo: {
-    flex: 1,
-  },
-  mealDetailTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  mealDetailDescription: {
-    fontSize: 13,
+    color: COLORS.textSecondary,
     marginBottom: 8,
-  },
-  mealDetailMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  mealMetaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  mealMetaText: {
-    fontSize: 11,
-    marginLeft: 4,
     fontWeight: "500",
+  },
+  badgeContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 6,
+    marginBottom: 4,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    marginLeft: 2,
+  },
+  actionSection: {
+    marginLeft: 12,
+  },
+  viewMoreSection: {
+    margin: 16,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  viewMoreGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 20,
+  },
+  viewMoreTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+    marginLeft: 12,
+  },
+  viewMoreSubtitle: {
+    flex: 1,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginLeft: 12,
   },
 });
 

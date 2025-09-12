@@ -137,6 +137,38 @@ const SearchScreen = ({ navigation }) => {
     fetchDiscountData();
   }, [user, searchResults, mealPlans]);
 
+  // Helper function to set fallback popular searches from actual meal plans
+  const setFallbackPopularSearches = async () => {
+    try {
+      // Get available meal plans and use their names
+      const mealPlansResponse = await apiService.getMealPlans();
+      if (mealPlansResponse?.success && Array.isArray(mealPlansResponse.data)) {
+        const mealPlanNames = mealPlansResponse.data
+          .filter(plan => plan?.planName || plan?.name) // Only plans with names
+          .slice(0, 5) // Take first 5
+          .map(plan => plan.planName || plan.name);
+        
+        if (mealPlanNames.length > 0) {
+          console.log("📋 Using meal plan names as popular searches:", mealPlanNames);
+          setPopularSearches(mealPlanNames);
+          return;
+        }
+      }
+    } catch (error) {
+      console.log("Could not fetch meal plans for fallback searches:", error);
+    }
+    
+    // Final fallback to meal plan-like names if API fails
+    console.log("📋 Using final fallback popular searches");
+    setPopularSearches([
+      "FitFuel Plan",
+      "Wellness Hub",
+      "Recharge Plan", 
+      "HealthyFam Plan",
+      "Premium Plan",
+    ]);
+  };
+
   const loadSearchData = async () => {
     try {
       setHistoryLoading(true);
@@ -148,34 +180,23 @@ const SearchScreen = ({ navigation }) => {
         setSearchHistory(parsedHistory.slice(0, 5)); // Keep only last 5 searches
       }
 
-      // Set popular searches to names of popular meal plans
-      if (mealPlans && mealPlans.length > 0) {
-        // Sort by popularity (totalSubscriptions or similar metric)
-        const sortedPlans = [...mealPlans].sort(
-          (a, b) => (b.totalSubscriptions || 0) - (a.totalSubscriptions || 0)
-        );
-        setPopularSearches(
-          sortedPlans.slice(0, 5).map((plan) => plan.planName || plan.name)
-        );
-      } else {
-        // Fallback popular searches
-        setPopularSearches([
-          "Jollof Rice",
-          "Amala & Ewedu",
-          "Pepper Soup",
-          "Suya",
-          "Pounded Yam",
-        ]);
+      // Load popular searches from backend (or fallback to meal plan names)
+      try {
+        const response = await apiService.getPopularSearches?.();
+        if (response?.success && Array.isArray(response.data)) {
+          setPopularSearches(response.data);
+        } else {
+          // Fallback: use actual meal plan names from available meal plans
+          await setFallbackPopularSearches();
+        }
+      } catch (error) {
+        console.log("Popular searches not available, using fallback from meal plans");
+        await setFallbackPopularSearches();
       }
     } catch (error) {
       console.error("Error loading search data:", error);
-      setPopularSearches([
-        "Jollof Rice",
-        "Amala & Ewedu",
-        "Pepper Soup",
-        "Suya",
-        "Pounded Yam",
-      ]);
+      // Use the same fallback function for consistency
+      await setFallbackPopularSearches();
     } finally {
       setHistoryLoading(false);
     }
@@ -649,7 +670,7 @@ const SearchScreen = ({ navigation }) => {
             ) : (
               <>
                 {/* Search History */}
-                {searchHistory.length > 0 && (
+                {/* {searchHistory.length > 0 && (
                   <View style={styles(colors).historySection}>
                     <Text style={styles(colors).suggestionsTitle}>
                       Recent Searches
@@ -676,7 +697,7 @@ const SearchScreen = ({ navigation }) => {
                       </TouchableOpacity>
                     ))}
                   </View>
-                )}
+                )} */}
 
                 {/* Popular Searches */}
                 {popularSearches.length > 0 && (

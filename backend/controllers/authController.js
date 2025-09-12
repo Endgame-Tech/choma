@@ -346,6 +346,10 @@ exports.updateProfile = async (req, res) => {
 // Delete user account
 exports.deleteAccount = async (req, res) => {
   try {
+    console.log("🗑️ DELETE /auth/account endpoint hit");
+    console.log("🗑️ Request user:", req.user?.id);
+    console.log("🗑️ Request headers:", req.headers);
+    
     const customerId = req.user.id;
     
     // Check if customer exists

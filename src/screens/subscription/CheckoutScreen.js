@@ -92,13 +92,16 @@ const CheckoutScreen = ({ route, navigation }) => {
   // Function to calculate discount
   const calculateDiscount = useCallback(async () => {
     if (!user || !mealPlan) return;
-    
+
     setLoadingDiscount(true);
     try {
-      const discountResult = await discountService.calculateDiscount(user, mealPlan);
+      const discountResult = await discountService.calculateDiscount(
+        user,
+        mealPlan
+      );
       setDiscount(discountResult);
     } catch (error) {
-      console.error('Failed to calculate discount:', error);
+      console.error("Failed to calculate discount:", error);
       setDiscount(null);
     } finally {
       setLoadingDiscount(false);
@@ -147,11 +150,6 @@ const CheckoutScreen = ({ route, navigation }) => {
         setCurrentLocationAddress(formattedAddress);
         setDeliveryAddress(formattedAddress);
         setAddressSource("current");
-
-        showSuccess(
-          "Location Found",
-          `Current location set as delivery address: ${formattedAddress}`
-        );
       } else {
         showError(
           "Error",
@@ -242,42 +240,54 @@ const CheckoutScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (selectedDuration) {
-        const newDeliveryCount = selectedDuration * 7;
-        console.log(`🚀 Duration Changed: ${selectedDuration} weeks → ${newDeliveryCount} deliveries`);
-        setDeliveryCount(newDeliveryCount);
+      const newDeliveryCount = selectedDuration * 7;
+      console.log(
+        `🚀 Duration Changed: ${selectedDuration} weeks → ${newDeliveryCount} deliveries`
+      );
+      setDeliveryCount(newDeliveryCount);
     }
   }, [selectedDuration]);
 
   useEffect(() => {
     if (selectedZone) {
-        let totalFee = 0;
-        if (consolidatedDeliveries) {
-            const consolidatedCount = Math.ceil(deliveryCount / 2);
-            totalFee = selectedZone.price * consolidatedCount;
-            console.log(`🚀 Consolidated Delivery Calculation: ₦${selectedZone.price} × ${consolidatedCount} deliveries = ₦${totalFee}`);
-        } else {
-            totalFee = selectedZone.price * deliveryCount;
-            console.log(`🚀 Daily Delivery Calculation: ₦${selectedZone.price} × ${deliveryCount} deliveries = ₦${totalFee}`);
-        }
-        setDeliveryFee(totalFee);
+      let totalFee = 0;
+      if (consolidatedDeliveries) {
+        const consolidatedCount = Math.ceil(deliveryCount / 2);
+        totalFee = selectedZone.price * consolidatedCount;
+        console.log(
+          `🚀 Consolidated Delivery Calculation: ₦${selectedZone.price} × ${consolidatedCount} deliveries = ₦${totalFee}`
+        );
+      } else {
+        totalFee = selectedZone.price * deliveryCount;
+        console.log(
+          `🚀 Daily Delivery Calculation: ₦${selectedZone.price} × ${deliveryCount} deliveries = ₦${totalFee}`
+        );
+      }
+      setDeliveryFee(totalFee);
     }
   }, [consolidatedDeliveries, selectedZone, deliveryCount]);
 
   // Handle delivery zone selection
   const handleZoneSelect = (zone) => {
     console.log(`🚀 Zone Selected: ${zone.area} - ₦${zone.price}`);
-    console.log(`🚀 Delivery Count: ${deliveryCount}, Consolidated: ${consolidatedDeliveries}`);
-    
+    console.log(
+      `🚀 Delivery Count: ${deliveryCount}, Consolidated: ${consolidatedDeliveries}`
+    );
+
     setSelectedZone(zone);
     // Calculate delivery fee based on selected zone and delivery options
     let totalFee = 0;
     if (consolidatedDeliveries) {
       const consolidatedCount = Math.ceil(deliveryCount / 2);
       totalFee = zone.price * consolidatedCount;
-      console.log(`🚀 Zone Select - Consolidated: ₦${zone.price} × ${consolidatedCount} = ₦${totalFee}`);
+      console.log(
+        `🚀 Zone Select - Consolidated: ₦${zone.price} × ${consolidatedCount} = ₦${totalFee}`
+      );
     } else {
       totalFee = zone.price * deliveryCount;
-      console.log(`🚀 Zone Select - Daily: ₦${zone.price} × ${deliveryCount} = ₦${totalFee}`);
+      console.log(
+        `🚀 Zone Select - Daily: ₦${zone.price} × ${deliveryCount} = ₦${totalFee}`
+      );
     }
     setDeliveryFee(totalFee);
     setDeliverySchedule([]);
@@ -379,17 +389,17 @@ const CheckoutScreen = ({ route, navigation }) => {
 
   // Calculate pricing based on meal plan's totalPrice and user selections
   const originalBasePlanPrice = mealPlan?.totalPrice || mealPlan?.price || 0; // Use totalPrice if available, fallback to price
-  
+
   // Apply discount to base price if available
   const hasValidDiscount = discount && discount.discountPercent > 0;
-  const basePlanPrice = hasValidDiscount ? discount.discountedPrice : originalBasePlanPrice;
-  
-  
+  const basePlanPrice = hasValidDiscount
+    ? discount.discountedPrice
+    : originalBasePlanPrice;
+
   const frequencyMultiplier =
     frequencies.find((f) => f.id === selectedFrequency)?.multiplier || 1;
   const durationMultiplier =
     durations.find((d) => d.id === selectedDuration)?.multiplier || 1;
-
 
   // Ensure all values are valid numbers
   const validBasePlanPrice = isNaN(basePlanPrice) ? 0 : basePlanPrice;
@@ -409,7 +419,6 @@ const CheckoutScreen = ({ route, navigation }) => {
 
   const totalPrice = subtotal + validDeliveryFee;
 
-
   const handleProceedToPayment = () => {
     if (!deliveryAddress.trim()) {
       showError("Required Field", "Please enter your delivery address");
@@ -417,7 +426,10 @@ const CheckoutScreen = ({ route, navigation }) => {
     }
 
     if (!selectedZone) {
-      showError("Required Field", "Please select a delivery zone to calculate delivery fees");
+      showError(
+        "Required Field",
+        "Please select a delivery zone to calculate delivery fees"
+      );
       return;
     }
 
@@ -449,23 +461,28 @@ const CheckoutScreen = ({ route, navigation }) => {
       totalPrice: Math.round(totalPrice), // Ensure it's a whole number
       originalBasePlanPrice: Math.round(originalBasePlanPrice),
       basePlanPrice: Math.round(validBasePlanPrice),
-      discount: discount && discount.discountPercent > 0 ? {
-        discountPercent: discount.discountPercent,
-        discountAmount: discount.discountAmount,
-        reason: discount.reason,
-        eligibilityReason: discount.eligibilityReason
-      } : null,
+      discount:
+        discount && discount.discountPercent > 0
+          ? {
+              discountPercent: discount.discountPercent,
+              discountAmount: discount.discountAmount,
+              reason: discount.reason,
+              eligibilityReason: discount.eligibilityReason,
+            }
+          : null,
       frequencyMultiplier: validFrequencyMultiplier,
       durationMultiplier: validDurationMultiplier,
       deliveryFee: deliveryFee,
-      selectedDeliveryZone: selectedZone ? {
-        _id: selectedZone._id,
-        area: selectedZone.area,
-        state: selectedZone.state,
-        country: selectedZone.country,
-        price: selectedZone.price,
-        locationName: selectedZone.locationName
-      } : null,
+      selectedDeliveryZone: selectedZone
+        ? {
+            _id: selectedZone._id,
+            area: selectedZone.area,
+            state: selectedZone.state,
+            country: selectedZone.country,
+            price: selectedZone.price,
+            locationName: selectedZone.locationName,
+          }
+        : null,
       deliveryCount,
       consolidatedDeliveries,
       deliverySchedule: deliverySchedule,
@@ -1046,19 +1063,29 @@ const CheckoutScreen = ({ route, navigation }) => {
                 ₦{originalBasePlanPrice.toLocaleString()}
               </Text>
             </View>
-            
+
             {/* Show discount if available */}
             {discount && discount.discountPercent > 0 && (
               <View style={styles(colors).summaryRow}>
-                <Text style={[styles(colors).summaryLabel, { color: colors.success }]}>
+                <Text
+                  style={[
+                    styles(colors).summaryLabel,
+                    { color: colors.success },
+                  ]}
+                >
                   {discount.reason} ({discount.discountPercent}% OFF)
                 </Text>
-                <Text style={[styles(colors).summaryValue, { color: colors.success }]}>
+                <Text
+                  style={[
+                    styles(colors).summaryValue,
+                    { color: colors.success },
+                  ]}
+                >
                   -₦{discount.discountAmount.toLocaleString()}
                 </Text>
               </View>
             )}
-            
+
             {discount && discount.discountPercent > 0 && (
               <View style={styles(colors).summaryRow}>
                 <Text style={styles(colors).summaryLabel}>
@@ -1093,7 +1120,11 @@ const CheckoutScreen = ({ route, navigation }) => {
             </View>
             <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).summaryLabel}>
-                Delivery Fee ({consolidatedDeliveries ? Math.ceil(deliveryCount / 2) : deliveryCount} deliveries)
+                Delivery Fee (
+                {consolidatedDeliveries
+                  ? Math.ceil(deliveryCount / 2)
+                  : deliveryCount}{" "}
+                deliveries)
               </Text>
               {loadingDeliveryFee ? (
                 <ActivityIndicator size="small" color={colors.primary} />
@@ -1113,13 +1144,19 @@ const CheckoutScreen = ({ route, navigation }) => {
             {/* Show delivery fee breakdown if zone is selected */}
             {selectedZone && validDeliveryFee > 0 && (
               <View style={styles(colors).summaryRow}>
-                <Text style={[styles(colors).summaryLabel, {fontSize: 14, fontStyle: 'italic'}]}>
-                  {consolidatedDeliveries 
-                    ? `₦${selectedZone.price.toLocaleString()} × ${Math.ceil(deliveryCount / 2)} consolidated deliveries`
-                    : `₦${selectedZone.price.toLocaleString()} × ${deliveryCount} daily deliveries`
-                  }
+                <Text
+                  style={[
+                    styles(colors).summaryLabel,
+                    { fontSize: 14, fontStyle: "italic" },
+                  ]}
+                >
+                  {consolidatedDeliveries
+                    ? `₦${selectedZone.price.toLocaleString()} × ${Math.ceil(
+                        deliveryCount / 2
+                      )} consolidated deliveries`
+                    : `₦${selectedZone.price.toLocaleString()} × ${deliveryCount} daily deliveries`}
                 </Text>
-                <Text style={[styles(colors).summaryValue, {fontSize: 14}]}>
+                <Text style={[styles(colors).summaryValue, { fontSize: 14 }]}>
                   = ₦{validDeliveryFee.toLocaleString()}
                 </Text>
               </View>

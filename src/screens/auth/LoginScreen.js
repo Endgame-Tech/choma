@@ -119,22 +119,22 @@ const LoginScreen = ({ navigation }) => {
   const handleLogin = async () => {
     // Clear previous errors
     setErrors({});
-    
+
     // Validation
     const newErrors = {};
-    
+
     if (!email.trim()) {
       newErrors.email = "Email is required";
     } else if (!email.includes("@") || !email.includes(".")) {
       newErrors.email = "Please enter a valid email address";
     }
-    
+
     if (!password.trim()) {
       newErrors.password = "Password is required";
     } else if (password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -142,7 +142,7 @@ const LoginScreen = ({ navigation }) => {
 
     try {
       setIsLoading(true);
-      setLoginAttempts(prev => prev + 1);
+      setLoginAttempts((prev) => prev + 1);
 
       console.log("Attempting login with:", { email: email.trim() });
 
@@ -156,38 +156,74 @@ const LoginScreen = ({ navigation }) => {
       } else {
         // Set specific error based on response
         const errorMessage = result.message || result.error || "Login failed";
-        
-        if (errorMessage.toLowerCase().includes('password') || 
-            errorMessage.toLowerCase().includes('credential') ||
-            errorMessage.toLowerCase().includes('invalid') ||
-            result.statusCode === 401) {
-          setErrors({ 
-            password: loginAttempts >= 2 ? "Incorrect password. Check your password and try again." : "Incorrect password",
-            general: loginAttempts >= 2 ? "Multiple failed attempts. Please verify your credentials." : undefined
-          });
-        } else if (errorMessage.toLowerCase().includes('email') || 
-                   errorMessage.toLowerCase().includes('user not found')) {
-          setErrors({ email: "No account found with this email address" });
-        } else if (errorMessage.toLowerCase().includes('network') || 
-                   errorMessage.toLowerCase().includes('connection')) {
-          setErrors({ general: "Network error. Please check your connection and try again." });
-        } else {
+
+        // Handle specific error cases
+        if (
+          errorMessage.toLowerCase().includes("deleted") ||
+          errorMessage.toLowerCase().includes("deactivated") ||
+          errorMessage.toLowerCase().includes("suspended")
+        ) {
           setErrors({ general: errorMessage });
-        }
-        
-        // Still show alert for serious errors
-        if (loginAttempts >= 2) {
-          showError("Login Failed", "Multiple failed attempts. Please verify your email and password are correct.");
+          showError("Account Issue", errorMessage);
+        } else if (
+          errorMessage.toLowerCase().includes("password") ||
+          errorMessage.toLowerCase().includes("credential") ||
+          errorMessage.toLowerCase().includes("invalid") ||
+          result.statusCode === 401
+        ) {
+          setErrors({
+            password:
+              loginAttempts >= 2
+                ? "Incorrect password. Check your password and try again."
+                : "Incorrect password",
+            general:
+              loginAttempts >= 2
+                ? "Multiple failed attempts. Please verify your credentials."
+                : undefined,
+          });
+
+          // Show alert for multiple attempts
+          if (loginAttempts >= 2) {
+            showError(
+              "Login Failed",
+              "Multiple failed attempts. Please verify your email and password are correct."
+            );
+          }
+        } else if (
+          errorMessage.toLowerCase().includes("email") ||
+          errorMessage.toLowerCase().includes("user not found")
+        ) {
+          setErrors({ email: "No account found with this email address" });
+        } else if (
+          errorMessage.toLowerCase().includes("network") ||
+          errorMessage.toLowerCase().includes("connection")
+        ) {
+          setErrors({
+            general:
+              "Network error. Please check your connection and try again.",
+          });
+        } else {
+          // For any other specific error messages, show them directly
+          setErrors({ general: errorMessage });
+
+          // Show alert for serious errors or after multiple attempts
+          if (loginAttempts >= 2 || result.statusCode >= 400) {
+            showError("Login Failed", errorMessage);
+          }
         }
       }
     } catch (error) {
       console.error("Login error:", error);
-      setErrors({ 
-        general: "Something went wrong. Please check your connection and try again." 
+      setErrors({
+        general:
+          "Something went wrong. Please check your connection and try again.",
       });
-      
+
       if (loginAttempts >= 2) {
-        showError("Connection Error", "Unable to connect to our servers. Please try again later.");
+        showError(
+          "Connection Error",
+          "Unable to connect to our servers. Please try again later."
+        );
       }
     } finally {
       setIsLoading(false);
@@ -263,7 +299,12 @@ const LoginScreen = ({ navigation }) => {
                 </View>
               )}
 
-              <View style={[styles.inputContainer, errors.email && styles.inputContainerError]}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  errors.email && styles.inputContainerError,
+                ]}
+              >
                 <Ionicons
                   name="mail-outline"
                   size={20}
@@ -278,7 +319,7 @@ const LoginScreen = ({ navigation }) => {
                   onChangeText={(text) => {
                     setEmail(text);
                     if (errors.email) {
-                      setErrors(prev => ({ ...prev, email: null }));
+                      setErrors((prev) => ({ ...prev, email: null }));
                     }
                   }}
                   keyboardType="email-address"
@@ -292,7 +333,12 @@ const LoginScreen = ({ navigation }) => {
                 </View>
               )}
 
-              <View style={[styles.inputContainer, errors.password && styles.inputContainerError]}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  errors.password && styles.inputContainerError,
+                ]}
+              >
                 <Ionicons
                   name="lock-closed-outline"
                   size={20}
@@ -307,7 +353,7 @@ const LoginScreen = ({ navigation }) => {
                   onChangeText={(text) => {
                     setPassword(text);
                     if (errors.password) {
-                      setErrors(prev => ({ ...prev, password: null }));
+                      setErrors((prev) => ({ ...prev, password: null }));
                     }
                   }}
                   secureTextEntry={!showPassword}

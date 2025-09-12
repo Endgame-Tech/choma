@@ -125,25 +125,43 @@ const PrivacySecurityScreen = ({ navigation }) => {
   };
 
   const handleDeleteAccount = () => {
+    console.log("🗑️ handleDeleteAccount button clicked");
     showConfirm(
       'Delete Account',
       'This action cannot be undone. All your data will be permanently deleted.\n\nAre you sure you want to delete your account?',
       () => {
-            showConfirm(
-              'Final Confirmation',
-              'Type "DELETE" to confirm account deletion',
-              async () => {
-                    try {
-                      setSaveLoading(true);
-                      await deleteAccount();
-                    } catch (error) {
-                      showError('Error', 'Failed to delete account. Please contact support.');
-                    } finally {
-                      setSaveLoading(false);
-                    }
+        console.log("🗑️ First confirmation accepted");
+        showConfirm(
+          'Final Confirmation',
+          'This will permanently delete your account and all associated data. This action cannot be undone.',
+          async () => {
+            console.log("🗑️ Final confirmation accepted, proceeding with deletion");
+            try {
+              setSaveLoading(true);
+              console.log("🗑️ About to call deleteAccount()");
+              const result = await deleteAccount();
+              console.log("🗑️ deleteAccount result:", result);
+              
+              if (result?.success) {
+                showInfo('Account Deleted', 'Your account has been successfully deleted.');
+                // Navigate to login or welcome screen
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Auth' }],
+                });
+              } else {
+                showError('Error', result?.message || 'Failed to delete account. Please contact support.');
               }
-            );
+            } catch (error) {
+              console.error('Delete account error:', error);
+              showError('Error', 'Failed to delete account. Please contact support.');
+            } finally {
+              setSaveLoading(false);
+            }
           }
+        );
+      }
+    );
   };
 
   const renderSettingRow = (title, subtitle, value, onToggle, type = 'switch') => (

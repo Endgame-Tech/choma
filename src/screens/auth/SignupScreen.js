@@ -37,13 +37,13 @@ import CloudStorageService from "../../services/cloudStorage";
 import { useAlert } from "../../contexts/AlertContext";
 import apiService from "../../services/api";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 const SignupScreen = ({ navigation, route }) => {
   const { colors, isDark } = useTheme();
   const { showError, showSuccess, showInfo, showConfirm, showAlert } =
     useAlert();
-  
+
   // Get verified email from route params if coming from email verification
   const { verifiedEmail, verificationToken } = route.params || {};
 
@@ -87,7 +87,7 @@ const SignupScreen = ({ navigation, route }) => {
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const rotateInterpolate = rotateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    outputRange: ["0deg", "360deg"],
   });
 
   const { signup } = useAuth();
@@ -108,18 +108,18 @@ const SignupScreen = ({ navigation, route }) => {
   // Smooth keyboard animation listeners
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (event) => {
         // White form section - move up more (original amount)
         Animated.timing(keyboardOffset, {
-          duration: Platform.OS === 'ios' ? 300 : 250,
+          duration: Platform.OS === "ios" ? 300 : 250,
           toValue: -event.endCoordinates.height * 0.3, // Keep white form moving up by 30%
           useNativeDriver: false,
         }).start();
 
         // Top section (logo + food image) - move up less
         Animated.timing(topSectionOffset, {
-          duration: Platform.OS === 'ios' ? 300 : 250,
+          duration: Platform.OS === "ios" ? 300 : 250,
           toValue: -event.endCoordinates.height * 0.1, // Logo and food image move up only 10%
           useNativeDriver: false,
         }).start();
@@ -127,17 +127,17 @@ const SignupScreen = ({ navigation, route }) => {
     );
 
     const keyboardWillHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
         // Reset both animations
         Animated.timing(keyboardOffset, {
-          duration: Platform.OS === 'ios' ? 300 : 250,
+          duration: Platform.OS === "ios" ? 300 : 250,
           toValue: 0,
           useNativeDriver: false,
         }).start();
 
         Animated.timing(topSectionOffset, {
-          duration: Platform.OS === 'ios' ? 300 : 250,
+          duration: Platform.OS === "ios" ? 300 : 250,
           toValue: 0,
           useNativeDriver: false,
         }).start();
@@ -184,11 +184,6 @@ const SignupScreen = ({ navigation, route }) => {
     setCity(addressInfo.locality || addressInfo.adminArea || "");
     setState(addressInfo.adminArea || "Lagos"); // Default to Lagos if not found
     setAddressCoordinates(addressInfo.coordinates);
-
-    showSuccess(
-      "Address Selected",
-      "Delivery address has been set successfully"
-    );
   };
 
   const validateStep1 = () => {
@@ -285,31 +280,149 @@ const SignupScreen = ({ navigation, route }) => {
         accuracy: Location.Accuracy.Balanced,
       });
 
-      const addressResponse = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-
-      if (addressResponse.length > 0) {
-        const address = addressResponse[0];
-        const formattedAddress = [
-          address.streetNumber,
-          address.street,
-          address.district,
-        ]
-          .filter(Boolean)
-          .join(", ");
-
-        setDeliveryAddress(formattedAddress);
-        setCity(address.city || "");
-        setState(address.region || "");
-
-        showSuccess(
-          "Location Found",
-          "Current location set as delivery address"
+      // Use our backend's Google Maps API for better address parsing
+      try {
+        const response = await apiService.reverseGeocode(
+          location.coords.latitude,
+          location.coords.longitude
         );
-      } else {
-        showError("Error", "Unable to get address from current location");
+
+        console.log(
+          "🔍 Reverse geocoding response:",
+          JSON.stringify(response, null, 2)
+        );
+
+        if (
+          response.success &&
+          response.data &&
+          response.data.success &&
+          response.data.data &&
+          response.data.data.length > 0
+        ) {
+          const result = response.data.data[0];
+          const addressComponents = result.address_components || [];
+
+          console.log(
+            "📍 Address components:",
+            JSON.stringify(addressComponents, null, 2)
+          );
+
+          // Parse address components
+          let streetNumber = "";
+          let streetName = "";
+          let neighborhood = "";
+          let city = "";
+          let state = "";
+
+          addressComponents.forEach((component) => {
+            const types = component.types;
+            if (types.includes("street_number")) {
+              streetNumber = component.long_name;
+            } else if (types.includes("route")) {
+              streetName = component.long_name;
+            } else if (
+              types.includes("sublocality") ||
+              types.includes("neighborhood")
+            ) {
+              neighborhood = component.long_name;
+            } else if (types.includes("locality")) {
+              // Prioritize locality (actual city name) over administrative areas
+              city = component.long_name;
+            } else if (types.includes("administrative_area_level_1")) {
+              state = component.long_name;
+            }
+          });
+
+          // Build formatted address
+          const addressParts = [streetNumber, streetName, neighborhood].filter(
+            Boolean
+          );
+          const formattedAddress = addressParts.join(" ");
+
+          console.log("🏠 Parsed address parts:", {
+            streetNumber,
+            streetName,
+            neighborhood,
+            city,
+            state,
+            formattedAddress,
+          });
+
+          // Set the address fields
+          setDeliveryAddress(formattedAddress || result.formatted_address);
+          setCity(city || "Lagos"); // Default to Lagos if not found
+          setState(state || "Lagos"); // Default to Lagos state if not found
+
+          console.log("✅ Setting address fields:", {
+            deliveryAddress: formattedAddress || result.formatted_address,
+            city: city || "Lagos",
+            state: state || "Lagos",
+          });
+
+          // Store coordinates for later use
+          setAddressCoordinates({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+        } else {
+          // Fallback to Expo's reverse geocoding
+          const addressResponse = await Location.reverseGeocodeAsync({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+
+          if (addressResponse.length > 0) {
+            const address = addressResponse[0];
+            const formattedAddress = [
+              address.streetNumber,
+              address.street,
+              address.district,
+            ]
+              .filter(Boolean)
+              .join(", ");
+
+            setDeliveryAddress(formattedAddress);
+            setCity(address.city || address.subregion || "Lagos");
+            setState(address.region || address.country || "Lagos");
+
+            setAddressCoordinates({
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            });
+          } else {
+            showError("Error", "Unable to get address from current location");
+          }
+        }
+      } catch (apiError) {
+        console.error("Backend geocoding failed, using fallback:", apiError);
+
+        // Fallback to Expo's reverse geocoding
+        const addressResponse = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+
+        if (addressResponse.length > 0) {
+          const address = addressResponse[0];
+          const formattedAddress = [
+            address.streetNumber,
+            address.street,
+            address.district,
+          ]
+            .filter(Boolean)
+            .join(", ");
+
+          setDeliveryAddress(formattedAddress);
+          setCity(address.city || address.subregion || "Lagos");
+          setState(address.region || address.country || "Lagos");
+
+          setAddressCoordinates({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+        } else {
+          showError("Error", "Unable to get address from current location");
+        }
       }
     } catch (error) {
       console.error("Error getting location:", error);
@@ -438,25 +551,35 @@ const SignupScreen = ({ navigation, route }) => {
 
       // Check if email is already verified first
       console.log("Checking verification status for:", email.trim());
-      
+
       try {
         const statusResponse = await apiService.checkVerificationStatus(
-          email.trim(), 
-          'customer_registration'
+          email.trim(),
+          "customer_registration"
         );
 
-        console.log("Status check response:", JSON.stringify(statusResponse, null, 2));
-        
+        console.log(
+          "Status check response:",
+          JSON.stringify(statusResponse, null, 2)
+        );
+
         // Handle nested response structure from API service
-        const verificationData = statusResponse?.data?.data || statusResponse?.data;
-        
-        if (statusResponse && statusResponse.success && verificationData?.verified) {
-          console.log("Email already verified, proceeding directly to complete registration");
-          showSuccess(
-            "Email Already Verified", 
-            "Your email is verified. Completing registration..."
+        const verificationData =
+          statusResponse?.data?.data || statusResponse?.data;
+
+        if (
+          statusResponse &&
+          statusResponse.success &&
+          verificationData?.verified
+        ) {
+          console.log(
+            "Email already verified, proceeding directly to complete registration"
           );
-          
+          // showSuccess(
+          //   "Email Already Verified",
+          //   "Your email is verified. Completing registration..."
+          // );
+
           // Navigate directly to complete signup
           navigation.navigate("CompleteSignup", {
             userData: {
@@ -468,11 +591,14 @@ const SignupScreen = ({ navigation, route }) => {
           return;
         }
 
-        console.log("Email not verified, sending verification code to:", email.trim());
-        
+        console.log(
+          "Email not verified, sending verification code to:",
+          email.trim()
+        );
+
         const verificationResponse = await apiService.sendVerificationCode({
           email: email.trim(),
-          purpose: 'customer_registration'
+          purpose: "customer_registration",
         });
 
         console.log("Verification response:", verificationResponse);
@@ -482,52 +608,56 @@ const SignupScreen = ({ navigation, route }) => {
             "Verification Email Sent",
             "Please check your email for the verification code"
           );
-          
+
           // Navigate to email verification screen
           console.log("Navigating to EmailVerification screen");
           navigation.navigate("EmailVerification", {
             email: email.trim(),
-            purpose: 'customer_registration',
-            userData: userData
+            purpose: "customer_registration",
+            userData: userData,
           });
         } else {
           console.error("Verification failed:", verificationResponse);
-          
+
           // TEMPORARY: For development/testing - navigate anyway
-          console.log("API failed, but navigating to EmailVerification for testing");
+          console.log(
+            "API failed, but navigating to EmailVerification for testing"
+          );
           showError(
             "Development Mode",
             "Email service not available, but proceeding for testing"
           );
-          
+
           navigation.navigate("EmailVerification", {
             email: email.trim(),
-            purpose: 'customer_registration',
-            userData: userData
+            purpose: "customer_registration",
+            userData: userData,
           });
-          
+
           // Uncomment below for production:
           // showError(
-          //   "Verification Error", 
+          //   "Verification Error",
           //   verificationResponse?.message || "Failed to send verification email. Please try again."
           // );
         }
       } catch (verificationError) {
         console.error("Verification API call failed:", verificationError);
-        
+
         // TEMPORARY: For development/testing - navigate anyway
-        console.log("API call failed, but navigating to EmailVerification for testing");
+        console.log(
+          "API call failed, but navigating to EmailVerification for testing"
+        );
         showError(
           "Development Mode",
           "Connection failed, but proceeding for testing"
         );
-        
+
         navigation.navigate("EmailVerification", {
           email: email.trim(),
-          purpose: 'customer_registration',
-          userData: userData
+          purpose: "customer_registration",
+          userData: userData,
         });
-        
+
         // Uncomment below for production:
         // showError(
         //   "Connection Error",
@@ -647,10 +777,7 @@ const SignupScreen = ({ navigation, route }) => {
         </View>
       </View>
 
-      <TouchableOpacity
-        style={styles.inputContainer}
-        onPress={openDatePicker}
-      >
+      <TouchableOpacity style={styles.inputContainer} onPress={openDatePicker}>
         <Ionicons
           name="calendar-outline"
           size={20}
@@ -669,7 +796,12 @@ const SignupScreen = ({ navigation, route }) => {
         <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
       </TouchableOpacity>
 
-      <View style={[styles.inputContainer, verifiedEmail && styles.inputContainerVerified]}>
+      <View
+        style={[
+          styles.inputContainer,
+          verifiedEmail && styles.inputContainerVerified,
+        ]}
+      >
         <Ionicons
           name="mail-outline"
           size={20}
@@ -786,9 +918,7 @@ const SignupScreen = ({ navigation, route }) => {
   const renderStep3 = () => (
     <View style={styles.stepContent}>
       {/* <Text style={styles.stepTitle}>Delivery Address</Text> */}
-      <Text style={styles.stepTitle}>
-        Where should we deliver your meals?
-      </Text>
+      <Text style={styles.stepTitle}>Where should we deliver your meals?</Text>
 
       <TouchableOpacity
         style={styles.locationButton}
@@ -898,9 +1028,7 @@ const SignupScreen = ({ navigation, route }) => {
           </View>
 
           <ScrollView style={styles.modalScroll}>
-            <Text style={styles.termsContent}>
-              {TERMS_AND_CONDITIONS}
-            </Text>
+            <Text style={styles.termsContent}>{TERMS_AND_CONDITIONS}</Text>
           </ScrollView>
 
           <View style={styles.modalFooter}>
@@ -926,7 +1054,7 @@ const SignupScreen = ({ navigation, route }) => {
       {/* Background with brown color and pattern */}
       <View style={styles.backgroundContainer}>
         <ImageBackground
-          source={require('../../../assets/patternchoma.png')}
+          source={require("../../../assets/patternchoma.png")}
           style={styles.backgroundPattern}
           resizeMode="repeat"
           imageStyle={styles.backgroundImageStyle}
@@ -946,7 +1074,7 @@ const SignupScreen = ({ navigation, route }) => {
           {/* Food Image (slow rotating) */}
           <View style={styles.foodImageContainer}>
             <Animated.Image
-              source={require('../../../assets/authImage.png')}
+              source={require("../../../assets/authImage.png")}
               style={[
                 styles.foodImage,
                 { transform: [{ rotate: rotateInterpolate }] },
@@ -975,7 +1103,9 @@ const SignupScreen = ({ navigation, route }) => {
             {/* Welcome text */}
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Create Account</Text>
-              <Text style={styles.welcomeSubtitle}>Start Your healthy journey with Choma</Text>
+              <Text style={styles.welcomeSubtitle}>
+                Start Your healthy journey with Choma
+              </Text>
             </View>
 
             {/* Step info */}
@@ -1016,7 +1146,9 @@ const SignupScreen = ({ navigation, route }) => {
                     {isLoading ? (
                       <ActivityIndicator color="#fff" />
                     ) : (
-                      <Text style={styles.signupButtonText}>Send Verification Code</Text>
+                      <Text style={styles.signupButtonText}>
+                        Finish Sign Up
+                      </Text>
                     )}
                   </TouchableOpacity>
                 )}
@@ -1025,9 +1157,7 @@ const SignupScreen = ({ navigation, route }) => {
 
             {/* Footer */}
             <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                Already have an account?{" "}
-              </Text>
+              <Text style={styles.footerText}>Already have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Login")}>
                 <Text style={styles.loginLink}>Sign In</Text>
               </TouchableOpacity>
@@ -1056,19 +1186,19 @@ const SignupScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#652815',
+    backgroundColor: "#652815",
   },
   backgroundContainer: {
     flex: 1,
-    position: 'relative',
+    position: "relative",
   },
   backgroundPattern: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#652815',
+    backgroundColor: "#652815",
     opacity: 0.8, // Subtle pattern overlay
   },
   backgroundImageStyle: {
@@ -1077,18 +1207,18 @@ const styles = StyleSheet.create({
   },
   topSection: {
     flex: 0.4,
-    paddingTop: Platform.OS === 'ios' ? 30 : 70,
+    paddingTop: Platform.OS === "ios" ? 30 : 70,
     paddingHorizontal: 20,
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   logoContainer: {
     marginTop: -30,
     marginBottom: 20,
   },
   foodImageContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 2,
   },
   foodImage: {
@@ -1098,7 +1228,7 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     flex: 0.8,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     minHeight: height * 0.5,
@@ -1114,73 +1244,73 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   welcomeContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   welcomeTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 4,
   },
   welcomeSubtitle: {
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
   },
   stepInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   stepTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 15,
   },
 
   // Step indicator
   stepIndicator: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
   stepContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   stepCircle: {
     width: 30,
     height: 30,
     borderRadius: 20,
-    backgroundColor: '#e8e8e8',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#e8e8e8",
+    justifyContent: "center",
+    alignItems: "center",
   },
   stepCircleActive: {
-    backgroundColor: '#652815',
+    backgroundColor: "#652815",
   },
   stepText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#999',
+    fontWeight: "600",
+    color: "#999",
   },
   stepTextActive: {
-    color: '#fff',
+    color: "#fff",
   },
   stepLine: {
     width: 50,
     height: 2,
-    backgroundColor: '#e8e8e8',
+    backgroundColor: "#e8e8e8",
     marginHorizontal: 10,
   },
   stepLineActive: {
-    backgroundColor: '#652815',
+    backgroundColor: "#652815",
   },
 
   form: {
-    width: '100%',
+    width: "100%",
   },
 
   // Step content
@@ -1188,19 +1318,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f8f8",
     borderRadius: 25,
     marginBottom: 16,
     paddingHorizontal: 20,
     height: 50,
     borderWidth: 1,
-    borderColor: '#e8e8e8',
+    borderColor: "#e8e8e8",
   },
   inputContainerVerified: {
-    backgroundColor: '#4CAF50' + '10',
-    borderColor: '#4CAF50',
+    backgroundColor: "#4CAF50" + "10",
+    borderColor: "#4CAF50",
   },
   inputIcon: {
     marginRight: 12,
@@ -1208,12 +1338,12 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
-    fontWeight: '400',
+    color: "#333",
+    fontWeight: "400",
   },
   inputVerified: {
-    color: '#4CAF50',
-    fontWeight: '600',
+    color: "#4CAF50",
+    fontWeight: "600",
   },
   verifiedIcon: {
     marginLeft: 8,
@@ -1228,17 +1358,17 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   placeholderText: {
-    color: '#999',
+    color: "#999",
   },
   // Address fields
   addressRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 10,
   },
   nameRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 10,
   },
   halfWidth: {
@@ -1247,51 +1377,51 @@ const styles = StyleSheet.create({
 
   // Profile image upload
   imageUploadContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   imageUploadButton: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 10,
-    backgroundColor: '#F4D03F',
+    backgroundColor: "#F4D03F",
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   placeholderImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#F4D03F',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#F4D03F",
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 50,
   },
   imageUploadText: {
     fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
   },
 
   // Location button
   locationButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f8f8",
     borderRadius: 25,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E6B17A',
+    borderColor: "#E6B17A",
   },
   locationButtonText: {
-    color: '#E6B17A',
+    color: "#E6B17A",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginLeft: 8,
     flex: 1,
   },
@@ -1301,7 +1431,7 @@ const styles = StyleSheet.create({
   },
   passwordHintText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
 
   // Terms and conditions
@@ -1309,8 +1439,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   termsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   termsTextContainer: {
     flex: 1,
@@ -1318,12 +1448,12 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     lineHeight: 20,
   },
   termsLink: {
-    color: '#E6B17A',
-    textDecorationLine: 'underline',
+    color: "#E6B17A",
+    textDecorationLine: "underline",
   },
 
   // Buttons
@@ -1331,13 +1461,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   nextButton: {
-    backgroundColor: '#652815',
+    backgroundColor: "#652815",
     borderRadius: 25,
     height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
-    shadowColor: '#652815',
+    shadowColor: "#652815",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -1347,18 +1477,18 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   nextButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   signupButton: {
-    backgroundColor: '#652815',
+    backgroundColor: "#652815",
     borderRadius: 25,
     height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
-    shadowColor: '#652815',
+    shadowColor: "#652815",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -1371,25 +1501,25 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   signupButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 20,
   },
   footerText: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
   },
   loginLink: {
-    color: '#E6B17A',
+    color: "#E6B17A",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   bottomPadding: {
     height: 30,
@@ -1398,27 +1528,27 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '80%',
+    maxHeight: "80%",
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
+    borderBottomColor: "#e8e8e8",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     flex: 1,
   },
   modalCloseButton: {
@@ -1429,26 +1559,26 @@ const styles = StyleSheet.create({
   },
   termsContent: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
     lineHeight: 20,
     padding: 20,
   },
   modalFooter: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#e8e8e8',
+    borderTopColor: "#e8e8e8",
   },
   acceptButton: {
-    backgroundColor: '#E6B17A',
+    backgroundColor: "#E6B17A",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 25,
-    alignItems: 'center',
+    alignItems: "center",
   },
   acceptButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   // Address autocomplete styles
   autocompleteContainer: {

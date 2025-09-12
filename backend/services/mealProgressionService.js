@@ -325,8 +325,8 @@ class MealProgressionService {
   /**
    * Get meal progression timeline for subscription grouped by day
    * @param {string} subscriptionId - Subscription ID
-   * @param {number} daysAhead - Number of days to look ahead
-   * @returns {Array} Timeline of upcoming meals grouped by day
+   * @param {number} daysAhead - Number of days to look ahead (includes past days)
+   * @returns {Array} Timeline of meals grouped by day (past and future)
    */
   async getMealProgressionTimeline(subscriptionId, daysAhead = 7) {
     try {
@@ -339,6 +339,12 @@ class MealProgressionService {
         throw new Error('Subscription not found');
       }
       
+      // Check if subscription has a valid meal plan
+      if (!subscription.mealPlanId) {
+        console.log('⚠️ Subscription has no meal plan assigned:', subscription._id);
+        return [];
+      }
+
       const assignments = await MealPlanAssignment.find({ 
         mealPlanId: subscription.mealPlanId._id 
       })
@@ -402,16 +408,37 @@ class MealProgressionService {
       console.log('🎯 Starting progression:', currentProgression);
       console.log('🍽️ Selected meal types:', selectedMealTypes);
       
-      for (let i = 0; i < daysAhead; i++) {
+      // Calculate progression states for past and future days
+      const pastDays = 3; // Show 3 days back
+      const futureDays = daysAhead - pastDays;
+      
+      // Start from past days
+      let workingProgression = { ...currentProgression };
+      
+      // Go back to calculate past days
+      for (let i = pastDays; i > 0; i--) {
+        workingProgression = this.calculatePreviousDayProgression(workingProgression, subscription);
+      }
+      
+      // Now generate timeline from past to future
+      for (let i = -pastDays; i < futureDays; i++) {
         const deliveryDate = new Date();
         deliveryDate.setDate(deliveryDate.getDate() + i);
         
-        const weekKey = `week${currentProgression.weekNumber}`;
-        const dayName = dayNames[currentProgression.dayOfWeek - 1];
+        const weekKey = `week${workingProgression.weekNumber}`;
+        const dayName = dayNames[workingProgression.dayOfWeek - 1];
         const weekData = weeklyMeals[weekKey];
         const dayData = weekData?.[dayName];
         
-        console.log(`🔍 Day ${i + 1}: Checking ${weekKey} > ${dayName}`);
+        console.log(`🔍 Day ${i}: Checking ${weekKey} > ${dayName}`);
+        
+        // Determine if this is a past, current, or future day
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        deliveryDate.setHours(0, 0, 0, 0);
+        
+        const dayType = deliveryDate < today ? 'past' : 
+                       deliveryDate.getTime() === today.getTime() ? 'current' : 'future';
         
         // Check if this day has any meals for the selected meal types
         const dayMeals = [];
@@ -433,17 +460,18 @@ class MealProgressionService {
         
         // Only add days that have meal assignments
         if (hasMeals) {
-          console.log(`✅ Found ${dayMeals.length} meals for ${dayName}`);
+          console.log(`✅ Found ${dayMeals.length} meals for ${dayName} (${dayType})`);
           
           timeline.push({
             date: deliveryDate,
             dayIndex: i,
             dayName: dayName,
-            weekNumber: currentProgression.weekNumber,
-            dayOfWeek: currentProgression.dayOfWeek,
+            weekNumber: workingProgression.weekNumber,
+            dayOfWeek: workingProgression.dayOfWeek,
+            dayType: dayType, // 'past', 'current', or 'future'
             meals: dayMeals,
             // Summary info for the day
-            dayTitle: `${dayName} - Week ${currentProgression.weekNumber}`,
+            dayTitle: `${dayName} - Week ${workingProgression.weekNumber}`,
             mealCount: dayMeals.length,
             // Primary image (use first meal's image)
             imageUrl: dayMeals[0]?.imageUrl || null
@@ -453,14 +481,7 @@ class MealProgressionService {
         }
         
         // Advance to next day
-        currentProgression.dayOfWeek = currentProgression.dayOfWeek % 7 + 1;
-        if (currentProgression.dayOfWeek === 1) {
-          currentProgression.weekNumber++;
-          // Cycle back to week 1 if exceeded plan duration
-          if (currentProgression.weekNumber > subscription.mealPlanId.durationWeeks) {
-            currentProgression.weekNumber = 1;
-          }
-        }
+        workingProgression = this.calculateNextDayProgression(workingProgression, subscription);
       }
       
       console.log(`✅ Generated timeline with ${timeline.length} days (only showing days with meals)`);
@@ -470,6 +491,59 @@ class MealProgressionService {
       console.error('❌ Error getting meal progression timeline:', error);
       throw error;
     }
+  }
+  
+  /**
+   * Calculate previous day progression (for showing past days)
+   * @param {Object} currentProgression - Current progression state
+   * @param {Object} subscription - Subscription document
+   * @returns {Object} Previous day progression
+   */
+  calculatePreviousDayProgression(currentProgression, subscription) {
+    let { weekNumber, dayOfWeek } = currentProgression;
+    
+    // Move to previous day
+    dayOfWeek = dayOfWeek - 1;
+    if (dayOfWeek < 1) {
+      dayOfWeek = 7; // Sunday
+      weekNumber = weekNumber - 1;
+      // If we go before week 1, cycle to last week of plan
+      if (weekNumber < 1) {
+        weekNumber = subscription.mealPlanId.durationWeeks;
+      }
+    }
+    
+    return {
+      weekNumber,
+      dayOfWeek,
+      mealTime: subscription.selectedMealTypes[0] // First meal of day
+    };
+  }
+  
+  /**
+   * Calculate next day progression (for timeline generation)
+   * @param {Object} currentProgression - Current progression state
+   * @param {Object} subscription - Subscription document
+   * @returns {Object} Next day progression
+   */
+  calculateNextDayProgression(currentProgression, subscription) {
+    let { weekNumber, dayOfWeek } = currentProgression;
+    
+    // Move to next day
+    dayOfWeek = dayOfWeek % 7 + 1;
+    if (dayOfWeek === 1) {
+      weekNumber++;
+      // Cycle back to week 1 if exceeded plan duration
+      if (weekNumber > subscription.mealPlanId.durationWeeks) {
+        weekNumber = 1;
+      }
+    }
+    
+    return {
+      weekNumber,
+      dayOfWeek,
+      mealTime: subscription.selectedMealTypes[0] // First meal of day
+    };
   }
   
   /**

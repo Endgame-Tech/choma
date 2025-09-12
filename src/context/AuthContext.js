@@ -37,11 +37,17 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       console.log("🔍 Checking authentication status...");
 
+      // Initialize API service first
+      await apiService.initialize();
+
       // Check if we have a stored token
       const token = await apiService.getStoredToken();
 
       if (token) {
         console.log("📱 Token found, verifying with backend...");
+
+        // Debug auth status
+        apiService.debugAuthStatus();
 
         // Try to get user profile to verify token validity
         const profileResponse = await apiService.getProfile();
@@ -134,6 +140,11 @@ export const AuthProvider = ({ children }) => {
           ) {
             userMessage =
               "Your account has been disabled. Please contact support.";
+          } else if (
+            errorMessage.includes("deleted") ||
+            errorMessage.includes("account has been deleted")
+          ) {
+            userMessage = response.error; // Use the exact backend message for deleted accounts
           } else if (errorMessage.includes("email not verified")) {
             userMessage = "Please verify your email address before logging in.";
           } else if (
@@ -150,6 +161,10 @@ export const AuthProvider = ({ children }) => {
               "Connection error. Please check your internet and try again.";
           } else if (response.status === 401) {
             userMessage = "Incorrect email or password. Please try again.";
+          } else if (response.status === 403) {
+            // For 403 errors, use the exact backend message as it usually contains important info
+            userMessage =
+              response.error || "Access forbidden. Please contact support.";
           } else if (response.status === 404) {
             userMessage =
               "No account found with this email address. Please check your email or sign up.";
@@ -492,9 +507,12 @@ export const AuthProvider = ({ children }) => {
   // Delete account
   const deleteAccount = async () => {
     try {
-      console.log("🗑️ Deleting account for user:", user?.email);
+      console.log("🗑️ Starting deleteAccount process for user:", user?.email);
+      console.log("🗑️ About to call apiService.deleteAccount()");
 
       const response = await apiService.deleteAccount();
+
+      console.log("🗑️ API response received:", response);
 
       if (response.success) {
         // Clear local state immediately

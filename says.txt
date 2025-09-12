@@ -1,4 +1,1051 @@
-Category
-Lunch
-Dinner
-Dessert
+ LOG  🗺️ Reverse geocoding coordinates: {"latitude": 9.0821666, "longitude": 7.4320322}
+ LOG  API Request (Attempt 1): GET http://10.226.105.28:5001/api/maps/geocode/reverse?lat=9.0821666&lng=7.4320322&language=en
+ LOG  🔍 Reverse geocoding response: {
+  "success": true,
+  "data": {
+    "success": true,
+    "data": [
+      {
+        "address_components": [
+          {
+            "long_name": "3CJJ+RM7",
+            "short_name": "3CJJ+RM7",
+            "types": [
+              "plus_code"
+            ]
+          },
+          {
+            "long_name": "Bafurra Close",
+            "short_name": "Bafurra Cl",
+            "types": [
+              "route"
+            ]
+          },
+          {
+            "long_name": "Jabi",
+            "short_name": "Jabi",
+            "types": [
+              "neighborhood",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja",
+            "short_name": "Abuja",
+            "types": [
+              "locality",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Gwarinpa",
+            "short_name": "Gwarinpa",
+            "types": [
+              "administrative_area_level_3",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          },
+          {
+            "long_name": "900108",
+            "short_name": "900108",
+            "types": [
+              "postal_code"
+            ]
+          }
+        ],
+        "formatted_address": "3CJJ+RM7, Bafurra Cl, Jabi, Abuja 900108, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.082114800000001,
+              "lng": 7.4317957
+            },
+            "southwest": {
+              "lat": 9.0819338,
+              "lng": 7.4316093
+            }
+          },
+          "location": {
+            "lat": 9.0820194,
+            "lng": 7.4316922
+          },
+          "location_type": "ROOFTOP",
+          "viewport": {
+            "northeast": {
+              "lat": 9.083373280291504,
+              "lng": 7.433051480291503
+            },
+            "southwest": {
+              "lat": 9.080675319708499,
+              "lng": 7.430353519708499
+            }
+          }
+        },
+        "navigation_points": [
+          {
+            "location": {
+              "latitude": 9.0820994,
+              "longitude": 7.4316736
+            }
+          }
+        ],
+        "place_id": "ChIJXbZa6TF1ThARlcKTkOMxhEE",
+        "types": [
+          "premise",
+          "street_address"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "3CJJ+RM7",
+            "short_name": "3CJJ+RM7",
+            "types": [
+              "plus_code"
+            ]
+          },
+          {
+            "long_name": "Bafurra Close",
+            "short_name": "Bafurra Cl",
+            "types": [
+              "route"
+            ]
+          },
+          {
+            "long_name": "Jabi",
+            "short_name": "Jabi",
+            "types": [
+              "neighborhood",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja",
+            "short_name": "Abuja",
+            "types": [
+              "locality",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Gwarinpa",
+            "short_name": "Gwarinpa",
+            "types": [
+              "administrative_area_level_3",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          },
+          {
+            "long_name": "900108",
+            "short_name": "900108",
+            "types": [
+              "postal_code"
+            ]
+          }
+        ],
+        "formatted_address": "3CJJ+RM7, Bafurra Cl, Jabi, Abuja 900108, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "location": {
+            "lat": 9.0820373,
+            "lng": 7.431686000000001
+          },
+          "location_type": "ROOFTOP",
+          "viewport": {
+            "northeast": {
+              "lat": 9.083386280291501,
+              "lng": 7.433034980291503
+            },
+            "southwest": {
+              "lat": 9.080688319708496,
+              "lng": 7.430337019708499
+            }
+          }
+        },
+        "navigation_points": [
+          {
+            "location": {
+              "latitude": 9.0820994,
+              "longitude": 7.4316736
+            }
+          }
+        ],
+        "place_id": "ChIJM6WaeQB1ThARKOzl17fHOmA",
+        "types": [
+          "establishment",
+          "general_contractor",
+          "point_of_interest"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "3CJJ+VR",
+            "short_name": "3CJJ+VR",
+            "types": [
+              "plus_code"
+            ]
+          },
+          {
+            "long_name": "Abuja",
+            "short_name": "Abuja",
+            "types": [
+              "locality",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          }
+        ],
+        "formatted_address": "3CJJ+VR Abuja, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.08225,
+              "lng": 7.432125
+            },
+            "southwest": {
+              "lat": 9.082125,
+              "lng": 7.432
+            }
+          },
+          "location": {
+            "lat": 9.082166599999999,
+            "lng": 7.4320322
+          },
+          "location_type": "GEOMETRIC_CENTER",
+          "viewport": {
+            "northeast": {
+              "lat": 9.083536480291501,
+              "lng": 7.433411480291501
+            },
+            "southwest": {
+              "lat": 9.080838519708497,
+              "lng": 7.430713519708497
+            }
+          }
+        },
+        "place_id": "GhIJo6WXvREqIkARlkYnpma6HUA",
+        "plus_code": {
+          "compound_code": "3CJJ+VR Abuja, Nigeria",
+          "global_code": "6FX93CJJ+VR"
+        },
+        "types": [
+          "plus_code"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "34",
+            "short_name": "34",
+            "types": [
+              "street_number"
+            ]
+          },
+          {
+            "long_name": "Bafurra Close",
+            "short_name": "Bafurra Cl",
+            "types": [
+              "route"
+            ]
+          },
+          {
+            "long_name": "Jabi",
+            "short_name": "Jabi",
+            "types": [
+              "neighborhood",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja",
+            "short_name": "Abuja",
+            "types": [
+              "locality",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Gwarinpa",
+            "short_name": "Gwarinpa",
+            "types": [
+              "administrative_area_level_3",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          },
+          {
+            "long_name": "900108",
+            "short_name": "900108",
+            "types": [
+              "postal_code"
+            ]
+          }
+        ],
+        "formatted_address": "34 Bafurra Cl, Kado, Abuja 900108, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "location": {
+            "lat": 9.0816456,
+            "lng": 7.4321523
+          },
+          "location_type": "RANGE_INTERPOLATED",
+          "viewport": {
+            "northeast": {
+              "lat": 9.082994580291501,
+              "lng": 7.433501280291503
+            },
+            "southwest": {
+              "lat": 9.080296619708497,
+              "lng": 7.430803319708498
+            }
+          }
+        },
+        "place_id": "EiMzNCBCYWZ1cnJhIENsLCBLYWRvLCBBYnVqYSwgTmlnZXJpYSIaEhgKFAoSCcPTZPkxdU4QEcWiSB3oqkRqECI",
+        "types": [
+          "street_address"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "Bafurra Close",
+            "short_name": "Bafurra Cl",
+            "types": [
+              "route"
+            ]
+          },
+          {
+            "long_name": "Jabi",
+            "short_name": "Jabi",
+            "types": [
+              "neighborhood",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja",
+            "short_name": "Abuja",
+            "types": [
+              "locality",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Gwarinpa",
+            "short_name": "Gwarinpa",
+            "types": [
+              "administrative_area_level_3",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          },
+          {
+            "long_name": "900108",
+            "short_name": "900108",
+            "types": [
+              "postal_code"
+            ]
+          }
+        ],
+        "formatted_address": "Bafurra Cl, Kado, Abuja 900108, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.0818633,
+              "lng": 7.432448200000001
+            },
+            "southwest": {
+              "lat": 9.0814852,
+              "lng": 7.431936200000001
+            }
+          },
+          "location": {
+            "lat": 9.0816352,
+            "lng": 7.4321634
+          },
+          "location_type": "GEOMETRIC_CENTER",
+          "viewport": {
+            "northeast": {
+              "lat": 9.083023230291502,
+              "lng": 7.433541180291503
+            },
+            "southwest": {
+              "lat": 9.080325269708498,
+              "lng": 7.430843219708499
+            }
+          }
+        },
+        "place_id": "ChIJw9Nk-TF1ThARxKJIHeiqRGo",
+        "types": [
+          "route"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "Kado",
+            "short_name": "Kado",
+            "types": [
+              "political",
+              "sublocality",
+              "sublocality_level_1"
+            ]
+          },
+          {
+            "long_name": "Abuja",
+            "short_name": "Abuja",
+            "types": [
+              "locality",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Gwarinpa",
+            "short_name": "Gwarinpa",
+            "types": [
+              "administrative_area_level_3",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          },
+          {
+            "long_name": "900108",
+            "short_name": "900108",
+            "types": [
+              "postal_code"
+            ]
+          }
+        ],
+        "formatted_address": "Kado, Abuja 900108, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.1050893,
+              "lng": 7.445203100000001
+            },
+            "southwest": {
+              "lat": 9.0759803,
+              "lng": 7.410648999999999
+            }
+          },
+          "location": {
+            "lat": 9.0888543,
+            "lng": 7.4257526
+          },
+          "location_type": "APPROXIMATE",
+          "viewport": {
+            "northeast": {
+              "lat": 9.1050893,
+              "lng": 7.445203100000001
+            },
+            "southwest": {
+              "lat": 9.0759803,
+              "lng": 7.410648999999999
+            }
+          }
+        },
+        "place_id": "ChIJF187lxh1ThARUhOG41dCMfg",
+        "types": [
+          "political",
+          "sublocality",
+          "sublocality_level_1"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "Jabi",
+            "short_name": "Jabi",
+            "types": [
+              "neighborhood",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja",
+            "short_name": "Abuja",
+            "types": [
+              "locality",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Gwarinpa",
+            "short_name": "Gwarinpa",
+            "types": [
+              "administrative_area_level_3",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          },
+          {
+            "long_name": "900108",
+            "short_name": "900108",
+            "types": [
+              "postal_code"
+            ]
+          }
+        ],
+        "formatted_address": "Jabi, Abuja 900108, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.0883668,
+              "lng": 7.4343474
+            },
+            "southwest": {
+              "lat": 9.060995499999999,
+              "lng": 7.3875382
+            }
+          },
+          "location": {
+            "lat": 9.0759809,
+            "lng": 7.411098799999999
+          },
+          "location_type": "APPROXIMATE",
+          "viewport": {
+            "northeast": {
+              "lat": 9.0883668,
+              "lng": 7.4343474
+            },
+            "southwest": {
+              "lat": 9.060995499999999,
+              "lng": 7.3875382
+            }
+          }
+        },
+        "place_id": "ChIJt_KeHxx1ThARHWVMN4yaZVs",
+        "types": [
+          "neighborhood",
+          "political"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "Gwarinpa",
+            "short_name": "Gwarinpa",
+            "types": [
+              "administrative_area_level_3",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          }
+        ],
+        "formatted_address": "Gwarinpa, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.143472299999999,
+              "lng": 7.4634011
+            },
+            "southwest": {
+              "lat": 8.9832079,
+              "lng": 7.3439676
+            }
+          },
+          "location": {
+            "lat": 9.1038479,
+            "lng": 7.4172755
+          },
+          "location_type": "APPROXIMATE",
+          "viewport": {
+            "northeast": {
+              "lat": 9.143472299999999,
+              "lng": 7.4634011
+            },
+            "southwest": {
+              "lat": 8.9832079,
+              "lng": 7.3439676
+            }
+          }
+        },
+        "place_id": "ChIJPXDeEft0ThARFDtNJJXTArw",
+        "types": [
+          "administrative_area_level_3",
+          "political"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "Abuja",
+            "short_name": "Abuja",
+            "types": [
+              "locality",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          }
+        ],
+        "formatted_address": "Abuja, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.11462,
+              "lng": 7.531974000000001
+            },
+            "southwest": {
+              "lat": 8.933892,
+              "lng": 7.3677621
+            }
+          },
+          "location": {
+            "lat": 9.0562646,
+            "lng": 7.4985259
+          },
+          "location_type": "APPROXIMATE",
+          "viewport": {
+            "northeast": {
+              "lat": 9.11462,
+              "lng": 7.531974000000001
+            },
+            "southwest": {
+              "lat": 8.933892,
+              "lng": 7.3677621
+            }
+          }
+        },
+        "place_id": "ChIJ2S_WTF90ThARK6EOorQXvVM",
+        "types": [
+          "locality",
+          "political"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "900108",
+            "short_name": "900108",
+            "types": [
+              "postal_code"
+            ]
+          },
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          }
+        ],
+        "formatted_address": "AMAC 900108, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.1400809,
+              "lng": 7.4803371
+            },
+            "southwest": {
+              "lat": 8.986839,
+              "lng": 7.347334999999999
+            }
+          },
+          "location": {
+            "lat": 9.1110627,
+            "lng": 7.4207231
+          },
+          "location_type": "APPROXIMATE",
+          "viewport": {
+            "northeast": {
+              "lat": 9.1400809,
+              "lng": 7.4803371
+            },
+            "southwest": {
+              "lat": 8.986839,
+              "lng": 7.347334999999999
+            }
+          }
+        },
+        "place_id": "ChIJl-vK3V51ThARg6y5qJaOPVs",
+        "types": [
+          "postal_code"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "Abuja Municipal Area Council",
+            "short_name": "AMAC",
+            "types": [
+              "administrative_area_level_2",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          }
+        ],
+        "formatted_address": "AMAC, Federal Capital Territory, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.168091300000002,
+              "lng": 7.6025911
+            },
+            "southwest": {
+              "lat": 8.6306888,
+              "lng": 7.0964526
+            }
+          },
+          "location": {
+            "lat": 9.061784399999999,
+            "lng": 7.422091099999999
+          },
+          "location_type": "APPROXIMATE",
+          "viewport": {
+            "northeast": {
+              "lat": 9.168091300000002,
+              "lng": 7.6025911
+            },
+            "southwest": {
+              "lat": 8.6306888,
+              "lng": 7.0964526
+            }
+          }
+        },
+        "place_id": "ChIJW-O7BX9uThAR44QEKcKVah8",
+        "types": [
+          "administrative_area_level_2",
+          "political"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "Federal Capital Territory",
+            "short_name": "Federal Capital Territory",
+            "types": [
+              "administrative_area_level_1",
+              "political"
+            ]
+          },
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          }
+        ],
+        "formatted_address": "Federal Capital Territory, Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 9.408685,
+              "lng": 7.724080000000001
+            },
+            "southwest": {
+              "lat": 8.419336,
+              "lng": 6.7799621
+            }
+          },
+          "location": {
+            "lat": 8.8940691,
+            "lng": 7.1860402
+          },
+          "location_type": "APPROXIMATE",
+          "viewport": {
+            "northeast": {
+              "lat": 9.408685,
+              "lng": 7.724080000000001
+            },
+            "southwest": {
+              "lat": 8.419336,
+              "lng": 6.7799621
+            }
+          }
+        },
+        "place_id": "ChIJqe0-zldhThAR_C3jizYcrzI",
+        "types": [
+          "administrative_area_level_1",
+          "political"
+        ]
+      },
+      {
+        "address_components": [
+          {
+            "long_name": "Nigeria",
+            "short_name": "NG",
+            "types": [
+              "country",
+              "political"
+            ]
+          }
+        ],
+        "formatted_address": "Nigeria",
+        "geometry": {
+          "bounds": {
+            "northeast": {
+              "lat": 13.8856449,
+              "lng": 14.6779814
+            },
+            "southwest": {
+              "lat": 4.1821001,
+              "lng": 2.676932
+            }
+          },
+          "location": {
+            "lat": 9.081999,
+            "lng": 8.675277
+          },
+          "location_type": "APPROXIMATE",
+          "viewport": {
+            "northeast": {
+              "lat": 13.8856449,
+              "lng": 14.6779814
+            },
+            "southwest": {
+              "lat": 4.1821001,
+              "lng": 2.676932
+            }
+          }
+        },
+        "place_id": "ChIJDY2kfa8LThARyAvFaEH-qJk",
+        "types": [
+          "country",
+          "political"
+        ]
+      }
+    ]
+  }
+}

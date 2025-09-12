@@ -3,6 +3,7 @@
 export const lightColors = {
   // Primary Colors
   primary: "#F7AE1A",
+  primary2: "#652815",
   primaryDark: "#D96800",
   primaryDark2: "#F3E9DF",
   primaryLight: "#FF9A3F",
@@ -42,6 +43,7 @@ export const lightColors = {
 export const darkColors = {
   // Primary Colors
   primary: "#F7AE1A", // Orange accent color from the image
+  primary2: "#652815",
   primaryDark: "#b6c530ff",
   primaryDark2: "#1b1b1b",
   primaryLight: "#f0fb8ee0",
@@ -71,7 +73,7 @@ export const darkColors = {
 
   // Rating/Accent
   rating: "#FFD700",
-  accent: "#FF6B35",
+  accent: "#FF6B35", 
 
   // Common
   white: "#FFFFFF",

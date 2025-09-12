@@ -178,7 +178,13 @@ router.post("/chefs/payouts/process", adminChefController.processWeeklyPayouts);
 router.get("/chefs/payouts/summary", adminChefController.getPayoutSummary);
 router.get("/chefs/:chefId/earnings", adminChefController.getChefEarningsAdmin);
 
-// ============= ENHANCED MEAL PLAN MANAGEMENT ROUTES (V2) =============
+// ============= ENHANCED MEAL PLAN MANAGEMENT ROUTES =============
+router.get("/mealplans", adminMealController.getAllMealPlans);
+router.get("/mealplans/:id", adminMealController.getMealPlanDetails);
+router.post("/mealplans", adminMealController.createMealPlan);
+router.put("/mealplans/:id", adminMealController.updateMealPlan);
+router.delete("/mealplans/:id", adminMealController.deleteMealPlan);
+
 // Discount management related routes
 router.get("/meal-plans/list", adminMealController.getMealPlanListForAdmin);
 router.get("/meal-plans/categories", adminMealController.getMealPlanCategories);
@@ -186,11 +192,24 @@ router.get("/meal-plans/categories", adminMealController.getMealPlanCategories);
 // ============= DAILY MEAL MANAGEMENT ROUTES =============
 router.get("/dailymeals", adminMealController.getAllDailyMeals);
 router.get(
-  "/meal-plans/:id/dailymeals",
+  "/mealplans/:id/dailymeals",
   adminMealController.getDailyMealsForPlan
 );
 router.put("/dailymeals/:id", adminMealController.updateDailyMeal);
 router.delete("/dailymeals/:id", adminMealController.deleteDailyMeal);
+
+// Enhanced meal plan features
+router.post("/mealplans/:id/duplicate", adminMealPlanController.duplicateMealPlan);
+router.get(
+  "/mealplans/analytics/overview",
+  adminMealController.getMealPlanAnalytics
+);
+router.get("/mealplans/export/data", adminMealController.exportMealPlanData);
+router.post(
+  "/mealplans/bulk/template",
+  adminMealController.createMealPlanFromTemplate
+);
+
 
 // ============= NEW MODULAR MEAL MANAGEMENT SYSTEM =============
 // Individual Meals Management
@@ -214,11 +233,7 @@ router.put("/meal-plans/:id", adminMealController.updateMealPlanV2);
 router.delete("/meal-plans/:id", adminMealController.deleteMealPlanV2);
 router.put("/meal-plans/:id/publish", adminMealController.publishMealPlan);
 router.put("/meal-plans/:id/unpublish", adminMealController.unpublishMealPlan);
-router.post("/meal-plans/:id/duplicate", adminMealController.duplicateMealPlan);
-router.post(
-  "/meal-plans/:id/recalculate-price",
-  adminMealPlanController.recalculateMealPlanPrice
-);
+router.post("/meal-plans/:id/duplicate", adminMealPlanController.duplicateMealPlan);
 
 // Meal Assignment System
 router.get(
@@ -245,6 +260,38 @@ router.put(
   "/meals/bulk/availability",
   adminMealController.bulkUpdateMealAvailability
 );
+
+// ============= UTILITY ROUTES =============
+router.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "Enhanced Admin API is healthy",
+    timestamp: new Date().toISOString(),
+    availableEndpoints: [
+      "GET /dashboard/stats",
+      "GET /analytics/users/:id",
+      "GET /analytics/engagement",
+      "GET /users",
+      "PUT /users/:id/status",
+      "GET /export/users",
+      "GET /orders",
+      "PUT /orders/:id/status",
+      "GET /payments",
+      "GET /subscriptions",
+      "GET /mealplans",
+      "GET /mealplans/:id",
+      "POST /mealplans",
+      "PUT /mealplans/:id",
+      "DELETE /mealplans/:id",
+      "POST /mealplans/:id/duplicate",
+      "GET /mealplans/analytics/overview",
+      "GET /mealplans/export/data",
+      "POST /mealplans/bulk/template",
+      "GET /dailymeals",
+      "POST /dailymeals",
+    ],
+  });
+});
 
 router.get("/test-connection", async (req, res) => {
   try {
@@ -321,26 +368,22 @@ router.use("/banners", require("./banners"));
 router.get(
   "/analytics/subscription-metrics",
   cacheMiddleware.medium,
-  require("../controllers/recurringDeliveryAnalyticsController")
-    .getSubscriptionMetrics
+  require("../controllers/recurringDeliveryAnalyticsController").getSubscriptionMetrics
 );
 router.get(
-  "/analytics/meal-plan-popularity",
+  "/analytics/meal-plan-popularity", 
   cacheMiddleware.medium,
-  require("../controllers/recurringDeliveryAnalyticsController")
-    .getMealPlanPopularity
+  require("../controllers/recurringDeliveryAnalyticsController").getMealPlanPopularity
 );
 router.get(
   "/analytics/chef-performance",
-  cacheMiddleware.medium,
-  require("../controllers/recurringDeliveryAnalyticsController")
-    .getChefPerformance
+  cacheMiddleware.medium, 
+  require("../controllers/recurringDeliveryAnalyticsController").getChefPerformance
 );
 router.get(
   "/analytics/subscription-trends",
   cacheMiddleware.medium,
-  require("../controllers/recurringDeliveryAnalyticsController")
-    .getSubscriptionTrends
+  require("../controllers/recurringDeliveryAnalyticsController").getSubscriptionTrends
 );
 
 // ============= RECURRING DELIVERY MONITORING ROUTES =============
@@ -348,14 +391,13 @@ router.get(
 router.get(
   "/deliveries/monitor",
   cacheMiddleware.short,
-  require("../controllers/recurringDeliveryMonitoringController")
-    .getLiveDeliveries
+  require("../controllers/recurringDeliveryMonitoringController").getLiveDeliveries
 );
 router.get(
   "/deliveries/stats",
   cacheMiddleware.short,
-  require("../controllers/recurringDeliveryMonitoringController")
-    .getDeliveryStats
+  require("../controllers/recurringDeliveryMonitoringController").getDeliveryStats
 );
+
 
 module.exports = router;

@@ -26,8 +26,98 @@ const CompactOrderCard = ({
 }) => {
   const { colors } = useTheme();
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [actualConfirmationCode, setActualConfirmationCode] = useState(null);
+  const [loadingCode, setLoadingCode] = useState(false);
   const progressAnimation = new Animated.Value(0);
+
+  // Helper functions to detect subscription orders
+  const isSubscriptionOrder = () => {
+    return (
+      order.isSubscriptionOrder === true ||
+      order.orderNumber?.startsWith("SUB") ||
+      order._id?.startsWith("sub_") ||
+      order.id?.startsWith("sub_") ||
+      order.orderType === "subscription" ||
+      order.recurringOrder !== undefined
+    );
+  };
+
+  const isFirstDelivery = () => {
+    return (
+      order.recurringOrder?.isActivationOrder === true ||
+      order.recurringOrder?.orderType === "one-time" ||
+      (order.deliveryDay && parseInt(order.deliveryDay) === 1) ||
+      (order.dayNumber && parseInt(order.dayNumber) === 1)
+    );
+  };
+
+  const getMealPlanName = () => {
+    return (
+      order?.orderItems?.planName || 
+      order?.mealPlan?.name || 
+      order?.subscription?.planName ||
+      "Meal Plan"
+    );
+  };
+
+  // Confirmation code functions (similar to RecurringDeliveryCard)
+  const fetchConfirmationCode = async () => {
+    if (actualConfirmationCode) {
+      return actualConfirmationCode;
+    }
+    
+    setLoadingCode(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const code = getConfirmationCode();
+      if (code && code !== "PENDING") {
+        setActualConfirmationCode(code);
+        setLoadingCode(false);
+        return code;
+      }
+    } catch (error) {
+      console.log("Could not fetch driver assignment:", error);
+    }
+    
+    setLoadingCode(false);
+    return "PENDING";
+  };
+
+  const getConfirmationCode = () => {
+    if (actualConfirmationCode) {
+      return actualConfirmationCode;
+    }
+    
+    if (order?.driverAssignment?.confirmationCode) {
+      return order.driverAssignment.confirmationCode;
+    }
+    
+    if (order?.confirmationCode) {
+      return order.confirmationCode;
+    }
+    
+    if (order?.deliveryCode) {
+      return order.deliveryCode;
+    }
+    
+    if (order?.pickupCode) {
+      return order.pickupCode;
+    }
+    
+    if (order?.orderNumber) {
+      const orderNumber = order.orderNumber.toString();
+      return orderNumber.slice(-6).toUpperCase();
+    }
+    
+    return "PENDING";
+  };
+
+  const isOutForDelivery = () => {
+    return order?.orderStatus === "Out for Delivery" || order?.status === "Out for Delivery" || currentStep === 5;
+  };
 
   // Order status steps - same as original
   const orderSteps = [
@@ -170,6 +260,19 @@ const CompactOrderCard = ({
 
   const getStatusInfo = () => {
     const currentStepData = orderSteps[currentStep];
+    const isSubscription = isSubscriptionOrder();
+    const isFirst = isFirstDelivery();
+    const delivered = currentStep === orderSteps.length - 1;
+    
+    // Custom messaging for delivered subscription orders (first delivery)
+    if (delivered && isSubscription && isFirst) {
+      return {
+        title: "First Delivery Complete",
+        color: "#4CAF50",
+        icon: "checkmark-circle"
+      };
+    }
+    
     return {
       title: currentStepData?.title || "Processing",
       color: currentStepData?.color || "#FF9800",
@@ -191,8 +294,33 @@ const CompactOrderCard = ({
   };
 
   const getTimeRemaining = () => {
-    if (isDelivered) return "Delivered!";
+    const isSubscription = isSubscriptionOrder();
+    const isFirst = isFirstDelivery();
+    
+    if (isDelivered) {
+      if (isSubscription && isFirst) {
+        return `First delivery completed for ${getMealPlanName()}`;
+      }
+      return "Delivered!";
+    }
 
+    // For subscription first delivery that's not yet delivered, show appropriate message
+    if (isSubscription && isFirst) {
+      const now = new Date();
+      const estimatedDelivery = getEstimatedDelivery();
+      const timeDiff = estimatedDelivery.getTime() - now.getTime();
+
+      if (timeDiff <= 0) return `Your first delivery arriving now for ${getMealPlanName()}`;
+
+      const minutes = Math.floor(timeDiff / 60000);
+      if (minutes < 60) return `First delivery in ${minutes} min for ${getMealPlanName()}`;
+
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      return `First delivery in ${hours}h ${remainingMinutes}m for ${getMealPlanName()}`;
+    }
+
+    // Regular order timing for non-subscription or non-first delivery
     const now = new Date();
     const estimatedDelivery = getEstimatedDelivery();
     const timeDiff = estimatedDelivery.getTime() - now.getTime();
@@ -312,13 +440,29 @@ const CompactOrderCard = ({
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles(colors).detailsButton}
-          onPress={() => setDetailsModalVisible(true)}
-        >
-          <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
-          <Text style={styles(colors).detailsButtonText}>Details</Text>
-        </TouchableOpacity>
+        <View style={styles(colors).statusButtons}>
+          {/* Confirmation Code Button */}
+          {isOutForDelivery() && !isDelivered && (
+            <TouchableOpacity
+              style={styles(colors).codeButton}
+              onPress={async () => {
+                await fetchConfirmationCode();
+                setConfirmationModalVisible(true);
+              }}
+            >
+              <Ionicons name="key" size={14} color={colors.white} />
+              <Text style={styles(colors).codeButtonText}>View Code</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={styles(colors).detailsButton}
+            onPress={() => setDetailsModalVisible(true)}
+          >
+            <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
+            <Text style={styles(colors).detailsButtonText}>Details</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Action Buttons */}
@@ -372,10 +516,43 @@ const CompactOrderCard = ({
             </View>
 
             <ScrollView style={styles(colors).modalContent} showsVerticalScrollIndicator={false}>
+              {/* Subscription Info Banner (if applicable) */}
+              {isSubscriptionOrder() && isFirstDelivery() && (
+                <View style={styles(colors).subscriptionBanner}>
+                  <View style={styles(colors).subscriptionIcon}>
+                    <Ionicons name="refresh-circle" size={24} color={colors.primary} />
+                  </View>
+                  <View style={styles(colors).subscriptionInfo}>
+                    {isDelivered ? (
+                      <>
+                        <Text style={styles(colors).subscriptionTitle}>First Delivery Complete! 🎉</Text>
+                        <Text style={styles(colors).subscriptionMessage}>
+                          This was your first delivery for {getMealPlanName()}. Your subscription is now active and future deliveries are scheduled automatically.
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={styles(colors).subscriptionTitle}>Your First Delivery 🚀</Text>
+                        <Text style={styles(colors).subscriptionMessage}>
+                          This is your activation delivery for {getMealPlanName()}. Once delivered, your subscription will be active and future deliveries will be scheduled automatically.
+                        </Text>
+                      </>
+                    )}
+                  </View>
+                </View>
+              )}
+
               {/* Order Journey */}
               <View style={styles(colors).journeySection}>
-                <Text style={styles(colors).sectionTitle}>🚀 Order Journey</Text>
-                <Text style={styles(colors).sectionSubtitle}>Track your delicious meal</Text>
+                <Text style={styles(colors).sectionTitle}>
+                  {isSubscriptionOrder() && isFirstDelivery() ? "🚀 First Delivery Journey" : "🚀 Order Journey"}
+                </Text>
+                <Text style={styles(colors).sectionSubtitle}>
+                  {isSubscriptionOrder() && isFirstDelivery() 
+                    ? "Your subscription activation delivery" 
+                    : "Track your delicious meal"
+                  }
+                </Text>
 
                 <View style={styles(colors).progressContainer}>
                   {orderSteps.map((step, index) => renderProgressStep(step, index))}
@@ -489,6 +666,65 @@ const CompactOrderCard = ({
                 )}
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Confirmation Code Modal */}
+      <Modal
+        visible={confirmationModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setConfirmationModalVisible(false)}
+      >
+        <View style={styles(colors).modalOverlay}>
+          <View style={styles(colors).codeModalContainer}>
+            <View style={styles(colors).modalHeader}>
+              <Text style={styles(colors).modalTitle}>Delivery Code</Text>
+              <TouchableOpacity
+                style={styles(colors).modalCloseButton}
+                onPress={() => setConfirmationModalVisible(false)}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles(colors).modalContent}>
+              <View style={styles(colors).codeDisplay}>
+                <Text style={styles(colors).codeLabel}>Show this code to your driver:</Text>
+                <View style={styles(colors).codeContainer}>
+                  {loadingCode ? (
+                    <ActivityIndicator size="large" color={colors.primary} />
+                  ) : (
+                    <Text style={styles(colors).confirmationCodeText}>
+                      {getConfirmationCode()}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles(colors).instructions}>
+                <View style={styles(colors).instructionRow}>
+                  <Ionicons name="information-circle" size={16} color={colors.primary} />
+                  <Text style={styles(colors).instructionText}>
+                    Your driver will ask for this code when delivering your meal
+                  </Text>
+                </View>
+                <View style={styles(colors).instructionRow}>
+                  <Ionicons name="shield-checkmark" size={16} color={colors.success} />
+                  <Text style={styles(colors).instructionText}>
+                    This ensures secure delivery to the right person
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles(colors).modalOkButton}
+                onPress={() => setConfirmationModalVisible(false)}
+              >
+                <Text style={styles(colors).modalOkButtonText}>Got it!</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -666,6 +902,40 @@ const styles = (colors) =>
     },
     modalContent: {
       paddingHorizontal: 20,
+    },
+
+    // Subscription Banner Styles
+    subscriptionBanner: {
+      flexDirection: "row",
+      backgroundColor: colors.primary + "08",
+      borderRadius: 12,
+      padding: 16,
+      marginVertical: 16,
+      borderWidth: 1,
+      borderColor: colors.primary + "20",
+    },
+    subscriptionIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.primary + "15",
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+    },
+    subscriptionInfo: {
+      flex: 1,
+    },
+    subscriptionTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    subscriptionMessage: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
     },
 
     // Journey Section (same as original)
@@ -866,6 +1136,99 @@ const styles = (colors) =>
       fontSize: 14,
       fontWeight: "600",
       marginLeft: 6,
+    },
+
+    // Status buttons container and confirmation code styles
+    statusButtons: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    codeButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    codeButtonText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.white,
+      marginLeft: 4,
+    },
+
+    // Confirmation Code Modal Styles
+    codeModalContainer: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: 20,
+      padding: 0,
+      width: "100%",
+      maxWidth: 350,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    codeDisplay: {
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    codeLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 12,
+      textAlign: "center",
+    },
+    codeContainer: {
+      backgroundColor: colors.primary + "15",
+      borderWidth: 2,
+      borderColor: colors.primary + "30",
+      borderRadius: 16,
+      paddingHorizontal: 24,
+      paddingVertical: 16,
+      borderStyle: "dashed",
+    },
+    confirmationCodeText: {
+      fontSize: 28,
+      fontWeight: "800",
+      color: colors.primary,
+      letterSpacing: 8,
+      textAlign: "center",
+      fontFamily: "monospace",
+    },
+    instructions: {
+      marginBottom: 24,
+    },
+    instructionRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
+    instructionText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginLeft: 8,
+      flex: 1,
+    },
+    modalOkButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    modalOkButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.white,
     },
   });
 

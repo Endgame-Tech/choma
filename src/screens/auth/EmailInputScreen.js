@@ -175,10 +175,10 @@ const EmailInputScreen = ({ navigation }) => {
       
       if (statusResponse && statusResponse.success && verificationData?.verified) {
         console.log("Email already verified, navigating directly to signup");
-        showSuccess(
-          "Email Already Verified",
-          "Your email is verified. Proceeding to account creation."
-        );
+        // showSuccess(
+        //   "Email Already Verified",
+        //   "Your email is verified. Proceeding to account creation."
+        // );
         
         // Navigate directly to signup with verified email
         navigation.navigate("Signup", {

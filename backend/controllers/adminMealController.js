@@ -688,13 +688,13 @@ exports.duplicateMealPlan = async (req, res) => {
     await duplicatePlan.save();
 
     // Duplicate meal plan assignments (V2 system)
-    const originalAssignments = await MealPlanAssignment.find({ 
-      mealPlanId: id 
+    const originalAssignments = await MealPlanAssignment.find({
+      mealPlanId: id,
     });
 
     if (originalAssignments.length > 0) {
       const duplicatedAssignments = [];
-      
+
       for (const assignment of originalAssignments) {
         const duplicatedAssignment = new MealPlanAssignment({
           ...assignment.toObject(),
@@ -1440,16 +1440,28 @@ exports.updateMealPlanV2 = async (req, res) => {
 exports.deleteMealPlanV2 = async (req, res) => {
   try {
     const { id } = req.params;
+    const { force } = req.body;
 
     // Check if meal plan has assignments
     const assignmentCount = await MealPlanAssignment.countDocuments({
       mealPlanId: id,
     });
-    if (assignmentCount > 0) {
+
+    if (assignmentCount > 0 && !force) {
       return res.status(400).json({
         success: false,
         message: `Cannot delete meal plan. It has ${assignmentCount} meal assignment(s). Remove assignments first.`,
+        hasAssignments: true,
+        assignmentCount,
       });
+    }
+
+    // If force delete is requested, delete all assignments first
+    if (force && assignmentCount > 0) {
+      await MealPlanAssignment.deleteMany({ mealPlanId: id });
+      console.log(
+        `Force deleted ${assignmentCount} meal assignments for meal plan ${id}`
+      );
     }
 
     const mealPlan = await MealPlan.findByIdAndDelete(id);
@@ -1462,7 +1474,9 @@ exports.deleteMealPlanV2 = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Meal plan deleted successfully",
+      message: force
+        ? `Meal plan deleted successfully along with ${assignmentCount} assignment(s)`
+        : "Meal plan deleted successfully",
     });
   } catch (error) {
     console.error("Delete meal plan V2 error:", error);
@@ -1819,6 +1833,71 @@ exports.removeMealAssignment = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to remove assignment",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+exports.removeAssignmentsBeyondWeek = async (req, res) => {
+  try {
+    const { id, weekNumber } = req.params;
+    const maxWeek = parseInt(weekNumber);
+
+    if (isNaN(maxWeek) || maxWeek < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid week number. Must be a positive integer.",
+      });
+    }
+
+    // Verify meal plan exists
+    const mealPlan = await MealPlan.findById(id);
+    if (!mealPlan) {
+      return res.status(404).json({
+        success: false,
+        message: "Meal plan not found",
+      });
+    }
+
+    // Find assignments to be removed (beyond the specified week)
+    const assignmentsToRemove = await MealPlanAssignment.find({
+      mealPlanId: id,
+      weekNumber: { $gt: maxWeek },
+    });
+
+    console.log(
+      `🗑️ Removing ${assignmentsToRemove.length} assignments beyond week ${maxWeek} for meal plan ${id}`
+    );
+
+    // Remove assignments beyond the specified week
+    const deleteResult = await MealPlanAssignment.deleteMany({
+      mealPlanId: id,
+      weekNumber: { $gt: maxWeek },
+    });
+
+    // Recalculate the total price and stats of the meal plan
+    await mealPlan.updateCalculatedFields();
+
+    console.log(
+      `✅ Successfully removed ${deleteResult.deletedCount} assignments beyond week ${maxWeek}`
+    );
+
+    res.json({
+      success: true,
+      message: `Successfully removed ${deleteResult.deletedCount} assignments beyond week ${maxWeek}`,
+      data: {
+        removedCount: deleteResult.deletedCount,
+        maxWeek: maxWeek,
+        remainingAssignments: await MealPlanAssignment.countDocuments({
+          mealPlanId: id,
+        }),
+      },
+    });
+  } catch (error) {
+    console.error("Remove assignments beyond week error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to remove assignments beyond week",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }

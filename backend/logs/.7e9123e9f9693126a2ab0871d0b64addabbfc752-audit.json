@@ -6,9 +6,9 @@
     "auditLog": "/mnt/c/dev/choma/backend/logs/.7e9123e9f9693126a2ab0871d0b64addabbfc752-audit.json",
     "files": [
         {
-            "date": 1755851307515,
-            "name": "/mnt/c/dev/choma/backend/logs/error-2025-08-22.log",
-            "hash": "442cf782b59c3308189d94e3abce50ba0f7706283f584f9c9b8da394591ac742"
+            "date": 1757673079298,
+            "name": "/mnt/c/dev/choma/backend/logs/error-2025-09-12.log",
+            "hash": "1147fa5ebce4c1f48f63646b44bf2f8c8f6448977377e0dd835ca707e86b3e6b"
         }
     ],
     "hashType": "sha256"

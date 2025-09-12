@@ -26,6 +26,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { THEME } from "../../utils/colors";
 import MealPlanDetailSkeleton from "../../components/meal-plans/MealPlanDetailSkeleton";
 import StandardHeader from "../../components/layout/Header";
+import MealDetailModal from "../../components/modals/MealDetailModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -38,17 +39,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   const [quantity, setQuantity] = useState(1);
   const [mealPlanDetails, setMealPlanDetails] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Enhanced meal modal states
-  const [mealModalVisible, setMealModalVisible] = useState(false);
-  const [selectedMealData, setSelectedMealData] = useState(null);
-  const [availableMeals, setAvailableMeals] = useState([]);
-  const [currentMealIndex, setCurrentMealIndex] = useState(0);
-
-  // Legacy image modal states (keeping for compatibility)
-  const [imageModalVisible, setImageModalVisible] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedImageName, setSelectedImageName] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedMealIndex, setSelectedMealIndex] = useState(0);
+  const [currentDayMeals, setCurrentDayMeals] = useState([]);
 
   // Discount state
   const [discountInfo, setDiscountInfo] = useState(null);
@@ -57,76 +50,25 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   // Animation states for smooth expand/collapse
   const animationValues = useRef({}).current;
 
-  // Open image gallery (legacy function)
-  const openImageGallery = (imageUri, mealName) => {
-    setSelectedImage(imageUri);
-    setSelectedImageName(mealName || "Meal Image");
-    setImageModalVisible(true);
-  };
+  // Open meal modal with swipe functionality
+  const openMealModal = (dayMeals, initialMealIndex = 0) => {
+    const formattedMeals = dayMeals.map((meal) => ({
+      name: meal.label,
+      description: meal.description,
+      image: meal.image,
+      type: meal.label,
+      nutrition: meal.nutrition,
+      ingredients: meal.ingredients,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      fiber: meal.fiber,
+    }));
 
-  // Open enhanced meal modal with swipe functionality
-  const openMealModal = (dayData, initialMealType) => {
-    const meals = [
-      {
-        type: "breakfast",
-        icon: "🌅",
-        label: "Breakfast",
-        title: dayData.breakfast,
-        description: dayData.breakfastDescription || dayData.breakfast,
-        image: dayData.breakfastImage,
-        nutrition: {
-          calories: 450, // These could come from mealPlanDetails.nutritionInfo
-          protein: "25g",
-          carbs: "45g",
-          fat: "15g",
-          fiber: "8g",
-        },
-      },
-      {
-        type: "lunch",
-        icon: "☀️",
-        label: "Lunch",
-        title: dayData.lunch,
-        description: dayData.lunchDescription || dayData.lunch,
-        image: dayData.lunchImage,
-        nutrition: {
-          calories: 550,
-          protein: "30g",
-          carbs: "50g",
-          fat: "18g",
-          fiber: "10g",
-        },
-      },
-      {
-        type: "dinner",
-        icon: "🌙",
-        label: "Dinner",
-        title: dayData.dinner,
-        description: dayData.dinnerDescription || dayData.dinner,
-        image: dayData.dinnerImage,
-        nutrition: {
-          calories: 500,
-          protein: "28g",
-          carbs: "40g",
-          fat: "20g",
-          fiber: "9g",
-        },
-      },
-    ].filter(
-      (meal) =>
-        meal.title !== "Breakfast not specified" &&
-        meal.title !== "Lunch not specified" &&
-        meal.title !== "Dinner not specified"
-    );
-
-    const initialIndex = meals.findIndex(
-      (meal) => meal.type === initialMealType
-    );
-
-    setAvailableMeals(meals);
-    setCurrentMealIndex(initialIndex >= 0 ? initialIndex : 0);
-    setSelectedMealData(meals[initialIndex >= 0 ? initialIndex : 0]);
-    setMealModalVisible(true);
+    setCurrentDayMeals(formattedMeals);
+    setSelectedMealIndex(initialMealIndex);
+    setModalVisible(true);
   };
 
   // Handle share functionality
@@ -175,9 +117,19 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     const fetchMealPlanDetails = async () => {
       try {
         setLoading(true);
-        const result = await apiService.getMealPlanDetails(
-          bundle.planId || bundle.id
+
+        // Try multiple ID formats: planId (MP001), _id (ObjectId), or id
+        const mealPlanId = bundle.planId || bundle._id || bundle.id;
+        console.log(
+          "🔍 MealPlanDetailScreen: Fetching details for ID:",
+          mealPlanId
         );
+        console.log(
+          "🔍 MealPlanDetailScreen: Bundle structure:",
+          JSON.stringify(bundle, null, 2)
+        );
+
+        const result = await apiService.getMealPlanDetails(mealPlanId);
 
         if (result.success && result.mealPlan) {
           console.log(
@@ -452,7 +404,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   );
 
   // Enhanced meal card for horizontal slider (similar to popular meal plans)
-  const renderMealSliderCard = (meal, dayData) => {
+  const renderMealSliderCard = (meal) => {
     const defaultImage = require("../../assets/images/meal-plans/fitfuel.jpg");
     const imageSource = meal.image
       ? typeof meal.image === "string"
@@ -463,9 +415,31 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     return (
       <TouchableOpacity
         style={styles(colors).mealSliderCard}
-        onPress={() =>
-          openMealModal(dayData, meal.type || meal.label.toLowerCase())
-        }
+        onPress={() => {
+          // Find the meal index for the modal
+          const dayMeals = [
+            {
+              icon: "🌅",
+              label: "Breakfast",
+              description: meal.description,
+              image: meal.image,
+            },
+            {
+              icon: "☀️",
+              label: "Lunch",
+              description: meal.description,
+              image: meal.image,
+            },
+            {
+              icon: "🌙",
+              label: "Dinner",
+              description: meal.description,
+              image: meal.image,
+            },
+          ];
+          const mealIndex = dayMeals.findIndex((m) => m.label === meal.label);
+          openMealModal(dayMeals, mealIndex);
+        }}
         activeOpacity={0.8}
       >
         <View style={styles(colors).mealSliderImageContainer}>
@@ -503,9 +477,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         </LinearGradient>
       </TouchableOpacity>
     );
-  };
-
-  // Toggle day expansion with smooth animation
+  }; // Toggle day expansion with smooth animation
   const toggleDayExpansion = (day) => {
     const isExpanding = expandedDay !== day;
 
@@ -537,21 +509,18 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     // Prepare meal data for horizontal slider
     const meals = [
       {
-        type: "breakfast",
         icon: "🌅",
         label: "Breakfast",
         description: dayData.breakfastDescription || dayData.breakfast,
         image: dayData.breakfastImage,
       },
       {
-        type: "lunch",
         icon: "☀️",
         label: "Lunch",
         description: dayData.lunchDescription || dayData.lunch,
         image: dayData.lunchImage,
       },
       {
-        type: "dinner",
         icon: "🌙",
         label: "Dinner",
         description: dayData.dinnerDescription || dayData.dinner,
@@ -618,9 +587,56 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   horizontal
                   data={meals}
                   keyExtractor={(item) => item.label}
-                  renderItem={({ item }) => (
+                  renderItem={({ item, index }) => (
                     <View style={styles(colors).mealCardWrapper}>
-                      {renderMealSliderCard(item, dayData)}
+                      <TouchableOpacity
+                        style={styles(colors).mealSliderCard}
+                        onPress={() => openMealModal(meals, index)}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles(colors).mealSliderImageContainer}>
+                          <Image
+                            source={
+                              item.image
+                                ? { uri: item.image }
+                                : require("../../assets/images/meal-plans/fitfuel.jpg")
+                            }
+                            style={styles(colors).mealSliderImage}
+                            defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+                          />
+                          {discountInfo && discountInfo.discountPercent > 0 && (
+                            <View style={styles(colors).mealDiscountPill}>
+                              <Ionicons
+                                name="gift-outline"
+                                size={14}
+                                color="#333"
+                              />
+                              <Text style={styles(colors).mealDiscountPillText}>
+                                {discountInfo.discountPercent}% Off
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <LinearGradient
+                          colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.85)"]}
+                          style={styles(colors).mealSliderContent}
+                        >
+                          <View style={styles(colors).mealSliderInfo}>
+                            <Text style={styles(colors).mealSliderIcon}>
+                              {item.icon}
+                            </Text>
+                            <Text style={styles(colors).mealSliderLabel}>
+                              {item.label}
+                            </Text>
+                            <Text
+                              style={styles(colors).mealSliderDescription}
+                              numberOfLines={2}
+                            >
+                              {item.description}
+                            </Text>
+                          </View>
+                        </LinearGradient>
+                      </TouchableOpacity>
                     </View>
                   )}
                   showsHorizontalScrollIndicator={false}
@@ -634,14 +650,8 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   maxToRenderPerBatch={3}
                   windowSize={30}
                   nestedScrollEnabled={true}
-                  getItemLayout={(data, index) => ({
-                    length: 195, // 180 width + 15 margin
-                    offset: 195 * index,
-                    index,
-                  })}
                 />
-              </View>
-
+              </View>{" "}
               {/* Note section remains below slider */}
               {dayData.remark && dayData.remark !== "No remarks" && (
                 <View style={styles(colors).remarkContainer}>
@@ -659,11 +669,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         {expandedDay !== dayData.day && (
           <View style={styles(colors).mealPreviewContainer}>
             {dayData.breakfast !== "Breakfast not specified" && (
-              <TouchableOpacity
-                style={styles(colors).mealPreview}
-                onPress={() => openMealModal(dayData, "breakfast")}
-                activeOpacity={0.7}
-              >
+              <View style={styles(colors).mealPreview}>
                 <Text style={styles(colors).mealIcon}>🌅</Text>
                 <Text style={styles(colors).mealPreviewText} numberOfLines={1}>
                   {dayData.breakfast}
@@ -676,14 +682,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     />
                   </View>
                 )}
-              </TouchableOpacity>
+              </View>
             )}
             {dayData.lunch !== "Lunch not specified" && (
-              <TouchableOpacity
-                style={styles(colors).mealPreview}
-                onPress={() => openMealModal(dayData, "lunch")}
-                activeOpacity={0.7}
-              >
+              <View style={styles(colors).mealPreview}>
                 <Text style={styles(colors).mealIcon}>☀️</Text>
                 <Text style={styles(colors).mealPreviewText} numberOfLines={1}>
                   {dayData.lunch}
@@ -696,14 +698,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     />
                   </View>
                 )}
-              </TouchableOpacity>
+              </View>
             )}
             {dayData.dinner !== "Dinner not specified" && (
-              <TouchableOpacity
-                style={styles(colors).mealPreview}
-                onPress={() => openMealModal(dayData, "dinner")}
-                activeOpacity={0.7}
-              >
+              <View style={styles(colors).mealPreview}>
                 <Text style={styles(colors).mealIcon}>🌙</Text>
                 <Text style={styles(colors).mealPreviewText} numberOfLines={1}>
                   {dayData.dinner}
@@ -716,7 +714,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     />
                   </View>
                 )}
-              </TouchableOpacity>
+              </View>
             )}
           </View>
         )}
@@ -797,9 +795,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       <StandardHeader
         title="Details"
         onBackPress={() => navigation.goBack()}
-        rightIcon="share-outline"
-        onRightPress={handleShare}
-        showRightIcon={true}
+        showRightIcon={false}
       />
 
       <ScrollView
@@ -1202,213 +1198,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Enhanced Meal Detail Modal with Swipe */}
-      <Modal
-        visible={mealModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setMealModalVisible(false)}
-      >
-        <View style={styles(colors).mealModalOverlay}>
-          <View style={styles(colors).mealModalContainer}>
-            {/* Header */}
-            <View style={styles(colors).mealModalHeaderParent}>
-              <View style={styles(colors).mealModalHeader}>
-                <TouchableOpacity
-                  style={styles(colors).mealModalCloseButton}
-                  onPress={() => setMealModalVisible(false)}
-                >
-                  <Ionicons name="close" size={24} color={colors.white} />
-                </TouchableOpacity>
-
-                {/* Meal Type Indicator */}
-                <View style={styles(colors).mealTypeIndicator}>
-                  <Text style={styles(colors).mealTypeIcon}>
-                    {selectedMealData?.icon}
-                  </Text>
-                  <Text style={styles(colors).mealTypeLabel}>
-                    {selectedMealData?.label}
-                  </Text>
-                </View>
-
-                {/* Swipe Indicators */}
-                <View style={styles(colors).swipeIndicators}>
-                  {availableMeals.map((_, index) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles(colors).swipeIndicator,
-                        index === currentMealIndex &&
-                          styles(colors).swipeIndicatorActive,
-                      ]}
-                    />
-                  ))}
-                </View>
-              </View>
-            </View>
-
-            {/* Swipeable Content */}
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={(event) => {
-                const newIndex = Math.round(
-                  event.nativeEvent.contentOffset.x / width
-                );
-                setCurrentMealIndex(newIndex);
-                setSelectedMealData(availableMeals[newIndex]);
-              }}
-              contentOffset={{ x: currentMealIndex * width, y: 0 }}
-              style={styles(colors).mealSwipeContainer}
-            >
-              {availableMeals.map((meal, index) => (
-                <View key={index} style={styles(colors).mealSlide}>
-                  {/* Full Screen Meal Image */}
-                  <View style={styles(colors).mealImageContainer}>
-                    <Image
-                      source={
-                        meal.image
-                          ? { uri: meal.image }
-                          : require("../../assets/images/meal-plans/fitfuel.jpg")
-                      }
-                      style={styles(colors).mealFullImage}
-                      resizeMode="cover"
-                    />
-
-                    {/* Gradient Overlay */}
-                    <LinearGradient
-                      colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.8)"]}
-                      style={styles(colors).mealImageGradient}
-                    />
-                  </View>
-
-                  {/* Meal Information Overlay */}
-                  <View style={styles(colors).mealInfoOverlay}>
-                    <ScrollView
-                      style={styles(colors).mealInfoScroll}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      {/* Meal Title */}
-                      <Text style={styles(colors).mealModalTitle}>
-                        {meal.title}
-                      </Text>
-
-                      {/* Meal Description */}
-                      <Text style={styles(colors).mealModalDescription}>
-                        {meal.description}
-                      </Text>
-
-                      {/* Nutrition Information */}
-                      <View style={styles(colors).nutritionContainer}>
-                        <Text style={styles(colors).nutritionTitle}>
-                          Nutrition Facts
-                        </Text>
-
-                        <View style={styles(colors).nutritionGrid}>
-                          <View style={styles(colors).nutritionItem}>
-                            <Text style={styles(colors).nutritionValue}>
-                              {meal.nutrition?.calories || "450"}
-                            </Text>
-                            <Text style={styles(colors).nutritionLabel}>
-                              Calories
-                            </Text>
-                          </View>
-
-                          <View style={styles(colors).nutritionItem}>
-                            <Text style={styles(colors).nutritionValue}>
-                              {meal.nutrition?.protein || "25g"}
-                            </Text>
-                            <Text style={styles(colors).nutritionLabel}>
-                              Protein
-                            </Text>
-                          </View>
-
-                          <View style={styles(colors).nutritionItem}>
-                            <Text style={styles(colors).nutritionValue}>
-                              {meal.nutrition?.carbs || "45g"}
-                            </Text>
-                            <Text style={styles(colors).nutritionLabel}>
-                              Carbs
-                            </Text>
-                          </View>
-
-                          <View style={styles(colors).nutritionItem}>
-                            <Text style={styles(colors).nutritionValue}>
-                              {meal.nutrition?.fat || "15g"}
-                            </Text>
-                            <Text style={styles(colors).nutritionLabel}>
-                              Fat
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Additional Nutrition Details */}
-                        <View style={styles(colors).additionalNutrition}>
-                          <View style={styles(colors).nutritionRow}>
-                            <Text style={styles(colors).nutritionRowLabel}>
-                              Fiber
-                            </Text>
-                            <Text style={styles(colors).nutritionRowValue}>
-                              {meal.nutrition?.fiber || "8g"}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-
-                      {/* Swipe Instructions */}
-                      {availableMeals.length > 1 && (
-                        <View style={styles(colors).swipeInstructions}>
-                          <Ionicons
-                            name="swap-horizontal"
-                            size={20}
-                            color={colors.textMuted}
-                          />
-                          <Text style={styles(colors).swipeInstructionsText}>
-                            Swipe to view other meals
-                          </Text>
-                        </View>
-                      )}
-                    </ScrollView>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Image Gallery Modal */}
-      <Modal
-        visible={imageModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setImageModalVisible(false)}
-      >
-        <View style={styles(colors).modalOverlay}>
-          <View style={styles(colors).modalContainer}>
-            {/* Header */}
-            <View style={styles(colors).modalHeader}>
-              <Text style={styles(colors).modalTitle}>{selectedImageName}</Text>
-              <TouchableOpacity
-                style={styles(colors).closeButton}
-                onPress={() => setImageModalVisible(false)}
-              >
-                <Ionicons name="close" size={24} color={colors.white} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Image */}
-            <View style={styles(colors).imageContainer}>
-              <Image
-                source={{ uri: selectedImage }}
-                style={styles(colors).fullScreenImage}
-                resizeMode="contain"
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* Meal Detail Modal */}
+      <MealDetailModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        meals={currentDayMeals}
+        initialIndex={selectedMealIndex}
+      />
     </SafeAreaView>
   );
 };
@@ -2013,55 +1809,129 @@ const styles = (colors) =>
       adjustsFontSizeToFit: true, // Auto-adjust font size to fit
       minimumFontScale: 0.8, // Minimum scale for font size
     },
-    // Image Modal Styles
+    // Enhanced Meal Modal Styles
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.9)",
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: "flex-end",
     },
     modalContainer: {
       width: width,
-      height: height,
-      backgroundColor: "rgba(0, 0, 0, 0.9)",
+      height: height * 0.95,
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      overflow: "hidden",
     },
     modalHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
       paddingHorizontal: 20,
-      paddingTop: 50,
-      paddingBottom: 20,
+      paddingTop: 20,
+      paddingBottom: 15,
+      backgroundColor: colors.cardBackground,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalHeaderLeft: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
     },
     modalTitle: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: "600",
-      color: colors.white,
-      flex: 1,
+      color: colors.text,
+    },
+    modalSubtitle: {
+      fontSize: 18,
     },
     closeButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      backgroundColor: colors.error,
       justifyContent: "center",
       alignItems: "center",
     },
-    imageContainer: {
+    modalScrollView: {
       flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      paddingHorizontal: 20,
     },
-    fullScreenImage: {
-      width: width - 40,
-      height: height - 200,
+    fullImageContainer: {
+      width: "100%",
+      height: height * 0.4,
+      position: "relative",
+      paddingHorizontal: 10,
+    },
+    fullMealImage: {
+      width: "100%",
+      height: "100%",
+      borderBottomLeftRadius: 30,
+      borderBottomRightRadius: 30,
+      borderWidth: 1,
+      borderColor: colors.border2,
+      marginBottom: 10,
+    },
+    imageGradient: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 50,
+    },
+    mealDetailsSection: {
+      padding: 20,
+      gap: 15,
+    },
+    detailCard: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: THEME.borderRadius.medium,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    detailHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 12,
+    },
+    detailTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    mealDescriptionText: {
+      fontSize: 15,
+      color: colors.text,
+      lineHeight: 22,
+    },
+    detailText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
     },
     modalActions: {
       flexDirection: "row",
-      justifyContent: "space-around",
-      paddingHorizontal: 20,
-      paddingBottom: 50,
+      gap: 15,
+      marginTop: 10,
+    },
+    shareButton: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: THEME.borderRadius.medium,
+      gap: 8,
+    },
+    shareButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.white,
     },
     actionButton: {
       alignItems: "center",
@@ -2157,194 +2027,6 @@ const styles = (colors) =>
       fontWeight: "500",
       flexShrink: 1,
       minWidth: 0,
-    },
-
-    // Enhanced Meal Modal Styles
-    mealModalOverlay: {
-      flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.95)",
-    },
-    mealModalContainer: {
-      flex: 1,
-      backgroundColor: "transparent",
-    },
-    mealModalHeaderParent: {
-      flexDirection: "row",
-      justifyContent: "center",
-      alignItems: "center",
-      // paddingHorizontal: 20,
-      width: "100%",
-      position: "absolute",
-      bottom: "53%",
-      left: 0,
-      right: 0,
-      zIndex: 10,
-    },
-    mealModalHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      width: "95%",
-      alignItems: "center",
-      backgroundColor: colors.background,
-      borderRadius: 50,
-      paddingHorizontal: 20,
-      paddingVertical: 8,
-    },
-    mealModalCloseButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: "#1b1b1b",
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    mealTypeIndicator: {
-      flexDirection: "row",
-      alignItems: "center",
-      borderRadius: 20,
-    },
-    mealTypeIcon: {
-      fontSize: 20,
-      marginRight: 8,
-    },
-    mealTypeLabel: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.white,
-    },
-    swipeIndicators: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    swipeIndicator: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: "rgba(255, 255, 255, 0.3)",
-    },
-    swipeIndicatorActive: {
-      backgroundColor: colors.primary,
-      width: 12,
-    },
-    mealSwipeContainer: {
-      flex: 1,
-    },
-    mealSlide: {
-      width: width,
-      height: height,
-      position: "relative",
-    },
-    mealImageContainer: {
-      width: "100%",
-      height: height * 0.65, // Slightly adjusted to account for fixed overlay
-      position: "relative",
-    },
-    mealFullImage: {
-      width: "100%",
-      height: "100%",
-    },
-    mealImageGradient: {
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 200, // Increased gradient height for better transition
-    },
-    mealInfoOverlay: {
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: colors.background,
-      borderTopLeftRadius: 30,
-      borderTopRightRadius: 30,
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 40,
-      height: height * 0.53, // Fixed height instead of maxHeight
-    },
-    mealInfoScroll: {
-      flex: 1,
-    },
-    mealModalTitle: {
-      fontSize: 24,
-      fontWeight: "bold",
-      color: colors.text,
-      marginBottom: 12,
-      textAlign: "center",
-    },
-    mealModalDescription: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      lineHeight: 24,
-      marginBottom: 20,
-      textAlign: "center",
-    },
-    nutritionContainer: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.large,
-      padding: 20,
-      marginBottom: 20,
-    },
-    nutritionTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 15,
-      textAlign: "center",
-    },
-    nutritionGrid: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginBottom: 15,
-    },
-    nutritionItem: {
-      alignItems: "center",
-      flex: 1,
-    },
-    nutritionValue: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: colors.primary,
-      marginBottom: 4,
-    },
-    nutritionLabel: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      textAlign: "center",
-    },
-    additionalNutrition: {
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      paddingTop: 15,
-    },
-    nutritionRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 8,
-    },
-    nutritionRowLabel: {
-      fontSize: 14,
-      color: colors.textSecondary,
-    },
-    nutritionRowValue: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    swipeInstructions: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 15,
-      paddingVertical: 10,
-    },
-    swipeInstructionsText: {
-      fontSize: 12,
-      color: colors.textMuted,
-      marginLeft: 8,
     },
   });
 

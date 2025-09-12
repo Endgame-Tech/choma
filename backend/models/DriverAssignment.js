@@ -292,8 +292,9 @@ driverAssignmentSchema.methods.generateConfirmationCode = async function () {
 
   try {
     const Order = require("./Order");
+    const Subscription = require("./Subscription");
     const order = await Order.findById(this.orderId).select(
-      "orderNumber subscriptionId createdAt"
+      "orderNumber recurringOrder subscriptionId createdAt"
     );
 
     if (!order) {
@@ -302,40 +303,81 @@ driverAssignmentSchema.methods.generateConfirmationCode = async function () {
     }
 
     // Check if this is a subscription order
+    if (order.recurringOrder && order.recurringOrder.orderType !== "one-time") {
+      // FIRST DELIVERY: Use last 6 digits of order number (activation code)
+      if (order.recurringOrder.isActivationOrder) {
+        console.log(
+          "🎯 First subscription delivery - using order number last 6 digits"
+        );
+        const orderNumber = order.orderNumber.toString();
+        const code = orderNumber.slice(-6).toUpperCase();
+
+        console.log("🔑 Activation delivery code:", {
+          orderId: this.orderId,
+          orderNumber: orderNumber,
+          activationCode: code,
+          isActivation: true,
+        });
+
+        this.confirmationCode = code;
+        return code;
+      }
+
+      // SUBSEQUENT DELIVERIES: Generate random 4-digit code
+      else if (order.recurringOrder.orderType === "subscription-recurring") {
+        console.log(
+          "🎲 Subsequent subscription delivery - generating 4-digit code"
+        );
+        const code = this.generateRandom4DigitCode();
+
+        console.log("🔑 Recurring delivery code:", {
+          orderId: this.orderId,
+          recurringCode: code,
+          isRecurring: true,
+        });
+
+        this.confirmationCode = code;
+        return code;
+      }
+    }
+
+    // FALLBACK: Check if this is first order for subscription (even if not properly flagged)
     if (order.subscriptionId) {
-      console.log("📋 Subscription order detected, checking if first delivery...");
+      console.log("🔍 Checking if this is first subscription order...");
 
       try {
-        // Count previous orders for this subscription
         const previousOrdersCount = await Order.countDocuments({
           subscriptionId: order.subscriptionId,
           createdAt: { $lt: order.createdAt },
         });
 
-        // FIRST DELIVERY: Use last 6 digits of order number (activation)
         if (previousOrdersCount === 0) {
-          console.log("🎯 FIRST delivery - using order number last 6 digits");
+          console.log(
+            "🎯 First subscription order detected - using order number last 6 digits"
+          );
           const orderNumber = order.orderNumber.toString();
           const code = orderNumber.slice(-6).toUpperCase();
-          
-          console.log("🔑 First delivery activation code:", {
+
+          console.log("🔑 First subscription delivery code:", {
             orderId: this.orderId,
             orderNumber: orderNumber,
             activationCode: code,
+            isFirstOrder: true,
             previousOrdersCount,
           });
 
           this.confirmationCode = code;
           return code;
-        } 
-        // SUBSEQUENT DELIVERIES: Generate random 4-digit code
-        else {
-          console.log("🔄 SUBSEQUENT delivery - generating 4-digit code");
+        } else {
+          console.log(
+            "🔄 Subsequent subscription order - generating 4-digit code"
+          );
           const code = this.generateRandom4DigitCode();
 
-          console.log("🔑 Recurring delivery code:", {
+          console.log("🔑 Subsequent subscription delivery code:", {
             orderId: this.orderId,
             recurringCode: code,
+            isSubsequent: true,
             previousOrdersCount,
           });
 
@@ -344,20 +386,15 @@ driverAssignmentSchema.methods.generateConfirmationCode = async function () {
         }
       } catch (countError) {
         console.error("❌ Error counting previous orders:", countError);
-        // Fallback to first delivery logic
-        const orderNumber = order.orderNumber.toString();
-        const code = orderNumber.slice(-6).toUpperCase();
-        this.confirmationCode = code;
-        return code;
+        // Fall through to one-time order logic
       }
     }
 
-    // ONE-TIME ORDERS: Use 6-digit random code
+    // ONE-TIME ORDERS: Use existing logic (6-digit random)
     console.log("🍽️ One-time order - using 6-digit random code");
     const code = this.generateRandomCode();
     this.confirmationCode = code;
     return code;
-    
   } catch (error) {
     console.error("❌ Error generating confirmation code:", error);
     return this.generateRandomCode();
@@ -455,57 +492,23 @@ driverAssignmentSchema.methods.confirmPickup = async function (
         console.log(`🗑️ Cleared cache for order ${this.orderId}`);
       }
 
-      // Send notification to customer with confirmation code for recurring deliveries
+      // Send notification to customer
       if (Notification && order.userId) {
-        // Check if this is a recurring delivery (subscription with multiple deliveries)
-        const isRecurringDelivery = this.subscriptionInfo && this.subscriptionInfo.subscriptionId && !this.isFirstDelivery;
-        
-        console.log(`📊 Pickup notification logic check:`, {
-          hasSubscriptionInfo: !!this.subscriptionInfo,
-          subscriptionId: this.subscriptionInfo?.subscriptionId,
-          isFirstDelivery: this.isFirstDelivery,
-          isRecurringDelivery,
-          hasConfirmationCode: !!this.confirmationCode,
-          confirmationCode: this.confirmationCode
+        await Notification.create({
+          userId: order.userId,
+          title: "Order Out for Delivery! 🚚",
+          message: `Your order is now out for delivery and on its way to you. Track your delivery in the app.`,
+          type: "delivery_update",
+          data: {
+            orderId: this.orderId,
+            assignmentId: this._id,
+            status: "Out for Delivery",
+            estimatedDeliveryTime: this.estimatedDeliveryTime,
+          },
         });
-        
-        if (isRecurringDelivery && this.confirmationCode) {
-          // For recurring deliveries, send notification with 4-digit confirmation code
-          await Notification.create({
-            userId: order.userId,
-            title: "Order Out for Delivery! 🚚",
-            message: `Your meal is on the way! Your delivery confirmation code is: ${this.confirmationCode}. Please have this code ready for the driver.`,
-            type: "order_out_for_delivery",
-            data: {
-              orderId: this.orderId,
-              assignmentId: this._id,
-              status: "Out for Delivery",
-              confirmationCode: this.confirmationCode,
-              estimatedDeliveryTime: this.estimatedDeliveryTime,
-              isRecurringDelivery: true,
-            },
-          });
-          console.log(
-            `📱 Sent pickup notification with 4-digit code ${this.confirmationCode} to user ${order.userId} for recurring delivery`
-          );
-        } else {
-          // For first deliveries or one-time orders, send standard notification
-          await Notification.create({
-            userId: order.userId,
-            title: "Order Out for Delivery! 🚚",
-            message: `Your order is now out for delivery and on its way to you. Track your delivery in the app.`,
-            type: "delivery_update",
-            data: {
-              orderId: this.orderId,
-              assignmentId: this._id,
-              status: "Out for Delivery",
-              estimatedDeliveryTime: this.estimatedDeliveryTime,
-            },
-          });
-          console.log(
-            `📱 Sent "Out for Delivery" notification to user ${order.userId}`
-          );
-        }
+        console.log(
+          `📱 Sent "Out for Delivery" notification to user ${order.userId}`
+        );
       }
     } else {
       console.error(
@@ -525,11 +528,9 @@ driverAssignmentSchema.methods.confirmPickup = async function (
 
 driverAssignmentSchema.methods.confirmDelivery = async function (
   confirmationCode,
-  deliveryData = {},
-  skipValidation = false
+  deliveryData = {}
 ) {
-  // Skip validation if already validated in controller
-  if (!skipValidation && this.confirmationCode.toUpperCase() !== confirmationCode.toUpperCase()) {
+  if (this.confirmationCode.toUpperCase() !== confirmationCode.toUpperCase()) {
     throw new Error("Invalid confirmation code");
   }
 
