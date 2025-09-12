@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { useCachedApi } from '../../hooks/useCachedApi';
 import { CACHE_DURATIONS } from '../../services/cacheService';
 import { api } from '../../services/api';
+import type { ApiResponse } from '../../types';
+
+// Mock axios response interface for the hook
+interface MockAxiosResponse<T> {
+  data: T;
+}
 
 interface SubscriptionMetrics {
   totalSubscriptions: number;
@@ -56,11 +62,13 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
 
   // Fetch subscription metrics
   const {
-    data: metricsResponse,
-    loading: metricsLoading,
-    error: metricsError
-  } = useCachedApi(
-    () => Promise.resolve(api.get(`/admin/analytics/subscription-metrics?period=${selectedPeriod}`)),
+    data: metrics,
+    loading: metricsLoading
+  } = useCachedApi<SubscriptionMetrics>(
+    async () => {
+      const response = await api.get<ApiResponse<SubscriptionMetrics>>(`/analytics/subscription-metrics?period=${selectedPeriod}`);
+      return { data: response.data.data } as MockAxiosResponse<SubscriptionMetrics>;
+    },
     {
       cacheKey: `subscription-metrics-${selectedPeriod}`,
       cacheDuration: CACHE_DURATIONS.ANALYTICS,
@@ -68,25 +76,15 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
     }
   );
 
-  // Extract data from axios response  
-  const metrics = (metricsResponse as any)?.data?.data;
-
-  // Debug logging
-  console.log('📊 Analytics Debug Info:', {
-    period: selectedPeriod,
-    metricsResponse: metricsResponse,
-    extractedMetrics: metrics,
-    metricsError: metricsError,
-    loading: metricsLoading
-  });
-
   // Fetch meal plan popularity
   const {
-    data: mealPlanResponse,
-    loading: mealPlanLoading,
-    error: mealPlanError
+    data: mealPlanStats,
+    loading: mealPlanLoading
   } = useCachedApi(
-    () => Promise.resolve(api.get(`/admin/analytics/meal-plan-popularity?period=${selectedPeriod}`)),
+    async () => {
+      const response = await api.get<ApiResponse<MealPlanPopularity[]>>(`/analytics/meal-plan-popularity?period=${selectedPeriod}`);
+      return { data: response.data.data } as MockAxiosResponse<MealPlanPopularity[]>;
+    },
     {
       cacheKey: `meal-plan-popularity-${selectedPeriod}`,
       cacheDuration: CACHE_DURATIONS.ANALYTICS,
@@ -94,16 +92,15 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
     }
   );
 
-  // Extract data from axios response
-  const mealPlanStats = (mealPlanResponse as any)?.data?.data;
-
   // Fetch chef performance
   const {
-    data: chefResponse,
-    loading: chefLoading,
-    error: chefError
+    data: chefPerformance,
+    loading: chefLoading
   } = useCachedApi(
-    () => Promise.resolve(api.get(`/admin/analytics/chef-performance?period=${selectedPeriod}`)),
+    async () => {
+      const response = await api.get<ApiResponse<ChefPerformance[]>>(`/analytics/chef-performance?period=${selectedPeriod}`);
+      return { data: response.data.data } as MockAxiosResponse<ChefPerformance[]>;
+    },
     {
       cacheKey: `chef-performance-${selectedPeriod}`,
       cacheDuration: CACHE_DURATIONS.ANALYTICS,
@@ -111,24 +108,20 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
     }
   );
 
-  // Extract data from axios response
-  const chefPerformance = (chefResponse as any)?.data?.data;
-
   // Fetch subscription trends
   const {
-    data: trendsResponse,
     loading: trendsLoading
   } = useCachedApi(
-    () => Promise.resolve(api.get(`/admin/analytics/subscription-trends?period=${selectedPeriod}`)),
+    async () => {
+      const response = await api.get<ApiResponse<SubscriptionTrends[]>>(`/analytics/subscription-trends?period=${selectedPeriod}`);
+      return { data: response.data.data } as MockAxiosResponse<SubscriptionTrends[]>;
+    },
     {
       cacheKey: `subscription-trends-${selectedPeriod}`,
       cacheDuration: CACHE_DURATIONS.ANALYTICS,
       immediate: true
     }
   );
-
-  // Extract data from axios response
-  const subscriptionTrends = (trendsResponse as any)?.data?.data;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -160,30 +153,10 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
   };
 
 
-  if (metricsLoading || mealPlanLoading || chefLoading || trendsLoading) {
+  if (metricsLoading && mealPlanLoading && chefLoading && trendsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
         <div className="text-lg text-gray-600 dark:text-neutral-200">Loading analytics...</div>
-      </div>
-    );
-  }
-
-  // Show error if any critical API calls failed
-  if (metricsError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <div className="text-red-500 text-6xl">⚠️</div>
-        <div className="text-lg font-medium text-gray-900 dark:text-neutral-100">Failed to Load Analytics</div>
-        <div className="text-gray-600 dark:text-neutral-200 text-center max-w-md">
-          Unable to fetch subscription metrics. Please check your connection and try refreshing the page.
-        </div>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Refresh Page
-        </button>
       </div>
     );
   }
@@ -203,10 +176,10 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
 
         {/* Period Selector */}
         <div className="flex gap-2">
-          {['7d', '30d', '90d', '1y'].map((period) => (
+          {(['7d', '30d', '90d', '1y'] as const).map((period) => (
             <button
               key={period}
-              onClick={() => setSelectedPeriod(period as '7d' | '30d' | '90d' | '1y')}
+              onClick={() => setSelectedPeriod(period)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedPeriod === period
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -353,49 +326,12 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
             Growth Trends
           </h3>
           <div className="space-y-4">
-            {Array.isArray(subscriptionTrends) && subscriptionTrends.length > 0 ? (
-              <div className="space-y-3">
-                {subscriptionTrends.slice(-7).map((trend, index) => (
-                  <div key={trend.date || index} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="text-gray-600 dark:text-neutral-400 text-xs whitespace-nowrap">
-                        {trend.date ? new Date(trend.date).toLocaleDateString() : '-'}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-green-600">+{trend.newSubscriptions || 0}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                        <span className="text-red-600">-{trend.cancellations || 0}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className={`font-medium ${(trend.netGrowth || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {(trend.netGrowth || 0) >= 0 ? '+' : ''}{trend.netGrowth || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div className="pt-3 border-t border-gray-200 dark:border-neutral-600">
-                  <div className="flex justify-between text-xs text-gray-500 dark:text-neutral-400">
-                    <span>New</span>
-                    <span>Cancelled</span>
-                    <span>Net Growth</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-4xl mb-2">📊</div>
-                <p className="text-gray-500 dark:text-neutral-400">
-                  {trendsLoading ? 'Loading trends...' : 'No trend data available'}
-                </p>
-              </div>
-            )}
+            <div className="text-center text-gray-500 dark:text-neutral-400">
+              [Trends Chart Placeholder]
+            </div>
+            <div className="text-sm text-gray-600 dark:text-neutral-200">
+              Chart showing new subscriptions, cancellations, and net growth over time
+            </div>
           </div>
         </div>
       </div>
@@ -413,17 +349,7 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
 
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mealPlanError ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-12">
-                <div className="text-red-400 text-6xl mb-4">⚠️</div>
-                <p className="text-red-500 dark:text-red-400 text-lg font-medium">
-                  Failed to load meal plan data
-                </p>
-                <p className="text-gray-400 dark:text-neutral-500 text-sm mt-1">
-                  Please try refreshing the page
-                </p>
-              </div>
-            ) : Array.isArray(mealPlanStats) && mealPlanStats.length > 0 ? mealPlanStats.map((plan, index) => (
+            {Array.isArray(mealPlanStats) && mealPlanStats.length > 0 ? mealPlanStats.map((plan, index) => (
               <div key={plan?.planId || `plan-${index}`} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <img
@@ -505,17 +431,7 @@ const SubscriptionAnalyticsDashboard: React.FC = () => {
 
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {chefError ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-12">
-                <div className="text-red-400 text-6xl mb-4">⚠️</div>
-                <p className="text-red-500 dark:text-red-400 text-lg font-medium">
-                  Failed to load chef performance data
-                </p>
-                <p className="text-gray-400 dark:text-neutral-500 text-sm mt-1">
-                  Please try refreshing the page
-                </p>
-              </div>
-            ) : Array.isArray(chefPerformance) && chefPerformance.length > 0 ? chefPerformance.slice(0, 6).map((chef, index) => (
+            {Array.isArray(chefPerformance) && chefPerformance.length > 0 ? chefPerformance.slice(0, 6).map((chef, index) => (
               <div key={chef?.chefId || `chef-${index}`} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <img

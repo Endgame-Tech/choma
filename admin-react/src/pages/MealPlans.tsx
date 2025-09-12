@@ -7,6 +7,7 @@ import EditMealPlanModal from '../components/EditMealPlanModal'
 import DuplicateMealPlanModal from '../components/DuplicateMealPlanModal'
 import MealPlanScheduler from '../components/MealPlanScheduler'
 import MealPlanCard from '../components/MealPlanCard'
+import ConfirmationModal from '../components/ConfirmationModal'
 import type { MealPlan as UiMealPlan } from '../types'
 
 const MealPlans: React.FC = () => {
@@ -42,6 +43,17 @@ const MealPlans: React.FC = () => {
   const [schedulerModalOpen, setSchedulerModalOpen] = useState(false)
   const [selectedMealPlan, setSelectedMealPlan] = useState<UiMealPlan | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  // Confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'danger' | 'warning' | 'info',
+    confirmText: 'Confirm',
+    onConfirm: () => { },
+    loading: false
+  })
 
   // View mode toggle
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
@@ -149,16 +161,55 @@ const MealPlans: React.FC = () => {
   }
 
   const handleDeleteMealPlan = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this meal plan? This action cannot be undone.')) {
-      return
-    }
+    const plan = mealPlans.find(p => p._id === id)
+    const planName = plan?.planName || 'this meal plan'
 
-    try {
-      await mealPlansApi.deleteMealPlan(id)
-      await fetchMealPlans()
-    } catch (err) {
-      alert(`Failed to delete meal plan: ${err instanceof Error ? err.message : 'Unknown error'}`)
-    }
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Delete Meal Plan',
+      message: `Are you sure you want to permanently delete "${planName}"? This action cannot be undone.`,      type: 'danger',
+      confirmText: 'Delete Meal Plan',
+      onConfirm: async () => {
+        setConfirmationModal(prev => ({ ...prev, loading: true }))
+
+        type AxiosLikeError = { response?: { data?: { message?: string; assignmentCount?: number } } }
+        const isAxiosLikeError = (e: unknown): e is AxiosLikeError =>
+          typeof e === 'object' && e !== null && 'response' in e
+
+        try {
+          await mealPlansApi.deleteMealPlan(id, false)
+          await fetchMealPlans()
+          setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
+        } catch (err: unknown) {
+          const errorMessage = isAxiosLikeError(err) ? err.response?.data?.message ?? 'An unknown error occurred.' : 'An unknown error occurred.'
+          const assignmentCount = isAxiosLikeError(err) ? err.response?.data?.assignmentCount ?? 'some' : 'some'
+
+          // Handle specific error types with a new modal
+          setConfirmationModal({
+            isOpen: true,
+            title: 'Cannot Delete Meal Plan',
+            message: `❌ ${errorMessage}\n\nThis will permanently delete all ${assignmentCount} meal assignment(s) for this meal plan. Do you want to proceed?`,            type: 'warning',
+            confirmText: 'Force Delete',
+            onConfirm: async () => {
+              setConfirmationModal(prev => ({ ...prev, loading: true }))
+              try {
+                await mealPlansApi.deleteMealPlan(id, true)
+                await fetchMealPlans()
+                setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
+              } catch (forceErr: unknown) {
+                const forceMessage = isAxiosLikeError(forceErr)
+                  ? forceErr.response?.data?.message ?? 'Unknown error'
+                  : (forceErr instanceof Error ? forceErr.message : 'Unknown error')
+                alert(`Failed to force delete meal plan: ${forceMessage}`)
+                setConfirmationModal(prev => ({ ...prev, loading: false }))
+              }
+            },
+            loading: false
+          })
+        }
+      },
+      loading: false
+    })
   }
 
   const handleTogglePublish = async (plan: UiMealPlan) => {
@@ -729,6 +780,7 @@ const MealPlans: React.FC = () => {
               setSelectedMealPlan(null)
             }}
             mealPlan={(apiPlanMap[selectedMealPlan?._id ?? ''] as ApiMealPlan) || (mealPlans.find(p => p._id === selectedMealPlan?._id) as unknown as ApiMealPlan) || (selectedMealPlan as unknown as ApiMealPlan)}
+            onUpdate={fetchMealPlans}
           />
 
           <DuplicateMealPlanModal
@@ -745,6 +797,18 @@ const MealPlans: React.FC = () => {
           />
         </>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        onClose={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmationModal.onConfirm}
+        title={confirmationModal.title}
+        message={confirmationModal.message}
+        type={confirmationModal.type}
+        confirmText={confirmationModal.confirmText}
+        loading={confirmationModal.loading}
+      />
     </div>
   )
 }

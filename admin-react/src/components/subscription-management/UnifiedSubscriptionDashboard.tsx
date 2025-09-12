@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
+import { 
   AlertTriangle,
-  XCircle,
-  RefreshCw,
-  Calendar,
+  XCircle, 
+  RefreshCw, 
+  Calendar, 
   MapPin,
   User,
   ChefHat,
@@ -137,13 +137,12 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
 
     } catch (err: unknown) {
       console.error('Error fetching delivery overview:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load delivery data');
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to load delivery data');
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const getRiskLevelColor = (level: string) => {
     switch (level) {
@@ -195,10 +194,10 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
         <div className="flex items-center">
           <XCircle className="h-5 w-5 text-red-500 mr-2" />
           <p className="text-red-700 dark:text-red-400">{error}</p>
-          <button
+          <button 
             onClick={() => fetchDeliveryOverview()}
             className="ml-auto text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            aria-label="Refresh delivery overview"
+            title="Refresh"
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -261,9 +260,9 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status
             </label>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            <select 
+              value={filters.status} 
+              onChange={(e) => setFilters({...filters, status: e.target.value})}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">All Statuses</option>
@@ -277,9 +276,9 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Risk Level
             </label>
-            <select
-              value={filters.riskLevel}
-              onChange={(e) => setFilters({ ...filters, riskLevel: e.target.value })}
+            <select 
+              value={filters.riskLevel} 
+              onChange={(e) => setFilters({...filters, riskLevel: e.target.value})}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">All Risk Levels</option>
@@ -293,10 +292,10 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Area
             </label>
-            <input
+            <input 
               type="text"
-              value={filters.area}
-              onChange={(e) => setFilters({ ...filters, area: e.target.value })}
+              value={filters.area} 
+              onChange={(e) => setFilters({...filters, area: e.target.value})}
               placeholder="Search area..."
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
@@ -306,10 +305,10 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Start Date
             </label>
-            <input
+            <input 
               type="date"
-              value={filters.startDate}
-              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              value={filters.startDate} 
+              onChange={(e) => setFilters({...filters, startDate: e.target.value})}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
@@ -318,24 +317,24 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               End Date
             </label>
-            <input
+            <input 
               type="date"
-              value={filters.endDate}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+              value={filters.endDate} 
+              onChange={(e) => setFilters({...filters, endDate: e.target.value})}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
         </div>
 
         <div className="flex justify-between items-center mt-4">
-          <button
+          <button 
             onClick={() => fetchDeliveryOverview()}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            title="Refresh"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </button>
-
           {selectedDeliveries.size > 0 && (
             <div className="flex space-x-2">
               <button className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700">
@@ -356,8 +355,8 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  <input
-                    type="checkbox"
+                  <input 
+                    type="checkbox" 
                     onChange={(e) => {
                       if (e.target.checked) {
                         setSelectedDeliveries(new Set(deliveries.map(d => d._id)));
@@ -395,8 +394,8 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
               {deliveries.map((delivery) => (
                 <tr key={delivery._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
+                    <input 
+                      type="checkbox" 
                       checked={selectedDeliveries.has(delivery._id)}
                       onChange={(e) => {
                         const newSelected = new Set(selectedDeliveries);
@@ -444,7 +443,7 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
                             {delivery.chefAssignment.chefId.fullName}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            Rating: {delivery.chefAssignment.performance.averageRating.toFixed(1)}
+                            Rating: {delivery.chefAssignment.performance.averageRating.toFixed(1)} 
                             (Score: {delivery.chefAssignment.performance.consistencyScore})
                           </div>
                         </div>
@@ -478,11 +477,7 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       {delivery.canReassignChef && (
-                        <button
-                          onClick={() => {
-                            console.log('Reassign chef for:', delivery._id);
-                            // TODO: Implement reassign chef modal
-                          }}
+                        <button 
                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                           title="Reassign Chef"
                         >
@@ -490,11 +485,7 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
                         </button>
                       )}
                       {delivery.canReassignDriver && (
-                        <button
-                          onClick={() => {
-                            console.log('Assign driver for:', delivery._id);
-                            // TODO: Implement assign driver modal
-                          }}
+                        <button 
                           className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
                           title="Assign Driver"
                         >
@@ -513,15 +504,15 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
         {pagination.totalPages > 1 && (
           <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
             <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage - 1 })}
+              <button 
+                onClick={() => setPagination({...pagination, currentPage: pagination.currentPage - 1})}
                 disabled={pagination.currentPage === 1}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
                 Previous
               </button>
-              <button
-                onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage + 1 })}
+              <button 
+                onClick={() => setPagination({...pagination, currentPage: pagination.currentPage + 1})}
                 disabled={pagination.currentPage === pagination.totalPages}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
@@ -541,11 +532,12 @@ const UnifiedSubscriptionDashboard: React.FC = () => {
                   {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
                     <button
                       key={page}
-                      onClick={() => setPagination({ ...pagination, currentPage: page })}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${page === pagination.currentPage
+                      onClick={() => setPagination({...pagination, currentPage: page})}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        page === pagination.currentPage
                           ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                           : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
+                      }`}
                     >
                       {page}
                     </button>

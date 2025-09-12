@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { cacheService, CACHE_DURATIONS } from '../services/cacheService';
 
+// Custom interface to replace AxiosResponse
+interface ApiResponseLike<T> {
+  data: T;
+}
+
 interface UseCachedApiOptions<T> {
   cacheKey: string;
   cacheDuration?: number;
@@ -22,7 +27,7 @@ interface UseCachedApiReturn<T> {
  * Custom hook for cached API requests
  */
 export function useCachedApi<T>(
-  apiFunction: () => Promise<T>,
+  apiFunction: () => Promise<ApiResponseLike<T>>,
   options: UseCachedApiOptions<T>
 ): UseCachedApiReturn<T> {
   const {
@@ -58,10 +63,10 @@ export function useCachedApi<T>(
       const result = await apiFunction();
       
       // Cache the result
-      cacheService.set(cacheKey, result, cacheDuration);
+      cacheService.set(cacheKey, result.data, cacheDuration);
       
-      setData(result);
-      onSuccess?.(result);
+      setData(result.data);
+      onSuccess?.(result.data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'API request failed';
       setError(errorMessage);
@@ -99,7 +104,7 @@ export function useCachedApi<T>(
  * Hook for debounced API calls (useful for search/filters)
  */
 export function useDebouncedApi<T>(
-  apiFunction: () => Promise<T>,
+  apiFunction: () => Promise<ApiResponseLike<T>>,
   dependencies: unknown[],
   delay: number = 500,
   options: Omit<UseCachedApiOptions<T>, 'immediate'> = { cacheKey: 'debounced' }
@@ -131,7 +136,7 @@ export function useDebouncedApi<T>(
  * Hook for periodic data refresh with caching
  */
 export function usePeriodicApi<T>(
-  apiFunction: () => Promise<T>,
+  apiFunction: () => Promise<ApiResponseLike<T>>,
   options: UseCachedApiOptions<T> & { refreshInterval?: number }
 ) {
   const { refreshInterval = 60000, ...apiOptions } = options; // Default 1 minute refresh

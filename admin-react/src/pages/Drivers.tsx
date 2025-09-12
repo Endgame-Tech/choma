@@ -222,7 +222,22 @@ const Drivers: React.FC = () => {
     }
   }
 
-  const typedDriversData = driversData as DriverApiResponse | undefined;
+  // Normalize driversData to a DriverApiResponse shape (handle array or null responses)
+  let typedDriversData: DriverApiResponse | undefined;
+  if (!driversData) {
+    typedDriversData = undefined;
+  } else if (Array.isArray(driversData)) {
+    // If the API returned an array (legacy/alternate shape), wrap it into the expected response shape.
+    typedDriversData = {
+      success: true,
+      data: driversData as Driver[],
+      summary: {},
+      pagination: undefined,
+    } as unknown as DriverApiResponse;
+  } else {
+    typedDriversData = driversData as DriverApiResponse;
+  }
+
   const drivers = typedDriversData?.data || [];
   const summary = typedDriversData?.summary || {};
 

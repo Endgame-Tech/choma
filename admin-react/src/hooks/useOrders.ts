@@ -36,9 +36,11 @@ export function useOrders(filters: OrderFilters = {}): UseOrdersReturn {
       cacheDuration: CACHE_DURATIONS.ORDERS,
       immediate: true,
       onSuccess: (result) => {
-        setOrders(Array.isArray(result.data.orders) ? result.data.orders : [])
-        setStats(result.data.stats || null)
-        setPagination(result.pagination || null)
+        setOrders(Array.isArray(result.orders) ? result.orders : [])
+        setStats(result.stats || null)
+        // OrdersResponse may not declare pagination in its type; access dynamically to avoid compile errors
+        const maybePagination = result as unknown as { pagination?: Pagination }
+        setPagination(maybePagination.pagination ?? null)
       },
       onError: () => {
         setOrders([])
@@ -119,7 +121,7 @@ export function useOrder(orderId: string) {
     loading,
     error
   } = useCachedApi(
-    () => ordersApi.getOrder(orderId),
+    () => ordersApi.getOrder(orderId).then(data => ({ data })),
     {
       cacheKey: `order-${orderId}`,
       cacheDuration: CACHE_DURATIONS.ORDERS,

@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { useCachedApi } from '../../hooks/useCachedApi';
 import { CACHE_DURATIONS } from '../../services/cacheService';
 import { api } from '../../services/api';
+import type { ApiResponse } from '../../types';
+
+// Mock axios response interface for the hook
+interface MockAxiosResponse<T> {
+  data: T;
+}
 
 interface ChefWorkload {
   _id: string;
@@ -43,15 +49,17 @@ const ChefWorkloadDashboard: React.FC = () => {
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<'today' | 'week' | 'month'>('today');
   const [selectedArea, setSelectedArea] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'workload' | 'rating' | 'efficiency'>('workload');
-
   // Fetch chef workload data
   const {
     data: chefsWorkload,
     loading: chefsLoading,
     error: chefsError,
     refetch: refetchChefs
-  } = useCachedApi(
-    () => Promise.resolve(api.get<ChefWorkload[]>(`/chefs/workload?timeframe=${selectedTimeFrame}&area=${selectedArea}&sort=${sortBy}`)),
+  } = useCachedApi<ChefWorkload[]>(
+    async () => {
+      const response = await api.get<ApiResponse<ChefWorkload[]>>(`/chefs/workload?timeframe=${selectedTimeFrame}&area=${selectedArea}&sort=${sortBy}`);
+      return { data: response.data.data } as MockAxiosResponse<ChefWorkload[]>;
+    },
     {
       cacheKey: `chef-workload-${selectedTimeFrame}-${selectedArea}-${sortBy}`,
       cacheDuration: CACHE_DURATIONS.CHEFS,
@@ -64,11 +72,14 @@ const ChefWorkloadDashboard: React.FC = () => {
     data: reassignmentRequests,
     loading: requestsLoading,
     refetch: refetchRequests
-  } = useCachedApi(
-    () => Promise.resolve(api.get<ChefReassignmentRequest[]>('/chefs/reassignment-requests')),
+  } = useCachedApi<ChefReassignmentRequest[]>(
+    async () => {
+      const response = await api.get<ApiResponse<ChefReassignmentRequest[]>>('/chefs/reassignment-requests');
+      return { data: response.data.data } as MockAxiosResponse<ChefReassignmentRequest[]>;
+    },
     {
       cacheKey: 'chef-reassignment-requests',
-      cacheDuration: CACHE_DURATIONS.NOTIFICATIONS,
+      cacheDuration: CACHE_DURATIONS.ORDERS,
       immediate: true
     }
   );
@@ -88,8 +99,6 @@ const ChefWorkloadDashboard: React.FC = () => {
       default: return '⚫';
     }
   };
-
-  // Removed unused function - handleAssignChef
 
   const handleReassignmentAction = async (requestId: string, action: 'approve' | 'reject', newChefId?: string) => {
     try {
@@ -116,7 +125,7 @@ const ChefWorkloadDashboard: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="text-red-600 dark:text-red-400 text-lg mb-2">Error loading chef workload data</div>
-          <div className="text-sm text-gray-600 dark:text-neutral-200">{typeof chefsError === 'string' ? chefsError : (chefsError as Error)?.message || 'Unknown error'}</div>
+          <div className="text-sm text-gray-600 dark:text-neutral-200">{chefsError || 'Unknown error'}</div>
           <button
             onClick={refetchChefs}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -226,10 +235,10 @@ const ChefWorkloadDashboard: React.FC = () => {
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full ${chef.workloadScore > 85
-                      ? 'bg-red-500'
-                      : chef.workloadScore > 65
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
+                    ? 'bg-red-500'
+                    : chef.workloadScore > 65
+                      ? 'bg-yellow-500'
+                      : 'bg-green-500'
                     }`}
                   style={{ width: `${Math.min(chef.workloadScore, 100)}%` }}
                 ></div>
@@ -308,10 +317,10 @@ const ChefWorkloadDashboard: React.FC = () => {
                     </h4>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${request.priority === 'high'
-                          ? 'bg-red-100 text-red-800'
-                          : request.priority === 'normal'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
+                        ? 'bg-red-100 text-red-800'
+                        : request.priority === 'normal'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
                         }`}
                     >
                       {request.priority} priority

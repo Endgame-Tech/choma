@@ -132,13 +132,13 @@ const AnalyticsDashboard: React.FC = () => {
     data: kpiData, 
     loading: kpiLoading,
     refetch: refetchKpiData 
-  } = useCachedApi(
+  } = useCachedApi<KPIData>(
     async () => {
       const timeRange = getTimeRange(selectedPeriod)
       try {
         const kpis = await analyticsApi.getKPIData(timeRange)
         if (kpis && kpis.overview) {
-          return kpis
+          return { data: kpis }
         } else {
           throw new Error('Invalid KPI data')
         }
@@ -162,7 +162,7 @@ const AnalyticsDashboard: React.FC = () => {
             growth: { revenueGrowth: 0, orderGrowth: 0, customerGrowth: 0, chefGrowth: 0 },
             realTime: { ordersInProgress: 0, pendingOrders: 0, activeDeliveries: 0, completedOrdersToday: 0 }
           }
-          return basicKpiData
+          return { data: basicKpiData }
         }
         throw new Error('Failed to load analytics data')
       }
@@ -182,19 +182,19 @@ const AnalyticsDashboard: React.FC = () => {
   const {
     loading: chartsLoading,
     refetch: refetchChartData
-  } = useCachedApi(
+  } = useCachedApi<ChartData | null>(
     async () => {
       const timeRange = getTimeRange(selectedPeriod)
       try {
         const charts = await analyticsApi.getChartsData(timeRange)
         if (charts) {
-          return charts
+          return { data: charts }
         } else {
           throw new Error('Invalid charts data')
         }
       } catch (error) {
         console.log('Charts data not available')
-        return null
+        return { data: null }
       }
     },
     {
@@ -210,19 +210,19 @@ const AnalyticsDashboard: React.FC = () => {
   const {
     loading: insightsLoading,
     refetch: refetchInsights
-  } = useCachedApi(
+  } = useCachedApi<BusinessInsights | null>(
     async () => {
       const timeRange = getTimeRange(selectedPeriod)
       try {
         const businessInsights = await analyticsApi.getBusinessIntelligence(timeRange)
         if (businessInsights) {
-          return businessInsights
+          return { data: businessInsights }
         } else {
           throw new Error('Invalid insights data')
         }
       } catch (error) {
         console.log('Insights data not available')
-        return null
+        return { data: null }
       }
     },
     {

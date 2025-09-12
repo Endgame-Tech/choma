@@ -190,8 +190,10 @@ export const mealsApi = {
 
   // Force delete meal (removes from meal plans first, then deletes)
   async forceDeleteMeal(id: string) {
-    const response = await api.delete(`/meals/${id}`, {
-      params: { force: true }
+    const response = await api.request({
+      method: 'delete',
+      url: `/meals/${id}`,
+      data: { force: true }
     })
     return response.data
   },
@@ -264,8 +266,12 @@ export const mealPlansApi = {
   },
 
   // Delete meal plan
-  async deleteMealPlan(id: string) {
-    const response = await api.delete(`/meal-plans/${id}`)
+  async deleteMealPlan(id: string, force: boolean = false) {
+    const response = await api.request({
+      method: 'delete',
+      url: `/meal-plans/${id}`,
+      data: { force }
+    })
     return response.data
   },
 
@@ -327,6 +333,12 @@ export const mealPlansApi = {
       newPlanName,
       modifications
     })
+    return response.data
+  },
+
+  // Remove assignments beyond specified week (for duration reduction)
+  async removeAssignmentsBeyondWeek(planId: string, maxWeekNumber: number) {
+    const response = await api.delete(`/meal-plans/${planId}/assignments/beyond-week/${maxWeekNumber}`)
     return response.data
   }
 }

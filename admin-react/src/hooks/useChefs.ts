@@ -26,7 +26,7 @@ export function useChefs(filters: ChefFilters = {}): UseChefsReturn {
     error,
     refetch
   } = useCachedApi(
-    () => chefsApi.getChefs(filters),
+    () => chefsApi.getChefs(filters).then((data) => ({ data })),
     {
       cacheKey,
       cacheDuration: CACHE_DURATIONS.CHEFS,

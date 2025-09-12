@@ -11,7 +11,7 @@ const Dashboard: React.FC = () => {
     error,
     refetch
   } = useCachedApi(
-    () => dashboardApi.getStats(),
+    () => dashboardApi.getStats().then(data => ({ data })),
     {
       cacheKey: 'dashboard-stats',
       cacheDuration: CACHE_DURATIONS.DASHBOARD_STATS,
