@@ -397,8 +397,39 @@ exports.updateMealPlan = async (req, res) => {
       });
     }
 
-    // Recalculate totals and nutrition after updates
+    // Clean up assignments for meal types that are no longer supported BEFORE recalculating
+    if (updates.mealTypes) {
+      console.log("🔄 Meal types changed to:", updates.mealTypes);
+      const existingAssignments = await MealPlanAssignment.find({
+        mealPlanId: id,
+      });
+      console.log("📋 Found existing assignments:", existingAssignments.length);
+
+      const assignmentsToRemove = existingAssignments.filter(
+        (assignment) => !updates.mealTypes.includes(assignment.mealTime)
+      );
+      console.log(
+        "🗑️ Assignments to remove:",
+        assignmentsToRemove.map((a) => `${a.mealTime} (${a.assignmentId})`)
+      );
+
+      if (assignmentsToRemove.length > 0) {
+        console.log(
+          `Removing ${assignmentsToRemove.length} assignments for disabled meal types`
+        );
+        await MealPlanAssignment.deleteMany({
+          _id: { $in: assignmentsToRemove.map((a) => a._id) },
+        });
+
+        // Recalculate after removing assignments
+        await mealPlan.updateCalculatedFields();
+        console.log("✅ Meal plan recalculated after removing assignments");
+      }
+    }
+
+    // Final recalculation to ensure all changes are reflected
     await mealPlan.updateCalculatedFields();
+    console.log("🔄 Final meal plan recalculation completed");
 
     res.json({
       success: true,
@@ -1418,8 +1449,42 @@ exports.updateMealPlanV2 = async (req, res) => {
       });
     }
 
-    // Recalculate totals and nutrition in case assignments or related data changed
+    // Clean up assignments for meal types that are no longer supported BEFORE recalculating
+    if (updateData.mealTypes) {
+      console.log("🔄 V2: Meal types changed to:", updateData.mealTypes);
+      const existingAssignments = await MealPlanAssignment.find({
+        mealPlanId: id,
+      });
+      console.log(
+        "📋 V2: Found existing assignments:",
+        existingAssignments.length
+      );
+
+      const assignmentsToRemove = existingAssignments.filter(
+        (assignment) => !updateData.mealTypes.includes(assignment.mealTime)
+      );
+      console.log(
+        "🗑️ V2: Assignments to remove:",
+        assignmentsToRemove.map((a) => `${a.mealTime} (${a.assignmentId})`)
+      );
+
+      if (assignmentsToRemove.length > 0) {
+        console.log(
+          `Removing ${assignmentsToRemove.length} assignments for disabled meal types`
+        );
+        await MealPlanAssignment.deleteMany({
+          _id: { $in: assignmentsToRemove.map((a) => a._id) },
+        });
+
+        // Recalculate after removing assignments
+        await mealPlan.updateCalculatedFields();
+        console.log("✅ V2: Meal plan recalculated after removing assignments");
+      }
+    }
+
+    // Final recalculation to ensure all changes are reflected
     await mealPlan.updateCalculatedFields();
+    console.log("🔄 V2: Final meal plan recalculation completed");
 
     res.json({
       success: true,
@@ -1609,7 +1674,7 @@ exports.assignMealToPlan = async (req, res) => {
       mealTime,
       notes,
     } = req.body;
-    
+
     console.log("Request params:", { id });
     console.log("Request body:", req.body);
 
@@ -1700,7 +1765,7 @@ exports.assignMealToPlan = async (req, res) => {
     } else {
       // Create new assignment
       await MealPlanAssignment.create({
-        mealPlanId: id,
+        mealPlanId: new mongoose.Types.ObjectId(id),
         mealIds,
         customTitle,
         customDescription: customDescription || "",
@@ -1712,10 +1777,10 @@ exports.assignMealToPlan = async (req, res) => {
       });
     }
 
-    // Recalculate the total price of the meal plan - temporarily disabled for debugging
-    // if (mealPlan) {
-    //   await mealPlan.updateCalculatedFields();
-    // }
+    // Recalculate the total price of the meal plan
+    if (mealPlan) {
+      await mealPlan.updateCalculatedFields();
+    }
 
     res.json({
       success: true,
@@ -1732,11 +1797,14 @@ exports.assignMealToPlan = async (req, res) => {
       success: false,
       message: "Failed to assign meal to plan",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
-      details: process.env.NODE_ENV === "development" ? {
-        stack: error.stack,
-        body: req.body,
-        params: req.params
-      } : undefined,
+      details:
+        process.env.NODE_ENV === "development"
+          ? {
+              stack: error.stack,
+              body: req.body,
+              params: req.params,
+            }
+          : undefined,
     });
   }
 };

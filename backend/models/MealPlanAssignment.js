@@ -104,6 +104,28 @@ MealPlanAssignmentSchema.post("remove", async function () {
   }
 });
 
+// Post-findOneAndUpdate middleware to update meal plan calculated fields
+MealPlanAssignmentSchema.post("findOneAndUpdate", async function (doc) {
+  if (doc && doc.mealPlanId) {
+    const MealPlan = mongoose.model("MealPlan");
+    const mealPlan = await MealPlan.findById(doc.mealPlanId);
+    if (mealPlan) {
+      await mealPlan.updateCalculatedFields();
+    }
+  }
+});
+
+// Post-findOneAndDelete middleware to update meal plan calculated fields
+MealPlanAssignmentSchema.post("findOneAndDelete", async function (doc) {
+  if (doc && doc.mealPlanId) {
+    const MealPlan = mongoose.model("MealPlan");
+    const mealPlan = await MealPlan.findById(doc.mealPlanId);
+    if (mealPlan) {
+      await mealPlan.updateCalculatedFields();
+    }
+  }
+});
+
 // Static method to get meal plan schedule
 MealPlanAssignmentSchema.statics.getMealPlanSchedule = function (mealPlanId) {
   return this.find({ mealPlanId })
@@ -143,21 +165,47 @@ MealPlanAssignmentSchema.statics.replaceSlot = async function (
   imageUrl = "",
   notes = ""
 ) {
-  // Remove existing assignment if any
-  await this.deleteOne({ mealPlanId, weekNumber, dayOfWeek, mealTime });
+  // Ensure mealPlanId is an ObjectId for proper database matching
+  const mealPlanObjectId = mongoose.Types.ObjectId.isValid(mealPlanId)
+    ? new mongoose.Types.ObjectId(mealPlanId)
+    : mealPlanId;
 
-  // Create new assignment
-  return this.create({
-    mealPlanId,
-    mealIds,
-    customTitle,
-    customDescription,
-    imageUrl,
-    weekNumber,
-    dayOfWeek,
-    mealTime,
-    notes,
-  });
+  // Use findOneAndUpdate with upsert to atomically replace/create
+  const assignment = await this.findOneAndUpdate(
+    {
+      mealPlanId: mealPlanObjectId,
+      weekNumber,
+      dayOfWeek,
+      mealTime,
+    },
+    {
+      mealPlanId: mealPlanObjectId,
+      mealIds,
+      customTitle,
+      customDescription,
+      imageUrl,
+      weekNumber,
+      dayOfWeek,
+      mealTime,
+      notes,
+      updatedAt: new Date(),
+    },
+    {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+
+  // Since findOneAndUpdate doesn't trigger post-save middleware,
+  // manually update meal plan calculated fields
+  const MealPlan = mongoose.model("MealPlan");
+  const mealPlan = await MealPlan.findById(mealPlanObjectId);
+  if (mealPlan) {
+    await mealPlan.updateCalculatedFields();
+  }
+
+  return assignment;
 };
 
 // Method to get day name from day number
