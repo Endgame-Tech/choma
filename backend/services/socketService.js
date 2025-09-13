@@ -150,7 +150,92 @@ class SocketService {
     });
     socket.join(`driver_${driverId}`);
     socket.join("all_drivers");
-    socket.emit("connected", { message: "Connected to delivery service" });
+    socket.emit("connected", { 
+      message: "Connected to delivery service",
+      driverId: driverId 
+    });
+
+    // Handle location updates from driver
+    socket.on('location_update', async (data) => {
+      try {
+        const { latitude, longitude, bearing, speed, accuracy } = data;
+        
+        if (!latitude || !longitude) {
+          console.log('❌ Invalid location data received from driver:', driverId);
+          return;
+        }
+
+        console.log(`📍 Location update from driver ${driverId}:`, { latitude, longitude });
+
+        // Update driver location in database
+        const Driver = require('../models/Driver');
+        const driver = await Driver.findById(driverId);
+        
+        if (driver) {
+          await driver.updateLocation([longitude, latitude]);
+
+          // Broadcast location to active tracking sessions
+          const driverTrackingService = require('./driverTrackingWebSocketService');
+          const DriverAssignment = require('../models/DriverAssignment');
+          
+          // Find all orders being delivered by this driver
+          const activeAssignments = await DriverAssignment.find({
+            driverId: driverId,
+            status: { $in: ['assigned', 'picked_up', 'in_transit'] }
+          }).populate('orderId');
+
+          // Broadcast location to each active order's tracking session
+          for (const assignment of activeAssignments) {
+            const orderId = assignment.orderId._id.toString();
+            const locationData = {
+              latitude,
+              longitude,
+              bearing: bearing || 0,
+              speed: speed || 0,
+              accuracy: accuracy || 10,
+              timestamp: new Date().toISOString(),
+              driverId: driverId,
+              driverName: driver.fullName
+            };
+
+            console.log(`📡 Broadcasting location for order ${orderId}`);
+            driverTrackingService.sendTrackingUpdate(orderId, 'driver_location', locationData);
+          }
+
+          // Send acknowledgment back to driver
+          socket.emit('location_update_ack', {
+            success: true,
+            timestamp: new Date().toISOString(),
+            activeDeliveries: activeAssignments.length
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error handling location update:', error);
+        socket.emit('location_update_ack', {
+          success: false,
+          error: error.message
+        });
+      }
+    });
+
+    // Handle driver status updates
+    socket.on('driver_status_update', async (data) => {
+      try {
+        const { status } = data;
+        console.log(`👷 Driver ${driverId} status update:`, status);
+
+        const Driver = require('../models/Driver');
+        await Driver.findByIdAndUpdate(driverId, { 
+          status: status,
+          isAvailable: status === 'online'
+        });
+
+        socket.emit('driver_status_update_ack', { success: true });
+      } catch (error) {
+        console.error('❌ Error updating driver status:', error);
+        socket.emit('driver_status_update_ack', { success: false, error: error.message });
+      }
+    });
   }
 
   handleCustomerConnection(socket) {

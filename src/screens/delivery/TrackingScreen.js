@@ -299,8 +299,8 @@ export const TrackingScreen = ({ route, navigation }) => {
 
         <TouchableOpacity
           onPress={() => {
-            // Navigate to the enhanced MapTrackingScreen
-            navigation.navigate('MapTracking', {
+            // Navigate to the enhanced tracking screen
+            navigation.navigate('EnhancedTracking', {
               orderId: tracking.order._id || orderId,
               order: tracking.order || order,
             });

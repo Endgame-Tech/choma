@@ -1,8 +1,8 @@
-import { GOOGLE_MAPS_API_KEY } from '../config/googleMaps';
+import { APP_CONFIG } from '../utils/constants';
 
 class GoogleRoutesService {
   constructor() {
-    this.apiKey = GOOGLE_MAPS_API_KEY;
+    this.apiKey = APP_CONFIG.GOOGLE_MAPS_API_KEY;
     this.baseURL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
     this.cache = new Map();
     this.cacheTTL = 5 * 60 * 1000; // 5 minutes

@@ -191,9 +191,9 @@ const MapTrackingScreen = ({ route, navigation }) => {
       });
 
       // Start enhanced mock updates for testing (can be removed in production)
-      if (process.env.NODE_ENV === 'development') {
-        enhancedDriverTrackingService.startEnhancedMockUpdates(orderId, userLocation);
-      }
+      // if (process.env.NODE_ENV === 'development') {
+      //   enhancedDriverTrackingService.startEnhancedMockUpdates(orderId, userLocation);
+      // }
 
     } catch (error) {
       console.error('❌ Error starting enhanced driver tracking:', error);

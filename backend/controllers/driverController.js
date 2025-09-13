@@ -195,11 +195,41 @@ const updateDriverLocation = async (req, res) => {
       });
     }
 
+    // Update driver location in database
     await driver.updateLocation([longitude, latitude]);
+
+    // Broadcast location to active tracking sessions
+    const driverTrackingService = require('../services/driverTrackingWebSocketService');
+    
+    // Find all orders being delivered by this driver
+    const DriverAssignment = require('../models/DriverAssignment');
+    const activeAssignments = await DriverAssignment.find({
+      driverId: driver._id,
+      status: { $in: ['assigned', 'picked_up', 'in_transit'] }
+    }).populate('orderId');
+
+    // Broadcast location to each active order's tracking session
+    for (const assignment of activeAssignments) {
+      const orderId = assignment.orderId._id.toString();
+      const locationData = {
+        latitude,
+        longitude,
+        bearing: req.body.bearing || 0,
+        speed: req.body.speed || 0,
+        accuracy: req.body.accuracy || 10,
+        timestamp: new Date().toISOString(),
+        driverId: driver._id.toString(),
+        driverName: driver.fullName
+      };
+
+      console.log(`📍 Broadcasting location for order ${orderId}:`, locationData);
+      driverTrackingService.sendTrackingUpdate(orderId, 'driver_location', locationData);
+    }
 
     res.json({
       success: true,
       message: "Location updated successfully",
+      activeDeliveries: activeAssignments.length
     });
   } catch (error) {
     console.error("Update location error:", error);
@@ -864,6 +894,60 @@ const updateDriverProfile = async (req, res) => {
   }
 };
 
+// @desc    Get driver location for an order
+// @route   GET /api/driver/location/:orderId
+// @access  Public (for customer tracking)
+const getDriverLocationForOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // Find the driver assignment for this order
+    const DriverAssignment = require('../models/DriverAssignment');
+    const assignment = await DriverAssignment.findOne({ 
+      orderId: orderId,
+      status: { $in: ['assigned', 'picked_up', 'in_transit'] }
+    }).populate('driverId', 'fullName currentLocation rating');
+
+    if (!assignment || !assignment.driverId) {
+      return res.status(404).json({
+        success: false,
+        message: "No active driver found for this order"
+      });
+    }
+
+    const driver = assignment.driverId;
+    const currentLocation = driver.currentLocation;
+
+    if (!currentLocation || !currentLocation.coordinates) {
+      return res.status(404).json({
+        success: false,
+        message: "Driver location not available"
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        driverId: driver._id,
+        driverName: driver.fullName,
+        rating: driver.rating,
+        location: {
+          latitude: currentLocation.coordinates[1], // GeoJSON format is [lng, lat]
+          longitude: currentLocation.coordinates[0],
+          lastUpdated: currentLocation.lastUpdated
+        },
+        assignmentStatus: assignment.status
+      }
+    });
+  } catch (error) {
+    console.error("Get driver location error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+
 module.exports = {
   registerDriver,
   loginDriver,
@@ -880,4 +964,5 @@ module.exports = {
   goOnline,
   goOffline,
   updateDriverProfile,
+  getDriverLocationForOrder,
 };

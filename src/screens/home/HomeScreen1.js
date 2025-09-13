@@ -1048,10 +1048,12 @@ const HomeScreen = ({ navigation }) => {
           key={order._id || order.id}
           order={order}
           onContactSupport={() => navigation.navigate("HelpCenter")}
-          onTrackDriver={(driver) => {
-            // Handle driver tracking
-            navigation.navigate("TrackingScreen", {
-              orderId: order._id,
+          onTrackDriver={(driver, orderData) => {
+            // Navigate to enhanced tracking screen
+            console.log("Track driver:", driver);
+            navigation.navigate("EnhancedTracking", {
+              orderId: order._id || order.id,
+              order: orderData || order,
             });
           }}
           style={styles(colors).orderCard}
@@ -1141,10 +1143,12 @@ const HomeScreen = ({ navigation }) => {
             orderId: order._id,
           });
         }}
-        onTrackDriver={(driver) => {
-          // Handle driver tracking
-          navigation.navigate("TrackingScreen", {
-            orderId: order._id,
+        onTrackDriver={(driver, orderData) => {
+          // Navigate to enhanced tracking screen
+          console.log("Track driver:", driver);
+          navigation.navigate("EnhancedTracking", {
+            orderId: order._id || order.id,
+            order: orderData || order,
           });
         }}
         style={styles(colors).orderCard}

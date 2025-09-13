@@ -228,4 +228,15 @@ DriverSchema.methods.startDelivery = async function() {
   return this;
 };
 
+// Method to update location
+DriverSchema.methods.updateLocation = async function(coordinates) {
+  this.currentLocation = {
+    type: 'Point',
+    coordinates: coordinates, // [longitude, latitude]
+    lastUpdated: new Date()
+  };
+  await this.save();
+  return this;
+};
+
 module.exports = mongoose.model('Driver', DriverSchema);

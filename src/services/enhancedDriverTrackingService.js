@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL, WS_BASE_URL } from '../config/api';
+import { APP_CONFIG } from '../utils/constants';
 import googleRoutesService from './googleRoutesService';
 
 class EnhancedDriverTrackingService {
@@ -35,44 +35,64 @@ class EnhancedDriverTrackingService {
         throw new Error('No authentication token available');
       }
 
-      const socketUrl = `${WS_BASE_URL}/driver-tracking?token=${token}`;
+      const socketUrl = `${APP_CONFIG.WS_BASE_URL}/driver-tracking?token=${token}`;
       console.log('📡 Connecting to enhanced driver tracking:', socketUrl);
 
-      this.ws = new WebSocket(socketUrl);
-      
-      this.ws.onopen = () => {
-        console.log('✅ Enhanced driver tracking connected');
-        this.isConnected = true;
-        this.reconnectAttempts = 0;
-        this.startHeartbeat();
-        this.restoreSubscriptions();
-      };
+      return new Promise((resolve, reject) => {
+        const connectionTimeout = setTimeout(() => {
+          console.log('❌ Connection timeout - cleaning up...');
+          if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+          }
+          reject(new Error('Connection timeout'));
+        }, 10000); // 10 second timeout
 
-      this.ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          this.handleMessage(data);
-        } catch (error) {
-          console.error('❌ Error parsing WebSocket message:', error);
-        }
-      };
-
-      this.ws.onerror = (error) => {
-        console.error('❌ Enhanced tracking WebSocket error:', error);
-      };
-
-      this.ws.onclose = (event) => {
-        console.log('📡 Enhanced tracking disconnected:', event.code, event.reason);
-        this.isConnected = false;
-        this.stopHeartbeat();
-        this.stopRouteUpdates();
+        this.ws = new WebSocket(socketUrl);
         
-        if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
-          this.scheduleReconnect();
-        }
-      };
+        this.ws.onopen = () => {
+          console.log('✅ Enhanced driver tracking connected');
+          clearTimeout(connectionTimeout);
+          this.isConnected = true;
+          this.reconnectAttempts = 0;
+          this.startHeartbeat();
+          this.restoreSubscriptions();
+          resolve();
+        };
 
-      await this.waitForConnection();
+        this.ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            this.handleMessage(data);
+          } catch (error) {
+            console.error('❌ Error parsing WebSocket message:', error);
+          }
+        };
+
+        this.ws.onerror = (error) => {
+          console.error('❌ Enhanced tracking WebSocket error:', error);
+          clearTimeout(connectionTimeout);
+          if (!this.isConnected) {
+            reject(error);
+          }
+        };
+
+        this.ws.onclose = (event) => {
+          console.log('📡 Enhanced tracking disconnected:', event.code, event.reason);
+          clearTimeout(connectionTimeout);
+          this.isConnected = false;
+          this.stopHeartbeat();
+          this.stopRouteUpdates();
+          
+          if (!this.isConnected && this.reconnectAttempts === 0) {
+            reject(new Error(`Connection failed: ${event.reason || 'Unknown error'}`));
+          }
+          
+          if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.scheduleReconnect();
+          }
+        };
+      });
       
     } catch (error) {
       console.error('❌ Error connecting to enhanced tracking:', error);
@@ -203,37 +223,64 @@ class EnhancedDriverTrackingService {
   }
 
   handleMessage(data) {
-    const { type, orderId, payload, error } = data;
+    const { type, orderId, payload, error, message } = data;
 
     if (error) {
       console.error(`❌ Server error for ${type}:`, error);
       return;
     }
 
-    console.log(`📨 Enhanced received ${type} for order ${orderId}:`, payload);
+    // Handle connection confirmation message
+    if (type === 'connected') {
+      console.log('📨 Enhanced tracking service connected:', message);
+      return;
+    }
 
-    // Store latest data
-    this.lastKnownData.set(`${orderId}_${type}`, payload);
+    // Log received messages with orderId (if available)
+    console.log(`📨 Enhanced received ${type} for order ${orderId || 'unknown'}:`, payload);
+
+    // Only store data with a valid orderId
+    if (orderId && payload) {
+      this.lastKnownData.set(`${orderId}_${type}`, payload);
+    }
 
     switch (type) {
       case 'driver_location':
-        this.handleDriverLocationUpdate(orderId, payload);
+        if (orderId && payload) {
+          this.handleDriverLocationUpdate(orderId, payload);
+        }
         break;
       
       case 'driver_info':
-        this.notifyDriverInfoListeners(orderId, payload);
+        if (orderId && payload) {
+          this.notifyDriverInfoListeners(orderId, payload);
+        }
         break;
       
       case 'order_update':
-        this.notifyOrderUpdateListeners(orderId, payload);
+        if (orderId && payload) {
+          this.notifyOrderUpdateListeners(orderId, payload);
+        }
         break;
       
       case 'eta_update':
-        this.notifyETAListeners(orderId, payload);
+        if (orderId && payload) {
+          this.notifyETAListeners(orderId, payload);
+        }
         break;
       
       case 'tracking_status':
-        this.notifyStatusListeners(orderId, payload);
+        if (orderId && payload) {
+          this.notifyStatusListeners(orderId, payload);
+        }
+        break;
+      
+      case 'subscribed':
+        console.log(`✅ Successfully subscribed to order ${orderId}`);
+        break;
+      
+      case 'unsubscribed':
+        console.log(`✅ Successfully unsubscribed from order ${orderId}`);
         break;
       
       case 'pong':
@@ -479,17 +526,17 @@ class EnhancedDriverTrackingService {
     }
   }
 
-  startEnhancedMockUpdates(orderId, userLocation, interval = 5000) {
-    console.log(`🧪 Starting enhanced mock updates for order ${orderId}`);
+  // startEnhancedMockUpdates(orderId, userLocation, interval = 5000) {
+  //   console.log(`🧪 Starting enhanced mock updates for order ${orderId}`);
     
-    const mockInterval = setInterval(async () => {
-      if (this.locationListeners.has(orderId)) {
-        await this.generateEnhancedMockUpdate(orderId, userLocation);
-      } else {
-        clearInterval(mockInterval);
-      }
-    }, interval);
-  }
+  //   const mockInterval = setInterval(async () => {
+  //     if (this.locationListeners.has(orderId)) {
+  //       await this.generateEnhancedMockUpdate(orderId, userLocation);
+  //     } else {
+  //       clearInterval(mockInterval);
+  //     }
+  //   }, interval);
+  // }
 
   // Get enhanced connection status
   getConnectionStatus() {

@@ -16,7 +16,8 @@ const {
   getDailyStats,
   goOnline,
   goOffline,
-  updateDriverProfile
+  updateDriverProfile,
+  getDriverLocationForOrder
 } = require('../controllers/driverController');
 
 const driverSubscriptionController = require('../controllers/driverSubscriptionController');
@@ -84,6 +85,13 @@ const validateConfirmationCode = [
 // @access  Public
 router.post('/auth/register', validateDriverRegistration, registerDriver);
 router.post('/auth/login', validateDriverLogin, loginDriver);
+
+// @desc    Public location endpoint for customer tracking
+// @access  Public
+router.get('/location/:orderId', 
+  param('orderId').isMongoId().withMessage('Invalid order ID'),
+  getDriverLocationForOrder
+);
 
 // @desc    Protected Routes - Require Authentication
 // @access  Private

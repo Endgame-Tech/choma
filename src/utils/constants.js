@@ -14,6 +14,12 @@ export const APP_CONFIG = {
       : "http://localhost:5001/api"
     : "https://choma.onrender.com/api",
 
+  WS_BASE_URL: __DEV__
+    ? Platform.OS === "android"
+      ? "ws://10.226.105.28:5001" // Your local development IP
+      : "ws://10.226.105.28:5001" // Your local development IP  
+    : "wss://choma.onrender.com", // Production WebSocket URL
+  
   // Payment Configuration
   PAYSTACK_PUBLIC_KEY: __DEV__
     ? "pk_test_c90af10dcc748a6c4e3cf481230abadd819037c1" // Test key

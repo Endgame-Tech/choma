@@ -1,22 +1,29 @@
-rWeek": 7, "percentage": 0, "subscriptionId": "68c4840d786beff29322ce41", "totalMeals": 7}
- ERROR  Error Boundary caught an error: [ReferenceError: Property 'handleEditProfile' doesn't exist]
- LOG  Failed to send error to server: Network request failed
- ERROR  Warning: ReferenceError: Property 'handleEditProfile' doesn't exist
+  "userAgent": "okhttp/4.9.2"
+}
+14:02:41 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "070xv5ahr",
+  "method": "POST",
+  "url": "/api/banners/68c3c2fb3df3459d602c09c4/impression",
+  "statusCode": 200,
+  "duration": "347ms",
+  "contentLength": "87"
+}
+📡 Customer 68c541aef28ad35854e590c4 unsubscribed from order 68c54251f28ad35854e590fc
+📱 Customer 68c541aef28ad35854e590c4 connected to driver tracking
 
-This error is located at:
-
-Call Stack
-  RNSScreenContainer (<anonymous>)
-  RNSScreenContainer (<anonymous>)
-  RNGestureHandlerRootView (<anonymous>)
-  RNCSafeAreaProvider (<anonymous>)
-  RNGestureHandlerRootView (<anonymous>)
- ERROR  Error Info:
-{"componentStack": "
-
-Call Stack
-  RNSScreenContainer (<anonymous>)
-  RNSScreenContainer (<anonymous>)
-  RNGestureHandlerRootView (<anonymous>)
-  RNCSafeAreaProvider (<anonymous>)
-  RNGestureHandlerRootView (<anonymous>)
+OG  Track driver: {"_id": "68c0ca6fd31fbb0fb313f125", "fullName": "Legend Testimony", "phone": "08139120289"}
+ LOG  📡 Connecting to enhanced driver tracking: ws://10.226.105.28:5001/driver-tracking?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6
+IjY4YzU0MWFlZjI4YWQzNTg1NGU1OTBjNCIsImVtYWlsIjoiZWJlcmV0ZXN0aW1vbnk3QGdtYWlsLmNvbSIsImN1c3RvbWVySWQiOiJDVS0wMDEiLCJpYXQiOjE3NTc3NTc4NzEsImV4cCI6MTc1ODM2MjY3MX0.rFHZhdWS5RtfiVUyGscuT32x7zVi5RNqlATFNYzXH4Q
+ LOG  ✅ Enhanced driver tracking connected
+ LOG  📨 Enhanced tracking service connected: Connected to driver tracking service
+ LOG  API Request (Attempt 1): POST http://10.226.105.28:5001/api/banners/68c3c2fb3df3459d602c09c4/impression
+ LOG  📨 Enhanced received pong for order unknown: undefined
+ LOG  📨 Enhanced received unsubscribed for order 68c54251f28ad35854e590fc: undefined
+ LOG  ✅ Successfully unsubscribed from order 68c54251f28ad35854e590fc
+ LOG  📡 Connecting to enhanced driver tracking: ws://10.226.105.28:5001/driver-tracking?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6
+IjY4YzU0MWFlZjI4YWQzNTg1NGU1OTBjNCIsImVtYWlsIjoiZWJlcmV0ZXN0aW1vbnk3QGdtYWlsLmNvbSIsImN1c3RvbWVySWQiOiJDVS0wMDEiLCJpYXQiOjE3NTc3NTc4NzEsImV4cCI6MTc1ODM2MjY3MX0.rFHZhdWS5RtfiVUyGscuT32x7zVi5RNqlATFNYzXH4Q
+ LOG  ✅ Enhanced driver tracking connected
+ LOG  📨 Enhanced tracking service connected: Connected to driver tracking service
+ LOG  📨 Enhanced received pong for order unknown: undefined
+ LOG  📨 Enhanced received pong for order unknown: undefined

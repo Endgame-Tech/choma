@@ -61,6 +61,11 @@ retryDatabaseConnection(connectDB)
     const socketService = require('./services/socketService');
     socketService.initialize(server);
     
+    // Initialize Driver Tracking WebSocket service
+    const driverTrackingService = require('./services/driverTrackingWebSocketService');
+    driverTrackingService.initialize(server);
+    driverTrackingService.startHealthCheck();
+    
     // Initialize Keep-Alive service only after DB is connected
     const keepAliveService = require('./services/keepAliveService');
     keepAliveService.start();

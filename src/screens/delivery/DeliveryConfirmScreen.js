@@ -46,7 +46,11 @@ export const DeliveryConfirmScreen = ({ route, navigation }) => {
 
   const trackDelivery = () => {
     if (trackingId) {
-      navigation.navigate('TrackingScreen', { trackingId, orderId });
+      navigation.navigate('EnhancedTracking', { 
+        trackingId, 
+        orderId,
+        order: route.params?.order 
+      });
     } else {
       Alert.alert('Info', 'Tracking information will be available soon');
     }

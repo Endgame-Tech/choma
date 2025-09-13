@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL, WS_BASE_URL } from '../config/api';
+import { APP_CONFIG } from '../utils/constants';
 
 class DriverTrackingService {
   constructor() {
@@ -33,7 +33,7 @@ class DriverTrackingService {
       }
 
       // Use WebSocket base URL
-      const socketUrl = `${WS_BASE_URL}/driver-tracking?token=${token}`;
+      const socketUrl = `${APP_CONFIG.WS_BASE_URL}/driver-tracking?token=${token}`;
 
       console.log('📡 Connecting to driver tracking:', socketUrl);
 
@@ -341,7 +341,7 @@ class DriverTrackingService {
   async getDriverLocationREST(orderId) {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/driver-tracking/${orderId}/location`, {
+      const response = await fetch(`${APP_CONFIG.API_BASE_URL}/driver-tracking/${orderId}/location`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -363,7 +363,7 @@ class DriverTrackingService {
   async getDriverInfoREST(orderId) {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/driver-tracking/${orderId}/driver`, {
+      const response = await fetch(`${APP_CONFIG.API_BASE_URL}/driver-tracking/${orderId}/driver`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -385,7 +385,7 @@ class DriverTrackingService {
   async getETAREST(orderId) {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/driver-tracking/${orderId}/eta`, {
+      const response = await fetch(`${APP_CONFIG.API_BASE_URL}/driver-tracking/${orderId}/eta`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

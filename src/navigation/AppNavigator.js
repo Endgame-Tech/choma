@@ -56,6 +56,7 @@ import AddCardScreen from "../screens/dashboard/AddCardScreen";
 // Delivery screens
 import { TrackingScreen } from "../screens/delivery/TrackingScreen";
 import MapTrackingScreen from "../screens/tracking/MapTrackingScreen";
+import EnhancedTrackingScreen from "../screens/tracking/EnhancedTrackingScreen";
 
 // Search screens
 import SearchScreen from "../screens/search/SearchScreen";
@@ -586,6 +587,14 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
           <Stack.Screen
             name="MapTracking"
             component={MapTrackingScreen}
+            options={{
+              headerShown: false,
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen
+            name="EnhancedTracking"
+            component={EnhancedTrackingScreen}
             options={{
               headerShown: false,
               gestureEnabled: true,

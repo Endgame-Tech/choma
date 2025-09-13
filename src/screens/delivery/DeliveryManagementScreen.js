@@ -94,9 +94,10 @@ const DeliveryManagementScreen = ({ navigation }) => {
   };
 
   const viewDeliveryDetails = (delivery) => {
-    navigation.navigate('TrackingScreen', {
+    navigation.navigate('EnhancedTracking', {
       trackingId: delivery.trackingId,
-      orderId: delivery.order._id
+      orderId: delivery.order._id,
+      order: delivery.order
     });
   };
 
