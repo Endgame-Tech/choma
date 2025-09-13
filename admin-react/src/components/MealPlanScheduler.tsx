@@ -129,7 +129,19 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
         setSelectedMealTime(null)
       } catch (error) {
         console.error('Failed to assign meal:', error)
-        alert('Failed to assign meal to plan')
+        // Safely narrow unknown error type before accessing response
+        if (error && typeof error === 'object' && 'response' in error) {
+          const err = error as { response?: { data?: { message?: string } } }
+          try {
+            console.error('Server response:', err.response?.data)
+            alert(`Failed to assign meal to plan: ${err.response?.data?.message || 'Server error'}`)
+          } catch (inner) {
+            console.error('Failed to read server response:', inner)
+            alert('Failed to assign meal to plan: Server error')
+          }
+        } else {
+          alert('Failed to assign meal to plan: An unknown error occurred.');
+        }
         // Reset the week tracking on error
         setWeekBeforeUpdate(null)
       } finally {

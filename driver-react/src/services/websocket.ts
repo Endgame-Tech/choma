@@ -50,7 +50,7 @@ class WebSocketService {
           auth: {
             token
           },
-          transports: ['websocket', 'polling'],
+          transports: ['polling', 'websocket'],
           path: '/socket.io',
           forceNew: true,
           reconnection: true,
@@ -79,6 +79,7 @@ class WebSocketService {
           settled = true;
           clearTimeout(connectionTimeout);
           this.reconnectAttempts = 0;
+          console.log('[WS] Successfully connected to server');
           resolve();
         });
 
@@ -88,6 +89,7 @@ class WebSocketService {
 
         this.socket.on('connect_error', (error) => {
           console.warn('[WS] Connection error:', error.message);
+          console.warn('[WS] Error details:', error);
           if (!settled) {
             settled = true;
             clearTimeout(connectionTimeout);
@@ -216,10 +218,17 @@ class WebSocketService {
   // Update driver location
   updateLocation(location: Location) {
     if (this.socket?.connected) {
+      console.log('[WS] Sending location update:', { latitude: location.latitude, longitude: location.longitude });
       this.socket.emit('location_update', {
         latitude: location.latitude,
-        longitude: location.longitude
+        longitude: location.longitude,
+        bearing: location.bearing || 0,
+        speed: location.speed || 0,
+        accuracy: location.accuracy || 10,
+        timestamp: new Date().toISOString()
       });
+    } else {
+      console.warn('[WS] Not connected - cannot send location update');
     }
   }
 

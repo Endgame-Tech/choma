@@ -13,7 +13,7 @@ interface UseWebSocketReturn {
   status: WebSocketStatus;
   connect: () => Promise<void>;
   disconnect: () => void;
-  updateLocation: (latitude: number, longitude: number) => void;
+  updateLocation: (location: any) => void;
   updateAssignmentStatus: (assignmentId: string, status: string) => void;
   updateDriverStatus: (status: 'online' | 'offline' | 'busy') => void;
   ping: () => void;
@@ -63,8 +63,8 @@ export const useWebSocket = (): UseWebSocketReturn => {
   }, [updateStatus]);
 
   // Update driver location
-  const updateLocation = useCallback((latitude: number, longitude: number) => {
-    websocketService.updateLocation({ latitude, longitude });
+  const updateLocation = useCallback((location: any) => {
+    websocketService.updateLocation(location);
   }, []);
 
   // Update assignment status

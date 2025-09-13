@@ -1,29 +1,5 @@
-  "userAgent": "okhttp/4.9.2"
-}
-14:02:41 [http]: Request Completed {
-  "service": "choma-backend",
-  "id": "070xv5ahr",
-  "method": "POST",
-  "url": "/api/banners/68c3c2fb3df3459d602c09c4/impression",
-  "statusCode": 200,
-  "duration": "347ms",
-  "contentLength": "87"
-}
-📡 Customer 68c541aef28ad35854e590c4 unsubscribed from order 68c54251f28ad35854e590fc
-📱 Customer 68c541aef28ad35854e590c4 connected to driver tracking
-
-OG  Track driver: {"_id": "68c0ca6fd31fbb0fb313f125", "fullName": "Legend Testimony", "phone": "08139120289"}
- LOG  📡 Connecting to enhanced driver tracking: ws://10.226.105.28:5001/driver-tracking?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6
-IjY4YzU0MWFlZjI4YWQzNTg1NGU1OTBjNCIsImVtYWlsIjoiZWJlcmV0ZXN0aW1vbnk3QGdtYWlsLmNvbSIsImN1c3RvbWVySWQiOiJDVS0wMDEiLCJpYXQiOjE3NTc3NTc4NzEsImV4cCI6MTc1ODM2MjY3MX0.rFHZhdWS5RtfiVUyGscuT32x7zVi5RNqlATFNYzXH4Q
- LOG  ✅ Enhanced driver tracking connected
- LOG  📨 Enhanced tracking service connected: Connected to driver tracking service
- LOG  API Request (Attempt 1): POST http://10.226.105.28:5001/api/banners/68c3c2fb3df3459d602c09c4/impression
- LOG  📨 Enhanced received pong for order unknown: undefined
- LOG  📨 Enhanced received unsubscribed for order 68c54251f28ad35854e590fc: undefined
- LOG  ✅ Successfully unsubscribed from order 68c54251f28ad35854e590fc
- LOG  📡 Connecting to enhanced driver tracking: ws://10.226.105.28:5001/driver-tracking?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6
-IjY4YzU0MWFlZjI4YWQzNTg1NGU1OTBjNCIsImVtYWlsIjoiZWJlcmV0ZXN0aW1vbnk3QGdtYWlsLmNvbSIsImN1c3RvbWVySWQiOiJDVS0wMDEiLCJpYXQiOjE3NTc3NTc4NzEsImV4cCI6MTc1ODM2MjY3MX0.rFHZhdWS5RtfiVUyGscuT32x7zVi5RNqlATFNYzXH4Q
- LOG  ✅ Enhanced driver tracking connected
- LOG  📨 Enhanced tracking service connected: Connected to driver tracking service
- LOG  📨 Enhanced received pong for order unknown: undefined
- LOG  📨 Enhanced received pong for order unknown: undefined
+Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+mealApi.ts:32 ❌ Meal API Error: POST /meal-plans/68c302b2fd5c2720f4f25c16/assign-meal Request failed with status code 500
+overrideMethod @ hook.js:608
+(anonymous) @ mealApi.ts:32Understand this error
+MealPlanScheduler.tsx:131 Failed to assign meal: AxiosError {message: 'Request failed with status code 500', name: 'AxiosError', code: 'ERR_BAD_RESPONSE', config: {…}, request: XMLHttpRequest, …}

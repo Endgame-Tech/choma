@@ -918,7 +918,14 @@ const getDriverLocationForOrder = async (req, res) => {
     const driver = assignment.driverId;
     const currentLocation = driver.currentLocation;
 
+    console.log(`🔍 Driver location debug for ${driver.fullName}:`);
+    console.log(`   - currentLocation exists:`, !!currentLocation);
+    console.log(`   - currentLocation:`, currentLocation);
+    console.log(`   - coordinates exists:`, !!currentLocation?.coordinates);
+    console.log(`   - coordinates:`, currentLocation?.coordinates);
+
     if (!currentLocation || !currentLocation.coordinates) {
+      console.log(`❌ Location unavailable - missing coordinates`);
       return res.status(404).json({
         success: false,
         message: "Driver location not available"

@@ -413,36 +413,7 @@ class DriverTrackingService {
     };
   }
 
-  // Mock data for development/testing
-  generateMockLocationUpdate(orderId) {
-    if (!this.isConnected) return;
-
-    // Generate random location around a base point
-    const baseLat = 6.5244; // Lagos coordinates
-    const baseLng = 3.3792;
-    
-    const mockData = {
-      latitude: baseLat + (Math.random() - 0.5) * 0.01,
-      longitude: baseLng + (Math.random() - 0.5) * 0.01,
-      bearing: Math.random() * 360,
-      speed: Math.random() * 60,
-      timestamp: new Date().toISOString(),
-    };
-
-    this.notifyLocationListeners(orderId, mockData);
-  }
-
-  startMockUpdates(orderId, interval = 5000) {
-    console.log(`🧪 Starting mock updates for order ${orderId}`);
-    
-    const mockInterval = setInterval(() => {
-      if (this.locationListeners.has(orderId)) {
-        this.generateMockLocationUpdate(orderId);
-      } else {
-        clearInterval(mockInterval);
-      }
-    }, interval);
-  }
+  // Mock functions removed - only real GPS data from drivers is used
 }
 
 // Export singleton instance

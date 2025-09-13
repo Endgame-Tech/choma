@@ -84,7 +84,20 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
 
         // Send location update to server via WebSocket
         if (isConnected) {
-          updateLocation(location.latitude, location.longitude);
+          console.log('[Location] Sending location update:', {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            accuracy: location.accuracy
+          });
+          updateLocation({
+            latitude: location.latitude,
+            longitude: location.longitude,
+            accuracy: location.accuracy,
+            speed: position.coords.speed,
+            bearing: position.coords.heading
+          });
+        } else {
+          console.warn('[Location] WebSocket not connected - location not sent');
         }
 
       },

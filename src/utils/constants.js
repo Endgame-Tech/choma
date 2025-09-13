@@ -17,7 +17,7 @@ export const APP_CONFIG = {
   WS_BASE_URL: __DEV__
     ? Platform.OS === "android"
       ? "ws://10.226.105.28:5001" // Your local development IP
-      : "ws://10.226.105.28:5001" // Your local development IP  
+      : "ws://localhost:5001" // Your local development IP  
     : "wss://choma.onrender.com", // Production WebSocket URL
   
   // Payment Configuration

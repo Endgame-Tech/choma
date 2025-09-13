@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { APP_CONFIG } from '../utils/constants';
-import googleRoutesService from './googleRoutesService';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { APP_CONFIG } from "../utils/constants";
+import googleRoutesService from "./googleRoutesService";
 
 class EnhancedDriverTrackingService {
   constructor() {
@@ -13,7 +13,7 @@ class EnhancedDriverTrackingService {
     this.subscriptions = new Map();
     this.lastKnownData = new Map();
     this.routeUpdateInterval = null;
-    
+
     // Event listeners
     this.locationListeners = new Map();
     this.driverInfoListeners = new Map();
@@ -26,32 +26,32 @@ class EnhancedDriverTrackingService {
   async connect() {
     try {
       if (this.isConnected) {
-        console.log('📡 Enhanced tracking already connected');
+        console.log("📡 Enhanced tracking already connected");
         return;
       }
 
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await AsyncStorage.getItem("authToken");
       if (!token) {
-        throw new Error('No authentication token available');
+        throw new Error("No authentication token available");
       }
 
       const socketUrl = `${APP_CONFIG.WS_BASE_URL}/driver-tracking?token=${token}`;
-      console.log('📡 Connecting to enhanced driver tracking:', socketUrl);
+      console.log("📡 Connecting to enhanced driver tracking:", socketUrl);
 
       return new Promise((resolve, reject) => {
         const connectionTimeout = setTimeout(() => {
-          console.log('❌ Connection timeout - cleaning up...');
+          console.log("❌ Connection timeout - cleaning up...");
           if (this.ws) {
             this.ws.close();
             this.ws = null;
           }
-          reject(new Error('Connection timeout'));
+          reject(new Error("Connection timeout"));
         }, 10000); // 10 second timeout
 
         this.ws = new WebSocket(socketUrl);
-        
+
         this.ws.onopen = () => {
-          console.log('✅ Enhanced driver tracking connected');
+          console.log("✅ Enhanced driver tracking connected");
           clearTimeout(connectionTimeout);
           this.isConnected = true;
           this.reconnectAttempts = 0;
@@ -65,12 +65,12 @@ class EnhancedDriverTrackingService {
             const data = JSON.parse(event.data);
             this.handleMessage(data);
           } catch (error) {
-            console.error('❌ Error parsing WebSocket message:', error);
+            console.error("❌ Error parsing WebSocket message:", error);
           }
         };
 
         this.ws.onerror = (error) => {
-          console.error('❌ Enhanced tracking WebSocket error:', error);
+          console.error("❌ Enhanced tracking WebSocket error:", error);
           clearTimeout(connectionTimeout);
           if (!this.isConnected) {
             reject(error);
@@ -78,24 +78,32 @@ class EnhancedDriverTrackingService {
         };
 
         this.ws.onclose = (event) => {
-          console.log('📡 Enhanced tracking disconnected:', event.code, event.reason);
+          console.log(
+            "📡 Enhanced tracking disconnected:",
+            event.code,
+            event.reason
+          );
           clearTimeout(connectionTimeout);
           this.isConnected = false;
           this.stopHeartbeat();
           this.stopRouteUpdates();
-          
+
           if (!this.isConnected && this.reconnectAttempts === 0) {
-            reject(new Error(`Connection failed: ${event.reason || 'Unknown error'}`));
+            reject(
+              new Error(`Connection failed: ${event.reason || "Unknown error"}`)
+            );
           }
-          
-          if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+
+          if (
+            event.code !== 1000 &&
+            this.reconnectAttempts < this.maxReconnectAttempts
+          ) {
             this.scheduleReconnect();
           }
         };
       });
-      
     } catch (error) {
-      console.error('❌ Error connecting to enhanced tracking:', error);
+      console.error("❌ Error connecting to enhanced tracking:", error);
       throw error;
     }
   }
@@ -103,17 +111,17 @@ class EnhancedDriverTrackingService {
   async waitForConnection(timeout = 10000) {
     return new Promise((resolve, reject) => {
       const startTime = Date.now();
-      
+
       const checkConnection = () => {
         if (this.isConnected) {
           resolve();
         } else if (Date.now() - startTime > timeout) {
-          reject(new Error('Connection timeout'));
+          reject(new Error("Connection timeout"));
         } else {
           setTimeout(checkConnection, 100);
         }
       };
-      
+
       checkConnection();
     });
   }
@@ -121,13 +129,15 @@ class EnhancedDriverTrackingService {
   scheduleReconnect() {
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
     this.reconnectAttempts++;
-    
-    console.log(`🔄 Scheduling enhanced reconnect attempt ${this.reconnectAttempts} in ${delay}ms`);
-    
+
+    console.log(
+      `🔄 Scheduling enhanced reconnect attempt ${this.reconnectAttempts} in ${delay}ms`
+    );
+
     setTimeout(() => {
       if (!this.isConnected) {
-        this.connect().catch(error => {
-          console.error('❌ Enhanced reconnection failed:', error);
+        this.connect().catch((error) => {
+          console.error("❌ Enhanced reconnection failed:", error);
         });
       }
     }, delay);
@@ -136,7 +146,7 @@ class EnhancedDriverTrackingService {
   startHeartbeat() {
     this.heartbeatInterval = setInterval(() => {
       if (this.isConnected && this.ws.readyState === WebSocket.OPEN) {
-        this.send({ type: 'ping' });
+        this.send({ type: "ping" });
       }
     }, 30000);
   }
@@ -156,12 +166,18 @@ class EnhancedDriverTrackingService {
     // Update route every 30 seconds
     this.routeUpdateInterval = setInterval(async () => {
       try {
-        const currentDriverLocation = this.lastKnownData.get(`${orderId}_driver_location`);
+        const currentDriverLocation = this.lastKnownData.get(
+          `${orderId}_driver_location`
+        );
         if (currentDriverLocation && userLocation) {
-          await this.updateRouteWithGoogleAPI(orderId, currentDriverLocation, userLocation);
+          await this.updateRouteWithGoogleAPI(
+            orderId,
+            currentDriverLocation,
+            userLocation
+          );
         }
       } catch (error) {
-        console.error('❌ Error updating route:', error);
+        console.error("❌ Error updating route:", error);
       }
     }, 30000);
   }
@@ -175,39 +191,44 @@ class EnhancedDriverTrackingService {
 
   async updateRouteWithGoogleAPI(orderId, driverLocation, userLocation) {
     try {
-      console.log('🗺️ Updating route with Google Routes API...');
-      
-      const etaData = await googleRoutesService.getETAWithTraffic(driverLocation, userLocation);
-      
+      console.log("🗺️ Updating route with Google Routes API...");
+
+      const etaData = await googleRoutesService.getETAWithTraffic(
+        driverLocation,
+        userLocation
+      );
+
       // Notify ETA listeners
       this.notifyETAListeners(orderId, etaData);
-      
+
       // Notify route listeners if we have route data
       if (etaData.route && etaData.route.encodedPolyline) {
-        const routeCoordinates = googleRoutesService.decodePolyline(etaData.route.encodedPolyline);
+        const routeCoordinates = googleRoutesService.decodePolyline(
+          etaData.route.encodedPolyline
+        );
         this.notifyRouteListeners(orderId, {
           coordinates: routeCoordinates,
           distance: etaData.distance,
           duration: etaData.estimatedMinutes,
-          traffic: etaData.status
+          traffic: etaData.status,
         });
       }
-      
+
       // Store updated ETA data
       this.lastKnownData.set(`${orderId}_eta_update`, etaData);
-      
-      console.log('✅ Route updated successfully');
+
+      console.log("✅ Route updated successfully");
     } catch (error) {
-      console.error('❌ Error updating route with Google API:', error);
+      console.error("❌ Error updating route with Google API:", error);
     }
   }
 
   restoreSubscriptions() {
     for (const [orderId, subscription] of this.subscriptions) {
       this.send({
-        type: 'subscribe',
+        type: "subscribe",
         orderId: orderId,
-        events: subscription.events
+        events: subscription.events,
       });
     }
   }
@@ -217,7 +238,7 @@ class EnhancedDriverTrackingService {
       this.ws.send(JSON.stringify(data));
       return true;
     } else {
-      console.warn('⚠️ Cannot send message: Enhanced WebSocket not connected');
+      console.warn("⚠️ Cannot send message: Enhanced WebSocket not connected");
       return false;
     }
   }
@@ -225,77 +246,142 @@ class EnhancedDriverTrackingService {
   handleMessage(data) {
     const { type, orderId, payload, error, message } = data;
 
+    console.log(`📨 Raw message received:`, data);
+
     if (error) {
       console.error(`❌ Server error for ${type}:`, error);
       return;
     }
 
     // Handle connection confirmation message
-    if (type === 'connected') {
-      console.log('📨 Enhanced tracking service connected:', message);
+    if (type === "connected") {
+      console.log("📨 Enhanced tracking service connected:", message);
       return;
     }
 
-    // Log received messages with orderId (if available)
-    console.log(`📨 Enhanced received ${type} for order ${orderId || 'unknown'}:`, payload);
+    // Log received messages with orderId (if available) - enhanced debugging
+    console.log(
+      `📨 Enhanced received ${type} for order ${orderId || "unknown"}:`,
+      payload
+    );
+
+    // Check for missing orderId which is often the root cause
+    if (!orderId) {
+      console.warn(
+        `⚠️ Message received without orderId for type: ${type}`,
+        data
+      );
+
+      // Try to handle messages that might not need orderId (like pong/ping)
+      if (type === "pong") {
+        console.log("💓 Heartbeat pong received");
+        return;
+      }
+
+      // For other messages, we need orderId to route properly
+      console.error(`❌ Cannot process ${type} message without orderId`);
+      return;
+    }
+
+    // Validate payload for data messages
+    if (
+      ["driver_location", "driver_info", "order_update", "eta_update"].includes(
+        type
+      ) &&
+      !payload
+    ) {
+      console.warn(
+        `⚠️ Message type ${type} received without payload for order ${orderId}`
+      );
+    }
 
     // Only store data with a valid orderId
     if (orderId && payload) {
       this.lastKnownData.set(`${orderId}_${type}`, payload);
+      console.log(`💾 Stored data for ${orderId}_${type}:`, payload);
     }
 
     switch (type) {
-      case 'driver_location':
+      case "driver_location":
         if (orderId && payload) {
+          console.log(
+            `📍 Processing driver location for order ${orderId}:`,
+            payload
+          );
           this.handleDriverLocationUpdate(orderId, payload);
+        } else {
+          console.error(
+            `❌ Cannot process driver_location: orderId=${orderId}, payload=`,
+            payload
+          );
         }
         break;
-      
-      case 'driver_info':
+
+      case "driver_info":
         if (orderId && payload) {
+          console.log(
+            `👨‍✈️ Processing driver info for order ${orderId}:`,
+            payload
+          );
           this.notifyDriverInfoListeners(orderId, payload);
         }
         break;
-      
-      case 'order_update':
+
+      case "order_update":
         if (orderId && payload) {
+          console.log(
+            `📦 Processing order update for order ${orderId}:`,
+            payload
+          );
           this.notifyOrderUpdateListeners(orderId, payload);
         }
         break;
-      
-      case 'eta_update':
+
+      case "eta_update":
         if (orderId && payload) {
           this.notifyETAListeners(orderId, payload);
         }
         break;
-      
-      case 'tracking_status':
+
+      case "tracking_status":
         if (orderId && payload) {
+          console.log(
+            `📊 Processing tracking status for order ${orderId}:`,
+            payload
+          );
           this.notifyStatusListeners(orderId, payload);
+
+          // Special handling for location unavailable status
+          if (payload.status === "location_unavailable") {
+            console.log(
+              `⚠️ Driver location unavailable for order ${orderId}:`,
+              payload.message
+            );
+          }
         }
         break;
-      
-      case 'subscribed':
+
+      case "subscribed":
         console.log(`✅ Successfully subscribed to order ${orderId}`);
         break;
-      
-      case 'unsubscribed':
+
+      case "unsubscribed":
         console.log(`✅ Successfully unsubscribed from order ${orderId}`);
         break;
-      
-      case 'pong':
+
+      case "pong":
         // Heartbeat response
         break;
-      
+
       default:
-        console.log('📨 Unknown enhanced message type:', type);
+        console.log("📨 Unknown enhanced message type:", type);
     }
   }
 
   async handleDriverLocationUpdate(orderId, locationData) {
     // Notify location listeners
     this.notifyLocationListeners(orderId, locationData);
-    
+
     // Check if we have user location to calculate route
     const userLocation = this.lastKnownData.get(`${orderId}_user_location`);
     if (userLocation) {
@@ -306,20 +392,22 @@ class EnhancedDriverTrackingService {
 
   // Enhanced subscription methods
   subscribeToDriverLocation(orderId, callback, userLocation = null) {
-    this.addSubscription(orderId, 'driver_location');
+    this.addSubscription(orderId, "driver_location");
     this.locationListeners.set(orderId, callback);
-    
+
     // Store user location for route calculations
     if (userLocation) {
       this.lastKnownData.set(`${orderId}_user_location`, userLocation);
-      
+
       // Start route updates
-      const driverLocation = this.lastKnownData.get(`${orderId}_driver_location`);
+      const driverLocation = this.lastKnownData.get(
+        `${orderId}_driver_location`
+      );
       if (driverLocation) {
         this.startRouteUpdates(orderId, driverLocation, userLocation);
       }
     }
-    
+
     // Send last known data if available
     const lastData = this.lastKnownData.get(`${orderId}_driver_location`);
     if (lastData) {
@@ -329,7 +417,7 @@ class EnhancedDriverTrackingService {
 
   subscribeToRoute(orderId, callback) {
     this.routeListeners.set(orderId, callback);
-    
+
     // Send last known route data if available
     const lastData = this.lastKnownData.get(`${orderId}_route_update`);
     if (lastData) {
@@ -338,9 +426,9 @@ class EnhancedDriverTrackingService {
   }
 
   subscribeToDriverInfo(orderId, callback) {
-    this.addSubscription(orderId, 'driver_info');
+    this.addSubscription(orderId, "driver_info");
     this.driverInfoListeners.set(orderId, callback);
-    
+
     const lastData = this.lastKnownData.get(`${orderId}_driver_info`);
     if (lastData) {
       callback(lastData);
@@ -348,9 +436,9 @@ class EnhancedDriverTrackingService {
   }
 
   subscribeToOrderUpdates(orderId, callback) {
-    this.addSubscription(orderId, 'order_update');
+    this.addSubscription(orderId, "order_update");
     this.orderUpdateListeners.set(orderId, callback);
-    
+
     const lastData = this.lastKnownData.get(`${orderId}_order_update`);
     if (lastData) {
       callback(lastData);
@@ -358,14 +446,14 @@ class EnhancedDriverTrackingService {
   }
 
   subscribeToETA(orderId, callback, userLocation = null) {
-    this.addSubscription(orderId, 'eta_update');
+    this.addSubscription(orderId, "eta_update");
     this.etaListeners.set(orderId, callback);
-    
+
     // Store user location for enhanced ETA calculations
     if (userLocation) {
       this.lastKnownData.set(`${orderId}_user_location`, userLocation);
     }
-    
+
     const lastData = this.lastKnownData.get(`${orderId}_eta_update`);
     if (lastData) {
       callback(lastData);
@@ -373,9 +461,9 @@ class EnhancedDriverTrackingService {
   }
 
   subscribeToTrackingStatus(orderId, callback) {
-    this.addSubscription(orderId, 'tracking_status');
+    this.addSubscription(orderId, "tracking_status");
     this.statusListeners.set(orderId, callback);
-    
+
     const lastData = this.lastKnownData.get(`${orderId}_tracking_status`);
     if (lastData) {
       callback(lastData);
@@ -383,20 +471,42 @@ class EnhancedDriverTrackingService {
   }
 
   addSubscription(orderId, eventType) {
+    console.log(
+      `🔔 Adding subscription for order ${orderId}, event: ${eventType}`
+    );
+
+    if (!orderId) {
+      console.error("❌ Cannot add subscription: orderId is required");
+      return;
+    }
+
     if (!this.subscriptions.has(orderId)) {
       this.subscriptions.set(orderId, { events: [] });
     }
-    
+
     const subscription = this.subscriptions.get(orderId);
     if (!subscription.events.includes(eventType)) {
       subscription.events.push(eventType);
     }
 
-    this.send({
-      type: 'subscribe',
+    const subscriptionMessage = {
+      type: "subscribe",
       orderId: orderId,
-      events: subscription.events
-    });
+      events: subscription.events,
+    };
+
+    console.log(`📤 Sending subscription message:`, subscriptionMessage);
+    this.send(subscriptionMessage);
+
+    // Also immediately request current data for this order
+    const requestMessage = {
+      type: "getCurrentData",
+      orderId: orderId,
+      eventType: eventType,
+    };
+
+    console.log(`📤 Requesting current data:`, requestMessage);
+    this.send(requestMessage);
   }
 
   // Enhanced notification methods
@@ -451,21 +561,23 @@ class EnhancedDriverTrackingService {
     this.etaListeners.delete(orderId);
     this.statusListeners.delete(orderId);
     this.routeListeners.delete(orderId);
-    
+
     // Clean up stored data
-    const keys = Array.from(this.lastKnownData.keys()).filter(key => key.startsWith(orderId));
-    keys.forEach(key => this.lastKnownData.delete(key));
+    const keys = Array.from(this.lastKnownData.keys()).filter((key) =>
+      key.startsWith(orderId)
+    );
+    keys.forEach((key) => this.lastKnownData.delete(key));
 
     this.send({
-      type: 'unsubscribe',
-      orderId: orderId
+      type: "unsubscribe",
+      orderId: orderId,
     });
   }
 
   // Enhanced disconnect
   disconnect() {
-    console.log('📡 Disconnecting enhanced driver tracking service');
-    
+    console.log("📡 Disconnecting enhanced driver tracking service");
+
     this.stopHeartbeat();
     this.stopRouteUpdates();
     this.subscriptions.clear();
@@ -476,67 +588,14 @@ class EnhancedDriverTrackingService {
     this.etaListeners.clear();
     this.statusListeners.clear();
     this.routeListeners.clear();
-    
+
     if (this.ws) {
-      this.ws.close(1000, 'Client disconnect');
+      this.ws.close(1000, "Client disconnect");
       this.ws = null;
     }
-    
+
     this.isConnected = false;
   }
-
-  // Enhanced mock data with Google API integration
-  async generateEnhancedMockUpdate(orderId, userLocation) {
-    if (!this.isConnected) return;
-
-    // Generate mock driver location around Lagos
-    const baseLat = 6.5244;
-    const baseLng = 3.3792;
-    
-    const mockDriverLocation = {
-      latitude: baseLat + (Math.random() - 0.5) * 0.01,
-      longitude: baseLng + (Math.random() - 0.5) * 0.01,
-      bearing: Math.random() * 360,
-      speed: Math.random() * 60,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Notify location listeners
-    this.notifyLocationListeners(orderId, mockDriverLocation);
-
-    // If we have user location, calculate real route with Google API
-    if (userLocation) {
-      try {
-        const etaData = await googleRoutesService.getETAWithTraffic(mockDriverLocation, userLocation);
-        this.notifyETAListeners(orderId, etaData);
-
-        // If we have route data, notify route listeners
-        if (etaData.route && etaData.route.encodedPolyline) {
-          const routeCoordinates = googleRoutesService.decodePolyline(etaData.route.encodedPolyline);
-          this.notifyRouteListeners(orderId, {
-            coordinates: routeCoordinates,
-            distance: etaData.distance,
-            duration: etaData.estimatedMinutes,
-            traffic: etaData.status
-          });
-        }
-      } catch (error) {
-        console.error('❌ Error in enhanced mock update:', error);
-      }
-    }
-  }
-
-  // startEnhancedMockUpdates(orderId, userLocation, interval = 5000) {
-  //   console.log(`🧪 Starting enhanced mock updates for order ${orderId}`);
-    
-  //   const mockInterval = setInterval(async () => {
-  //     if (this.locationListeners.has(orderId)) {
-  //       await this.generateEnhancedMockUpdate(orderId, userLocation);
-  //     } else {
-  //       clearInterval(mockInterval);
-  //     }
-  //   }, interval);
-  // }
 
   // Get enhanced connection status
   getConnectionStatus() {
@@ -545,7 +604,7 @@ class EnhancedDriverTrackingService {
       reconnectAttempts: this.reconnectAttempts,
       activeSubscriptions: this.subscriptions.size,
       routeUpdatesActive: !!this.routeUpdateInterval,
-      googleRoutesCache: googleRoutesService.getCacheStats()
+      googleRoutesCache: googleRoutesService.getCacheStats(),
     };
   }
 }

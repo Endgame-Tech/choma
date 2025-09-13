@@ -25,15 +25,19 @@ class SocketService {
             : [
                 "http://localhost:3000",
                 "http://localhost:3001",
-                "http://localhost:3002", // Driver React app
+                "http://localhost:3002",
+                "http://localhost:3004", // Driver React app                
                 "http://localhost:5173",
                 "http://localhost:8081",
+                "http://10.226.105.28:3002", // Driver app connecting to remote backend
+                "http://10.226.105.28:3004", // Driver app connecting to remote backend
+                "*", // Allow all origins in development (less secure but fixes CORS)
               ],
         methods: ["GET", "POST"],
         credentials: true,
       },
       path: "/socket.io",
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"], // Try polling first, then websocket
     });
 
     this.io.use(async (socket, next) => {
@@ -160,12 +164,14 @@ class SocketService {
       try {
         const { latitude, longitude, bearing, speed, accuracy } = data;
         
+        console.log(`🚗 Raw location update from driver ${driverId}:`, data);
+        
         if (!latitude || !longitude) {
           console.log('❌ Invalid location data received from driver:', driverId);
           return;
         }
 
-        console.log(`📍 Location update from driver ${driverId}:`, { latitude, longitude });
+        console.log(`📍 Valid location update from driver ${driverId}:`, { latitude, longitude });
 
         // Update driver location in database
         const Driver = require('../models/Driver');

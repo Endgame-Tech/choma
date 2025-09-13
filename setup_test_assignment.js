@@ -39,7 +39,7 @@ async function setupTestAssignment() {
         rating: 4.7,
         currentLocation: {
           type: 'Point',
-          coordinates: [7.4914, 9.0579], // Abuja coordinates
+          coordinates: [7.4914, 9.0579], // Abuja coordinates (longitude, latitude)
           lastUpdated: new Date()
         }
       });
@@ -50,7 +50,7 @@ async function setupTestAssignment() {
       // Update location to Abuja
       driver.currentLocation = {
         type: 'Point',
-        coordinates: [7.4914, 9.0579], // Abuja coordinates  
+        coordinates: [7.4914, 9.0579], // Abuja coordinates (longitude, latitude)
         lastUpdated: new Date()
       };
       await driver.save();

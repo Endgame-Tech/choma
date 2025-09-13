@@ -135,7 +135,7 @@ const corsOptions = {
         process.env.CHEF_URL,
         process.env.DRIVER_URL,
         process.env.API_URL,
-      ].filter(Boolean); // Remove any undefined values
+      ].filter(Boolean); // Remove any undefined values 
 
       allowedOrigins.push(...productionOrigins);
 

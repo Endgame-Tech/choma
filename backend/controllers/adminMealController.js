@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const MealPlan = require("../models/MealPlan");
-const DailyMeal = require("../models/DailyMeal");
-const Meal = require("../models/DailyMeal"); // Updated model (DailyMeal is now Meal)
+const Meal = require("../models/DailyMeal");
 const MealPlanAssignment = require("../models/MealPlanAssignment");
 const Subscription = require("../models/Subscription");
 const {
@@ -29,7 +28,7 @@ async function processDailyMeals(weeklyMeals, mealPlanId, mealImages = {}) {
         ) {
           try {
             // Check if this daily meal already exists for this combination
-            const existingMeal = await DailyMeal.findOne({
+            const existingMeal = await Meal.findOne({
               assignedMealPlan: mealPlanId,
               weekNumber: weekNumber,
               dayOfWeek: day,
@@ -65,7 +64,7 @@ async function processDailyMeals(weeklyMeals, mealPlanId, mealImages = {}) {
               savedMeal = await existingMeal.save();
             } else {
               // Create new meal
-              const dailyMeal = new DailyMeal(mealData);
+              const dailyMeal = new Meal(mealData);
               savedMeal = await dailyMeal.save();
             }
 
@@ -373,7 +372,7 @@ exports.updateMealPlan = async (req, res) => {
       updates.weeklyMeals = structuredWeeklyMeals;
 
       // Remove old daily meals associated with this specific meal plan
-      await DailyMeal.deleteMany({ assignedMealPlan: id });
+      await Meal.deleteMany({ assignedMealPlan: id });
 
       // Create/update daily meals for the new structure
       const dailyMeals = await processDailyMeals(
@@ -547,7 +546,7 @@ exports.getMealPlanAnalytics = async (req, res) => {
     ]);
 
     // Get popular meal types
-    const mealTypeStats = await DailyMeal.aggregate([
+    const mealTypeStats = await Meal.aggregate([
       {
         $group: {
           _id: "$mealType",
@@ -582,7 +581,7 @@ exports.getMealPlanAnalytics = async (req, res) => {
         priceRanges,
         totalPlans: await MealPlan.countDocuments(),
         activePlans: await MealPlan.countDocuments({ isActive: true }),
-        totalMeals: await DailyMeal.countDocuments(),
+        totalMeals: await Meal.countDocuments(),
       },
     });
   } catch (err) {
@@ -748,7 +747,7 @@ exports.getDailyMealsForPlan = async (req, res) => {
     if (day) query.dayOfWeek = day;
     if (mealType) query.mealType = mealType;
 
-    const dailyMeals = await DailyMeal.find(query)
+    const dailyMeals = await Meal.find(query)
       .populate("assignedMealPlan", "planName")
       .sort({ weekNumber: 1, dayOfWeek: 1, mealType: 1 });
 
@@ -801,7 +800,7 @@ exports.updateDailyMeal = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    const dailyMeal = await DailyMeal.findByIdAndUpdate(
+    const dailyMeal = await Meal.findByIdAndUpdate(
       id,
       { ...updates, updatedAt: new Date() },
       { new: true, runValidators: true }
@@ -834,7 +833,7 @@ exports.deleteDailyMeal = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const dailyMeal = await DailyMeal.findByIdAndDelete(id);
+    const dailyMeal = await Meal.findByIdAndDelete(id);
 
     if (!dailyMeal) {
       return res.status(404).json({
@@ -888,13 +887,13 @@ exports.getAllDailyMeals = async (req, res) => {
     if (weekNumber) query.weekNumber = parseInt(weekNumber);
     if (mealPlanId) query.assignedMealPlan = mealPlanId;
 
-    const dailyMeals = await DailyMeal.find(query)
+    const dailyMeals = await Meal.find(query)
       .populate("assignedMealPlan", "planName")
       .sort({ weekNumber: 1, dayOfWeek: 1, mealType: 1, createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const totalMeals = await DailyMeal.countDocuments(query);
+    const totalMeals = await Meal.countDocuments(query);
 
     res.json({
       success: true,
@@ -1598,6 +1597,7 @@ exports.getMealPlanAssignments = async (req, res) => {
 
 exports.assignMealToPlan = async (req, res) => {
   try {
+    console.log("=== assignMealToPlan START ===");
     const { id } = req.params; // meal plan id
     const {
       mealIds,
@@ -1609,6 +1609,9 @@ exports.assignMealToPlan = async (req, res) => {
       mealTime,
       notes,
     } = req.body;
+    
+    console.log("Request params:", { id });
+    console.log("Request body:", req.body);
 
     // Validate inputs
     if (
@@ -1628,7 +1631,9 @@ exports.assignMealToPlan = async (req, res) => {
     }
 
     // Verify meal plan exists
+    console.log("Finding meal plan with ID:", id);
     const mealPlan = await MealPlan.findById(id);
+    console.log("Meal plan found:", !!mealPlan);
     if (!mealPlan) {
       return res.status(404).json({
         success: false,
@@ -1637,7 +1642,9 @@ exports.assignMealToPlan = async (req, res) => {
     }
 
     // Verify all meals exist
+    console.log("Finding meals with IDs:", mealIds);
     const meals = await Meal.find({ _id: { $in: mealIds } });
+    console.log("Meals found:", meals.length, "Expected:", mealIds.length);
     if (meals.length !== mealIds.length) {
       return res.status(404).json({
         success: false,
@@ -1705,10 +1712,10 @@ exports.assignMealToPlan = async (req, res) => {
       });
     }
 
-    // Recalculate the total price of the meal plan
-    if (mealPlan) {
-      await mealPlan.updateCalculatedFields();
-    }
+    // Recalculate the total price of the meal plan - temporarily disabled for debugging
+    // if (mealPlan) {
+    //   await mealPlan.updateCalculatedFields();
+    // }
 
     res.json({
       success: true,
@@ -1718,10 +1725,18 @@ exports.assignMealToPlan = async (req, res) => {
     });
   } catch (error) {
     console.error("Assign meal to plan error:", error);
+    console.error("Request body:", req.body);
+    console.error("Request params:", req.params);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
       message: "Failed to assign meal to plan",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      details: process.env.NODE_ENV === "development" ? {
+        stack: error.stack,
+        body: req.body,
+        params: req.params
+      } : undefined,
     });
   }
 };

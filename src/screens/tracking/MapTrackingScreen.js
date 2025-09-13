@@ -190,10 +190,13 @@ const MapTrackingScreen = ({ route, navigation }) => {
         setTrackingData(statusData);
       });
 
-      // Start enhanced mock updates for testing (can be removed in production)
-      // if (process.env.NODE_ENV === 'development') {
-      //   enhancedDriverTrackingService.startEnhancedMockUpdates(orderId, userLocation);
-      // }
+      // Subscribe to route updates
+      enhancedDriverTrackingService.subscribeToRoute(orderId, (routeData) => {
+        console.log('🗺️ Route update:', routeData);
+        if (routeData.coordinates && routeData.coordinates.length > 0) {
+          setRouteCoordinates(routeData.coordinates);
+        }
+      });
 
     } catch (error) {
       console.error('❌ Error starting enhanced driver tracking:', error);
