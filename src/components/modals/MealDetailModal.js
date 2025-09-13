@@ -117,31 +117,39 @@ const MealDetailModal = ({
                 style={styles(colors).mealImage}
                 resizeMode="cover"
               />
-              
+
               {/* Title Badge at Bottom */}
               <View style={styles(colors).titleBadge}>
                 <Text style={styles(colors).mealTitle}>
-                  {currentMeal.name || currentMeal.title || "BreakFast"}
+                  {currentMeal.customTitle ||
+                    currentMeal.name ||
+                    currentMeal.title ||
+                    "Meal"}
                 </Text>
               </View>
             </View>
 
             {/* Dark Content Area - Overlaying Image */}
             <View style={styles(colors).ContentContainer}>
-              <ScrollView 
+              <ScrollView
                 style={styles(colors).scrollableContent}
                 showsVerticalScrollIndicator={false}
               >
                 {/* Meal Name */}
                 <Text style={styles(colors).mealNameTitle}>
-                  {currentMeal.name || currentMeal.title || "BreakFast"}
+                  {currentMeal.customTitle ||
+                    currentMeal.name ||
+                    currentMeal.title ||
+                    "Meal"}
                 </Text>
 
                 {/* Description Section */}
                 <View style={styles(colors).descriptionSection}>
-                  <Text style={styles(colors).descriptionTitle}>Description</Text>
+                  <Text style={styles(colors).descriptionTitle}>
+                    Description
+                  </Text>
                   <Text style={styles(colors).description}>
-                    {currentMeal.description || 
+                    {currentMeal.description ||
                       "Experience the authentic taste of Nigeria with our carefully crafted meals. From Jollof rice to Suya, we bring your favorite local dishes right to you in under 30 minutes."}
                   </Text>
                 </View>
@@ -152,39 +160,29 @@ const MealDetailModal = ({
                   <View style={styles(colors).statsGrid}>
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>
-                        {formatNutrition(
-                          currentMeal.protein || currentMeal.nutrition?.protein || "15"
-                        )}k g
+                        {formatNutrition(currentMeal.nutrition?.protein || "0")}{" "}
+                        g
                       </Text>
                       <Text style={styles(colors).statLabel}>Protein</Text>
                     </View>
 
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>
-                        {formatNutrition(
-                          currentMeal.carbs ||
-                            currentMeal.nutrition?.carbs ||
-                            currentMeal.nutrition?.carbohydrates ||
-                            "600"
-                        )} g
+                        {formatNutrition(currentMeal.nutrition?.carbs || "0")} g
                       </Text>
                       <Text style={styles(colors).statLabel}>Carbs</Text>
                     </View>
 
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>
-                        {formatNutrition(
-                          currentMeal.fat || currentMeal.nutrition?.fat || "20"
-                        )} g
+                        {formatNutrition(currentMeal.nutrition?.fat || "0")} g
                       </Text>
                       <Text style={styles(colors).statLabel}>Fat</Text>
                     </View>
 
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>
-                        {formatNutrition(
-                          currentMeal.fiber || currentMeal.nutrition?.fiber || "19"
-                        )} g
+                        {formatNutrition(currentMeal.nutrition?.fiber || "0")} g
                       </Text>
                       <Text style={styles(colors).statLabel}>Fiber</Text>
                     </View>
@@ -200,7 +198,7 @@ const MealDetailModal = ({
                 style={styles(colors).closeButton}
                 onPress={onClose}
               >
-                <Ionicons name="close" size={24} color="#000" />
+                <Ionicons name="close" size={34} color="#000" />
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -346,10 +344,10 @@ const styles = (colors) =>
       position: "absolute",
       bottom: 30,
       left: "50%",
-      marginLeft: -25,
-      width: 50,
-      height: 50,
-      borderRadius: 25,
+      marginLeft: "-5%",
+      width: 70,
+      height: 70,
+      borderRadius: 75,
       backgroundColor: "#FFA726",
       justifyContent: "center",
       alignItems: "center",

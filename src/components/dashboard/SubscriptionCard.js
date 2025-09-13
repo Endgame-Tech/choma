@@ -22,16 +22,17 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
   const [loading, setLoading] = useState(true);
 
   // Debug subscription data structure
-  if (subscription && subscription._id) {
-    console.log("🔍 SubscriptionCard received subscription data:", {
-      id: subscription._id,
-      status: subscription.status,
-      startDate: subscription.startDate,
-      createdAt: subscription.createdAt,
-      mealPlanId: subscription.mealPlanId,
-      planName: subscription.planName,
-    });
-  }
+  // if (subscription && subscription._id) {
+  //   console.log("🔍 SubscriptionCard received subscription data:", {
+  //     id: subscription._id,
+  //     status: subscription.status,
+  //     startDate: subscription.startDate,
+  //     createdAt: subscription.createdAt,
+  //     mealPlanId: subscription.mealPlanId,
+  //     planName: subscription.planName,
+  //     firstDeliveryCompleted: subscription.firstDeliveryCompleted,
+  //   });
+  // }
 
   useEffect(() => {
     if (subscription?._id) {
@@ -148,26 +149,58 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       startDate.getDate()
     );
 
-    // Check if first delivery has been completed
-    // Only start counting days after the first delivery is marked as delivered
-    const hasFirstDeliveryCompleted = subscription.firstDeliveryCompleted === true || 
-                                      subscription.status === "active";
-    
-    if (!hasFirstDeliveryCompleted) {
-      // If first delivery hasn't been completed, don't show today's meal yet
-      console.log("🚫 First delivery not completed yet, not showing today's meal");
+    // Check if subscription is valid and should show meals
+    // Show meals by default unless subscription is explicitly inactive
+    const inactiveStatuses = ["cancelled", "expired", "suspended", "deleted"];
+    const shouldShowMeals = !inactiveStatuses.includes(
+      subscription.status?.toLowerCase()
+    );
+
+    // Check if first delivery has been completed to determine if subscription is "active"
+    const isSubscriptionActive =
+      subscription.firstDeliveryCompleted === true ||
+      subscription.status === "active";
+
+    console.log("🍽️ Meal display check:", {
+      subscriptionStatus: subscription.status,
+      firstDeliveryCompleted: subscription.firstDeliveryCompleted,
+      shouldShowMeals,
+      isSubscriptionActive,
+      hasValidMealPlan: !!subscription.mealPlanId,
+    });
+
+    if (!shouldShowMeals) {
+      console.log(
+        "🚫 Subscription is inactive, not showing meals. Status:",
+        subscription.status
+      );
       return null;
     }
 
+    // Calculate days since subscription start
     const daysDiff = Math.max(
       0,
       Math.floor(
         (todayNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
       )
     );
-    const currentDay = Math.max(1, daysDiff + 1);
-    const currentWeek = Math.max(1, Math.ceil(currentDay / 7));
-    const dayInWeek = Math.max(1, ((currentDay - 1) % 7) + 1);
+
+    // Pause the day counter if first delivery hasn't been completed
+    let currentDay, currentWeek, dayInWeek;
+
+    if (!isSubscriptionActive) {
+      // Subscription is paused - show Day 1, Week 1 until first delivery
+      currentDay = 1;
+      currentWeek = 1;
+      dayInWeek = 1;
+      console.log("⏸️ Subscription paused - waiting for first delivery");
+    } else {
+      // Normal progression after first delivery
+      currentDay = Math.max(1, daysDiff + 1);
+      currentWeek = Math.max(1, Math.ceil(currentDay / 7));
+      dayInWeek = Math.max(1, ((currentDay - 1) % 7) + 1);
+      console.log("▶️ Subscription active - normal day progression");
+    }
 
     // Try to get meal data from mealPlanId if available
     const mealPlan = subscription.mealPlanId;
@@ -217,7 +250,31 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
         assignment,
         hasImageUrl: !!assignment?.imageUrl,
         imageUrl: assignment?.imageUrl,
+        weeklyMealsKeys: Object.keys(weeklyMeals),
+        currentWeekMealsKeys: Object.keys(currentWeekMeals),
+        todaysMealsKeys: Object.keys(todaysMeals),
       });
+
+      // If no weekly meals structure, try to get from assignments array
+      if (!assignment && mealPlan?.assignments) {
+        console.log("🔍 Trying assignments array fallback...");
+        const assignmentsList = mealPlan.assignments;
+        // Find assignment that matches current day and meal type
+        const foundAssignment = assignmentsList.find(
+          (a) =>
+            a.week === currentWeek &&
+            a.day === dayName &&
+            a.mealType?.toLowerCase() === mealType.toLowerCase()
+        );
+
+        if (foundAssignment) {
+          console.log(
+            `✅ Found assignment in assignments array:`,
+            foundAssignment
+          );
+          return foundAssignment;
+        }
+      }
 
       return assignment;
     };
@@ -293,7 +350,6 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       startDate: subscription.startDate,
       createdAt: subscription.createdAt,
       calculatedStartDate: startDate.toISOString(),
-      hasFirstDeliveryCompleted,
       subscriptionStatus: subscription.status,
       daysDiff,
       currentDay,
@@ -304,6 +360,12 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       currentMealName,
       currentMealCalories,
       planName,
+      hasMealPlan: !!mealPlan,
+      mealPlanStructure: {
+        hasWeeklyMeals: !!mealPlan?.weeklyMeals,
+        hasAssignments: !!mealPlan?.assignments,
+        assignmentsLength: mealPlan?.assignments?.length || 0,
+      },
     });
 
     return {
@@ -371,13 +433,27 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
         (todayNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
       )
     );
-    const currentDay = Math.max(1, daysDiff + 1);
 
-    // Estimate completed meals based on current day (3 meals per day)
-    const estimatedCompleted = Math.min(
-      Math.floor((currentDay - 1) * 3),
-      totalMeals
-    );
+    // Check if subscription is active (first delivery completed)
+    const isSubscriptionActive =
+      subscription.firstDeliveryCompleted === true ||
+      subscription.status === "active";
+
+    let currentDay, estimatedCompleted;
+
+    if (!isSubscriptionActive) {
+      // Subscription is paused - no progress until first delivery
+      currentDay = 1;
+      estimatedCompleted = 0;
+    } else {
+      // Normal progression after first delivery
+      currentDay = Math.max(1, daysDiff + 1);
+      estimatedCompleted = Math.min(
+        Math.floor((currentDay - 1) * 3),
+        totalMeals
+      );
+    }
+
     const actualCompleted = Math.max(completedMeals, estimatedCompleted);
 
     const percentage =
@@ -402,6 +478,15 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
   };
 
   const getStatusColor = (status) => {
+    // Check if subscription is waiting for first delivery
+    const isSubscriptionActive =
+      subscription.firstDeliveryCompleted === true ||
+      subscription.status === "active";
+
+    if (!isSubscriptionActive) {
+      return "#FFA500"; // Orange color for waiting/paused state
+    }
+
     switch (status) {
       case "preparing":
         return "#FF9500";
@@ -419,6 +504,15 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
   };
 
   const getStatusText = (status) => {
+    // Check if subscription is waiting for first delivery
+    const isSubscriptionActive =
+      subscription.firstDeliveryCompleted === true ||
+      subscription.status === "active";
+
+    if (!isSubscriptionActive) {
+      return "Waiting for first delivery";
+    }
+
     switch (status) {
       case "preparing":
         return "Chef is cooking";
@@ -592,8 +686,18 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
         {/* Progress Indicator */}
         <View style={styles.progressSection}>
           <Text style={styles.progressText}>
-            {calculateProgress().completed} of {calculateProgress().total} meals
-            delivered
+            {(() => {
+              const progress = calculateProgress();
+              const isActive =
+                subscription.firstDeliveryCompleted === true ||
+                subscription.status === "active";
+
+              if (!isActive) {
+                return `Subscription paused - ${progress.total} meals planned`;
+              }
+
+              return `${progress.completed} of ${progress.total} meals delivered`;
+            })()}
           </Text>
           <View style={styles.progressBar}>
             <View

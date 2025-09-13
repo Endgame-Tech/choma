@@ -206,10 +206,45 @@ const OrdersScreen = ({ navigation }) => {
         allOrders = [...allOrders, ...subscriptionOrders];
       }
 
-      setOrders(allOrders);
+      // Deduplicate orders by _id to prevent duplicate cards with same keys
+      // Keep the order with the most recent status (prioritize delegationStatus over regular status)
+      const deduplicatedOrders = [];
+      const seenIds = new Set();
 
-      // Update tab counts based on real data - check delegationStatus first (chef updates), then fallback
-      const activeCounts = allOrders.filter((order) => {
+      // Process orders in reverse to keep later entries (which might have more recent status)
+      [...allOrders].reverse().forEach(order => {
+        const orderId = order._id || order.id;
+        
+        if (!seenIds.has(orderId)) {
+          seenIds.add(orderId);
+          deduplicatedOrders.unshift(order); // Add to beginning to maintain original order
+        } else {
+          // If we've seen this order before, check if current order has more recent status
+          const existingIndex = deduplicatedOrders.findIndex(o => (o._id || o.id) === orderId);
+          if (existingIndex !== -1) {
+            const existingOrder = deduplicatedOrders[existingIndex];
+            const currentStatus = order.delegationStatus || order.status || order.orderStatus;
+            const existingStatus = existingOrder.delegationStatus || existingOrder.status || existingOrder.orderStatus;
+            
+            // If current order has delegationStatus and existing doesn't, prefer current
+            if (order.delegationStatus && !existingOrder.delegationStatus) {
+              console.log(`🔄 Replacing order ${orderId} with updated status:`, {
+                oldStatus: existingStatus,
+                newStatus: currentStatus,
+                hasDelegationStatus: !!order.delegationStatus
+              });
+              deduplicatedOrders[existingIndex] = order;
+            }
+          }
+        }
+      });
+
+      console.log(`📊 Order deduplication: ${allOrders.length} → ${deduplicatedOrders.length} orders`);
+
+      setOrders(deduplicatedOrders);
+
+      // Update tab counts based on deduplicated data - check delegationStatus first (chef updates), then fallback
+      const activeCounts = deduplicatedOrders.filter((order) => {
         if (!order) return false;
         // Check delegationStatus first (chef status), then fallback to order status
         const status = (
@@ -221,7 +256,7 @@ const OrdersScreen = ({ navigation }) => {
         return status && !["cancelled", "delivered"].includes(status);
       }).length;
 
-      const completedCount = allOrders.filter((order) => {
+      const completedCount = deduplicatedOrders.filter((order) => {
         if (!order) return false;
         // Check delegationStatus first (chef status), then fallback to order status
         const status = (
@@ -233,7 +268,7 @@ const OrdersScreen = ({ navigation }) => {
         return status && ["delivered"].includes(status);
       }).length;
 
-      const cancelledCount = allOrders.filter((order) => {
+      const cancelledCount = deduplicatedOrders.filter((order) => {
         if (!order) return false;
         // Check delegationStatus first (chef status), then fallback to order status
         const status = (
@@ -252,7 +287,7 @@ const OrdersScreen = ({ navigation }) => {
       ]);
 
       console.log(
-        `✅ Loaded ${allOrders.length} total orders (${activeCounts} active)`
+        `✅ Loaded ${deduplicatedOrders.length} total orders (${activeCounts} active)`
       );
     } catch (err) {
       setError("Unable to connect to server");

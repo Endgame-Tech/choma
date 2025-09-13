@@ -16,7 +16,7 @@ import { useTheme } from "../styles/theme";
 // import { THEME } from '../utils/colors';
 
 // Import all screen components
-import HomeScreen from "../screens/home/HomeScreen";
+import HomeScreen from "../screens/home/HomeScreen1";
 import WelcomeScreen from "../screens/home/WelcomeScreen";
 
 // Removed SwipeableTabNavigator - using default navigation

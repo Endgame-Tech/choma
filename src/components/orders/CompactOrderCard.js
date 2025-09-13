@@ -9,6 +9,7 @@ import {
   Modal,
   ScrollView,
   Animated,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
@@ -26,7 +27,8 @@ const CompactOrderCard = ({
 }) => {
   const { colors } = useTheme();
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
-  const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
+  const [confirmationModalVisible, setConfirmationModalVisible] =
+    useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [actualConfirmationCode, setActualConfirmationCode] = useState(null);
   const [loadingCode, setLoadingCode] = useState(false);
@@ -55,8 +57,8 @@ const CompactOrderCard = ({
 
   const getMealPlanName = () => {
     return (
-      order?.orderItems?.planName || 
-      order?.mealPlan?.name || 
+      order?.orderItems?.planName ||
+      order?.mealPlan?.name ||
       order?.subscription?.planName ||
       "Meal Plan"
     );
@@ -67,11 +69,11 @@ const CompactOrderCard = ({
     if (actualConfirmationCode) {
       return actualConfirmationCode;
     }
-    
+
     setLoadingCode(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const code = getConfirmationCode();
       if (code && code !== "PENDING") {
         setActualConfirmationCode(code);
@@ -81,7 +83,7 @@ const CompactOrderCard = ({
     } catch (error) {
       console.log("Could not fetch driver assignment:", error);
     }
-    
+
     setLoadingCode(false);
     return "PENDING";
   };
@@ -90,33 +92,37 @@ const CompactOrderCard = ({
     if (actualConfirmationCode) {
       return actualConfirmationCode;
     }
-    
+
     if (order?.driverAssignment?.confirmationCode) {
       return order.driverAssignment.confirmationCode;
     }
-    
+
     if (order?.confirmationCode) {
       return order.confirmationCode;
     }
-    
+
     if (order?.deliveryCode) {
       return order.deliveryCode;
     }
-    
+
     if (order?.pickupCode) {
       return order.pickupCode;
     }
-    
+
     if (order?.orderNumber) {
       const orderNumber = order.orderNumber.toString();
       return orderNumber.slice(-6).toUpperCase();
     }
-    
+
     return "PENDING";
   };
 
   const isOutForDelivery = () => {
-    return order?.orderStatus === "Out for Delivery" || order?.status === "Out for Delivery" || currentStep === 5;
+    return (
+      order?.orderStatus === "Out for Delivery" ||
+      order?.status === "Out for Delivery" ||
+      currentStep === 5
+    );
   };
 
   // Order status steps - same as original
@@ -189,22 +195,22 @@ const CompactOrderCard = ({
       "in progress": 2,
       ready: 3,
       completed: 4,
-      "Completed": 4,
-      "Ready": 3,
-      "Accepted": 2,
-      "Assigned": 1,
+      Completed: 4,
+      Ready: 3,
+      Accepted: 2,
+      Assigned: 1,
       "In Progress": 2,
       "Quality Check": 4,
       "quality check": 4,
       "out for delivery": 5,
       "Out for Delivery": 5,
       delivered: 6,
-      "Delivered": 6,
+      Delivered: 6,
       preparing: 2,
       inprogress: 2,
       "preparing food": 2,
       "food ready": 3,
-      "out_for_delivery": 5,
+      out_for_delivery: 5,
       outfordelivery: 5,
       "not assigned": 0,
       "pending assignment": 0,
@@ -214,20 +220,25 @@ const CompactOrderCard = ({
     const delegationStatus = order?.delegationStatus;
     let rawFinalStatus;
 
-    if (orderStatus === 'Delivered' || orderStatus === 'delivered' || 
-        orderStatus === 'Cancelled' || orderStatus === 'cancelled' ||
-        orderStatus === 'Out for Delivery' || orderStatus === 'out for delivery') {
+    if (
+      orderStatus === "Delivered" ||
+      orderStatus === "delivered" ||
+      orderStatus === "Cancelled" ||
+      orderStatus === "cancelled" ||
+      orderStatus === "Out for Delivery" ||
+      orderStatus === "out for delivery"
+    ) {
       rawFinalStatus = orderStatus;
     } else {
       rawFinalStatus = delegationStatus || orderStatus || "";
     }
-    
+
     let step = statusMap[rawFinalStatus];
     if (step === undefined) {
       const normalizedStatus = rawFinalStatus.toLowerCase();
       step = statusMap[normalizedStatus] || 0;
     }
-    
+
     setCurrentStep(step);
 
     // Animate progress
@@ -242,9 +253,13 @@ const CompactOrderCard = ({
     if (order?.image) return { uri: order.image };
     if (order?.mealPlan?.image) return { uri: order.mealPlan.image };
     if (order?.orderItems?.image) return { uri: order.orderItems.image };
-    
-    const planName = (order?.orderItems?.planName || order?.mealPlan?.name || "").toLowerCase();
-    
+
+    const planName = (
+      order?.orderItems?.planName ||
+      order?.mealPlan?.name ||
+      ""
+    ).toLowerCase();
+
     if (planName.includes("fitfuel") || planName.includes("fit fuel")) {
       return require("../../assets/images/meal-plans/fitfuel.jpg");
     } else if (planName.includes("wellness") || planName.includes("healthy")) {
@@ -254,7 +269,7 @@ const CompactOrderCard = ({
     } else if (planName.includes("family") || planName.includes("healthyfam")) {
       return require("../../assets/images/meal-plans/healthyfam.jpg");
     }
-    
+
     return require("../../assets/images/meal-plans/fitfuel.jpg");
   };
 
@@ -263,20 +278,20 @@ const CompactOrderCard = ({
     const isSubscription = isSubscriptionOrder();
     const isFirst = isFirstDelivery();
     const delivered = currentStep === orderSteps.length - 1;
-    
+
     // Custom messaging for delivered subscription orders (first delivery)
     if (delivered && isSubscription && isFirst) {
       return {
         title: "First Delivery Complete",
         color: "#4CAF50",
-        icon: "checkmark-circle"
+        icon: "checkmark-circle",
       };
     }
-    
+
     return {
       title: currentStepData?.title || "Processing",
       color: currentStepData?.color || "#FF9800",
-      icon: currentStepData?.icon || "time"
+      icon: currentStepData?.icon || "time",
     };
   };
 
@@ -296,7 +311,7 @@ const CompactOrderCard = ({
   const getTimeRemaining = () => {
     const isSubscription = isSubscriptionOrder();
     const isFirst = isFirstDelivery();
-    
+
     if (isDelivered) {
       if (isSubscription && isFirst) {
         return `First delivery completed for ${getMealPlanName()}`;
@@ -310,10 +325,12 @@ const CompactOrderCard = ({
       const estimatedDelivery = getEstimatedDelivery();
       const timeDiff = estimatedDelivery.getTime() - now.getTime();
 
-      if (timeDiff <= 0) return `Your first delivery arriving now for ${getMealPlanName()}`;
+      if (timeDiff <= 0)
+        return `Your first delivery arriving now for ${getMealPlanName()}`;
 
       const minutes = Math.floor(timeDiff / 60000);
-      if (minutes < 60) return `First delivery in ${minutes} min for ${getMealPlanName()}`;
+      if (minutes < 60)
+        return `First delivery in ${minutes} min for ${getMealPlanName()}`;
 
       const hours = Math.floor(minutes / 60);
       const remainingMinutes = minutes % 60;
@@ -407,10 +424,12 @@ const CompactOrderCard = ({
           style={styles(colors).mealImage}
           defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
         />
-        
+
         <View style={styles(colors).mealInfo}>
           <Text style={styles(colors).mealTitle} numberOfLines={1}>
-            {order?.orderItems?.planName || order?.mealPlan?.name || "Delicious Meal"}
+            {order?.orderItems?.planName ||
+              order?.mealPlan?.name ||
+              "Delicious Meal"}
           </Text>
           <Text style={styles(colors).orderNumber}>
             #{order?.orderNumber || order?.id?.slice(-6) || "CHM001"}
@@ -427,7 +446,12 @@ const CompactOrderCard = ({
       {/* Status Section */}
       <View style={styles(colors).statusSection}>
         <View style={styles(colors).statusInfo}>
-          <View style={[styles(colors).statusIcon, { backgroundColor: status.color }]}>
+          <View
+            style={[
+              styles(colors).statusIcon,
+              { backgroundColor: status.color },
+            ]}
+          >
             <Ionicons name={status.icon} size={16} color="white" />
           </View>
           <View style={styles(colors).statusTextContainer}>
@@ -459,7 +483,11 @@ const CompactOrderCard = ({
             style={styles(colors).detailsButton}
             onPress={() => setDetailsModalVisible(true)}
           >
-            <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={colors.primary}
+            />
             <Text style={styles(colors).detailsButtonText}>Details</Text>
           </TouchableOpacity>
         </View>
@@ -480,7 +508,11 @@ const CompactOrderCard = ({
             style={styles(colors).actionButton}
             onPress={() => onTrackDriver?.(order.driver)}
           >
-            <Ionicons name="location-outline" size={16} color={colors.primary} />
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color={colors.primary}
+            />
             <Text style={styles(colors).actionButtonText}>Track</Text>
           </TouchableOpacity>
         )}
@@ -491,7 +523,14 @@ const CompactOrderCard = ({
             onPress={() => onReorder?.(order)}
           >
             <Ionicons name="repeat-outline" size={16} color={colors.success} />
-            <Text style={[styles(colors).actionButtonText, { color: colors.success }]}>Reorder</Text>
+            <Text
+              style={[
+                styles(colors).actionButtonText,
+                { color: colors.success },
+              ]}
+            >
+              Reorder
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -515,26 +554,42 @@ const CompactOrderCard = ({
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles(colors).modalContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles(colors).modalContent}
+              showsVerticalScrollIndicator={false}
+            >
               {/* Subscription Info Banner (if applicable) */}
               {isSubscriptionOrder() && isFirstDelivery() && (
                 <View style={styles(colors).subscriptionBanner}>
                   <View style={styles(colors).subscriptionIcon}>
-                    <Ionicons name="refresh-circle" size={24} color={colors.primary} />
+                    <Ionicons
+                      name="refresh-circle"
+                      size={24}
+                      color={colors.primary}
+                    />
                   </View>
                   <View style={styles(colors).subscriptionInfo}>
                     {isDelivered ? (
                       <>
-                        <Text style={styles(colors).subscriptionTitle}>First Delivery Complete! 🎉</Text>
+                        <Text style={styles(colors).subscriptionTitle}>
+                          First Delivery Complete! 🎉
+                        </Text>
                         <Text style={styles(colors).subscriptionMessage}>
-                          This was your first delivery for {getMealPlanName()}. Your subscription is now active and future deliveries are scheduled automatically.
+                          This was your first delivery for {getMealPlanName()}.
+                          Your subscription is now active and future deliveries
+                          are scheduled automatically.
                         </Text>
                       </>
                     ) : (
                       <>
-                        <Text style={styles(colors).subscriptionTitle}>Your First Delivery 🚀</Text>
+                        <Text style={styles(colors).subscriptionTitle}>
+                          Your First Delivery 🚀
+                        </Text>
                         <Text style={styles(colors).subscriptionMessage}>
-                          This is your activation delivery for {getMealPlanName()}. Once delivered, your subscription will be active and future deliveries will be scheduled automatically.
+                          This is your activation delivery for{" "}
+                          {getMealPlanName()}. Once delivered, your subscription
+                          will be active and future deliveries will be scheduled
+                          automatically.
                         </Text>
                       </>
                     )}
@@ -545,28 +600,35 @@ const CompactOrderCard = ({
               {/* Order Journey */}
               <View style={styles(colors).journeySection}>
                 <Text style={styles(colors).sectionTitle}>
-                  {isSubscriptionOrder() && isFirstDelivery() ? "🚀 First Delivery Journey" : "🚀 Order Journey"}
+                  {isSubscriptionOrder() && isFirstDelivery()
+                    ? "🚀 First Delivery Journey"
+                    : "🚀 Order Journey"}
                 </Text>
                 <Text style={styles(colors).sectionSubtitle}>
-                  {isSubscriptionOrder() && isFirstDelivery() 
-                    ? "Your subscription activation delivery" 
-                    : "Track your delicious meal"
-                  }
+                  {isSubscriptionOrder() && isFirstDelivery()
+                    ? "Your subscription activation delivery"
+                    : "Track your delicious meal"}
                 </Text>
 
                 <View style={styles(colors).progressContainer}>
-                  {orderSteps.map((step, index) => renderProgressStep(step, index))}
+                  {orderSteps.map((step, index) =>
+                    renderProgressStep(step, index)
+                  )}
                 </View>
               </View>
 
               {/* Driver Information */}
               {canTrackDriver && order?.driver && (
                 <View style={styles(colors).driverSection}>
-                  <Text style={styles(colors).sectionTitle}>🏍️ Your Delivery Hero</Text>
+                  <Text style={styles(colors).sectionTitle}>
+                    🏍️ Your Delivery Hero
+                  </Text>
                   <View style={styles(colors).driverInfo}>
                     <Image
                       source={{
-                        uri: order.driver.photo || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100",
+                        uri:
+                          order.driver.photo ||
+                          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100",
                       }}
                       style={styles(colors).driverPhoto}
                     />
@@ -590,27 +652,45 @@ const CompactOrderCard = ({
 
               {/* Order Details */}
               <View style={styles(colors).orderDetailsSection}>
-                <Text style={styles(colors).sectionTitle}>📋 Order Information</Text>
-                
+                <Text style={styles(colors).sectionTitle}>
+                  📋 Order Information
+                </Text>
+
                 <View style={styles(colors).detailsGrid}>
                   <View style={styles(colors).detailCard}>
-                    <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+                    <Ionicons
+                      name="calendar-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
                     <Text style={styles(colors).detailLabel}>Order Date</Text>
                     <Text style={styles(colors).detailValue}>
-                      {new Date(order?.createdAt || Date.now()).toLocaleDateString()}
+                      {new Date(
+                        order?.createdAt || Date.now()
+                      ).toLocaleDateString()}
                     </Text>
                   </View>
 
                   <View style={styles(colors).detailCard}>
-                    <Ionicons name="location-outline" size={16} color={colors.primary} />
-                    <Text style={styles(colors).detailLabel}>Delivery Address</Text>
+                    <Ionicons
+                      name="location-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
+                    <Text style={styles(colors).detailLabel}>
+                      Delivery Address
+                    </Text>
                     <Text style={styles(colors).detailValue} numberOfLines={2}>
                       {order?.deliveryAddress || "Lagos, Nigeria"}
                     </Text>
                   </View>
 
                   <View style={styles(colors).detailCard}>
-                    <Ionicons name="card-outline" size={16} color={colors.primary} />
+                    <Ionicons
+                      name="card-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
                     <Text style={styles(colors).detailLabel}>Payment</Text>
                     <Text style={styles(colors).detailValue}>
                       {order?.paymentMethod || "Card ***1234"}
@@ -618,7 +698,11 @@ const CompactOrderCard = ({
                   </View>
 
                   <View style={styles(colors).detailCard}>
-                    <Ionicons name="checkmark-circle-outline" size={16} color={colors.primary} />
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
                     <Text style={styles(colors).detailLabel}>Status</Text>
                     <Text style={styles(colors).detailValue}>
                       {order?.paymentStatus || "Paid"}
@@ -628,8 +712,14 @@ const CompactOrderCard = ({
 
                 {order?.instructions && (
                   <View style={styles(colors).instructionsCard}>
-                    <Ionicons name="chatbox-outline" size={16} color={colors.primary} />
-                    <Text style={styles(colors).instructionsLabel}>Special Instructions</Text>
+                    <Ionicons
+                      name="chatbox-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
+                    <Text style={styles(colors).instructionsLabel}>
+                      Special Instructions
+                    </Text>
                     <Text style={styles(colors).instructionsText}>
                       {order.instructions}
                     </Text>
@@ -641,27 +731,55 @@ const CompactOrderCard = ({
               <View style={styles(colors).modalActions}>
                 {canCancel && (
                   <TouchableOpacity
-                    style={[styles(colors).modalActionButton, styles(colors).cancelButton]}
+                    style={[
+                      styles(colors).modalActionButton,
+                      styles(colors).cancelButton,
+                    ]}
                     onPress={() => {
                       setDetailsModalVisible(false);
                       onCancelOrder?.(order._id || order.id);
                     }}
                   >
-                    <Ionicons name="close-circle-outline" size={18} color={colors.error} />
-                    <Text style={[styles(colors).modalActionText, { color: colors.error }]}>Cancel Order</Text>
+                    <Ionicons
+                      name="close-circle-outline"
+                      size={18}
+                      color={colors.error}
+                    />
+                    <Text
+                      style={[
+                        styles(colors).modalActionText,
+                        { color: colors.error },
+                      ]}
+                    >
+                      Cancel Order
+                    </Text>
                   </TouchableOpacity>
                 )}
 
                 {isDelivered && (
                   <TouchableOpacity
-                    style={[styles(colors).modalActionButton, styles(colors).rateButton]}
+                    style={[
+                      styles(colors).modalActionButton,
+                      styles(colors).rateButton,
+                    ]}
                     onPress={() => {
                       setDetailsModalVisible(false);
                       onRateOrder?.(order);
                     }}
                   >
-                    <Ionicons name="star-outline" size={18} color={colors.warning} />
-                    <Text style={[styles(colors).modalActionText, { color: colors.warning }]}>Rate & Review</Text>
+                    <Ionicons
+                      name="star-outline"
+                      size={18}
+                      color={colors.warning}
+                    />
+                    <Text
+                      style={[
+                        styles(colors).modalActionText,
+                        { color: colors.warning },
+                      ]}
+                    >
+                      Rate & Review
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -691,7 +809,9 @@ const CompactOrderCard = ({
 
             <View style={styles(colors).modalContent}>
               <View style={styles(colors).codeDisplay}>
-                <Text style={styles(colors).codeLabel}>Show this code to your driver:</Text>
+                <Text style={styles(colors).codeLabel}>
+                  Show this code to your driver:
+                </Text>
                 <View style={styles(colors).codeContainer}>
                   {loadingCode ? (
                     <ActivityIndicator size="large" color={colors.primary} />
@@ -705,13 +825,21 @@ const CompactOrderCard = ({
 
               <View style={styles(colors).instructions}>
                 <View style={styles(colors).instructionRow}>
-                  <Ionicons name="information-circle" size={16} color={colors.primary} />
+                  <Ionicons
+                    name="information-circle"
+                    size={16}
+                    color={colors.primary}
+                  />
                   <Text style={styles(colors).instructionText}>
                     Your driver will ask for this code when delivering your meal
                   </Text>
                 </View>
                 <View style={styles(colors).instructionRow}>
-                  <Ionicons name="shield-checkmark" size={16} color={colors.success} />
+                  <Ionicons
+                    name="shield-checkmark"
+                    size={16}
+                    color={colors.success}
+                  />
                   <Text style={styles(colors).instructionText}>
                     This ensures secure delivery to the right person
                   </Text>

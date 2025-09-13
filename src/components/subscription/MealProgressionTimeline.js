@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,18 +9,27 @@ import {
   RefreshControl,
   ActivityIndicator,
   Dimensions,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../utils/colors";
+import { useTheme } from "../../styles/theme";
 import apiService from "../../services/api";
 
 const { width } = Dimensions.get("window");
 
-const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
+const MealProgressionTimeline = ({
+  subscriptionId,
+  onMealPress,
+  onViewFullTimeline,
+}) => {
+  const { colors, isDark } = useTheme();
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState("vertical"); // 'vertical' or 'horizontal'
+  const timelineRef = useRef(null);
 
   useEffect(() => {
     loadTimeline();
@@ -67,24 +76,46 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
           "days"
         );
         console.log("📋 Grouped timeline:", groupedByDay);
-        setTimeline(groupedByDay);
+
+        // If no timeline data from API, try to generate timeline from subscription details
+        if (groupedByDay.length === 0) {
+          console.log(
+            "🔧 No meal assignments found, trying to generate basic timeline..."
+          );
+          const basicTimelineData = await generateBasicTimeline();
+          setTimeline(basicTimelineData);
+        } else {
+          setTimeline(groupedByDay);
+        }
       } else {
         console.log(
           "⚠️ No timeline data available:",
           result.message || "Unknown error"
         );
-        setTimeline([]);
+        console.log("🔧 Generating basic timeline...");
+        const basicTimelineData = await generateBasicTimeline();
+        setTimeline(basicTimelineData);
       }
     } catch (error) {
       console.error("❌ Error loading meal timeline:", error);
-      // If API fails, try to load mock data for development
-      if (__DEV__) {
-        console.log("🔧 Loading mock timeline data for development");
-        const mockData = getMockTimelineData();
-        const groupedMock = groupMealsByDay(mockData);
-        setTimeline(groupedMock);
-      } else {
-        setTimeline([]);
+
+      // Try to generate basic timeline even on error
+      console.log("🔧 API error, generating basic timeline...");
+      try {
+        const basicTimelineData = await generateBasicTimeline();
+        setTimeline(basicTimelineData);
+      } catch (fallbackError) {
+        console.error("❌ Fallback timeline generation failed:", fallbackError);
+
+        // Final fallback to mock data for development
+        if (__DEV__) {
+          console.log("🔧 Loading mock timeline data for development");
+          const mockData = getMockTimelineData();
+          const groupedMock = groupMealsByDay(mockData);
+          setTimeline(groupedMock);
+        } else {
+          setTimeline([]);
+        }
       }
     } finally {
       setLoading(false);
@@ -177,6 +208,83 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
   };
 
   // Mock data for development/testing
+  // Generate basic timeline from subscription data when API is not available
+  const generateBasicTimeline = async () => {
+    if (!subscriptionId) {
+      console.log("⚠️ No subscription ID for basic timeline generation");
+      return [];
+    }
+
+    try {
+      // Try to get subscription details to generate timeline
+      const subscriptionResult = await apiService.getSubscription(subscriptionId);
+      const subscription = subscriptionResult?.data || {};
+      
+      console.log("🔧 Generating basic timeline from subscription:", subscription);
+
+      const today = new Date();
+      const startDate = new Date(subscription.startDate || subscription.createdAt || today);
+      const basicData = [];
+
+      // Generate 14 days of timeline (2 weeks)
+      for (let i = -3; i < 11; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+
+        const isToday = date.toDateString() === today.toDateString();
+        const isPast = date < today && !isToday;
+        const dayType = isPast ? "past" : isToday ? "current" : "future";
+
+        // Calculate week and day numbers
+        const weekNumber = Math.ceil((i + 4) / 7);
+        const dayOfWeek = ((i + 3) % 7) + 1;
+
+        // Generate meal for each day
+        const mealTypes = ["breakfast", "lunch", "dinner"];
+        const mealTime = mealTypes[i % 3];
+
+        basicData.push({
+          date: date.toISOString(),
+          dayIndex: i,
+          dayName: date.toLocaleDateString("en-US", { weekday: "long" }),
+          weekNumber: weekNumber,
+          dayOfWeek: dayOfWeek,
+          dayType: dayType,
+          mealAssignment: {
+            customTitle: subscription.planName ? `${subscription.planName} ${mealTime}` : `${mealTime} meal`,
+            customDescription: `Week ${weekNumber}, Day ${dayOfWeek}`,
+            mealTime: mealTime,
+            imageUrl: subscription.mealPlanId?.planImageUrl || "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+            meals: [
+              { name: "Protein" },
+              { name: "Vegetables" },
+              { name: "Carbs" },
+            ],
+            weekNumber: weekNumber,
+            dayOfWeek: dayOfWeek,
+            delivered: dayType === "past",
+            deliveryStatus: dayType === "past" ? "delivered" : dayType === "current" ? "ready" : "scheduled",
+          },
+          meals: [
+            {
+              mealTime: mealTime,
+              title: `${mealTime.charAt(0).toUpperCase() + mealTime.slice(1)} Meal`,
+              description: "Fresh ingredients prepared daily",
+              meals: "Protein + Vegetables + Carbs",
+              imageUrl: subscription.mealPlanId?.planImageUrl || "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+            },
+          ],
+        });
+      }
+
+      console.log("✅ Generated basic timeline with", basicData.length, "entries");
+      return basicData;
+    } catch (error) {
+      console.error("❌ Error generating basic timeline:", error);
+      return getMockTimelineData();
+    }
+  };
+
   const getMockTimelineData = () => {
     const today = new Date();
     const mockData = [];
@@ -195,20 +303,10 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
         dayOfWeek: date.getDay() || 7, // Convert Sunday=0 to Sunday=7
         dayType: dayType,
         mealAssignment: {
-          customTitle: `${
-            dayType === "past"
-              ? "Delivered"
-              : dayType === "current"
-              ? "Ready"
-              : "Upcoming"
-          } Meal`,
-          customDescription: `Delicious ${
-            i < 0 ? "delivered" : "prepared"
-          } meal for ${date.toLocaleDateString()}`,
-          mealTime:
-            i % 3 === 0 ? "breakfast" : i % 3 === 1 ? "lunch" : "dinner",
-          imageUrl:
-            "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+          customTitle: `${dayType === "past" ? "Delivered" : dayType === "current" ? "Ready" : "Upcoming"} Meal`,
+          customDescription: `Delicious ${i < 0 ? "delivered" : "prepared"} meal for ${date.toLocaleDateString()}`,
+          mealTime: i % 3 === 0 ? "breakfast" : i % 3 === 1 ? "lunch" : "dinner",
+          imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
           meals: [
             { name: "Grilled Chicken" },
             { name: "Steamed Vegetables" },
@@ -217,22 +315,15 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
           weekNumber: 1,
           dayOfWeek: date.getDay() || 7,
           delivered: dayType === "past",
-          deliveryStatus:
-            dayType === "past"
-              ? "delivered"
-              : dayType === "current"
-              ? "ready"
-              : "scheduled",
+          deliveryStatus: dayType === "past" ? "delivered" : dayType === "current" ? "ready" : "scheduled",
         },
         meals: [
           {
-            mealTime:
-              i % 3 === 0 ? "breakfast" : i % 3 === 1 ? "lunch" : "dinner",
+            mealTime: i % 3 === 0 ? "breakfast" : i % 3 === 1 ? "lunch" : "dinner",
             title: `Meal ${i + 3}`,
             description: "Fresh ingredients prepared daily",
             meals: "Protein + Vegetables + Carbs",
-            imageUrl:
-              "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+            imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
           },
         ],
       });
@@ -245,6 +336,37 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
     setRefreshing(true);
     await loadTimeline();
     setRefreshing(false);
+  };
+
+  const handleViewFullTimeline = () => {
+    if (onViewFullTimeline) {
+      onViewFullTimeline();
+    } else {
+      // Toggle between horizontal and vertical view modes
+      setViewMode(viewMode === "vertical" ? "horizontal" : "vertical");
+    }
+  };
+
+  const scrollToToday = () => {
+    if (timelineRef.current && safeTimeline.length > 0) {
+      const todayIndex = safeTimeline.findIndex(
+        (item) => item.dayType === "current"
+      );
+      if (todayIndex >= 0) {
+        if (viewMode === "horizontal") {
+          timelineRef.current.scrollToIndex({
+            index: todayIndex,
+            animated: true,
+            viewPosition: 0.5,
+          });
+        } else {
+          timelineRef.current.scrollTo({
+            y: todayIndex * 132, // Approximate card height
+            animated: true,
+          });
+        }
+      }
+    }
   };
 
   const formatDate = (date) => {
@@ -384,6 +506,362 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
     };
   };
 
+  const renderTimelineCard = (item, index, isHorizontal = false) => {
+    const dateInfo = formatDate(item.date);
+    const dayType = item.dayType || "future";
+    const mealAssignment = item.mealAssignment || item.meals?.[0] || {};
+    const mealTime =
+      mealAssignment.mealTime || item.meals?.[0]?.mealTime || "lunch";
+    const isCurrentDay = dayType === "current";
+    const isPastDay = dayType === "past";
+
+    if (isHorizontal) {
+      return (
+        <TouchableOpacity
+          key={`${item.date}-${item.dayIndex || index}`}
+          style={[
+            styles.horizontalCard,
+            { backgroundColor: isDark ? "#1A1A1A" : colors.cardBackground },
+          ]}
+          onPress={() => onMealPress && onMealPress(mealAssignment)}
+          activeOpacity={0.8}
+        >
+          {/* Order Status Badge */}
+          <View style={styles.orderStatusContainer}>
+            <Text
+              style={[
+                styles.orderStatusLabel,
+                { color: isDark ? "#FFF" : colors.text },
+              ]}
+            >
+              order Status
+            </Text>
+            <View style={styles.orderCheckBadge}>
+              <Text style={styles.orderCheckText}>Qualitycheck</Text>
+            </View>
+          </View>
+
+          {/* Date and Time Section */}
+          <View style={styles.dateTimeSection}>
+            <View style={styles.sunIcon}>
+              <Ionicons
+                name="sunny"
+                size={32}
+                color={isDark ? "#FFF" : "#FFB347"}
+              />
+            </View>
+            <View style={styles.dateTextContainer}>
+              <Text
+                style={[
+                  styles.todayText,
+                  { color: isDark ? "#FFF" : colors.text },
+                ]}
+              >
+                {dateInfo.primary}
+              </Text>
+              <Text
+                style={[
+                  styles.dayText,
+                  {
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.7)"
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                {dateInfo.secondary}
+              </Text>
+            </View>
+          </View>
+
+          {/* Main Meal Image */}
+          <View style={styles.horizontalImageContainer}>
+            <Image
+              source={{
+                uri:
+                  mealAssignment.imageUrl ||
+                  item.imageUrl ||
+                  item.meals?.[0]?.imageUrl ||
+                  "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+              }}
+              style={styles.horizontalMealImage}
+              defaultSource={require("../../assets/images/daily-meals.jpg")}
+            />
+          </View>
+
+          {/* Meal Info Section */}
+          <View style={styles.mealInfoSection}>
+            <Text
+              style={[
+                styles.mealTypeText,
+                {
+                  color: isDark
+                    ? "rgba(255, 255, 255, 0.7)"
+                    : colors.textSecondary,
+                },
+              ]}
+            >
+              {mealTime || "breakfast"}
+            </Text>
+            <Text
+              style={[
+                styles.mealNameText,
+                { color: isDark ? "#FFF" : colors.text },
+              ]}
+            >
+              {mealAssignment.customTitle ||
+                mealAssignment.title ||
+                item.dayTitle ||
+                "Zobo"}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    // Vertical card layout
+    return (
+      <TouchableOpacity
+        key={`${item.date}-${item.dayIndex || index}`}
+        style={[
+          styles.timelineCard,
+          { backgroundColor: isDark ? "#1A1A1A" : colors.cardBackground },
+        ]}
+        onPress={() => onMealPress && onMealPress(mealAssignment)}
+        activeOpacity={0.8}
+      >
+        {/* Order Status Badge */}
+        <View style={styles.orderStatusContainer}>
+          <Text
+            style={[
+              styles.orderStatusLabel,
+              { color: isDark ? "#FFF" : colors.text },
+            ]}
+          >
+            order Status
+          </Text>
+          <View style={styles.orderCheckBadge}>
+            <Text style={styles.orderCheckText}>Qualitycheck</Text>
+          </View>
+        </View>
+
+        <View style={styles.verticalCardContainer}>
+          {/* Left Stack (Date, Icon, Arrows, Step Indicator) */}
+          <View style={styles.leftStack}>
+            
+            {/* Daytime Indicator Icon */}
+            <View style={styles.sunIcon}>
+              <Ionicons
+                name={getMealTypeIcon(mealTime)}
+                size={28}
+                color={isDark ? "#FFF" : "#FFB347"}
+              />
+            </View>
+            
+            {/* Date */}
+            <Text
+              style={[
+                styles.todayText,
+                { color: isDark ? "#FFF" : colors.text },
+              ]}
+            >
+              {dateInfo.primary}
+            </Text>
+            <Text
+              style={[
+                styles.dayText,
+                {
+                  color: isDark
+                    ? "rgba(255, 255, 255, 0.7)"
+                    : colors.textSecondary,
+                },
+              ]}
+            >
+              {dateInfo.secondary}
+            </Text
+
+            {/* Navigation Arrows */}
+            <View style={styles.arrowContainer}>
+              <Ionicons
+                name="chevron-back"
+                size={20}
+                color={isDark ? "#FFF" : colors.textSecondary}
+              />
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={isDark ? "#FFF" : colors.textSecondary}
+              />
+            </View>
+
+            {/* Step Indicator (Dots) */}
+            <View style={styles.stepIndicator}>
+              <View
+                style={[
+                  styles.stepDot,
+                  { backgroundColor: index === 0 ? COLORS.primary : "#D0D0D0" },
+                ]}
+              />
+              <View
+                style={[
+                  styles.stepDot,
+                  {
+                    backgroundColor:
+                      index === 1 ? COLORS.primary : "#D0D0D0",
+                  },
+                ]}
+              />
+              <View
+                style={[
+                  styles.stepDot,
+                  {
+                    backgroundColor:
+                      index === 2 ? COLORS.primary : "#D0D0D0",
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Right Section (Image and Text) */}
+          <View style={styles.rightSection}>
+            {/* Main Meal Image */}
+            <View style={styles.verticalImageContainer}>
+              <Image
+                source={{
+                  uri:
+                    mealAssignment.imageUrl ||
+                    item.imageUrl ||
+                    item.meals?.[0]?.imageUrl ||
+                    "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+                }}
+                style={styles.verticalMealImage}
+                defaultSource={require("../../assets/images/daily-meals.jpg")}
+              />
+            </View>
+
+            {/* Meal Info Section */}
+            <View style={styles.mealInfoSection}>
+              <Text
+                style={[
+                  styles.mealTypeText,
+                  {
+                    color: isDark
+                      ? "rgba(255, 255, 255, 0.7)"
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                {mealTime || "breakfast"}
+              </Text>
+              <Text
+                style={[
+                  styles.mealNameText,
+                  { color: isDark ? "#FFF" : colors.text },
+                ]}
+              >
+                {mealAssignment.customTitle ||
+                  mealAssignment.title ||
+                  item.dayTitle ||
+                  "Zobo"}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderHorizontalTimeline = () => {
+    return (
+      <FlatList
+        ref={timelineRef}
+        data={safeTimeline}
+        renderItem={({ item, index }) => renderTimelineCard(item, index, true)}
+        keyExtractor={(item, index) => `${item.date}-${item.dayIndex || index}`}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalScrollContainer}
+        ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListFooterComponent={() => (
+          <TouchableOpacity
+            style={[
+              styles.viewMoreHorizontalSection,
+              { backgroundColor: colors.cardBackground },
+            ]}
+            onPress={handleViewFullTimeline}
+          >
+            <LinearGradient
+              colors={[colors.inputBackground, colors.border]}
+              style={styles.viewMoreHorizontalGradient}
+            >
+              <Ionicons name="calendar" size={20} color={COLORS.primary} />
+              <Text
+                style={[styles.viewMoreHorizontalTitle, { color: colors.text }]}
+              >
+                View Full
+              </Text>
+              <Text
+                style={[
+                  styles.viewMoreHorizontalSubtitle,
+                  { color: colors.textSecondary },
+                ]}
+              >
+                Timeline
+              </Text>
+              <Ionicons name="arrow-forward" size={14} color={COLORS.primary} />
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+      />
+    );
+  };
+
+  const renderVerticalTimeline = () => {
+    return (
+      <ScrollView
+        ref={timelineRef}
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {safeTimeline.map((item, index) =>
+          renderTimelineCard(item, index, false)
+        )}
+
+        {/* View more section */}
+        <TouchableOpacity
+          style={[
+            styles.viewMoreSection,
+            { backgroundColor: colors.cardBackground },
+          ]}
+          onPress={handleViewFullTimeline}
+        >
+          <LinearGradient
+            colors={[colors.inputBackground, colors.border]}
+            style={styles.viewMoreGradient}
+          >
+            <Ionicons name="calendar" size={24} color={COLORS.primary} />
+            <Text style={[styles.viewMoreTitle, { color: colors.text }]}>
+              View Full Timeline
+            </Text>
+            <Text
+              style={[styles.viewMoreSubtitle, { color: colors.textSecondary }]}
+            >
+              See all upcoming meals and plan ahead
+            </Text>
+            <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
+          </LinearGradient>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  };
+
   const renderProgressBar = () => {
     if (safeTimeline.length === 0) return null;
 
@@ -394,16 +872,33 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
         : 0;
 
     return (
-      <View style={styles.progressContainer}>
+      <View
+        style={[
+          styles.progressContainer,
+          {
+            backgroundColor: colors.cardBackground,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
         <View style={styles.progressHeader}>
-          <Text style={styles.progressTitle}>Meal Progress</Text>
-          <Text style={styles.progressSummary}>
+          <Text style={[styles.progressTitle, { color: colors.text }]}>
+            Meal Progress
+          </Text>
+          <Text
+            style={[styles.progressSummary, { color: colors.textSecondary }]}
+          >
             {progressInfo.completed} delivered • {progressInfo.remaining}{" "}
             remaining
           </Text>
         </View>
 
-        <View style={styles.progressBar}>
+        <View
+          style={[
+            styles.progressBar,
+            { backgroundColor: colors.inputBackground },
+          ]}
+        >
           <View
             style={[styles.progressFill, { width: `${completedPercentage}%` }]}
           />
@@ -412,7 +907,7 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
         <View style={styles.progressStats}>
           <View style={styles.progressStat}>
             <View style={[styles.statDot, { backgroundColor: "#27AE60" }]} />
-            <Text style={styles.statText}>
+            <Text style={[styles.statText, { color: colors.textSecondary }]}>
               {progressInfo.completed} Delivered
             </Text>
           </View>
@@ -420,13 +915,15 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
           {progressInfo.current > 0 && (
             <View style={styles.progressStat}>
               <View style={[styles.statDot, { backgroundColor: "#F39C12" }]} />
-              <Text style={styles.statText}>{progressInfo.current} Ready</Text>
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>
+                {progressInfo.current} Ready
+              </Text>
             </View>
           )}
 
           <View style={styles.progressStat}>
             <View style={[styles.statDot, { backgroundColor: "#3498DB" }]} />
-            <Text style={styles.statText}>
+            <Text style={[styles.statText, { color: colors.textSecondary }]}>
               {progressInfo.remaining} Upcoming
             </Text>
           </View>
@@ -437,27 +934,38 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading meal timeline...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          Loading meal timeline...
+        </Text>
       </View>
     );
   }
 
   if (safeTimeline.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
+      <View
+        style={[styles.emptyContainer, { backgroundColor: colors.background }]}
+      >
         <LinearGradient
-          colors={["#f8f9fa", "#e9ecef"]}
+          colors={[colors.cardBackground, colors.inputBackground]}
           style={styles.emptyGradient}
         >
           <Ionicons
             name="calendar-outline"
             size={64}
-            color={COLORS.textSecondary}
+            color={colors.textSecondary}
           />
-          <Text style={styles.emptyTitle}>No Meals Scheduled</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            No Meals Scheduled
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
             Your upcoming meal timeline will appear here once you have an active
             subscription
           </Text>
@@ -470,279 +978,50 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.sectionTitle}>Meal Timeline</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter" size={16} color={COLORS.primary} />
-          <Text style={styles.filterText}>7 Days</Text>
-        </TouchableOpacity>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.cardBackground }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Meal Timeline
+        </Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              { backgroundColor: colors.inputBackground },
+            ]}
+            onPress={scrollToToday}
+          >
+            <Ionicons name="today" size={16} color={COLORS.primary} />
+            <Text style={styles.filterText}>Today</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              { backgroundColor: colors.inputBackground, marginLeft: 8 },
+            ]}
+            onPress={() =>
+              setViewMode(viewMode === "vertical" ? "horizontal" : "vertical")
+            }
+          >
+            <Ionicons
+              name={
+                viewMode === "vertical" ? "swap-horizontal" : "swap-vertical"
+              }
+              size={16}
+              color={COLORS.primary}
+            />
+            <Text style={styles.filterText}>
+              {viewMode === "vertical" ? "Horizontal" : "Vertical"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {renderProgressBar()}
 
-      <ScrollView
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {safeTimeline.map((item, index) => {
-          const dateInfo = formatDate(item.date);
-          const dayType = item.dayType || "future";
-          const mealAssignment = item.mealAssignment || item.meals?.[0] || {};
-          const mealTime =
-            mealAssignment.mealTime || item.meals?.[0]?.mealTime || "lunch";
-          const mealColors = getMealTypeColor(mealTime, dayType);
-          const statusInfo = getMealStatusInfo(item);
-          const isCurrentDay = dayType === "current";
-          const isPastDay = dayType === "past";
-
-          return (
-            <TouchableOpacity
-              key={`${item.date}-${item.dayIndex || index}`}
-              style={[
-                styles.timelineCard,
-                isCurrentDay && styles.todayCard,
-                isPastDay && styles.pastCard,
-              ]}
-              onPress={() => onMealPress && onMealPress(mealAssignment)}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={
-                  isCurrentDay
-                    ? mealColors
-                    : isPastDay
-                    ? ["#f8f9fa", "#e9ecef"]
-                    : ["#ffffff", "#ffffff"]
-                }
-                style={[
-                  styles.cardGradient,
-                  isCurrentDay && styles.todayGradient,
-                  isPastDay && styles.pastGradient,
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                {/* Timeline connector */}
-                {index < safeTimeline.length - 1 && (
-                  <View
-                    style={[
-                      styles.connector,
-                      isCurrentDay && styles.activeConnector,
-                    ]}
-                  />
-                )}
-
-                {/* Left side - Date and icon */}
-                <View style={styles.leftSection}>
-                  <View
-                    style={[
-                      styles.iconContainer,
-                      isCurrentDay && styles.todayIcon,
-                      isPastDay && styles.pastIcon,
-                    ]}
-                  >
-                    <Ionicons
-                      name={
-                        isPastDay
-                          ? "checkmark-circle"
-                          : getMealTypeIcon(mealTime)
-                      }
-                      size={24}
-                      color={
-                        isCurrentDay
-                          ? "#FFFFFF"
-                          : isPastDay
-                          ? "#27AE60"
-                          : mealColors[0]
-                      }
-                    />
-                  </View>
-
-                  <View style={styles.dateSection}>
-                    <Text
-                      style={[
-                        styles.primaryDate,
-                        isCurrentDay && styles.todayText,
-                        isPastDay && styles.pastText,
-                      ]}
-                    >
-                      {dateInfo.primary}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.secondaryDate,
-                        isCurrentDay && styles.todaySubText,
-                        isPastDay && styles.pastSubText,
-                      ]}
-                    >
-                      {dateInfo.secondary}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Right side - Meal details */}
-                <View style={styles.rightSection}>
-                  <View style={styles.mealImageContainer}>
-                    <Image
-                      source={{
-                        uri:
-                          mealAssignment.imageUrl ||
-                          item.imageUrl ||
-                          item.meals?.[0]?.imageUrl ||
-                          "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
-                      }}
-                      style={[
-                        styles.mealImage,
-                        isPastDay && styles.pastMealImage,
-                      ]}
-                      defaultSource={require("../../assets/images/daily-meals.jpg")}
-                    />
-                    <View style={styles.imageOverlay}>
-                      <Text style={styles.mealCount}>
-                        {mealAssignment.meals?.length ||
-                          item.meals?.length ||
-                          item.mealCount ||
-                          3}
-                      </Text>
-                    </View>
-
-                    {/* Delivery status overlay */}
-                    {isPastDay && (
-                      <View style={styles.deliveredBadge}>
-                        <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                      </View>
-                    )}
-                  </View>
-
-                  <View style={styles.mealDetailsSection}>
-                    <Text
-                      style={[
-                        styles.mealTitle,
-                        isCurrentDay && styles.todayText,
-                        isPastDay && styles.pastText,
-                      ]}
-                    >
-                      {mealAssignment.customTitle ||
-                        mealAssignment.title ||
-                        item.dayTitle ||
-                        `${
-                          mealTime?.charAt(0).toUpperCase() + mealTime?.slice(1)
-                        } Meal`}
-                    </Text>
-
-                    <Text
-                      style={[
-                        styles.mealDescription,
-                        isCurrentDay && styles.todaySubText,
-                        isPastDay && styles.pastSubText,
-                      ]}
-                    >
-                      {mealAssignment.customDescription ||
-                        mealAssignment.description ||
-                        item.meals?.[0]?.description ||
-                        `Week ${item.weekNumber || 1} • Day ${
-                          item.dayOfWeek || 1
-                        }`}
-                    </Text>
-
-                    {/* Status badges */}
-                    <View style={styles.badgeContainer}>
-                      {/* Delivery status badge */}
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          { backgroundColor: statusInfo.bgColor },
-                        ]}
-                      >
-                        <Ionicons
-                          name={statusInfo.statusIcon}
-                          size={12}
-                          color={statusInfo.statusColor}
-                        />
-                        <Text
-                          style={[
-                            styles.badgeText,
-                            { color: statusInfo.statusColor },
-                          ]}
-                        >
-                          {statusInfo.statusText}
-                        </Text>
-                      </View>
-
-                      {/* Meal count badge */}
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          {
-                            backgroundColor: isCurrentDay
-                              ? "rgba(255,255,255,0.2)"
-                              : isPastDay
-                              ? "rgba(39, 174, 96, 0.1)"
-                              : "#f0f0f0",
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.badgeText,
-                            {
-                              color: isCurrentDay
-                                ? "#FFFFFF"
-                                : isPastDay
-                                ? "#27AE60"
-                                : COLORS.textSecondary,
-                            },
-                          ]}
-                        >
-                          {mealAssignment.meals?.length ||
-                            item.meals?.length ||
-                            item.mealCount ||
-                            3}{" "}
-                          items
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Action arrow */}
-                <View style={styles.actionSection}>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={
-                      isCurrentDay
-                        ? "#FFFFFF"
-                        : isPastDay
-                        ? "#27AE60"
-                        : COLORS.textSecondary
-                    }
-                  />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          );
-        })}
-
-        {/* View more section */}
-        <TouchableOpacity style={styles.viewMoreSection}>
-          <LinearGradient
-            colors={["#f8f9fa", "#e9ecef"]}
-            style={styles.viewMoreGradient}
-          >
-            <Ionicons name="calendar" size={24} color={COLORS.primary} />
-            <Text style={styles.viewMoreTitle}>View Full Timeline</Text>
-            <Text style={styles.viewMoreSubtitle}>
-              See all upcoming meals and plan ahead
-            </Text>
-            <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
-          </LinearGradient>
-        </TouchableOpacity>
-      </ScrollView>
+      {viewMode === "horizontal"
+        ? renderHorizontalTimeline()
+        : renderVerticalTimeline()}
     </View>
   );
 };
@@ -750,7 +1029,6 @@ const MealProgressionTimeline = ({ subscriptionId, onMealPress }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
   },
   header: {
     flexDirection: "row",
@@ -758,10 +1036,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#ffffff",
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   sectionTitle: {
-    color: COLORS.textPrimary,
     fontSize: 24,
     fontWeight: "800",
   },
@@ -771,7 +1051,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: "#f0f0f0",
   },
   filterText: {
     color: COLORS.primary,
@@ -782,9 +1061,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#ffffff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
   },
   progressHeader: {
     flexDirection: "row",
@@ -795,16 +1072,13 @@ const styles = StyleSheet.create({
   progressTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: COLORS.textPrimary,
   },
   progressSummary: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     fontWeight: "500",
   },
   progressBar: {
     height: 4,
-    backgroundColor: "#e9ecef",
     borderRadius: 2,
     marginBottom: 12,
   },
@@ -831,27 +1105,23 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
     fontWeight: "600",
-  },
-  progressText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
   },
   scrollContainer: {
     flex: 1,
     paddingTop: 16,
+  },
+  horizontalScrollContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 60,
-    backgroundColor: "#f8f9fa",
   },
   loadingText: {
-    color: COLORS.textSecondary,
     fontSize: 16,
     marginTop: 16,
     fontWeight: "500",
@@ -870,14 +1140,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    color: COLORS.textPrimary,
     fontSize: 22,
     fontWeight: "700",
     marginTop: 24,
     marginBottom: 8,
   },
   emptySubtitle: {
-    color: COLORS.textSecondary,
     fontSize: 16,
     textAlign: "center",
     lineHeight: 22,
@@ -894,10 +1162,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+
+  // Vertical Timeline Styles
   timelineCard: {
     marginHorizontal: 16,
     marginBottom: 16,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: "hidden",
     position: "relative",
     elevation: 3,
@@ -905,163 +1175,133 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+    paddingTop: 16,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
   },
-  todayCard: {
-    elevation: 6,
-    shadowOpacity: 0.2,
-  },
-  pastCard: {
-    opacity: 0.8,
-  },
-  cardGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 20,
-    minHeight: 100,
-  },
-  todayGradient: {
-    // Gradient colors handled by LinearGradient component
-  },
-  pastGradient: {
-    // Gradient colors handled by LinearGradient component
-  },
-  connector: {
-    position: "absolute",
-    left: 45,
-    top: 100,
-    width: 3,
-    height: 32,
-    backgroundColor: "#e9ecef",
-    zIndex: 1,
-  },
-  activeConnector: {
-    backgroundColor: COLORS.primary,
-  },
-  leftSection: {
-    alignItems: "center",
-    marginRight: 16,
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-    elevation: 2,
+
+  // Horizontal Timeline Styles
+  horizontalCard: {
+    width: width * 0.85,
+    borderRadius: 20,
+    overflow: "hidden",
+    elevation: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 8,
+    paddingTop: 16,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
   },
-  todayIcon: {
-    backgroundColor: "rgba(255,255,255,0.3)",
-  },
-  dateSection: {
+
+  // Order Status Section
+  orderStatusContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 20,
   },
-  primaryDate: {
+  orderStatusLabel: {
     fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
-    marginBottom: 2,
+    fontWeight: "400",
   },
-  secondaryDate: {
-    fontSize: 11,
-    fontWeight: "500",
-    color: COLORS.textSecondary,
+  orderCheckBadge: {
+    backgroundColor: "#8B5CF6",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
   },
-  todayText: {
-    color: "#ffffff",
+  orderCheckText: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "600",
   },
-  todaySubText: {
-    color: "rgba(255,255,255,0.8)",
+
+  // Vertical Card Layout
+  verticalCardContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
-  pastIcon: {
-    backgroundColor: "rgba(39, 174, 96, 0.1)",
-  },
-  pastText: {
-    color: "#27AE60",
-  },
-  pastSubText: {
-    color: "rgba(39, 174, 96, 0.8)",
-  },
-  pastMealImage: {
-    opacity: 0.8,
-  },
-  deliveredBadge: {
-    position: "absolute",
-    top: 4,
-    left: 4,
-    backgroundColor: "#27AE60",
-    borderRadius: 8,
-    padding: 2,
+  leftStack: {
+    marginRight: 20,
+    alignItems: "left",
   },
   rightSection: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
   },
-  mealImageContainer: {
-    position: "relative",
-    marginRight: 16,
-  },
-  mealImage: {
-    width: 80,
-    height: 60,
-    borderRadius: 12,
-  },
-  imageOverlay: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  mealCount: {
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  mealDetailsSection: {
-    flex: 1,
-  },
-  mealTitle: {
-    fontSize: 16,
+
+  // Date and Time Section
+  todayText: {
+    fontSize: 22,
     fontWeight: "700",
-    color: COLORS.textPrimary,
+    marginBottom: 4,
+    // textAlign: "center",
+  },
+  dayText: {
+    fontSize: 12,
+    fontWeight: "400",
+    // textAlign: "center",
+  },
+
+  // Meal Image Containers
+  horizontalImageContainer: {
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  verticalImageContainer: {
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  horizontalMealImage: {
+    width: "100%",
+    height: 180,
+    resizeMode: "cover",
+  },
+  verticalMealImage: {
+    width: "100%",
+    height: 150,
+    resizeMode: "cover",
+  },
+
+  // Meal Info Section
+  mealInfoSection: {
+    alignItems: "flex-start",
+  },
+  mealTypeText: {
+    fontSize: 14,
+    fontWeight: "400",
     marginBottom: 4,
   },
-  mealDescription: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginBottom: 8,
-    fontWeight: "500",
-  },
-  badgeContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 6,
-    marginBottom: 4,
-  },
-  badgeText: {
-    fontSize: 10,
+  mealNameText: {
+    fontSize: 24,
     fontWeight: "600",
-    marginLeft: 2,
   },
-  actionSection: {
-    marginLeft: 12,
+
+  // Navigation Arrows
+  arrowContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: 50,
+    marginVertical: 8,
   },
+
+  // Step Indicator
+  stepIndicator: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: 50,
+    marginTop: 8,
+  },
+  stepDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+
+  // View More Styles
   viewMoreSection: {
     margin: 16,
     borderRadius: 16,
@@ -1077,14 +1317,35 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: "700",
-    color: COLORS.textPrimary,
     marginLeft: 12,
   },
   viewMoreSubtitle: {
     flex: 1,
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginLeft: 12,
+  },
+  viewMoreHorizontalSection: {
+    width: width * 0.3,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginLeft: 12,
+  },
+  viewMoreHorizontalGradient: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    minHeight: 120,
+  },
+  viewMoreHorizontalTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 8,
+    textAlign: "center",
+  },
+  viewMoreHorizontalSubtitle: {
+    fontSize: 10,
+    marginTop: 2,
+    textAlign: "center",
   },
 });
 
