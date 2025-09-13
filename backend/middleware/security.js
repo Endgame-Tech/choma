@@ -19,6 +19,20 @@ const createRateLimiter = (windowMs, max, message, keyPrefix = "rl") => {
     },
     standardHeaders: true,
     legacyHeaders: false,
+    // Skip rate limiting for mobile app requests
+    skip: (req) => {
+      const userAgent = req.get("user-agent") || "";
+      // Skip rate limiting for mobile apps (React Native, Expo, mobile browsers)
+      return (
+        userAgent.includes("ReactNative") ||
+        userAgent.includes("Expo") ||
+        userAgent.includes("okhttp") ||
+        userAgent.includes("Android") ||
+        userAgent.includes("iPhone") ||
+        userAgent.includes("Mobile") ||
+        !req.get("origin")
+      ); // Skip for requests without origin (mobile apps)
+    },
     // Use Redis store for distributed rate limiting in production
     store:
       process.env.NODE_ENV === "production" && cacheService.getClient()

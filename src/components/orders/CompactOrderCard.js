@@ -997,7 +997,8 @@ const styles = (colors) =>
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
-      justifyContent: "flex-end",
+      justifyContent: "center",
+      alignItems: "center",
     },
     modalContainer: {
       backgroundColor: colors.cardBackground,

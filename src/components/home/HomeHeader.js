@@ -46,7 +46,7 @@ const HomeHeader = ({
             source={
               user?.profilePicture
                 ? { uri: user.profilePicture }
-                : require("../../assets/images/default-avatar.png")
+                : require("../../assets/images/avatar.jpg")
             }
             style={styles(colors).avatar}
           />

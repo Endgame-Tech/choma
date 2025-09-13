@@ -52,6 +52,7 @@ import ProfileScreen from "../screens/dashboard/ProfileScreen";
 
 // Delivery screens
 import { TrackingScreen } from "../screens/delivery/TrackingScreen";
+import MapTrackingScreen from "../screens/tracking/MapTrackingScreen";
 
 // Search screens
 import SearchScreen from "../screens/search/SearchScreen";
@@ -556,6 +557,14 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             options={{
               headerShown: true,
               headerTitle: "Track Order",
+            }}
+          />
+          <Stack.Screen
+            name="MapTracking"
+            component={MapTrackingScreen}
+            options={{
+              headerShown: false,
+              gestureEnabled: true,
             }}
           />
           <Stack.Screen

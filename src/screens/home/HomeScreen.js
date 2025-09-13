@@ -233,9 +233,12 @@ const HomeScreen = ({ navigation }) => {
     // Navigate to rating screen
   };
 
-  const handleTrackDriver = (driver) => {
+  const handleTrackDriver = (driver, order) => {
     console.log("Track driver:", driver);
-    // Navigate to driver tracking screen
+    navigation.navigate("MapTracking", { 
+      orderId: order?._id || order?.id, 
+      order: order 
+    });
   };
 
   // Refresh handler

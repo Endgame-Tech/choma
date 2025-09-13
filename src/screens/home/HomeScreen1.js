@@ -2882,11 +2882,18 @@ const styles = (colors) =>
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: "350",
+      fontWeight: "600",
       marginBottom: 15,
       opacity: 0.7,
       color: colors.text,
     },
+    // sectionTitleTodaytext: {
+    //   fontSize: 18,
+    //   fontWeight: "600",
+    //   marginBottom: 15,
+    //   opacity: 0.7,
+    //   color: colors.text,
+    // },
     seeAllText: {
       fontSize: 14,
       color: colors.primary,
@@ -3221,7 +3228,7 @@ const styles = (colors) =>
       fontSize: 16,
       color: colors.textSecondary,
       marginBottom: 15,
-      fontStyle: "italic",
+      // fontStyle: "italic",
     },
     mealsScroll: {
       marginTop: 5,

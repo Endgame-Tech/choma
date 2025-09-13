@@ -443,6 +443,10 @@ const OrdersScreen = ({ navigation }) => {
           onContactSupport={() => navigation.navigate("Support")}
           onTrackDriver={(driver) => {
             console.log("Track driver:", driver);
+            navigation.navigate("MapTracking", { 
+              orderId: order._id || order.id, 
+              order: order 
+            });
           }}
           style={{ marginHorizontal: 0, marginBottom: 20 }}
         />
@@ -509,6 +513,10 @@ const OrdersScreen = ({ navigation }) => {
           onContactSupport={() => navigation.navigate("Support")}
           onTrackDriver={(driver) => {
             console.log("Track driver:", driver);
+            navigation.navigate("MapTracking", { 
+              orderId: order._id || order.id, 
+              order: order 
+            });
           }}
           style={{ marginHorizontal: 0, marginBottom: 20 }}
         />
