@@ -27,7 +27,7 @@ class DriverTrackingService {
         return;
       }
 
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem('authToken');
       if (!token) {
         throw new Error('No authentication token available');
       }
@@ -340,7 +340,7 @@ class DriverTrackingService {
   // Fallback REST API methods for when WebSocket is not available
   async getDriverLocationREST(orderId) {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem('authToken');
       const response = await fetch(`${API_BASE_URL}/api/driver-tracking/${orderId}/location`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -362,7 +362,7 @@ class DriverTrackingService {
 
   async getDriverInfoREST(orderId) {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem('authToken');
       const response = await fetch(`${API_BASE_URL}/api/driver-tracking/${orderId}/driver`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -384,7 +384,7 @@ class DriverTrackingService {
 
   async getETAREST(orderId) {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem('authToken');
       const response = await fetch(`${API_BASE_URL}/api/driver-tracking/${orderId}/eta`, {
         headers: {
           'Authorization': `Bearer ${token}`,

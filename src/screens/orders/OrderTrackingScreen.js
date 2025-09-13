@@ -133,9 +133,14 @@ const OrderTrackingScreen = ({ navigation }) => {
     console.log('Rate order:', order._id);
   };
 
-  const handleTrackDriver = (driver) => {
-    // Handle driver tracking
-    console.log('Track driver:', driver);
+  const handleTrackDriver = (driver, order) => {
+    // Extract driver from driverAssignment if not directly provided
+    const actualDriver = driver || order?.driverAssignment?.driver || order?.driver;
+    console.log('Track driver:', actualDriver);
+    navigation.navigate("MapTracking", { 
+      orderId: order?._id || order?.id, 
+      order: order 
+    });
   };
 
   if (loading) {

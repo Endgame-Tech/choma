@@ -511,20 +511,26 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       {
         icon: "🌅",
         label: "Breakfast",
-        description: dayData.breakfastDescription || dayData.breakfast,
+        name: dayData.breakfast,
+        description: dayData.breakfastDescription,
         image: dayData.breakfastImage,
+        nutrition: dayData.breakfastNutrition,
       },
       {
         icon: "☀️",
         label: "Lunch",
-        description: dayData.lunchDescription || dayData.lunch,
+        name: dayData.lunch,
+        description: dayData.lunchDescription,
         image: dayData.lunchImage,
+        nutrition: dayData.lunchNutrition,
       },
       {
         icon: "🌙",
         label: "Dinner",
-        description: dayData.dinnerDescription || dayData.dinner,
+        name: dayData.dinner,
+        description: dayData.dinnerDescription,
         image: dayData.dinnerImage,
+        nutrition: dayData.dinnerNutrition,
       },
     ];
 
@@ -651,7 +657,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   windowSize={30}
                   nestedScrollEnabled={true}
                 />
-              </View>{" "}
+              </View>
               {/* Note section remains below slider */}
               {dayData.remark && dayData.remark !== "No remarks" && (
                 <View style={styles(colors).remarkContainer}>
@@ -1975,7 +1981,7 @@ const styles = (colors) =>
       marginRight: 15,
     },
     mealSliderCard: {
-      width: 180,
+      width: 130,
       height: 140,
       borderRadius: THEME.borderRadius.large,
       overflow: "hidden",
@@ -2013,18 +2019,18 @@ const styles = (colors) =>
       marginBottom: 2,
     },
     mealSliderLabel: {
-      fontSize: 16,
+      fontSize: 12,
       fontWeight: "bold",
       color: colors.black,
       flexShrink: 1,
       minWidth: 0,
-      marginBottom: 2,
+      marginBottom: 1,
     },
     mealSliderDescription: {
       fontSize: 14,
       color: colors.white,
       marginTop: 5,
-      fontWeight: "500",
+      fontWeight: "bold",
       flexShrink: 1,
       minWidth: 0,
     },

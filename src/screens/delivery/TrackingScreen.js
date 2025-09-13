@@ -30,16 +30,9 @@ export const TrackingScreen = ({ route, navigation }) => {
   const [tracking, setTracking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [showMap, setShowMap] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
-  const [mapsAvailable, setMapsAvailable] = useState(false);
-  const [MapComponents, setMapComponents] = useState({
-    MapView: null,
-    Marker: null,
-    Polyline: null,
-  });
   const refreshInterval = useRef(null);
 
   useEffect(() => {
@@ -49,20 +42,6 @@ export const TrackingScreen = ({ route, navigation }) => {
       refreshInterval.current = setInterval(loadTrackingData, 120000);
     }
 
-    // Try to lazily require react-native-maps; if not installed, disable map features
-    try {
-      // eslint-disable-next-line global-require
-      const Maps = require("react-native-maps");
-      setMapComponents({
-        MapView: Maps.default || Maps.MapView || Maps,
-        Marker: Maps.Marker,
-        Polyline: Maps.Polyline,
-      });
-      setMapsAvailable(true);
-    } catch (err) {
-      setMapsAvailable(false);
-      console.warn("react-native-maps not found; map view will be disabled.");
-    }
 
     return () => {
       if (refreshInterval.current) {
@@ -138,6 +117,40 @@ export const TrackingScreen = ({ route, navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const createTrackingFromOrder = (orderData) => {
+    // Create a tracking object from order data when tracking API is not available
+    const orderStatusToDeliveryStatus = {
+      pending: "Pending Assignment",
+      confirmed: "Assigned",
+      preparing: "Driver En Route to Kitchen",
+      ready: "Picked Up",
+      delivering: "En Route to Customer",
+      delivered: "Delivered",
+      cancelled: "Cancelled",
+    };
+
+    const deliveryStatus = orderStatusToDeliveryStatus[orderData.orderStatus?.toLowerCase()] || "Pending Assignment";
+    
+    return {
+      trackingId: orderData._id?.slice(-8).toUpperCase() || "TRACK001",
+      deliveryStatus: deliveryStatus,
+      order: orderData,
+      deliveryLocation: {
+        address: orderData.deliveryAddress || orderData.address || "Address not provided",
+        instructions: orderData.deliveryInstructions || "",
+      },
+      timeline: [
+        {
+          status: deliveryStatus,
+          timestamp: orderData.updatedAt || new Date().toISOString(),
+          notes: orderData.orderStatus ? `Order status: ${orderData.orderStatus}` : "",
+        },
+      ],
+      estimatedDeliveryTime: orderData.deliveryDate || null,
+      driver: null, // Driver info not available from order data
+    };
   };
 
   const onRefresh = () => {
@@ -285,10 +298,16 @@ export const TrackingScreen = ({ route, navigation }) => {
         </View>
 
         <TouchableOpacity
-          onPress={() => setShowMap(!showMap)}
+          onPress={() => {
+            // Navigate to the enhanced MapTrackingScreen
+            navigation.navigate('MapTracking', {
+              orderId: tracking.order._id || orderId,
+              order: tracking.order || order,
+            });
+          }}
           style={styles(colors).mapToggle}
         >
-          <Ionicons name={showMap ? "list" : "map"} size={24} color="white" />
+          <Ionicons name="map" size={24} color="white" />
         </TouchableOpacity>
       </LinearGradient>
 
@@ -380,18 +399,6 @@ export const TrackingScreen = ({ route, navigation }) => {
           </View>
         )}
 
-        {showMap && (
-          <View style={styles(colors).mapNoticeContainer}>
-            {mapsAvailable ? (
-              <Text style={styles(colors).mapNoticeText}>Loading map...</Text>
-            ) : (
-              <Text style={styles(colors).mapNoticeText}>
-                Map features are unavailable. Install the optional native
-                package "react-native-maps" to enable live location maps.
-              </Text>
-            )}
-          </View>
-        )}
 
         {/* Delivery Timeline */}
         <View style={styles(colors).timelineCard}>
@@ -744,17 +751,6 @@ const styles = (colors) =>
       height: 30,
       backgroundColor: colors.border,
       marginTop: 4,
-    },
-    mapNoticeContainer: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
-      alignItems: "center",
-    },
-    mapNoticeText: {
-      color: colors.textSecondary,
-      textAlign: "center",
     },
     timelineContent: {
       flex: 1,

@@ -470,7 +470,8 @@ const ProfileScreen = ({ navigation, route }) => {
             orderStatus: o.orderStatus,
             createdAt: o.createdAt,
             updatedAt: o.updatedAt,
-            mealPlan: o.mealPlanId?.planName || o.planName || o.name || "Unknown",
+            mealPlan:
+              o.mealPlanId?.planName || o.planName || o.name || "Unknown",
           }))
         );
 
@@ -952,7 +953,7 @@ const ProfileScreen = ({ navigation, route }) => {
         { text: "Got it!", style: "default" },
         {
           text: "View Details",
-          onPress: () => navigation.navigate("WalletScreen"), // TODO: Create WalletScreen
+          onPress: () => navigation.navigate("Wallet"), // Navigate to Wallet screen
         },
       ]
     );
@@ -1037,6 +1038,52 @@ Your meal plan has been updated with fresh options.`;
       validateForm();
     }
   }, [editableUser, saveAttempted]);
+
+  const handleEditProfile = async () => {
+    try {
+      setIsLoading(true);
+      const profileResult = await apiService.getProfile();
+      console.log(
+        "Full profile result:",
+        JSON.stringify(profileResult, null, 2)
+      );
+      if (profileResult.success && profileResult.data) {
+        const fullProfile = profileResult.data;
+        setEditableUser({
+          fullName: fullProfile.fullName || user.fullName,
+          phone: fullProfile.phone || "",
+          address: fullProfile.address || "",
+          city: fullProfile.city || user.city || "",
+          dietaryPreferences:
+            fullProfile.dietaryPreferences || user.dietaryPreferences || [],
+          allergies: fullProfile.allergies || "",
+        });
+      } else {
+        // fallback to user object if API fails
+        setEditableUser({
+          fullName: user.fullName,
+          phone: user.phone || "",
+          address: user.address || "",
+          city: user.city || "",
+          dietaryPreferences: user.dietaryPreferences || [],
+          allergies: user.allergies || "",
+        });
+        showError(
+          "Error",
+          "Could not load full profile. Please check your connection."
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching full profile:", error);
+      showError(
+        "Error",
+        "Could not load full profile. Please check your connection."
+      );
+    } finally {
+      setIsLoading(false);
+      setIsEditing(true);
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -1999,7 +2046,7 @@ Your meal plan has been updated with fresh options.`;
 
         <TouchableOpacity
           style={styles(colors).actionButton}
-          onPress={() => setIsEditing(true)}
+          onPress={handleEditProfile}
         >
           <Ionicons name="pencil" size={20} color={colors.primary} />
           <Text style={styles(colors).actionButtonText}>Edit Profile</Text>
@@ -2175,7 +2222,7 @@ Your meal plan has been updated with fresh options.`;
                 {/* Edit Profile Button */}
                 <TouchableOpacity
                   style={styles(colors).editButton}
-                  onPress={() => setIsEditing(true)}
+                  onPress={handleEditProfile}
                 >
                   <Text style={styles(colors).editButtonText}>
                     Edit Profile

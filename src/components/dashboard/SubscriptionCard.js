@@ -158,12 +158,15 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
 
     // Check if first delivery has been completed to determine if subscription is "active"
     const isSubscriptionActive =
-      subscription.firstDeliveryCompleted === true ||
+      subscription.recurringDelivery?.activationDeliveryCompleted === true ||
+      subscription.recurringDelivery?.isActivated === true ||
       subscription.status === "active";
 
     console.log("🍽️ Meal display check:", {
       subscriptionStatus: subscription.status,
-      firstDeliveryCompleted: subscription.firstDeliveryCompleted,
+      isActivated: subscription.recurringDelivery?.isActivated,
+      activationDeliveryCompleted:
+        subscription.recurringDelivery?.activationDeliveryCompleted,
       shouldShowMeals,
       isSubscriptionActive,
       hasValidMealPlan: !!subscription.mealPlanId,
@@ -243,17 +246,17 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       // Get the assignment for the specific meal type
       const assignment = todaysMeals[mealType.toLowerCase()];
 
-      console.log(`🍽️ Looking for ${mealType} assignment:`, {
-        week: `week${currentWeek}`,
-        day: dayName,
-        mealType: mealType.toLowerCase(),
-        assignment,
-        hasImageUrl: !!assignment?.imageUrl,
-        imageUrl: assignment?.imageUrl,
-        weeklyMealsKeys: Object.keys(weeklyMeals),
-        currentWeekMealsKeys: Object.keys(currentWeekMeals),
-        todaysMealsKeys: Object.keys(todaysMeals),
-      });
+      // console.log(`🍽️ Looking for ${mealType} assignment:`, {
+      //   week: `week${currentWeek}`,
+      //   day: dayName,
+      //   mealType: mealType.toLowerCase(),
+      //   assignment,
+      //   hasImageUrl: !!assignment?.imageUrl,
+      //   imageUrl: assignment?.imageUrl,
+      //   weeklyMealsKeys: Object.keys(weeklyMeals),
+      //   currentWeekMealsKeys: Object.keys(currentWeekMeals),
+      //   todaysMealsKeys: Object.keys(todaysMeals),
+      // });
 
       // If no weekly meals structure, try to get from assignments array
       if (!assignment && mealPlan?.assignments) {
@@ -344,29 +347,29 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     const currentMealCalories = getMealCalories(mealTime);
     const currentMealImage = getMealImage(mealTime);
 
-    // Debug logging
-    console.log("🍽️ SubscriptionCard calculateCurrentMeal:", {
-      subscriptionId: subscription._id,
-      startDate: subscription.startDate,
-      createdAt: subscription.createdAt,
-      calculatedStartDate: startDate.toISOString(),
-      subscriptionStatus: subscription.status,
-      daysDiff,
-      currentDay,
-      currentWeek,
-      dayInWeek,
-      dayName,
-      mealTime,
-      currentMealName,
-      currentMealCalories,
-      planName,
-      hasMealPlan: !!mealPlan,
-      mealPlanStructure: {
-        hasWeeklyMeals: !!mealPlan?.weeklyMeals,
-        hasAssignments: !!mealPlan?.assignments,
-        assignmentsLength: mealPlan?.assignments?.length || 0,
-      },
-    });
+    // // Debug logging
+    // console.log("🍽️ SubscriptionCard calculateCurrentMeal:", {
+    //   subscriptionId: subscription._id,
+    //   startDate: subscription.startDate,
+    //   createdAt: subscription.createdAt,
+    //   calculatedStartDate: startDate.toISOString(),
+    //   subscriptionStatus: subscription.status,
+    //   daysDiff,
+    //   currentDay,
+    //   currentWeek,
+    //   dayInWeek,
+    //   dayName,
+    //   mealTime,
+    //   currentMealName,
+    //   currentMealCalories,
+    //   planName,
+    //   hasMealPlan: !!mealPlan,
+    //   mealPlanStructure: {
+    //     hasWeeklyMeals: !!mealPlan?.weeklyMeals,
+    //     hasAssignments: !!mealPlan?.assignments,
+    //     assignmentsLength: mealPlan?.assignments?.length || 0,
+    //   },
+    // });
 
     return {
       customTitle:
@@ -436,7 +439,8 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
 
     // Check if subscription is active (first delivery completed)
     const isSubscriptionActive =
-      subscription.firstDeliveryCompleted === true ||
+      subscription.recurringDelivery?.activationDeliveryCompleted === true ||
+      subscription.recurringDelivery?.isActivated === true ||
       subscription.status === "active";
 
     let currentDay, estimatedCompleted;
@@ -459,16 +463,16 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     const percentage =
       totalMeals > 0 ? Math.min(100, (actualCompleted / totalMeals) * 100) : 0;
 
-    console.log("📊 SubscriptionCard progress calculation:", {
-      subscriptionId: subscription._id,
-      durationWeeks,
-      mealsPerWeek,
-      totalMeals,
-      currentDay,
-      estimatedCompleted,
-      actualCompleted,
-      percentage,
-    });
+    // console.log("📊 SubscriptionCard progress calculation:", {
+    //   subscriptionId: subscription._id,
+    //   durationWeeks,
+    //   mealsPerWeek,
+    //   totalMeals,
+    //   currentDay,
+    //   estimatedCompleted,
+    //   actualCompleted,
+    //   percentage,
+    // });
 
     return {
       completed: actualCompleted,
@@ -480,7 +484,8 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
   const getStatusColor = (status) => {
     // Check if subscription is waiting for first delivery
     const isSubscriptionActive =
-      subscription.firstDeliveryCompleted === true ||
+      subscription.recurringDelivery?.activationDeliveryCompleted === true ||
+      subscription.recurringDelivery?.isActivated === true ||
       subscription.status === "active";
 
     if (!isSubscriptionActive) {
@@ -506,7 +511,8 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
   const getStatusText = (status) => {
     // Check if subscription is waiting for first delivery
     const isSubscriptionActive =
-      subscription.firstDeliveryCompleted === true ||
+      subscription.recurringDelivery?.activationDeliveryCompleted === true ||
+      subscription.recurringDelivery?.isActivated === true ||
       subscription.status === "active";
 
     if (!isSubscriptionActive) {
@@ -689,7 +695,9 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
             {(() => {
               const progress = calculateProgress();
               const isActive =
-                subscription.firstDeliveryCompleted === true ||
+                subscription.recurringDelivery?.activationDeliveryCompleted ===
+                  true ||
+                subscription.recurringDelivery?.isActivated === true ||
                 subscription.status === "active";
 
               if (!isActive) {
@@ -717,7 +725,7 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
+    marginHorizontal: 6,
     marginVertical: 8,
     borderRadius: 16,
     overflow: "hidden",
@@ -729,7 +737,7 @@ const styles = StyleSheet.create({
   },
   loadingCard: {
     backgroundColor: "#F8F9FA",
-    padding: 40,
+    padding: 15,
     margin: 16,
     borderRadius: 16,
     alignItems: "center",

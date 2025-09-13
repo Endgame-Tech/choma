@@ -3,16 +3,16 @@ import { Platform } from 'react-native';
 // API Configuration
 export const API_BASE_URL = __DEV__
   ? Platform.OS === "android"
-    ? "http://10.0.2.2:5001/api" // Android emulator localhost
-    : "http://localhost:5001/api" // iOS simulator localhost
-  : "https://your-production-api.com/api"; // Replace with your production API URL
+    ? "http://10.226.105.28:5001/api" // Your local development IP
+    : "http://10.226.105.28:5001/api" // Your local development IP
+  : "https://choma.onrender.com/api"; // Production API URL
 
 // WebSocket Configuration
 export const WS_BASE_URL = __DEV__
   ? Platform.OS === "android"
-    ? "ws://10.0.2.2:5001" // Android emulator localhost
-    : "ws://localhost:5001" // iOS simulator localhost  
-  : "wss://your-production-api.com"; // Replace with your production WebSocket URL
+    ? "ws://10.226.105.28:5001" // Your local development IP
+    : "ws://10.226.105.28:5001" // Your local development IP  
+  : "wss://choma.onrender.com"; // Production WebSocket URL
 
 // API Endpoints
 export const API_ENDPOINTS = {

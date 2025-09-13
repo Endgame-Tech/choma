@@ -1,24 +1,24 @@
-const Order = require('../models/Order');
-const Customer = require('../models/Customer');
-const MealPlan = require('../models/MealPlan');
-const DriverAssignment = require('../models/DriverAssignment');
-const NotificationService = require('../services/notificationService');
+const Order = require("../models/Order");
+const Customer = require("../models/Customer");
+const MealPlan = require("../models/MealPlan");
+const DriverAssignment = require("../models/DriverAssignment");
+const NotificationService = require("../services/notificationService");
 
 // Get user's orders
 exports.getUserOrders = async (req, res) => {
   try {
     // Get orders that are NOT assigned to chefs or are completed/cancelled
-    const orders = await Order.find({ 
+    const orders = await Order.find({
       customer: req.user.id,
       $or: [
         { assignedChef: { $exists: false } },
         { assignedChef: null },
-        { delegationStatus: { $in: ['Completed', 'Cancelled'] } }
-      ]
+        { delegationStatus: { $in: ["Completed", "Cancelled"] } },
+      ],
     })
-      .populate('subscription')
-      .populate('customer', 'fullName email phone')
-      .populate('assignedChef', 'fullName email chefId')
+      .populate("subscription")
+      .populate("customer", "fullName email phone")
+      .populate("assignedChef", "fullName email chefId")
       .sort({ createdDate: -1 });
 
     console.log(`📋 Found ${orders.length} orders for user ${req.user.id}`);
@@ -28,12 +28,14 @@ exports.getUserOrders = async (req, res) => {
       orders.map(async (order) => {
         try {
           // Find driver assignment for this order
-          const driverAssignment = await DriverAssignment.findOne({ orderId: order._id })
-            .populate('driverId', 'fullName phone')
+          const driverAssignment = await DriverAssignment.findOne({
+            orderId: order._id,
+          })
+            .populate("driverId", "fullName phone")
             .lean();
 
           const orderObj = order.toObject();
-          
+
           if (driverAssignment) {
             // Add driver assignment data to order
             orderObj.driverAssignment = {
@@ -44,13 +46,13 @@ exports.getUserOrders = async (req, res) => {
               pickupLocation: driverAssignment.pickupLocation,
               deliveryLocation: driverAssignment.deliveryLocation,
               estimatedPickupTime: driverAssignment.estimatedPickupTime,
-              estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime
+              estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime,
             };
-            
+
             // Also add confirmation code directly to order for easier access
             orderObj.confirmationCode = driverAssignment.confirmationCode;
           }
-          
+
           return orderObj;
         } catch (error) {
           console.error(`Error enhancing order ${order._id}:`, error);
@@ -62,14 +64,14 @@ exports.getUserOrders = async (req, res) => {
     res.json({
       success: true,
       data: enhancedOrders,
-      count: enhancedOrders.length
+      count: enhancedOrders.length,
     });
   } catch (err) {
-    console.error('Get user orders error:', err);
+    console.error("Get user orders error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch orders',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to fetch orders",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -78,29 +80,35 @@ exports.getUserOrders = async (req, res) => {
 exports.getUserAssignedOrders = async (req, res) => {
   try {
     // Get orders that are assigned to chefs and in progress
-    const orders = await Order.find({ 
+    const orders = await Order.find({
       customer: req.user.id,
       assignedChef: { $exists: true, $ne: null },
-      delegationStatus: { $in: ['Assigned', 'Accepted', 'In Progress', 'Ready'] }
+      delegationStatus: {
+        $in: ["Assigned", "Accepted", "In Progress", "Ready"],
+      },
     })
-      .populate('subscription')
-      .populate('customer', 'fullName email phone')
-      .populate('assignedChef', 'fullName email chefId')
+      .populate("subscription")
+      .populate("customer", "fullName email phone")
+      .populate("assignedChef", "fullName email chefId")
       .sort({ createdDate: -1 });
 
-    console.log(`🍳 Found ${orders.length} assigned orders for user ${req.user.id}`);
+    console.log(
+      `🍳 Found ${orders.length} assigned orders for user ${req.user.id}`
+    );
 
     // Enhance orders with driver assignment data (including confirmation codes)
     const enhancedOrders = await Promise.all(
       orders.map(async (order) => {
         try {
           // Find driver assignment for this order
-          const driverAssignment = await DriverAssignment.findOne({ orderId: order._id })
-            .populate('driverId', 'fullName phone')
+          const driverAssignment = await DriverAssignment.findOne({
+            orderId: order._id,
+          })
+            .populate("driverId", "fullName phone")
             .lean();
 
           const orderObj = order.toObject();
-          
+
           if (driverAssignment) {
             // Add driver assignment data to order
             orderObj.driverAssignment = {
@@ -111,13 +119,13 @@ exports.getUserAssignedOrders = async (req, res) => {
               pickupLocation: driverAssignment.pickupLocation,
               deliveryLocation: driverAssignment.deliveryLocation,
               estimatedPickupTime: driverAssignment.estimatedPickupTime,
-              estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime
+              estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime,
             };
-            
+
             // Also add confirmation code directly to order for easier access
             orderObj.confirmationCode = driverAssignment.confirmationCode;
           }
-          
+
           return orderObj;
         } catch (error) {
           console.error(`Error enhancing order ${order._id}:`, error);
@@ -129,14 +137,14 @@ exports.getUserAssignedOrders = async (req, res) => {
     res.json({
       success: true,
       data: enhancedOrders,
-      count: enhancedOrders.length
+      count: enhancedOrders.length,
     });
   } catch (err) {
-    console.error('Get user assigned orders error:', err);
+    console.error("Get user assigned orders error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch assigned orders',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to fetch assigned orders",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -145,29 +153,31 @@ exports.getUserAssignedOrders = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const order = await Order.findOne({ 
-      _id: id, 
-      customer: req.user.id 
+
+    const order = await Order.findOne({
+      _id: id,
+      customer: req.user.id,
     })
-    .populate('subscription')
-    .populate('customer', 'fullName email phone');
+      .populate("subscription")
+      .populate("customer", "fullName email phone");
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: "Order not found",
       });
     }
 
     // Enhance order with driver assignment data (including confirmation code)
     try {
-      const driverAssignment = await DriverAssignment.findOne({ orderId: order._id })
-        .populate('driverId', 'fullName phone')
+      const driverAssignment = await DriverAssignment.findOne({
+        orderId: order._id,
+      })
+        .populate("driverId", "fullName phone")
         .lean();
 
       const orderObj = order.toObject();
-      
+
       if (driverAssignment) {
         // Add driver assignment data to order
         orderObj.driverAssignment = {
@@ -178,30 +188,30 @@ exports.getOrderById = async (req, res) => {
           pickupLocation: driverAssignment.pickupLocation,
           deliveryLocation: driverAssignment.deliveryLocation,
           estimatedPickupTime: driverAssignment.estimatedPickupTime,
-          estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime
+          estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime,
         };
-        
+
         // Also add confirmation code directly to order for easier access
         orderObj.confirmationCode = driverAssignment.confirmationCode;
       }
 
       res.json({
         success: true,
-        data: orderObj
+        data: orderObj,
       });
     } catch (error) {
       console.error(`Error enhancing order ${id}:`, error);
       res.json({
         success: true,
-        data: order
+        data: order,
       });
     }
   } catch (err) {
-    console.error('Get order by ID error:', err);
+    console.error("Get order by ID error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch order',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to fetch order",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -217,14 +227,14 @@ exports.createOrder = async (req, res) => {
       paymentReference,
       deliveryAddress,
       deliveryDate,
-      specialInstructions
+      specialInstructions,
     } = req.body;
 
     // Validation
     if (!orderItems || !totalAmount || !paymentMethod) {
       return res.status(400).json({
         success: false,
-        message: 'Order items, total amount, and payment method are required'
+        message: "Order items, total amount, and payment method are required",
       });
     }
 
@@ -238,12 +248,12 @@ exports.createOrder = async (req, res) => {
       deliveryAddress: deliveryAddress || req.user.address,
       deliveryDate,
       specialInstructions,
-      paymentStatus: 'Pending'
+      paymentStatus: "Pending",
     });
 
     // Update customer's total orders and spent
     await Customer.findByIdAndUpdate(req.user.id, {
-      $inc: { totalOrders: 1, totalSpent: totalAmount }
+      $inc: { totalOrders: 1, totalSpent: totalAmount },
     });
 
     // Send order confirmation notification
@@ -251,24 +261,24 @@ exports.createOrder = async (req, res) => {
       await NotificationService.notifyOrderConfirmed(req.user.id, {
         orderId: order._id,
         totalAmount: totalAmount,
-        deliveryDate: deliveryDate
+        deliveryDate: deliveryDate,
       });
     } catch (notificationError) {
-      console.error('Failed to send order notification:', notificationError);
+      console.error("Failed to send order notification:", notificationError);
       // Don't fail the order creation if notification fails
     }
 
     res.status(201).json({
       success: true,
-      message: 'Order created successfully',
-      data: order
+      message: "Order created successfully",
+      data: order,
     });
   } catch (err) {
-    console.error('Create order error:', err);
+    console.error("Create order error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to create order',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to create order",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -281,13 +291,13 @@ exports.updateOrder = async (req, res) => {
 
     // Only allow certain fields to be updated
     const allowedUpdates = [
-      'deliveryAddress',
-      'deliveryDate',
-      'specialInstructions'
+      "deliveryAddress",
+      "deliveryDate",
+      "specialInstructions",
     ];
-    
+
     const filteredUpdates = {};
-    allowedUpdates.forEach(field => {
+    allowedUpdates.forEach((field) => {
       if (updates[field] !== undefined) {
         filteredUpdates[field] = updates[field];
       }
@@ -302,21 +312,21 @@ exports.updateOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found or you do not have permission to update it'
+        message: "Order not found or you do not have permission to update it",
       });
     }
 
     res.json({
       success: true,
-      message: 'Order updated successfully',
-      data: order
+      message: "Order updated successfully",
+      data: order,
     });
   } catch (err) {
-    console.error('Update order error:', err);
+    console.error("Update order error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to update order',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to update order",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -330,35 +340,59 @@ exports.updateOrderStatus = async (req, res) => {
     const updates = {};
     if (status) updates.orderStatus = status;
     if (paymentStatus) updates.paymentStatus = paymentStatus;
-    
-    if (status === 'Delivered') {
+
+    if (status === "Delivered") {
       updates.actualDelivery = new Date();
     }
 
-    const order = await Order.findByIdAndUpdate(
-      id,
-      updates,
-      { new: true, runValidators: true }
-    );
+    const order = await Order.findByIdAndUpdate(id, updates, {
+      new: true,
+      runValidators: true,
+    }).populate("subscriptionId");
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: "Order not found",
       });
+    }
+
+    // Handle subscription activation for first delivery
+    if (status === "Delivered" && order.subscriptionId) {
+      const Subscription = require("../models/Subscription");
+      const subscription = await Subscription.findById(order.subscriptionId);
+
+      if (
+        subscription &&
+        !subscription.recurringDelivery.activationDeliveryCompleted
+      ) {
+        // Mark first delivery as completed and activate subscription
+        subscription.recurringDelivery.activationDeliveryCompleted = true;
+        subscription.recurringDelivery.isActivated = true;
+        subscription.recurringDelivery.activatedAt = new Date();
+
+        if (subscription.status === "pending") {
+          subscription.status = "active";
+        }
+
+        await subscription.save();
+        console.log(
+          `Subscription ${subscription._id} activated by order delivery completion`
+        );
+      }
     }
 
     res.json({
       success: true,
-      message: 'Order status updated successfully',
-      data: order
+      message: "Order status updated successfully",
+      data: order,
     });
   } catch (err) {
-    console.error('Update order status error:', err);
+    console.error("Update order status error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to update order status',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to update order status",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -373,19 +407,19 @@ exports.rateOrder = async (req, res) => {
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({
         success: false,
-        message: 'Rating must be between 1 and 5'
+        message: "Rating must be between 1 and 5",
       });
     }
 
     const order = await Order.findOneAndUpdate(
-      { 
-        _id: id, 
+      {
+        _id: id,
         customer: req.user.id,
-        orderStatus: 'Delivered' // Only allow rating delivered orders
+        orderStatus: "Delivered", // Only allow rating delivered orders
       },
       {
         customerRating: rating,
-        customerFeedback: feedback
+        customerFeedback: feedback,
       },
       { new: true, runValidators: true }
     );
@@ -393,21 +427,21 @@ exports.rateOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found or cannot be rated'
+        message: "Order not found or cannot be rated",
       });
     }
 
     res.json({
       success: true,
-      message: 'Order rated successfully',
-      data: order
+      message: "Order rated successfully",
+      data: order,
     });
   } catch (err) {
-    console.error('Rate order error:', err);
+    console.error("Rate order error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to rate order',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to rate order",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };

@@ -234,7 +234,9 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleTrackDriver = (driver, order) => {
-    console.log("Track driver:", driver);
+    // Extract driver from driverAssignment if not directly provided
+    const actualDriver = driver || order?.driverAssignment?.driver || order?.driver;
+    console.log("Track driver:", actualDriver);
     navigation.navigate("MapTracking", { 
       orderId: order?._id || order?.id, 
       order: order 

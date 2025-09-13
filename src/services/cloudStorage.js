@@ -1,12 +1,13 @@
 // src/services/cloudStorage.js - Cloud Storage Service
-import { Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { APP_CONFIG } from '../utils/constants';
+import { Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { APP_CONFIG } from "../utils/constants";
 
 class CloudStorageService {
   constructor() {
-    this.baseUrl = 'https://api.cloudinary.com/v1_1/your-cloud-name/image/upload';
-    this.uploadPreset = 'choma_profiles'; // Configure this in your Cloudinary settings
+    this.baseUrl =
+      "https://api.cloudinary.com/v1_1/your-cloud-name/image/upload";
+    this.uploadPreset = "choma_profiles"; // Configure this in your Cloudinary settings
   }
 
   /**
@@ -18,36 +19,35 @@ class CloudStorageService {
   async uploadImage(imageUri, userId) {
     try {
       const formData = new FormData();
-      
+
       // Create a unique filename
       const filename = `profile_${userId}_${Date.now()}.jpg`;
-      
-      formData.append('file', {
+
+      formData.append("file", {
         uri: imageUri,
-        type: 'image/jpeg',
+        type: "image/jpeg",
         name: filename,
       });
-      
-      formData.append('upload_preset', this.uploadPreset);
-      formData.append('folder', 'choma/profiles');
-      
+
+      formData.append("upload_preset", this.uploadPreset);
+      formData.append("folder", "choma/profiles");
+
       const response = await fetch(this.baseUrl, {
-        method: 'POST',
+        method: "POST",
         body: formData,
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`Upload failed: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       return data.secure_url;
-      
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error("Error uploading image:", error);
       throw error;
     }
   }
@@ -61,22 +61,21 @@ class CloudStorageService {
     try {
       // Extract public ID from URL for deletion
       const publicId = this.extractPublicId(imageUrl);
-      
+
       const response = await fetch(`${this.baseUrl}/destroy`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           public_id: publicId,
           upload_preset: this.uploadPreset,
         }),
       });
-      
+
       return response.ok;
-      
     } catch (error) {
-      console.error('Error deleting image:', error);
+      console.error("Error deleting image:", error);
       return false;
     }
   }
@@ -87,9 +86,9 @@ class CloudStorageService {
    * @returns {string} - Public ID
    */
   extractPublicId(url) {
-    const parts = url.split('/');
+    const parts = url.split("/");
     const filename = parts[parts.length - 1];
-    return filename.split('.')[0];
+    return filename.split(".")[0];
   }
 
   /**
@@ -103,7 +102,7 @@ class CloudStorageService {
       // In production, you might want to use expo-image-manipulator
       return imageUri;
     } catch (error) {
-      console.error('Error compressing image:', error);
+      console.error("Error compressing image:", error);
       return imageUri;
     }
   }
@@ -114,44 +113,74 @@ class CloudStorageService {
    */
   async uploadToBackend(imageUri, userId) {
     try {
+      console.log("🔄 Starting image upload to backend...");
+      console.log("Image URI:", imageUri);
+      console.log("User ID:", userId);
+
       const formData = new FormData();
-      
-      formData.append('image', {
+
+      formData.append("image", {
         uri: imageUri,
-        type: 'image/jpeg',
+        type: "image/jpeg",
         name: `profile_${userId}_${Date.now()}.jpg`,
       });
-      
+
       // Get the API base URL from constants - now points to production server
-      const API_BASE_URL = APP_CONFIG.API_BASE_URL.replace('/api', ''); // Remove /api suffix
-      
+      const API_BASE_URL = APP_CONFIG.API_BASE_URL.replace("/api", ""); // Remove /api suffix
+      const uploadUrl = `${API_BASE_URL}/api/upload/profile-image`;
+
+      console.log("Upload URL:", uploadUrl);
+
       // Get auth token for authenticated request
-      const token = await AsyncStorage.getItem('authToken');
-      
-      const response = await fetch(`${API_BASE_URL}/api/upload/profile-image`, {
-        method: 'POST',
+      const token = await AsyncStorage.getItem("authToken");
+      console.log("Auth token exists:", !!token);
+
+      const headers = {
+        "Content-Type": "multipart/form-data",
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      console.log("Making upload request...");
+      const response = await fetch(uploadUrl, {
+        method: "POST",
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: headers,
       });
-      
+
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
+
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("Upload failed with status:", response.status);
+        console.error("Error response:", errorText);
+        throw new Error(
+          `Upload failed: ${response.status} - ${response.statusText}. ${errorText}`
+        );
       }
-      
+
       const data = await response.json();
-      
+      console.log("Upload response data:", data);
+
       if (!data.success) {
-        throw new Error(data.message || 'Upload failed');
+        throw new Error(
+          data.message || "Upload failed - server returned success: false"
+        );
       }
-      
+
+      console.log("✅ Image uploaded successfully:", data.imageUrl);
       return data.imageUrl;
-      
     } catch (error) {
-      console.error('Error uploading to backend:', error);
-      throw error;
+      console.error("❌ Error uploading to backend:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+      throw new Error(`Image upload failed: ${error.message}`);
     }
   }
 }

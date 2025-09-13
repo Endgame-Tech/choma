@@ -1448,14 +1448,14 @@ const HomeScreen = ({ navigation }) => {
         // Look in the organized weekly schedule for the assignment
         const assignment = todaysMealsData[mealType.toLowerCase()];
 
-        console.log(`🍽️ HomeScreen - Looking for ${mealType} assignment:`, {
-          week: `week${currentWeekNumber}`,
-          day: dayName,
-          mealType: mealType.toLowerCase(),
-          assignment,
-          hasImageUrl: !!assignment?.imageUrl,
-          imageUrl: assignment?.imageUrl,
-        });
+        // console.log(`🍽️ HomeScreen - Looking for ${mealType} assignment:`, {
+        //   week: `week${currentWeekNumber}`,
+        //   day: dayName,
+        //   mealType: mealType.toLowerCase(),
+        //   assignment,
+        //   hasImageUrl: !!assignment?.imageUrl,
+        //   imageUrl: assignment?.imageUrl,
+        // });
 
         return assignment;
       };
@@ -1495,18 +1495,18 @@ const HomeScreen = ({ navigation }) => {
       const getMealName = (mealType) => {
         const assignment = getMealAssignment(mealType);
 
-        console.log(`🍽️ HomeScreen - getMealName for ${mealType}:`, {
-          assignment,
-          hasTitle: !!assignment?.title,
-          title: assignment?.title,
-        });
+        // console.log(`🍽️ HomeScreen - getMealName for ${mealType}:`, {
+        //   assignment,
+        //   hasTitle: !!assignment?.title,
+        //   title: assignment?.title,
+        // });
 
         // Use the assignment's custom title if available
         if (assignment?.title) {
-          console.log(
-            `📝 HomeScreen - Meal name result for ${mealType}:`,
-            assignment.title
-          );
+          // console.log(
+          //   `📝 HomeScreen - Meal name result for ${mealType}:`,
+          //   assignment.title
+          // );
           return assignment.title;
         }
 
@@ -1528,11 +1528,11 @@ const HomeScreen = ({ navigation }) => {
       const getMealCalories = (mealType) => {
         const assignment = getMealAssignment(mealType);
 
-        console.log(`🔢 HomeScreen - getMealCalories for ${mealType}:`, {
-          assignment,
-          hasCalories: !!assignment?.calories,
-          calories: assignment?.calories,
-        });
+        // console.log(`🔢 HomeScreen - getMealCalories for ${mealType}:`, {
+        //   assignment,
+        //   hasCalories: !!assignment?.calories,
+        //   calories: assignment?.calories,
+        // });
 
         // Try to get calories from assignment
         if (assignment?.calories) {
@@ -1578,10 +1578,10 @@ const HomeScreen = ({ navigation }) => {
         }
       );
 
-      console.log(
-        "HomeScreen - Available meals for today:",
-        availableMeals.map(([type, meal]) => `${type}: ${meal.name}`)
-      );
+      // console.log(
+      //   "HomeScreen - Available meals for today:",
+      //   availableMeals.map(([type, meal]) => `${type}: ${meal.name}`)
+      // );
 
       // console.log("HomeScreen - Assignment check results:", {
       //   breakfast: !!getMealAssignment("breakfast"),

@@ -523,6 +523,47 @@ const MealProgressionTimeline = ({
     return ((index + 1) / totalItems) * 100;
   };
 
+  // Helper function to get all meals for a day (for horizontal cards)
+  const getAllMealsForDay = (item) => {
+    if (item.meals && Array.isArray(item.meals)) {
+      return item.meals;
+    }
+    // If no meals array, return the single meal assignment
+    const mealAssignment = item.mealAssignment || {};
+    return mealAssignment ? [mealAssignment] : [];
+  };
+
+  // Helper function to check if day has valid meals assigned
+  const hasValidMeals = (item) => {
+    const meals = getAllMealsForDay(item);
+
+    // If no meals array, return false
+    if (!meals || meals.length === 0) {
+      return false;
+    }
+
+    // Check if any meal has actual content (similar to MealPlanDetailScreen pattern)
+    return meals.some((meal) => {
+      const title = meal.customTitle || meal.title || meal.name || "";
+      const hasValidTitle =
+        title &&
+        title !== "not specified" &&
+        title !== "Not specified" &&
+        title !== "Meal not specified" &&
+        title !== "Breakfast not specified" &&
+        title !== "Lunch not specified" &&
+        title !== "Dinner not specified" &&
+        title.trim() !== "";
+
+      const hasImage = meal.imageUrl && meal.imageUrl.trim() !== "";
+      const hasDescription = meal.description && meal.description.trim() !== "";
+      const hasMealTime = meal.mealTime && meal.mealTime.trim() !== "";
+
+      // Consider meal valid if it has either a title, image, description, or meal time
+      return hasValidTitle || hasImage || hasDescription || hasMealTime;
+    });
+  };
+
   // Ensure timeline is always an array to prevent map() errors
   // Filter timeline to only include days with valid meals assigned (similar to MealPlanDetailScreen pattern)
   const safeTimeline = Array.isArray(timeline)
@@ -595,47 +636,6 @@ const MealProgressionTimeline = ({
 
     const normalizedStatus = rawFinalStatus.toLowerCase();
     return statusMap[normalizedStatus] || rawFinalStatus || "Processing";
-  };
-
-  // Helper function to get all meals for a day (for horizontal cards)
-  const getAllMealsForDay = (item) => {
-    if (item.meals && Array.isArray(item.meals)) {
-      return item.meals;
-    }
-    // If no meals array, return the single meal assignment
-    const mealAssignment = item.mealAssignment || {};
-    return mealAssignment ? [mealAssignment] : [];
-  };
-
-  // Helper function to check if day has valid meals assigned
-  const hasValidMeals = (item) => {
-    const meals = getAllMealsForDay(item);
-
-    // If no meals array, return false
-    if (!meals || meals.length === 0) {
-      return false;
-    }
-
-    // Check if any meal has actual content (similar to MealPlanDetailScreen pattern)
-    return meals.some((meal) => {
-      const title = meal.customTitle || meal.title || meal.name || "";
-      const hasValidTitle =
-        title &&
-        title !== "not specified" &&
-        title !== "Not specified" &&
-        title !== "Meal not specified" &&
-        title !== "Breakfast not specified" &&
-        title !== "Lunch not specified" &&
-        title !== "Dinner not specified" &&
-        title.trim() !== "";
-
-      const hasImage = meal.imageUrl && meal.imageUrl.trim() !== "";
-      const hasDescription = meal.description && meal.description.trim() !== "";
-      const hasMealTime = meal.mealTime && meal.mealTime.trim() !== "";
-
-      // Consider meal valid if it has either a title, image, description, or meal time
-      return hasValidTitle || hasImage || hasDescription || hasMealTime;
-    });
   };
 
   // Helper function to get current meal for a day

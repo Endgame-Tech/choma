@@ -506,7 +506,7 @@ const CompactOrderCard = ({
         {canTrackDriver && (
           <TouchableOpacity
             style={styles(colors).actionButton}
-            onPress={() => onTrackDriver?.(order.driver)}
+            onPress={() => onTrackDriver?.(order.driverAssignment?.driver || order.driver, order)}
           >
             <Ionicons
               name="location-outline"
@@ -642,7 +642,7 @@ const CompactOrderCard = ({
                     </View>
                     <TouchableOpacity
                       style={styles(colors).callButton}
-                      onPress={() => onTrackDriver?.(order.driver)}
+                      onPress={() => onTrackDriver?.(order.driverAssignment?.driver || order.driver, order)}
                     >
                       <Ionicons name="call" size={16} color={colors.white} />
                     </TouchableOpacity>

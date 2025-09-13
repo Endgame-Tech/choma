@@ -30,7 +30,7 @@ class EnhancedDriverTrackingService {
         return;
       }
 
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem('authToken');
       if (!token) {
         throw new Error('No authentication token available');
       }

@@ -300,15 +300,9 @@ const AddressAutocomplete = ({
 
       {showSuggestions && suggestions.length > 0 && (
         <View style={styles(colors).suggestionsContainer}>
-          <FlatList
-            data={suggestions}
-            renderItem={renderSuggestion}
-            keyExtractor={(item) => item.place_id}
-            style={styles(colors).suggestionsList}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled={true}
-            keyboardShouldPersistTaps="always"
-          />
+          <View style={styles(colors).suggestionsList}>
+            {suggestions.map((item) => renderSuggestion({ item }))}
+          </View>
         </View>
       )}
     </View>

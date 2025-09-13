@@ -49,6 +49,9 @@ import DashboardScreen from "../screens/dashboard/DashboardScreen";
 import OrdersScreen from "../screens/dashboard/OrdersScreen";
 import OrderDetailScreen from "../screens/dashboard/OrderDetailScreen";
 import ProfileScreen from "../screens/dashboard/ProfileScreen";
+import WalletScreen from "../screens/dashboard/WalletScreen";
+import AddMoneyScreen from "../screens/dashboard/AddMoneyScreen";
+import AddCardScreen from "../screens/dashboard/AddCardScreen";
 
 // Delivery screens
 import { TrackingScreen } from "../screens/delivery/TrackingScreen";
@@ -542,6 +545,27 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             options={{
               ...standardHeaderOptions,
               headerTitle: "Dashboard",
+            }}
+          />
+          <Stack.Screen
+            name="Wallet"
+            component={WalletScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="AddMoneyScreen"
+            component={AddMoneyScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="AddCardScreen"
+            component={AddCardScreen}
+            options={{
+              headerShown: false,
             }}
           />
           <Stack.Screen

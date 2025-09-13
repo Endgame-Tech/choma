@@ -10,7 +10,7 @@ import {
   Animated,
   StyleSheet,
 } from "react-native";
-import { PanGestureHandler } from "react-native-gesture-handler";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
@@ -44,7 +44,7 @@ const MealDetailModal = ({
   );
 
   const onHandlerStateChange = (event) => {
-    if (event.nativeEvent.state === 5) {
+    if (event.nativeEvent.state === State.END) {
       // END state
       const { translationX, velocityX } = event.nativeEvent;
 
@@ -194,12 +194,12 @@ const MealDetailModal = ({
               </ScrollView>
 
               {/* Close Button - Outside ScrollView */}
-              <TouchableOpacity
-                style={styles(colors).closeButton}
-                onPress={onClose}
-              >
+            <View style={styles(colors).closeButtonContainer}>
+              <TouchableOpacity style={styles(colors).closeButton} onPress={onClose}>
                 <Ionicons name="close" size={34} color="#000" />
               </TouchableOpacity>
+            </View>
+
             </View>
           </Animated.View>
         </PanGestureHandler>
@@ -340,11 +340,16 @@ const styles = (colors) =>
     bottomScrollPadding: {
       height: 100,
     },
-    closeButton: {
+    closeButtonContainer: {
       position: "absolute",
-      bottom: 30,
-      left: "50%",
-      marginLeft: "-5%",
+      bottom: 70,
+      width: "100%",
+      height: 70,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    closeButton: {
+      position: "relative",
       width: 70,
       height: 70,
       borderRadius: 75,

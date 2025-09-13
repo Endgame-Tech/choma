@@ -212,34 +212,45 @@ const OrdersScreen = ({ navigation }) => {
       const seenIds = new Set();
 
       // Process orders in reverse to keep later entries (which might have more recent status)
-      [...allOrders].reverse().forEach(order => {
+      [...allOrders].reverse().forEach((order) => {
         const orderId = order._id || order.id;
-        
+
         if (!seenIds.has(orderId)) {
           seenIds.add(orderId);
           deduplicatedOrders.unshift(order); // Add to beginning to maintain original order
         } else {
           // If we've seen this order before, check if current order has more recent status
-          const existingIndex = deduplicatedOrders.findIndex(o => (o._id || o.id) === orderId);
+          const existingIndex = deduplicatedOrders.findIndex(
+            (o) => (o._id || o.id) === orderId
+          );
           if (existingIndex !== -1) {
             const existingOrder = deduplicatedOrders[existingIndex];
-            const currentStatus = order.delegationStatus || order.status || order.orderStatus;
-            const existingStatus = existingOrder.delegationStatus || existingOrder.status || existingOrder.orderStatus;
-            
+            const currentStatus =
+              order.delegationStatus || order.status || order.orderStatus;
+            const existingStatus =
+              existingOrder.delegationStatus ||
+              existingOrder.status ||
+              existingOrder.orderStatus;
+
             // If current order has delegationStatus and existing doesn't, prefer current
             if (order.delegationStatus && !existingOrder.delegationStatus) {
-              console.log(`🔄 Replacing order ${orderId} with updated status:`, {
-                oldStatus: existingStatus,
-                newStatus: currentStatus,
-                hasDelegationStatus: !!order.delegationStatus
-              });
+              console.log(
+                `🔄 Replacing order ${orderId} with updated status:`,
+                {
+                  oldStatus: existingStatus,
+                  newStatus: currentStatus,
+                  hasDelegationStatus: !!order.delegationStatus,
+                }
+              );
               deduplicatedOrders[existingIndex] = order;
             }
           }
         }
       });
 
-      console.log(`📊 Order deduplication: ${allOrders.length} → ${deduplicatedOrders.length} orders`);
+      console.log(
+        `📊 Order deduplication: ${allOrders.length} → ${deduplicatedOrders.length} orders`
+      );
 
       setOrders(deduplicatedOrders);
 
@@ -400,13 +411,18 @@ const OrdersScreen = ({ navigation }) => {
       id: order._id || order.id,
       isSubscriptionOrder: order.isSubscriptionOrder,
       orderNumber: order.orderNumber,
-      status: order.status,
+      status: order.status || order.orderStatus || order.delegationStatus,
       orderType: order.orderType,
       recurringOrder: order.recurringOrder,
       subscription: !!order.subscription,
       deliveryDay: order.deliveryDay,
       dayNumber: order.dayNumber,
       isActivationOrder: order.recurringOrder?.isActivationOrder,
+      // Add more fields for debugging
+      hasSubscriptionField: order.subscription !== undefined,
+      hasRecurringOrder: order.recurringOrder !== undefined,
+      recurringOrderType: order.recurringOrder?.orderType,
+      activationCompleted: order.recurringOrder?.activationCompleted,
     });
 
     // Check if this is a subscription order (but not the first delivery)
@@ -416,12 +432,16 @@ const OrdersScreen = ({ navigation }) => {
       order._id?.startsWith("sub_") ||
       order.id?.startsWith("sub_") ||
       order.orderType === "subscription" ||
-      order.recurringOrder !== undefined;
+      order.recurringOrder !== undefined ||
+      order.subscription === true; // Add this check for boolean subscription field
 
     // Check if this is the first delivery of a subscription
+    // For recurring orders, check if it's NOT an activation order and activation is completed
     const isFirstDelivery =
       order.recurringOrder?.isActivationOrder === true ||
       order.recurringOrder?.orderType === "one-time" ||
+      (order.recurringOrder &&
+        order.recurringOrder.activationCompleted === false) ||
       (order.deliveryDay && parseInt(order.deliveryDay) === 1) ||
       (order.dayNumber && parseInt(order.dayNumber) === 1);
 
@@ -432,6 +452,13 @@ const OrdersScreen = ({ navigation }) => {
         isSubscriptionOrder && !isFirstDelivery
           ? "RecurringDeliveryCard"
           : "CompactOrderCard",
+      reasoning: {
+        hasSubscription: order.subscription === true,
+        hasRecurringOrder: order.recurringOrder !== undefined,
+        isActivationOrder: order.recurringOrder?.isActivationOrder,
+        activationCompleted: order.recurringOrder?.activationCompleted,
+        orderType: order.recurringOrder?.orderType,
+      },
     });
 
     // Use RecurringDeliveryCard for subscription orders EXCEPT the first delivery
@@ -443,9 +470,9 @@ const OrdersScreen = ({ navigation }) => {
           onContactSupport={() => navigation.navigate("Support")}
           onTrackDriver={(driver) => {
             console.log("Track driver:", driver);
-            navigation.navigate("MapTracking", { 
-              orderId: order._id || order.id, 
-              order: order 
+            navigation.navigate("MapTracking", {
+              orderId: order._id || order.id,
+              order: order,
             });
           }}
           style={{ marginHorizontal: 0, marginBottom: 20 }}
@@ -495,12 +522,16 @@ const OrdersScreen = ({ navigation }) => {
       order._id?.startsWith("sub_") ||
       order.id?.startsWith("sub_") ||
       order.orderType === "subscription" ||
-      order.recurringOrder !== undefined;
+      order.recurringOrder !== undefined ||
+      order.subscription === true; // Add this check for boolean subscription field
 
     // Check if this is the first delivery of a subscription
+    // For recurring orders, check if it's NOT an activation order and activation is completed
     const isFirstDelivery =
       order.recurringOrder?.isActivationOrder === true ||
       order.recurringOrder?.orderType === "one-time" ||
+      (order.recurringOrder &&
+        order.recurringOrder.activationCompleted === false) ||
       (order.deliveryDay && parseInt(order.deliveryDay) === 1) ||
       (order.dayNumber && parseInt(order.dayNumber) === 1);
 
@@ -513,9 +544,9 @@ const OrdersScreen = ({ navigation }) => {
           onContactSupport={() => navigation.navigate("Support")}
           onTrackDriver={(driver) => {
             console.log("Track driver:", driver);
-            navigation.navigate("MapTracking", { 
-              orderId: order._id || order.id, 
-              order: order 
+            navigation.navigate("MapTracking", {
+              orderId: order._id || order.id,
+              order: order,
             });
           }}
           style={{ marginHorizontal: 0, marginBottom: 20 }}

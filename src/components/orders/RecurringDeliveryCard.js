@@ -236,7 +236,7 @@ const RecurringDeliveryCard = ({
         {isOutForDelivery() && (
           <TouchableOpacity
             style={styles(colors).actionButton}
-            onPress={() => onTrackDriver?.(order.driver)}
+            onPress={() => onTrackDriver?.(order.driverAssignment?.driver || order.driver, order)}
           >
             <Ionicons name="location-outline" size={16} color={colors.primary} />
             <Text style={styles(colors).actionButtonText}>Track</Text>
