@@ -133,6 +133,7 @@ const MealPlanSchema = new mongoose.Schema({
 
 // Pre-save middleware to generate planId
 MealPlanSchema.pre("save", async function (next) {
+
   if (!this.planId) {
     // Find the highest existing planId number
     const lastPlan = await mongoose

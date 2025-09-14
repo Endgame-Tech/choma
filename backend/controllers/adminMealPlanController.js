@@ -74,6 +74,14 @@ exports.getAllMealPlans = async (req, res) => {
         }
       },
       {
+        $lookup: {
+          from: 'mealplanassignments',
+          localField: '_id',
+          foreignField: 'mealPlanId',
+          as: 'assignments'
+        }
+      },
+      {
         $addFields: {
           totalSubscriptions: { $size: '$subscriptions' },
           activeSubscriptions: {
@@ -86,6 +94,7 @@ exports.getAllMealPlans = async (req, res) => {
             }
           },
           totalDailyMeals: { $size: '$dailyMeals' },
+          assignmentCount: { $size: '$assignments' },
           revenue: {
             $sum: {
               $map: {
@@ -107,12 +116,14 @@ exports.getAllMealPlans = async (req, res) => {
         $project: {
           subscriptions: 0,
           dailyMeals: 0
+          // Keep assignments for frontend processing
         }
       },
       { $sort: sortObj },
       { $skip: skip },
       { $limit: limit }
     ]);
+
 
     const total = await MealPlan.countDocuments(query);
 
@@ -155,7 +166,7 @@ exports.getAllMealPlans = async (req, res) => {
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
-        totalPlans: total,
+        totalMealPlans: total,
         hasNext: page < Math.ceil(total / limit),
         hasPrev: page > 1,
         limit
@@ -249,6 +260,7 @@ exports.getMealPlanDetails = async (req, res) => {
 // Create new meal plan
 exports.createMealPlan = async (req, res) => {
   try {
+
     const {
       planName,
       description,
@@ -298,6 +310,7 @@ exports.createMealPlan = async (req, res) => {
       }
     }
 
+
     // Create meal plan
     const mealPlan = new MealPlan({
       planName: planName.trim(),
@@ -312,6 +325,7 @@ exports.createMealPlan = async (req, res) => {
     });
 
     await mealPlan.save();
+
 
     res.status(201).json({
       success: true,
@@ -424,6 +438,12 @@ exports.updateMealPlan = async (req, res) => {
       }
     }
 
+
+    // Don't allow direct updates to calculated fields
+    delete updateData.totalPrice;
+    delete updateData.nutritionInfo;
+    delete updateData.stats;
+
     // Update timestamp
     updateData.updatedAt = new Date();
 
@@ -432,6 +452,39 @@ exports.updateMealPlan = async (req, res) => {
       updateData,
       { new: true, runValidators: true }
     );
+
+    // Clean up assignments for meal types that are no longer supported
+    if (updateData.mealTypes) {
+      console.log("🔄 Meal types changed to:", updateData.mealTypes);
+      const MealPlanAssignment = require('../models/MealPlanAssignment');
+      const existingAssignments = await MealPlanAssignment.find({
+        mealPlanId: id,
+      });
+      console.log("📋 Found existing assignments:", existingAssignments.length);
+
+      const assignmentsToRemove = existingAssignments.filter(
+        (assignment) => !updateData.mealTypes.includes(assignment.mealTime)
+      );
+      console.log(
+        "🗑️ Assignments to remove:",
+        assignmentsToRemove.map((a) => `${a.mealTime} (${a.assignmentId})`)
+      );
+
+      if (assignmentsToRemove.length > 0) {
+        console.log(
+          `Removing ${assignmentsToRemove.length} assignments for disabled meal types`
+        );
+        await MealPlanAssignment.deleteMany({
+          _id: { $in: assignmentsToRemove.map((a) => a._id) },
+        });
+        console.log("✅ Assignments removed, recalculating meal plan");
+      }
+    }
+
+    // Recalculate totals and nutrition in case assignments or related data changed
+    await updatedPlan.updateCalculatedFields();
+    console.log("🔄 Final meal plan recalculation completed");
+
 
     res.json({
       success: true,
@@ -578,16 +631,14 @@ exports.duplicateMealPlan = async (req, res) => {
     if (modifications) {
       console.log('📊 Applying modifications:', modifications);
       
-      // Handle duration and price changes
+      // Handle duration changes
       if (modifications.durationWeeks && modifications.durationWeeks !== originalPlan.durationWeeks) {
         duplicateData.durationWeeks = modifications.durationWeeks;
         console.log(`⏱️ Duration changed: ${originalPlan.durationWeeks} → ${modifications.durationWeeks} weeks`);
       }
       
-      if (modifications.totalPrice && modifications.totalPrice !== originalPlan.totalPrice) {
-        duplicateData.totalPrice = modifications.totalPrice;
-        console.log(`💰 Price updated: ₦${originalPlan.totalPrice?.toLocaleString()} → ₦${modifications.totalPrice.toLocaleString()}`);
-      }
+      // NEVER manually set totalPrice - it will be calculated from actual assignments
+      duplicateData.totalPrice = 0; // Reset to 0, will be calculated later
 
       // Handle publication status
       if (modifications.isPublished !== undefined) {
@@ -595,12 +646,15 @@ exports.duplicateMealPlan = async (req, res) => {
         console.log(`📢 Publication status: ${modifications.isPublished ? 'Published' : 'Draft'}`);
       }
 
-      // Apply any other modifications
+      // Apply any other modifications (exclude totalPrice since we calculate it)
       Object.keys(modifications).forEach(key => {
         if (key !== 'durationWeeks' && key !== 'totalPrice' && key !== 'isPublished') {
           duplicateData[key] = modifications[key];
         }
       });
+    } else {
+      // Even without modifications, reset price to be calculated from assignments
+      duplicateData.totalPrice = 0;
     }
 
     // Create duplicate plan
@@ -637,14 +691,26 @@ exports.duplicateMealPlan = async (req, res) => {
     console.log('🔄 Step 3: Duplicating meal plan assignments...');
     const MealPlanAssignment = require('../models/MealPlanAssignment');
     const originalAssignments = await MealPlanAssignment.find({ mealPlanId: id });
+    
+    let duplicatedAssignmentsCount = 0;
+    let excludedAssignmentsCount = 0;
+    
     if (originalAssignments.length > 0) {
       // Filter assignments to only include those within the new meal plan duration
       const newDuration = duplicateData.durationWeeks;
-      const validAssignments = originalAssignments.filter(assignment => 
-        assignment.weekNumber <= newDuration
-      );
+      const validAssignments = originalAssignments.filter(assignment => {
+        const isValid = assignment.weekNumber <= newDuration;
+        if (!isValid) excludedAssignmentsCount++;
+        return isValid;
+      });
 
-      console.log(`📋 Original assignments: ${originalAssignments.length}, Valid for ${newDuration} weeks: ${validAssignments.length}`);
+      console.log(`📋 Original assignments: ${originalAssignments.length}, Valid for ${newDuration} weeks: ${validAssignments.length}, Excluded: ${excludedAssignmentsCount}`);
+      
+      // Log details about what's being excluded for downsizing scenarios
+      if (excludedAssignmentsCount > 0) {
+        const excludedWeeks = [...new Set(originalAssignments.filter(a => a.weekNumber > newDuration).map(a => a.weekNumber))];
+        console.log(`⚠️  Excluding assignments from weeks: ${excludedWeeks.join(', ')}`);
+      }
 
       if (validAssignments.length > 0) {
         const duplicateAssignments = validAssignments.map(assignment => ({
@@ -654,7 +720,8 @@ exports.duplicateMealPlan = async (req, res) => {
         }));
         
         await MealPlanAssignment.insertMany(duplicateAssignments);
-        console.log(`✅ Step 3 completed: Duplicated ${duplicateAssignments.length} meal plan assignments`);
+        duplicatedAssignmentsCount = duplicateAssignments.length;
+        console.log(`✅ Step 3 completed: Duplicated ${duplicatedAssignmentsCount} meal plan assignments`);
       } else {
         console.log(`✅ Step 3 completed: No assignments to duplicate within ${newDuration} weeks`);
       }
@@ -662,26 +729,63 @@ exports.duplicateMealPlan = async (req, res) => {
       console.log('✅ Step 3 completed: No meal plan assignments to duplicate');
     }
 
-    console.log('🔄 Step 4: Preparing response...');
+    // Step 4: Calculate actual cost from duplicated assignments
+    console.log('🔄 Step 4: Calculating actual cost from assignments...');
+    try {
+      if (duplicatedAssignmentsCount > 0) {
+        console.log('Calling updateCalculatedFields...');
+        await duplicatePlan.updateCalculatedFields();
+        console.log(`💰 Calculated total price: ₦${duplicatePlan.totalPrice?.toLocaleString()} from ${duplicatedAssignmentsCount} assignments`);
+      } else {
+        console.log('💰 No assignments duplicated, total price remains: ₦0');
+      }
+      console.log('✅ Step 4 completed: Cost calculation finished');
+    } catch (calcError) {
+      console.error('❌ Step 4 failed: Cost calculation error:', calcError);
+      console.error('Calculation error stack:', calcError.stack);
+      // Continue without failing the entire duplication
+      console.log('⚠️ Continuing duplication without cost calculation...');
+    }
+
+    // Step 5: Prepare detailed response with duplication summary
+    console.log('🔄 Step 5: Preparing detailed response...');
     const responseData = {
       success: true,
       message: 'Meal plan duplicated successfully',
-      data: duplicatePlan
+      data: duplicatePlan,
+      duplicationSummary: {
+        originalDuration: originalPlan.durationWeeks,
+        newDuration: duplicateData.durationWeeks,
+        originalAssignments: originalAssignments.length,
+        duplicatedAssignments: duplicatedAssignmentsCount,
+        excludedAssignments: excludedAssignmentsCount,
+        originalPrice: originalPlan.totalPrice,
+        newPrice: duplicatePlan.totalPrice,
+        isDownsizing: duplicateData.durationWeeks < originalPlan.durationWeeks,
+        isExpanding: duplicateData.durationWeeks > originalPlan.durationWeeks
+      }
     };
-    console.log('✅ Step 4 completed: Response prepared');
+    console.log('✅ Step 5 completed: Response prepared with summary');
 
-    console.log('🔄 Step 5: Sending response...');
+    console.log('🔄 Step 6: Sending response...');
     res.status(201).json(responseData);
-    console.log('✅ Step 5 completed: Response sent');
+    console.log('✅ Step 6 completed: Response sent');
   } catch (err) {
-    console.error('Duplicate meal plan error:', err);
+    console.error('❌ DUPLICATE MEAL PLAN ERROR:', err);
+    console.error('Error message:', err.message);
     console.error('Error stack:', err.stack);
     console.error('Error name:', err.name);
+    console.error('Request params:', req.params);
+    console.error('Request body:', req.body);
     res.status(500).json({
       success: false,
       message: 'Failed to duplicate meal plan',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+      details: process.env.NODE_ENV === 'development' ? {
+        params: req.params,
+        body: req.body
+      } : undefined
     });
   }
 };

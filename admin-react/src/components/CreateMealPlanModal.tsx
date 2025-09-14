@@ -77,6 +77,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
         adminNotes: formData.adminNotes
       }
 
+
       await onSubmit(planData)
       
       // Reset form

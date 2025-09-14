@@ -4,7 +4,7 @@ import type { MealPlan } from '../types'
 interface DuplicateMealPlanModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (newPlanName: string, modifications?: any) => Promise<void>
+  onSubmit: (newPlanName: string, modifications?: Record<string, unknown>) => Promise<void>
   mealPlan: MealPlan | null
   isLoading?: boolean
 }
@@ -32,20 +32,31 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
     }
   }, [isOpen, mealPlan])
 
-  // Calculate recalculated price based on new duration
-  const getRecalculatedPrice = () => {
-    if (!mealPlan || !mealPlan.totalPrice || !mealPlan.durationWeeks) return 0
-    const pricePerWeek = mealPlan.totalPrice / mealPlan.durationWeeks
-    return Math.round(pricePerWeek * newDurationWeeks)
+  // Analyze duplication scenario
+  const getDuplicationAnalysis = () => {
+    if (!mealPlan || !mealPlan.durationWeeks) return null
+
+    const isDownsizing = newDurationWeeks < mealPlan.durationWeeks
+    const isExpanding = newDurationWeeks > mealPlan.durationWeeks
+    const isSameDuration = newDurationWeeks === mealPlan.durationWeeks
+
+    return {
+      isDownsizing,
+      isExpanding,
+      isSameDuration,
+      originalWeeks: mealPlan.durationWeeks,
+      newWeeks: newDurationWeeks,
+      originalAssignments: mealPlan.assignmentCount || 0
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitError('')
-    
+
     // Validation
     const newErrors: { [key: string]: string } = {}
-    
+
     if (!newPlanName.trim()) {
       newErrors.newPlanName = 'Plan name is required'
     } else if (newPlanName.trim().length < 3) {
@@ -53,26 +64,26 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
     } else if (newPlanName.trim().length > 100) {
       newErrors.newPlanName = 'Plan name must not exceed 100 characters'
     }
-    
+
     setErrors(newErrors)
-    
+
     if (Object.keys(newErrors).length > 0) {
       return
     }
 
     // Prepare modifications
-    const modifications: any = {}
-    
+    const modifications: Record<string, unknown> = {}
+
     if (publishImmediately && mealPlan?.assignmentCount && mealPlan.assignmentCount > 0) {
       modifications.isPublished = true
     }
 
-    // Add duration and price modifications if duration changed
+    // Add duration modifications if duration changed (price will be calculated from actual assignments)
     if (newDurationWeeks !== mealPlan?.durationWeeks) {
       modifications.durationWeeks = newDurationWeeks
-      modifications.totalPrice = getRecalculatedPrice()
+      // Note: totalPrice will be calculated automatically from duplicated assignments
     }
-    
+
     try {
       await onSubmit(newPlanName.trim(), modifications)
     } catch (error) {
@@ -118,17 +129,73 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto max-h-[70vh]">
           <div className="p-6">
-            {/* Important Note */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-6">
-              <div className="flex items-start">
-                <div className="text-blue-400 mr-3 text-lg">📋</div>
-                <div>
-                  <h3 className="text-blue-800 dark:text-blue-300 font-medium">Duplicating Plan</h3>
-                  <p className="text-blue-700 dark:text-blue-300 text-sm mt-1">
-                    Creating a copy of "<strong>{mealPlan?.planName}</strong>". All settings and meal assignments will be preserved in the duplicate.
-                  </p>
+            {/* Important Note & Duration Warnings */}
+            <div className="space-y-4 mb-6">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                <div className="flex items-start">
+                  <div className="text-blue-400 mr-3 text-lg">📋</div>
+                  <div>
+                    <h3 className="text-blue-800 dark:text-blue-300 font-medium">Duplicating Plan</h3>
+                    <p className="text-blue-700 dark:text-blue-300 text-sm mt-1">
+                      Creating a copy of &ldquo;<strong>{mealPlan?.planName}</strong>&rdquo;.
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Duration-specific warnings */}
+              {(() => {
+                const analysis = getDuplicationAnalysis()
+                if (!analysis || !analysis.originalWeeks) return null
+
+                if (analysis.isDownsizing) {
+                  const excludedWeeks = Array.from(
+                    { length: analysis.originalWeeks - analysis.newWeeks },
+                    (_, i) => analysis.newWeeks + i + 1
+                  )
+                  return (
+                    <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-4">
+                      <div className="flex items-start">
+                        <div className="text-orange-400 mr-3 text-lg">⚠️</div>
+                        <div>
+                          <h3 className="text-orange-800 dark:text-orange-300 font-medium">Downsizing Plan</h3>
+                          <p className="text-orange-700 dark:text-orange-300 text-sm mt-1">
+                            Reducing from <strong>{analysis.originalWeeks}</strong> to <strong>{analysis.newWeeks}</strong> weeks will <strong>exclude meals from weeks {excludedWeeks.join(', ')}</strong>.
+                          </p>
+                          <p className="text-orange-700 dark:text-orange-300 text-sm mt-2">
+                            <strong>Cost will be recalculated</strong> based only on the meals included in weeks 1-{analysis.newWeeks}.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                if (analysis.isExpanding) {
+                  const emptyWeeks = Array.from(
+                    { length: analysis.newWeeks - analysis.originalWeeks },
+                    (_, i) => analysis.originalWeeks + i + 1
+                  )
+                  return (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                      <div className="flex items-start">
+                        <div className="text-green-400 mr-3 text-lg">📈</div>
+                        <div>
+                          <h3 className="text-green-800 dark:text-green-300 font-medium">Expanding Plan</h3>
+                          <p className="text-green-700 dark:text-green-300 text-sm mt-1">
+                            Expanding from <strong>{analysis.originalWeeks}</strong> to <strong>{analysis.newWeeks}</strong> weeks. Weeks {emptyWeeks.join(', ')} will be <strong>empty and ready for new meals</strong>.
+                          </p>
+                          <p className="text-green-700 dark:text-green-300 text-sm mt-2">
+                            <strong>Cost will only reflect</strong> the copied meals from weeks 1-{analysis.originalWeeks}. Add meals to the new weeks to complete the plan.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                return null
+              })()}
             </div>
 
             {/* Plan Name Input */}
@@ -145,11 +212,10 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
                     setErrors({ ...errors, newPlanName: '' })
                   }
                 }}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors dark:bg-neutral-800 dark:text-white ${
-                  errors.newPlanName
-                    ? 'border-red-300 dark:border-red-600'
-                    : 'border-gray-300 dark:border-neutral-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors dark:bg-neutral-800 dark:text-white ${errors.newPlanName
+                  ? 'border-red-300 dark:border-red-600'
+                  : 'border-gray-300 dark:border-neutral-600'
+                  }`}
                 placeholder="Enter name for the duplicated plan"
                 disabled={isLoading}
                 maxLength={100}
@@ -193,7 +259,7 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
             {/* Duplication Options */}
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">⚙️ Duplication Options</h3>
-              
+
               {/* Include Assignments */}
               <div className="flex items-start gap-3 mb-4">
                 <input
@@ -259,12 +325,16 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
                   <div>
                     <span className="text-gray-500 dark:text-neutral-400">Price:</span>
                     <span className="ml-2 text-gray-900 dark:text-neutral-100">
-                      ₦{getRecalculatedPrice().toLocaleString()}
-                      {newDurationWeeks !== mealPlan.durationWeeks && (
-                        <span className="text-blue-600 dark:text-blue-400 text-xs ml-1">
-                          (was ₦{mealPlan.totalPrice?.toLocaleString() || '0'})
-                        </span>
-                      )}
+                      {(() => {
+                        const analysis = getDuplicationAnalysis()
+                        if (!analysis) return '₦0'
+
+                        if (analysis.isSameDuration) {
+                          return `₦${mealPlan.totalPrice?.toLocaleString() || '0'}`
+                        } else {
+                          return 'Will be calculated from actual meals'
+                        }
+                      })()}
                     </span>
                   </div>
                   <div>
@@ -283,7 +353,9 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
                 {newDurationWeeks !== mealPlan.durationWeeks && (
                   <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
                     <div className="text-xs text-blue-700 dark:text-blue-300">
-                      <strong>Price Calculation:</strong> ₦{mealPlan.totalPrice?.toLocaleString() || '0'} ÷ {mealPlan.durationWeeks} weeks × {newDurationWeeks} weeks = ₦{getRecalculatedPrice().toLocaleString()}
+                      <strong>Pricing Note:</strong> The final price will be calculated based on the actual meals that get copied from the original plan.
+                      {getDuplicationAnalysis()?.isDownsizing && ' Some meals will be excluded.'}
+                      {getDuplicationAnalysis()?.isExpanding && ' Additional weeks will be empty until you add meals.'}
                     </div>
                   </div>
                 )}

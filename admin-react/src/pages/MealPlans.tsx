@@ -81,6 +81,7 @@ const MealPlans: React.FC = () => {
       const response = await mealPlansApi.getAllMealPlans(filters) as { data: { mealPlans: ApiMealPlan[]; pagination: typeof pagination } }
       // Normalize API MealPlan -> UI MealPlan shape to satisfy shared UI types
       const apiPlans = response.data.mealPlans || []
+      
       const uiPlans: UiMealPlan[] = apiPlans.map((p) => {
         // Safe extraction helpers
         const statsRecord = p.stats as unknown as Record<string, unknown> | undefined
@@ -129,7 +130,13 @@ const MealPlans: React.FC = () => {
       const map: Record<string, ApiMealPlan> = {}
       apiPlans.forEach(p => { map[p._id] = p })
       setApiPlanMap(map)
-      setPagination(response.data.pagination)
+      setPagination(response.data.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalMealPlans: 0,
+        hasNext: false,
+        hasPrev: false
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch meal plans')
     } finally {
@@ -139,6 +146,7 @@ const MealPlans: React.FC = () => {
 
   const handleCreateMealPlan = async (planData: Partial<ApiMealPlan>) => {
     try {
+
       await mealPlansApi.createMealPlan(planData)
       await fetchMealPlans()
       setCreateModalOpen(false)
@@ -333,7 +341,7 @@ const MealPlans: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">Meal Plans Management</h1>
-          <p className="text-gray-600 dark:text-neutral-200">Create and manage meal plan templates ({pagination.totalMealPlans} plans)</p>
+          <p className="text-gray-600 dark:text-neutral-200">Create and manage meal plan templates ({pagination?.totalMealPlans || 0} plans)</p>
         </div>
         <div className="flex items-center space-x-3">
           {/* View Toggle */}
@@ -723,28 +731,28 @@ const MealPlans: React.FC = () => {
       )}
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
+      {(pagination?.totalPages || 0) > 1 && (
         <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700 dark:text-neutral-200">
-              Showing {((pagination.currentPage - 1) * (filters.limit || 20)) + 1} to{' '}
-              {Math.min(pagination.currentPage * (filters.limit || 20), pagination.totalMealPlans)} of{' '}
-              {pagination.totalMealPlans} meal plans
+              Showing {((pagination?.currentPage || 1) - 1) * (filters.limit || 20) + 1} to{' '}
+              {Math.min((pagination?.currentPage || 1) * (filters.limit || 20), pagination?.totalMealPlans || 0)} of{' '}
+              {pagination?.totalMealPlans || 0} meal plans
             </div>
             <div className="flex space-x-2">
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, prev.page! - 1) }))}
-                disabled={!pagination.hasPrev}
+                disabled={!pagination?.hasPrev}
                 className="px-3 py-1 text-sm border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded hover:bg-gray-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
               <span className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
-                {pagination.currentPage} of {pagination.totalPages}
+                {pagination?.currentPage || 1} of {pagination?.totalPages || 1}
               </span>
               <button
                 onClick={() => setFilters(prev => ({ ...prev, page: prev.page! + 1 }))}
-                disabled={!pagination.hasNext}
+                disabled={!pagination?.hasNext}
                 className="px-3 py-1 text-sm border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded hover:bg-gray-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next

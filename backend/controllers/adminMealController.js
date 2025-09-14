@@ -1234,6 +1234,7 @@ exports.toggleMealAvailability = async (req, res) => {
 };
 
 // ============= NEW MEAL PLANS MANAGEMENT (V2) =============
+// DEPRECATED: Use adminMealPlanController.getAllMealPlans instead
 exports.getAllMealPlansV2 = async (req, res) => {
   try {
     const {
@@ -1302,6 +1303,7 @@ exports.getAllMealPlansV2 = async (req, res) => {
   }
 };
 
+// DEPRECATED: Use adminMealPlanController.getMealPlanDetails instead
 exports.getMealPlanDetailsV2 = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1355,6 +1357,7 @@ exports.getMealPlanDetailsV2 = async (req, res) => {
   }
 };
 
+// DEPRECATED: Use adminMealPlanController.createMealPlan instead
 exports.createMealPlanV2 = async (req, res) => {
   try {
     const {
@@ -1397,6 +1400,7 @@ exports.createMealPlanV2 = async (req, res) => {
   }
 };
 
+// DEPRECATED: Use adminMealPlanController.updateMealPlan instead
 exports.updateMealPlanV2 = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1418,8 +1422,46 @@ exports.updateMealPlanV2 = async (req, res) => {
       });
     }
 
+    // Clean up assignments for meal types that are no longer supported BEFORE recalculating
+    if (updateData.mealTypes) {
+      console.log("🔄 V2: Meal types changed to:", updateData.mealTypes);
+      const existingAssignments = await MealPlanAssignment.find({
+        mealPlanId: id,
+      });
+      console.log(
+        "📋 V2: Found existing assignments:",
+        existingAssignments.length
+      );
+
+      const assignmentsToRemove = existingAssignments.filter(
+        (assignment) => !updateData.mealTypes.includes(assignment.mealTime)
+      );
+      console.log(
+        "🗑️ V2: Assignments to remove:",
+        assignmentsToRemove.map((a) => `${a.mealTime} (${a.assignmentId})`)
+      );
+
+      if (assignmentsToRemove.length > 0) {
+        console.log(
+          `Removing ${assignmentsToRemove.length} assignments for disabled meal types`
+        );
+        await MealPlanAssignment.deleteMany({
+          _id: { $in: assignmentsToRemove.map((a) => a._id) },
+        });
+
+        console.log("✅ V2: Assignments removed, recalculating meal plan");
+      }
+    }
+
     // Recalculate totals and nutrition in case assignments or related data changed
     await mealPlan.updateCalculatedFields();
+    console.log("🔄 V2: Final meal plan recalculation completed");
+
+    // Log final values being returned to frontend
+    console.log("📤 V2: Returning to frontend:");
+    console.log(`💰 Total price: ${mealPlan.totalPrice}`);
+    console.log(`📊 Meals assigned: ${mealPlan.stats.totalMealsAssigned}`);
+    console.log(`🍽️ Meal types: ${mealPlan.mealTypes}`);
 
     res.json({
       success: true,
@@ -1436,6 +1478,7 @@ exports.updateMealPlanV2 = async (req, res) => {
   }
 };
 
+// DEPRECATED: Use adminMealPlanController.deleteMealPlan instead
 exports.deleteMealPlanV2 = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1609,7 +1652,7 @@ exports.assignMealToPlan = async (req, res) => {
       mealTime,
       notes,
     } = req.body;
-    
+
     console.log("Request params:", { id });
     console.log("Request body:", req.body);
 
@@ -1712,10 +1755,10 @@ exports.assignMealToPlan = async (req, res) => {
       });
     }
 
-    // Recalculate the total price of the meal plan - temporarily disabled for debugging
-    // if (mealPlan) {
-    //   await mealPlan.updateCalculatedFields();
-    // }
+    // Recalculate the total price of the meal plan
+    if (mealPlan) {
+      await mealPlan.updateCalculatedFields();
+    }
 
     res.json({
       success: true,
@@ -1732,11 +1775,14 @@ exports.assignMealToPlan = async (req, res) => {
       success: false,
       message: "Failed to assign meal to plan",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
-      details: process.env.NODE_ENV === "development" ? {
-        stack: error.stack,
-        body: req.body,
-        params: req.params
-      } : undefined,
+      details:
+        process.env.NODE_ENV === "development"
+          ? {
+              stack: error.stack,
+              body: req.body,
+              params: req.params,
+            }
+          : undefined,
     });
   }
 };

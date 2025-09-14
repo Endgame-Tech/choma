@@ -121,11 +121,11 @@ const corsOptions = {
       "http://localhost:3002",
       "http://localhost:3003",
       "http://localhost:3004",
-      "http://127.0.0.1:3000",
-      "http://127.0.0.1:3001",
-      "http://127.0.0.1:3002",
-      "http://127.0.0.1:3003",
-      "http://127.0.0.1:3004",
+      "http://10.226.105.28:3000",
+      "http://10.226.105.28:3001",
+      "http://10.226.105.28:3002",
+      "http://10.226.105.28:3003",
+      "http://10.226.105.28:3004",
     ];
 
     // In production, add your production domains from environment variables

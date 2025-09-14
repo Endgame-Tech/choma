@@ -66,7 +66,7 @@ const UserActivityDashboard: React.FC = () => {
                         <span style={{ marginRight: 12 }}><UserPlusIcon className="h-6 w-6" /></span>
                         <div>
                             <div style={{ fontWeight: 'bold' }}>New User Registration</div>
-                            <div style={{ color: '#555' }}>{item.data.fullName} ({item.data.email}) registered.</div>
+                            <div style={{ color: '#555' }}>{item.data.fullName || 'Unknown User'} ({item.data.email || 'No email'}) registered.</div>
                         </div>
                     </li>
                 );
@@ -76,7 +76,7 @@ const UserActivityDashboard: React.FC = () => {
                         <span style={{ marginRight: 12 }}><ShoppingCartIcon className="h-6 w-6" /></span>
                         <div>
                             <div style={{ fontWeight: 'bold' }}>New Order</div>
-                            <div style={{ color: '#555' }}>Order #{item.data.orderNumber} for ₦{item.data.totalAmount} by {item.data.customer.fullName}.</div>
+                            <div style={{ color: '#555' }}>Order #{item.data.orderNumber || 'Unknown'} for ₦{item.data.totalAmount || 0} by {item.data.customer?.fullName || 'Unknown Customer'}.</div>
                         </div>
                     </li>
                 );
@@ -86,7 +86,7 @@ const UserActivityDashboard: React.FC = () => {
                         <span style={{ marginRight: 12 }}><BellAlertIcon className="h-6 w-6" /></span>
                         <div>
                             <div style={{ fontWeight: 'bold' }}>New Subscription</div>
-                            <div style={{ color: '#555' }}>{item.data.userId.fullName} subscribed to {item.data.mealPlanId.planName}.</div>
+                            <div style={{ color: '#555' }}>{item.data.userId?.fullName || 'Unknown User'} subscribed to {item.data.mealPlanId?.planName || 'Unknown Meal Plan'}.</div>
                         </div>
                     </li>
                 );

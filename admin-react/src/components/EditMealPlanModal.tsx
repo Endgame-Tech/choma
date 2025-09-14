@@ -42,16 +42,20 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
   // Update form data when meal plan changes
   useEffect(() => {
     if (mealPlan) {
+
       setFormData({
         planName: typeof mealPlanRec.planName === 'string' ? mealPlanRec.planName as string : '',
         description: typeof mealPlanRec.description === 'string' ? mealPlanRec.description as string : '',
         coverImage: typeof mealPlanRec.coverImage === 'string' ? mealPlanRec.coverImage as string : '',
         durationWeeks: typeof mealPlanRec.durationWeeks === 'number' ? String(mealPlanRec.durationWeeks as number) : (typeof mealPlanRec.durationWeeks === 'string' ? mealPlanRec.durationWeeks as string : '4'),
         targetAudience: typeof mealPlanRec.targetAudience === 'string' ? mealPlanRec.targetAudience as string : 'Family',
-        mealTypes: Array.isArray(mealPlanRec.mealTypes) ? (mealPlanRec.mealTypes as string[]) : ['breakfast', 'lunch', 'dinner'],
+        mealTypes: Array.isArray(mealPlanRec.mealTypes) && mealPlanRec.mealTypes.length > 0 
+          ? (mealPlanRec.mealTypes as string[]) 
+          : ['breakfast', 'lunch', 'dinner'], // Only default if no meal types or empty array
         planFeatures: Array.isArray(mealPlanRec.planFeatures) ? (mealPlanRec.planFeatures as string[]).join(', ') : (typeof mealPlanRec.planFeatures === 'string' ? mealPlanRec.planFeatures as string : ''),
         adminNotes: typeof mealPlanRec.adminNotes === 'string' ? mealPlanRec.adminNotes as string : ''
       })
+
     }
   }, [mealPlan])
 

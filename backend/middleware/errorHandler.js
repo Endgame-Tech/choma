@@ -92,7 +92,7 @@ const createLogger = () => {
   );
 
   const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL || 'info',
+    level: process.env.LOG_LEVEL || 'http',
     format: logFormat,
     defaultMeta: { service: 'choma-backend' },
     transports: [
@@ -128,7 +128,7 @@ const createLogger = () => {
   if (process.env.NODE_ENV !== 'production') {
     logger.add(new winston.transports.Console({
       format: consoleFormat,
-      level: 'debug'
+      level: process.env.LOG_LEVEL || 'http'
     }));
   }
 

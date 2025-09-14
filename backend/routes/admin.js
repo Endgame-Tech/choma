@@ -226,13 +226,13 @@ router.put(
 );
 
 // New Meal Plans Management (with publishing system)
-router.get("/meal-plans", adminMealController.getAllMealPlansV2);
-router.get("/meal-plans/:id", adminMealController.getMealPlanDetailsV2);
-router.post("/meal-plans", adminMealController.createMealPlanV2);
-router.put("/meal-plans/:id", adminMealController.updateMealPlanV2);
-router.delete("/meal-plans/:id", adminMealController.deleteMealPlanV2);
-router.put("/meal-plans/:id/publish", adminMealController.publishMealPlan);
-router.put("/meal-plans/:id/unpublish", adminMealController.unpublishMealPlan);
+router.get("/meal-plans", adminMealPlanController.getAllMealPlans);
+router.get("/meal-plans/:id", adminMealPlanController.getMealPlanDetails);
+router.post("/meal-plans", adminMealPlanController.createMealPlan);
+router.put("/meal-plans/:id", adminMealPlanController.updateMealPlan);
+router.delete("/meal-plans/:id", adminMealPlanController.deleteMealPlan);
+router.put("/meal-plans/:id/publish", adminMealPlanController.publishMealPlan);
+router.put("/meal-plans/:id/unpublish", adminMealPlanController.unpublishMealPlan);
 router.post("/meal-plans/:id/duplicate", adminMealPlanController.duplicateMealPlan);
 
 // Meal Assignment System
