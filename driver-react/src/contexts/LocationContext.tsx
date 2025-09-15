@@ -40,11 +40,11 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
   const { updateLocation, isConnected } = useWebSocket();
 
-  // Position options
+  // Position options for high-accuracy GPS (not IP geolocation)
   const positionOptions: PositionOptions = {
     enableHighAccuracy: true,
-    timeout: 15000,
-    maximumAge: 60000 // 1 minute
+    timeout: 30000, // Increased timeout for GPS
+    maximumAge: 0 // Force fresh GPS reading, don't use cached data
   };
 
   // Handle successful position update
@@ -54,17 +54,36 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       longitude: position.coords.longitude
     };
 
+    // Validate location accuracy - reject low-accuracy positions
+    const accuracy = position.coords.accuracy;
+    if (accuracy > 100) {
+      console.warn(`[Location] Low accuracy GPS reading (${accuracy}m) - likely IP geolocation. Requesting better GPS fix...`);
+      setLocationError(`Low accuracy location (${Math.round(accuracy)}m) - waiting for better GPS signal...`);
+      return;
+    }
+
     setCurrentLocation(location);
-    setAccuracy(position.coords.accuracy);
+    setAccuracy(accuracy);
     setLastUpdate(new Date());
     setLocationError(null);
 
-    // Send to server if connected
+    // Send enhanced location data to server if connected
     if (isConnected) {
-      updateLocation(location.latitude, location.longitude);
+      updateLocation({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        accuracy: accuracy,
+        speed: position.coords.speed || 0,
+        bearing: position.coords.heading || 0,
+        timestamp: new Date().toISOString()
+      });
     }
 
-    console.log('[Location] Location updated:', location);
+    console.log(`[Location] High-accuracy GPS location updated:`, {
+      ...location,
+      accuracy: `${Math.round(accuracy)}m`,
+      source: accuracy <= 20 ? 'GPS' : accuracy <= 100 ? 'Network-assisted GPS' : 'Network/IP'
+    });
   };
 
   // Handle position error

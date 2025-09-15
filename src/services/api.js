@@ -812,6 +812,11 @@ class ApiService {
     return this.request(`/subscriptions/${id}`);
   }
 
+  // Alias for compatibility with SubscriptionCard
+  async getSubscription(id) {
+    return this.getSubscriptionById(id);
+  }
+
   async updateSubscription(id, updates) {
     console.log(
       "API updateSubscription called with ID:",

@@ -233,7 +233,10 @@ const DeliveryDetail: React.FC = () => {
       </div>
 
       {/* Location Tracker */}
-      <LocationTracker isActive={assignment.status !== 'delivered'} />
+      <LocationTracker 
+        isActive={assignment.status !== 'delivered'} 
+        highFrequency={assignment.status === 'picked_up'} // High frequency when package is picked up
+      />
 
       {/* Pickup Location */}
       <div className="bg-white rounded-lg shadow p-6">

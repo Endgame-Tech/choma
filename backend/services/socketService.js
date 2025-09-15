@@ -37,7 +37,11 @@ class SocketService {
         credentials: true,
       },
       path: "/socket.io",
-      transports: ["polling", "websocket"], // Try polling first, then websocket
+      transports: ["websocket", "polling"], // Prefer websocket over polling
+      pingTimeout: 60000,
+      pingInterval: 25000,
+      upgradeTimeout: 10000,
+      allowUpgrades: true
     });
 
     this.io.use(async (socket, next) => {
@@ -162,26 +166,67 @@ class SocketService {
     // Handle location updates from driver
     socket.on('location_update', async (data) => {
       try {
-        const { latitude, longitude, bearing, speed, accuracy } = data;
+        const { latitude, longitude, bearing, speed, accuracy, timestamp } = data;
         
         console.log(`🚗 Raw location update from driver ${driverId}:`, data);
         
         if (!latitude || !longitude) {
           console.log('❌ Invalid location data received from driver:', driverId);
+          socket.emit('location_update_ack', {
+            success: false,
+            error: 'Invalid location coordinates'
+          });
           return;
         }
 
-        console.log(`📍 Valid location update from driver ${driverId}:`, { latitude, longitude });
+        // Validate location accuracy - be more lenient for testing
+        const locationAccuracy = accuracy || 0;
+        if (locationAccuracy > 500000) { // 500km threshold for testing
+          console.log(`⚠️ Extremely low accuracy location from driver ${driverId}: ${locationAccuracy}m - rejecting`);
+          socket.emit('location_update_ack', {
+            success: false,
+            error: `Location accuracy too low (${Math.round(locationAccuracy)}m). Please wait for better GPS signal.`,
+            accuracy: locationAccuracy
+          });
+          return;
+        }
 
-        // Update driver location in database
+        // Accept IP-based location for testing with warning
+        if (locationAccuracy > 100000) {
+          console.log(`⚠️ Using IP-based location for testing from driver ${driverId}: ${locationAccuracy}m`);
+        }
+
+        // Validate timestamp freshness (optional - reject very stale data)
+        if (timestamp) {
+          const locationTime = new Date(timestamp).getTime();
+          const now = Date.now();
+          const ageMinutes = (now - locationTime) / (1000 * 60);
+          if (ageMinutes > 5) {
+            console.log(`⚠️ Stale location from driver ${driverId}: ${ageMinutes.toFixed(1)} minutes old`);
+            socket.emit('location_update_ack', {
+              success: false,
+              error: 'Location data is too old',
+              age: ageMinutes
+            });
+            return;
+          }
+        }
+
+        console.log(`📍 High-accuracy GPS update from driver ${driverId}:`, { 
+          latitude, 
+          longitude, 
+          accuracy: `${Math.round(locationAccuracy)}m`,
+          source: locationAccuracy <= 20 ? 'GPS' : locationAccuracy <= 100 ? 'Network-assisted GPS' : 'Network/IP'
+        });
+
+        // Get driver info but don't update database for real-time tracking
         const Driver = require('../models/Driver');
         const driver = await Driver.findById(driverId);
         
         if (driver) {
+          // Update driver's location in the database
           await driver.updateLocation([longitude, latitude]);
 
-          // Broadcast location to active tracking sessions
-          const driverTrackingService = require('./driverTrackingWebSocketService');
           const DriverAssignment = require('../models/DriverAssignment');
           
           // Find all orders being delivered by this driver
@@ -190,7 +235,7 @@ class SocketService {
             status: { $in: ['assigned', 'picked_up', 'in_transit'] }
           }).populate('orderId');
 
-          // Broadcast location to each active order's tracking session
+          // Broadcast location to each active order's tracking session using Socket.IO rooms
           for (const assignment of activeAssignments) {
             const orderId = assignment.orderId._id.toString();
             const locationData = {
@@ -204,15 +249,17 @@ class SocketService {
               driverName: driver.fullName
             };
 
-            console.log(`📡 Broadcasting location for order ${orderId}`);
-            driverTrackingService.sendTrackingUpdate(orderId, 'driver_location', locationData);
+            console.log(`📡 Broadcasting location for order ${orderId} to room tracking_${orderId}`);
+            this.io.to(`tracking_${orderId}`).emit('driver_location', locationData);
           }
 
           // Send acknowledgment back to driver
           socket.emit('location_update_ack', {
             success: true,
             timestamp: new Date().toISOString(),
-            activeDeliveries: activeAssignments.length
+            activeDeliveries: activeAssignments.length,
+            accuracy: locationAccuracy,
+            source: locationAccuracy <= 20 ? 'GPS' : locationAccuracy <= 100 ? 'Network-assisted GPS' : 'Network/IP'
           });
         }
       } catch (error) {
@@ -254,6 +301,97 @@ class SocketService {
     socket.emit("connected", {
       message: "Connected to Choma real-time service",
     });
+
+    // Handle tracking subscriptions
+    socket.on('track_order', async (data) => {
+      try {
+        const { orderId } = data;
+        if (!orderId) {
+          socket.emit('track_order_error', { error: 'Order ID required' });
+          return;
+        }
+
+        console.log(`📱 Customer ${customerId} subscribing to track order ${orderId}`);
+        
+        // Join tracking room for this order
+        socket.join(`tracking_${orderId}`);
+        
+        // Send current driver info if available
+        const DriverAssignment = require('../models/DriverAssignment');
+        const Driver = require('../models/Driver');
+        
+        const assignment = await DriverAssignment.findOne({
+          orderId: orderId,
+          status: { $in: ['assigned', 'picked_up', 'in_transit'] }
+        }).populate('driverId');
+
+        if (assignment && assignment.driverId) {
+          const driver = assignment.driverId;
+          
+          // Send current driver info
+          socket.emit('driver_info', {
+            name: driver.fullName,
+            phone: driver.phone,
+            vehicle: `${driver.vehicleInfo?.type || 'Vehicle'} ${driver.vehicleInfo?.model || ''} - ${driver.vehicleInfo?.plateNumber || ''}`,
+            rating: driver.rating || { average: 5, count: 0 },
+            profileImage: driver.profileImage || 'https://via.placeholder.com/100x100'
+          });
+
+          // Send current location if available
+          if (driver.currentLocation && driver.currentLocation.coordinates) {
+            const locationData = {
+              latitude: driver.currentLocation.coordinates[1],
+              longitude: driver.currentLocation.coordinates[0],
+              accuracy: 10,
+              bearing: 0,
+              speed: 0,
+              timestamp: driver.currentLocation.lastUpdated || new Date().toISOString(),
+              driverId: driver._id.toString(),
+              driverName: driver.fullName
+            };
+            
+            console.log(`📍 Sending stored location to customer for order ${orderId}:`, locationData);
+            socket.emit('driver_location', locationData);
+            
+            // Also broadcast to room for any other listeners
+            this.io.to(`tracking_${orderId}`).emit('driver_location', locationData);
+          }
+
+          // Send current tracking status
+          socket.emit('tracking_status', {
+            status: assignment.status,
+            message: this.getStatusMessage(assignment.status),
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        socket.emit('track_order_success', { orderId, message: 'Successfully subscribed to order tracking' });
+        
+      } catch (error) {
+        console.error('❌ Error handling track_order:', error);
+        socket.emit('track_order_error', { error: error.message });
+      }
+    });
+
+    // Handle unsubscribe from tracking
+    socket.on('untrack_order', (data) => {
+      const { orderId } = data;
+      if (orderId) {
+        console.log(`📱 Customer ${customerId} unsubscribing from order ${orderId}`);
+        socket.leave(`tracking_${orderId}`);
+        socket.emit('untrack_order_success', { orderId });
+      }
+    });
+  }
+
+  getStatusMessage(status) {
+    const messages = {
+      'assigned': 'Driver assigned to your order',
+      'picked_up': 'Driver has picked up your order', 
+      'in_transit': 'Your order is on the way',
+      'delivered': 'Order delivered successfully'
+    };
+    return messages[status] || 'Order status updated';
   }
 
   handleDisconnect(socket) {

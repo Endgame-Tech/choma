@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket';
+import firebaseService from '../services/firebaseService';
 import { MapPinIcon, SignalIcon, SignalSlashIcon } from '@heroicons/react/24/outline';
 
 interface Location {
@@ -12,22 +13,48 @@ interface Location {
 interface LocationTrackerProps {
   isActive?: boolean;
   updateInterval?: number;
+  highFrequency?: boolean; // For active deliveries
 }
 
 const LocationTracker: React.FC<LocationTrackerProps> = ({ 
   isActive = true, 
-  updateInterval = 60000 // 60 seconds (1 minute)
+  updateInterval,
+  highFrequency = false
 }) => {
+  // Dynamic update interval based on activity
+  const getUpdateInterval = () => {
+    if (updateInterval) return updateInterval;
+    return highFrequency ? 15000 : 60000; // 15 seconds for active deliveries, 60 seconds otherwise
+  };
   const { isConnected, updateLocation } = useWebSocket();
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isTracking, setIsTracking] = useState(false);
+  const [firebaseConnected, setFirebaseConnected] = useState(false);
 
   useEffect(() => {
-    if (!isActive || !isConnected) {
+    if (!isActive) {
       setIsTracking(false);
       return;
     }
+
+    // Initialize Firebase with driver ID from localStorage
+    const initFirebase = async () => {
+      const driverToken = localStorage.getItem('driverToken');
+      if (driverToken) {
+        try {
+          // Extract driver ID from token or use a stored driver ID
+          const driverId = localStorage.getItem('driverId') || 'driver_' + Date.now();
+          const connected = await firebaseService.initialize(driverId);
+          setFirebaseConnected(connected);
+        } catch (error) {
+          console.error('Firebase initialization failed:', error);
+          setFirebaseConnected(false);
+        }
+      }
+    };
+
+    initFirebase();
 
     // Request permission first
     if ('geolocation' in navigator) {
@@ -48,7 +75,7 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
     return () => {
       setIsTracking(false);
     };
-  }, [isActive, isConnected, updateInterval]);
+  }, [isActive, isConnected, highFrequency]);
 
   const startTracking = () => {
     if (!navigator.geolocation) return;
@@ -59,12 +86,15 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
     // Get initial position
     getCurrentLocation();
 
-    // Set up continuous tracking
+    // Set up continuous tracking with dynamic interval
+    const actualUpdateInterval = getUpdateInterval();
+    console.log(`[LocationTracker] Setting up GPS tracking with ${actualUpdateInterval/1000}s interval (high frequency: ${highFrequency})`);
+    
     const intervalId = setInterval(() => {
       if (isActive && isConnected) {
         getCurrentLocation();
       }
-    }, updateInterval);
+    }, actualUpdateInterval);
 
     return () => clearInterval(intervalId);
   };
@@ -79,25 +109,50 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
           timestamp: Date.now()
         };
 
+        // Validate location accuracy - reject very low-accuracy positions
+        if (location.accuracy > 500000) { // Very lenient for testing (500km)
+          console.warn(`[LocationTracker] Extremely low accuracy GPS reading (${location.accuracy}m) - likely IP geolocation. Requesting better GPS fix...`);
+          setLocationError(`Very low accuracy location (${Math.round(location.accuracy)}m) - waiting for better GPS signal...`);
+          return;
+        }
+        
+        // Accept even IP-based location for testing
+        console.warn(`[LocationTracker] Using location with ${Math.round(location.accuracy)}m accuracy for testing`);
+
         setCurrentLocation(location);
         setLocationError(null);
 
-        // Send location update to server via WebSocket
+        // Send location update to Firebase (primary) and WebSocket (fallback)
+        const locationUpdate = {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          accuracy: location.accuracy,
+          speed: position.coords.speed || 0,
+          bearing: position.coords.heading || 0,
+          timestamp: new Date().toISOString()
+        };
+
+        console.log(`[LocationTracker] Sending high-accuracy location update:`, {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          accuracy: `${Math.round(location.accuracy)}m`,
+          source: location.accuracy <= 20 ? 'GPS' : location.accuracy <= 100 ? 'Network-assisted GPS' : 'Network/IP',
+          firebase: firebaseConnected,
+          websocket: isConnected
+        });
+
+        // Try Firebase first
+        if (firebaseConnected) {
+          firebaseService.updateLocation(locationUpdate);
+        }
+
+        // Also send via WebSocket as backup
         if (isConnected) {
-          console.log('[Location] Sending location update:', {
-            latitude: location.latitude,
-            longitude: location.longitude,
-            accuracy: location.accuracy
-          });
-          updateLocation({
-            latitude: location.latitude,
-            longitude: location.longitude,
-            accuracy: location.accuracy,
-            speed: position.coords.speed,
-            bearing: position.coords.heading
-          });
-        } else {
-          console.warn('[Location] WebSocket not connected - location not sent');
+          updateLocation(locationUpdate);
+        }
+
+        if (!firebaseConnected && !isConnected) {
+          console.warn('[LocationTracker] Neither Firebase nor WebSocket connected - location not sent');
         }
 
       },
@@ -121,8 +176,8 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
       },
       {
         enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 60000 // 1 minute
+        timeout: 30000, // Increased timeout for GPS
+        maximumAge: 0 // Force fresh GPS reading, don't use cached data
       }
     );
   };
@@ -147,15 +202,18 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
           <span className="font-medium text-gray-900">Location Tracking</span>
         </div>
         
-        <div className={`flex items-center space-x-1 ${isTracking && isConnected ? 'text-green-600' : 'text-gray-400'}`}>
-          {isTracking && isConnected ? (
+        <div className={`flex items-center space-x-1 ${isTracking && (firebaseConnected || isConnected) ? 'text-green-600' : 'text-gray-400'}`}>
+          {isTracking && (firebaseConnected || isConnected) ? (
             <SignalIcon className="h-4 w-4" />
           ) : (
             <SignalSlashIcon className="h-4 w-4" />
           )}
           <span className="text-sm font-medium">
-            {isTracking && isConnected ? 'Active' : 'Inactive'}
+            {isTracking && (firebaseConnected || isConnected) ? 'Active' : 'Inactive'}
           </span>
+          {firebaseConnected && (
+            <span className="text-xs text-green-500 font-medium">FB</span>
+          )}
         </div>
       </div>
 
@@ -190,10 +248,18 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
         </div>
       )}
 
-      {!isConnected && (
+      {!firebaseConnected && !isConnected && (
+        <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-sm">
+          <span className="text-red-800">
+            <i className="fi fi-rr-triangle-warning"></i> Not connected to Firebase or WebSocket. Location updates are disabled.
+          </span>
+        </div>
+      )}
+
+      {!firebaseConnected && isConnected && (
         <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
           <span className="text-yellow-800">
-            <i className="fi fi-rr-triangle-warning"></i> Not connected to server. Location updates will resume when connection is restored.
+            <i className="fi fi-rr-triangle-warning"></i> Using WebSocket fallback. Firebase connection failed.
           </span>
         </div>
       )}

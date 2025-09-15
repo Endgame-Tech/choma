@@ -28,6 +28,7 @@ const MealProgressionTimeline = ({
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [realTimeUpdateInterval, setRealTimeUpdateInterval] = useState(null);
   const [viewMode, setViewMode] = useState("vertical"); // 'vertical' or 'horizontal'
   const [currentMealIndex, setCurrentMealIndex] = useState({}); // Track current meal index for each day
   const timelineRef = useRef(null);
@@ -35,6 +36,137 @@ const MealProgressionTimeline = ({
   useEffect(() => {
     loadTimeline();
   }, [subscriptionId]);
+
+  // Silent update function that only updates status without refreshing UI
+  const silentTimelineUpdate = async () => {
+    try {
+      if (!subscriptionId) {
+        console.log("Silent timeline update: No subscription ID");
+        return;
+      }
+
+      const result = await apiService.getSubscriptionMealTimeline(
+        subscriptionId,
+        14 // Show 2 weeks instead of 7 days
+      );
+      
+      // Enhanced error checking
+      if (!result) {
+        console.log("Silent timeline update: No response received");
+        return;
+      }
+      
+      if (!result.success) {
+        console.log("Silent timeline update: API returned success: false");
+        return;
+      }
+      
+      if (!result.data) {
+        console.log("Silent timeline update: No data received");
+        return;
+      }
+
+      // Handle different possible data structures
+      let timelineData = [];
+      if (Array.isArray(result.data)) {
+        timelineData = result.data;
+      } else if (Array.isArray(result.data.data)) {
+        timelineData = result.data.data;
+      } else if (
+        result.data.timeline &&
+        Array.isArray(result.data.timeline)
+      ) {
+        timelineData = result.data.timeline;
+      }
+
+      if (timelineData.length === 0) {
+        console.log("Silent timeline update: No timeline data available");
+        return;
+      }
+
+      // Group meals by day
+      const groupedByDay = groupMealsByDay(timelineData);
+      
+      setTimeline((prevTimeline) => {
+        const newTimeline = [...prevTimeline];
+        let hasChanges = false;
+        
+        // Update status for existing timeline items without triggering refresh
+        groupedByDay.forEach((newItem) => {
+          const existingIndex = newTimeline.findIndex(
+            (item) => new Date(item.date).toDateString() === new Date(newItem.date).toDateString()
+          );
+          
+          if (existingIndex !== -1) {
+            const existing = newTimeline[existingIndex];
+            const newOrder = newItem.order || newItem.mealAssignment?.order || {};
+            const newStatus = newOrder.orderStatus || newOrder.status || newOrder.delegationStatus;
+            const existingOrder = existing.order || existing.mealAssignment?.order || {};
+            const existingStatus = existingOrder.orderStatus || existingOrder.status || existingOrder.delegationStatus;
+            
+            // Only update if status has actually changed
+            if (newStatus && newStatus !== existingStatus) {
+              console.log(`📱 Meal status update for ${newItem.date}: ${existingStatus} → ${newStatus}`);
+              newTimeline[existingIndex] = { ...existing, ...newItem };
+              hasChanges = true;
+            }
+          }
+        });
+        
+        return hasChanges ? newTimeline : prevTimeline;
+      });
+      
+    } catch (error) {
+      console.log("Silent timeline update failed:", error.message);
+      // Don't show error to user for silent updates
+    }
+  };
+
+  // Set up intelligent real-time updates for active meals
+  useEffect(() => {
+    // Clear any existing interval
+    if (realTimeUpdateInterval) {
+      clearInterval(realTimeUpdateInterval);
+      setRealTimeUpdateInterval(null);
+    }
+
+    // Only set up real-time updates if we have timeline data and active/current meals
+    const hasActiveMeals = timeline.some((item) => {
+      const order = item.order || item.mealAssignment?.order || {};
+      const status = (
+        order.delegationStatus ||
+        order.status ||
+        order.orderStatus ||
+        ""
+      ).toLowerCase();
+      return status && !["cancelled", "delivered"].includes(status) || item.dayType === "current";
+    });
+
+    if (hasActiveMeals && timeline.length > 0 && subscriptionId) {
+      console.log("🔄 Starting intelligent meal timeline status updates...");
+      const interval = setInterval(async () => {
+        console.log("🔄 Checking for meal timeline status updates...");
+        await silentTimelineUpdate(); // Silent updates for status changes only
+      }, 30000); // Check every 30 seconds for status changes only
+
+      setRealTimeUpdateInterval(interval);
+    }
+
+    return () => {
+      if (realTimeUpdateInterval) {
+        clearInterval(realTimeUpdateInterval);
+      }
+    };
+  }, [timeline.length, subscriptionId]); // Add subscriptionId to dependencies
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (realTimeUpdateInterval) {
+        clearInterval(realTimeUpdateInterval);
+      }
+    };
+  }, []);
 
   const loadTimeline = async () => {
     try {
@@ -119,6 +251,8 @@ const MealProgressionTimeline = ({
         }
       }
     } finally {
+      // Track last update time for smart refresh
+      global.lastTimelineUpdate = Date.now();
       setLoading(false);
     }
   };
@@ -376,6 +510,8 @@ const MealProgressionTimeline = ({
 
   const onRefresh = async () => {
     setRefreshing(true);
+    // Track last update time for smart refresh
+    global.lastTimelineUpdate = Date.now();
     await loadTimeline();
     setRefreshing(false);
   };
@@ -593,49 +729,64 @@ const MealProgressionTimeline = ({
     };
   };
 
-  // Helper function to get order status using the same logic as CompactOrderCard
+  // Helper function to get order status using the same 7-step flow as CompactOrderCard
   const getOrderStatus = (item) => {
     const order = item.order || item.mealAssignment?.order || {};
     const orderStatus = order?.orderStatus || order?.status;
     const delegationStatus = order?.delegationStatus;
-    let rawFinalStatus;
+    
+    // Use the same logic as CompactOrderCard - prioritize delegationStatus first (chef updates), then fallback
+    const rawFinalStatus = delegationStatus || orderStatus || "";
 
-    // Use the same logic as CompactOrderCard - prioritize orderStatus for final states
-    if (
-      orderStatus === "Delivered" ||
-      orderStatus === "delivered" ||
-      orderStatus === "Cancelled" ||
-      orderStatus === "cancelled" ||
-      orderStatus === "Out for Delivery" ||
-      orderStatus === "out for delivery"
-    ) {
-      rawFinalStatus = orderStatus;
-    } else {
-      rawFinalStatus = delegationStatus || orderStatus || "";
-    }
-
-    // Map status to user-friendly display
+    // Enhanced 7-step order flow mapping (same as OrdersScreen and CompactOrderCard)
     const statusMap = {
+      // Step 1: Order Placed
       pending: "Order Placed",
-      confirmed: "Confirmed",
+      "order placed": "Order Placed",
+      
+      // Step 2: Admin assigns chef
+      "pending assignment": "Pending Assignment",
+      "not assigned": "Pending Assignment",
+      
+      // Step 3: Chef accepts order
+      assigned: "Order Confirmed",
+      accepted: "Order Confirmed",
+      confirmed: "Order Confirmed",
+      
+      // Step 4: Chef prepares food
+      "in progress": "Preparing",
       preparing: "Preparing",
       "preparing food": "Preparing",
+      inprogress: "Preparing",
+      
+      // Step 5: Quality check and ready
       ready: "Ready",
       "food ready": "Ready",
+      "quality check": "Quality Check",
+      qualitycheck: "Quality Check",
+      
+      // Step 6: Out for delivery
       delivering: "Out for Delivery",
       "out for delivery": "Out for Delivery",
       outfordelivery: "Out for Delivery",
+      
+      // Step 7: Delivered
       delivered: "Delivered",
+      completed: "Delivered",
+      
+      // Cancellation
       cancelled: "Cancelled",
-      qualitycheck: "Quality Check",
-      "quality check": "Quality Check",
-      inprogress: "In Progress",
-      "not assigned": "Pending Assignment",
-      "pending assignment": "Pending Assignment",
     };
 
     const normalizedStatus = rawFinalStatus.toLowerCase();
-    return statusMap[normalizedStatus] || rawFinalStatus || "Processing";
+    const mappedStatus = statusMap[normalizedStatus] || rawFinalStatus || "Processing";
+    
+    // Debug logging to track status mapping
+    if (rawFinalStatus) {
+      console.log(`📊 Timeline status mapping: "${rawFinalStatus}" → "${mappedStatus}"`);
+    }
+    
+    return mappedStatus;
   };
 
   // Helper function to get current meal for a day
@@ -1502,7 +1653,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   mealNameText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "600",
   },
 

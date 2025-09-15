@@ -108,6 +108,111 @@ const CheckoutScreen = ({ route, navigation }) => {
     }
   }, [user, mealPlan]);
 
+  // Enhanced geocoding function with fallbacks and timeout (similar to EnhancedTrackingScreen)
+  const geocodeAddressWithFallbacks = async (latitude, longitude) => {
+    try {
+      console.log("🔍 Reverse geocoding coordinates:", latitude, longitude);
+
+      // Add timeout wrapper for geocoding
+      const geocodeWithTimeout = (lat, lng, timeout = 8000) => {
+        return Promise.race([
+          Location.reverseGeocodeAsync({ latitude: lat, longitude: lng }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Geocoding timeout")), timeout)
+          ),
+        ]);
+      };
+
+      // First attempt with timeout
+      let addressResponse = await geocodeWithTimeout(latitude, longitude);
+      if (addressResponse && addressResponse.length > 0) {
+        console.log("✅ Reverse geocoding successful");
+        return addressResponse;
+      }
+
+      // If no results, try again with slightly adjusted coordinates (helps with precision issues)
+      console.log("🔄 Retrying with adjusted coordinates...");
+      const adjustments = [
+        { lat: latitude + 0.001, lng: longitude + 0.001 },
+        { lat: latitude - 0.001, lng: longitude - 0.001 },
+        { lat: latitude + 0.001, lng: longitude - 0.001 },
+        { lat: latitude - 0.001, lng: longitude + 0.001 },
+      ];
+
+      for (const adjustment of adjustments) {
+        try {
+          addressResponse = await geocodeWithTimeout(
+            adjustment.lat,
+            adjustment.lng,
+            5000
+          );
+          if (addressResponse && addressResponse.length > 0) {
+            console.log(
+              "✅ Reverse geocoding successful with coordinate adjustment"
+            );
+            return addressResponse;
+          }
+        } catch (err) {
+          console.log("⚠️ Coordinate adjustment attempt failed:", err.message);
+          continue;
+        }
+      }
+
+      // Last resort: try backend geocoding API if available
+      console.log("🌐 Attempting backend geocoding as final fallback...");
+      try {
+        const backendResponse = await api.get(
+          `/maps/reverse-geocode?lat=${latitude}&lng=${longitude}`
+        );
+        if (
+          backendResponse.success &&
+          backendResponse.data &&
+          backendResponse.data.address
+        ) {
+          console.log("✅ Backend geocoding successful");
+          // Convert backend response to match expected format
+          return [
+            {
+              street: backendResponse.data.address.street || "",
+              city: backendResponse.data.address.city || "",
+              region:
+                backendResponse.data.address.region ||
+                backendResponse.data.address.state ||
+                "",
+              country: backendResponse.data.address.country || "Nigeria",
+              district: backendResponse.data.address.district || "",
+              name: backendResponse.data.address.name || "",
+              formattedAddress: backendResponse.data.address.formatted || "",
+            },
+          ];
+        }
+      } catch (backendError) {
+        console.log("⚠️ Backend geocoding also failed:", backendError.message);
+      }
+
+      // Return null to trigger fallback
+      return null;
+    } catch (error) {
+      console.error("❌ Reverse geocoding error:", error);
+
+      // Enhanced error handling: Check for specific error types
+      const errorMessage = error.message || error.toString();
+      if (
+        errorMessage.includes("UNAVAILABLE") ||
+        errorMessage.includes("IOException") ||
+        errorMessage.includes("rejected") ||
+        errorMessage.includes("timeout")
+      ) {
+        console.log(
+          "🌐 Network/Service unavailable or timeout for reverse geocoding, using fallback"
+        );
+      }
+
+      // Return null to trigger fallback
+      return null;
+    }
+  };
+
   // Function to get current location
   const getCurrentLocation = async () => {
     setIsGettingLocation(true);
@@ -128,33 +233,231 @@ const CheckoutScreen = ({ route, navigation }) => {
         accuracy: Location.Accuracy.Balanced,
       });
 
-      // Reverse geocode to get address
-      const addressResponse = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
+      // Use enhanced reverse geocoding with fallbacks
+      const addressResponse = await geocodeAddressWithFallbacks(
+        location.coords.latitude,
+        location.coords.longitude
+      );
 
-      if (addressResponse.length > 0) {
+      if (addressResponse && addressResponse.length > 0) {
         const address = addressResponse[0];
-        const formattedAddress = [
-          address.streetNumber,
-          address.street,
-          address.district,
-          address.city,
-          address.region,
-          address.country,
-        ]
-          .filter(Boolean)
-          .join(", ");
+        console.log("📍 Raw address data:", address);
+
+        // Create a more detailed formatted address
+        const addressComponents = [];
+
+        // Add street number and name first (most specific)
+        if (address.streetNumber && address.street) {
+          addressComponents.push(`${address.streetNumber} ${address.street}`);
+        } else if (address.street) {
+          addressComponents.push(address.street);
+        } else if (address.name) {
+          addressComponents.push(address.name);
+        }
+
+        // Add district/neighborhood if available
+        if (
+          address.district &&
+          !addressComponents.some((comp) => comp.includes(address.district))
+        ) {
+          addressComponents.push(address.district);
+        }
+
+        // Add subregion (local government area) if available
+        if (
+          address.subregion &&
+          !addressComponents.some((comp) => comp.includes(address.subregion))
+        ) {
+          addressComponents.push(address.subregion);
+        }
+
+        // Add city (essential)
+        if (
+          address.city &&
+          !addressComponents.some((comp) => comp.includes(address.city))
+        ) {
+          addressComponents.push(address.city);
+        }
+
+        // Add region/state (essential)
+        if (
+          address.region &&
+          !addressComponents.some((comp) => comp.includes(address.region))
+        ) {
+          addressComponents.push(address.region);
+        }
+
+        // Add country (always include)
+        if (
+          address.country &&
+          !addressComponents.some((comp) => comp.includes(address.country))
+        ) {
+          addressComponents.push(address.country);
+        }
+
+        // Fallback to basic formatting if no components were added
+        if (addressComponents.length === 0) {
+          const fallbackComponents = [
+            address.streetNumber,
+            address.street,
+            address.district,
+            address.city,
+            address.region,
+            address.country,
+          ].filter(Boolean);
+          addressComponents.push(...fallbackComponents);
+        }
+
+        const formattedAddress = addressComponents.join(", ");
+        console.log("📍 Formatted address:", formattedAddress);
 
         setCurrentLocationAddress(formattedAddress);
         setDeliveryAddress(formattedAddress);
         setAddressSource("current");
-      } else {
-        showError(
-          "Error",
-          "Unable to get address from current location. Please enter manually."
+
+        showSuccess(
+          "Location Found",
+          "Successfully retrieved your current address."
         );
+      } else {
+        // Fallback: Use known coordinates for Nigerian locations with more detailed addresses
+        const { latitude, longitude } = location.coords;
+        let fallbackAddress = "";
+
+        // Check if coordinates are in Nigeria (approximate bounds)
+        if (
+          latitude >= 4.0 &&
+          latitude <= 14.0 &&
+          longitude >= 2.0 &&
+          longitude <= 15.0
+        ) {
+          // More specific fallback based on general Nigerian regions with detailed addresses
+          if (
+            latitude >= 9.0 &&
+            latitude <= 10.0 &&
+            longitude >= 7.0 &&
+            longitude <= 8.0
+          ) {
+            // Abuja region - provide more detailed areas based on coordinates
+            if (
+              latitude >= 9.05 &&
+              latitude <= 9.15 &&
+              longitude >= 7.45 &&
+              longitude <= 7.55
+            ) {
+              fallbackAddress =
+                "Central Business District, Abuja, Federal Capital Territory, Nigeria";
+              console.log("🏛️ Using Abuja CBD fallback address");
+            } else if (
+              latitude >= 9.0 &&
+              latitude <= 9.1 &&
+              longitude >= 7.4 &&
+              longitude <= 7.5
+            ) {
+              fallbackAddress =
+                "Garki Area, Abuja, Federal Capital Territory, Nigeria";
+              console.log("🏛️ Using Abuja Garki fallback address");
+            } else if (
+              latitude >= 9.1 &&
+              latitude <= 9.2 &&
+              longitude >= 7.4 &&
+              longitude <= 7.5
+            ) {
+              fallbackAddress =
+                "Wuse District, Abuja, Federal Capital Territory, Nigeria";
+              console.log("🏛️ Using Abuja Wuse fallback address");
+            } else {
+              fallbackAddress =
+                "Abuja Municipal Area Council, Federal Capital Territory, Nigeria";
+              console.log("🏛️ Using Abuja Municipal fallback address");
+            }
+          } else if (
+            latitude >= 6.0 &&
+            latitude <= 7.0 &&
+            longitude >= 3.0 &&
+            longitude <= 4.0
+          ) {
+            // Lagos region - provide more detailed areas based on coordinates
+            if (
+              latitude >= 6.4 &&
+              latitude <= 6.5 &&
+              longitude >= 3.3 &&
+              longitude <= 3.4
+            ) {
+              fallbackAddress =
+                "Victoria Island, Lagos Island, Lagos State, Nigeria";
+              console.log("🌆 Using Lagos VI fallback address");
+            } else if (
+              latitude >= 6.5 &&
+              latitude <= 6.6 &&
+              longitude >= 3.3 &&
+              longitude <= 3.4
+            ) {
+              fallbackAddress = "Ikeja, Lagos State, Nigeria";
+              console.log("🌆 Using Lagos Ikeja fallback address");
+            } else if (
+              latitude >= 6.4 &&
+              latitude <= 6.5 &&
+              longitude >= 3.4 &&
+              longitude <= 3.5
+            ) {
+              fallbackAddress = "Surulere, Lagos State, Nigeria";
+              console.log("🌆 Using Lagos Surulere fallback address");
+            } else if (
+              latitude >= 6.6 &&
+              latitude <= 6.7 &&
+              longitude >= 3.2 &&
+              longitude <= 3.3
+            ) {
+              fallbackAddress = "Alimosho, Lagos State, Nigeria";
+              console.log("🌆 Using Lagos Alimosho fallback address");
+            } else {
+              fallbackAddress = "Lagos Mainland, Lagos State, Nigeria";
+              console.log("� Using Lagos Mainland fallback address");
+            }
+          } else if (
+            latitude >= 7.0 &&
+            latitude <= 8.0 &&
+            longitude >= 3.0 &&
+            longitude <= 5.0
+          ) {
+            fallbackAddress = "Ibadan, Oyo State, Nigeria";
+            console.log("🏘️ Using Ibadan fallback address");
+          } else if (
+            latitude >= 5.0 &&
+            latitude <= 6.0 &&
+            longitude >= 6.0 &&
+            longitude <= 8.0
+          ) {
+            fallbackAddress = "Port Harcourt, Rivers State, Nigeria";
+            console.log("🛢️ Using Port Harcourt fallback address");
+          } else if (
+            latitude >= 10.0 &&
+            latitude <= 12.0 &&
+            longitude >= 8.0 &&
+            longitude <= 10.0
+          ) {
+            fallbackAddress = "Kano, Kano State, Nigeria";
+            console.log("🏜️ Using Kano fallback address");
+          } else {
+            fallbackAddress = "Nigeria";
+            console.log("�🇳🇬 Using general Nigeria fallback address");
+          }
+
+          setCurrentLocationAddress(fallbackAddress);
+          setDeliveryAddress(fallbackAddress);
+          setAddressSource("current");
+
+          showInfo(
+            "Approximate Location Used",
+            "GPS location service is unavailable. We've provided an approximate address based on your location. Please verify and update if needed."
+          );
+        } else {
+          showError(
+            "Error",
+            "Unable to get address from current location. Please enter manually."
+          );
+        }
       }
     } catch (error) {
       console.error("Error getting location:", error);

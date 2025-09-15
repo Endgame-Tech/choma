@@ -10,10 +10,11 @@ class FirebaseService {
 
   async initializeFirebase() {
     try {
-      // Skip Firebase in development mode (Expo Go doesn't support Firebase)
+      // Only skip Firebase messaging in Expo Go, not Firebase Realtime Database
       if (__DEV__ && !Constants.appOwnership) {
-        console.log("🚫 Skipping Firebase in development mode (Expo Go)");
-        return null;
+        console.log("🚫 Skipping Firebase messaging in development mode (Expo Go)");
+        console.log("✅ Firebase Realtime Database is still available in development");
+        return null; // Only skip messaging, not entire Firebase
       }
 
       // Request permission for iOS

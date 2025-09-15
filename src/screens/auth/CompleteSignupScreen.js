@@ -146,7 +146,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
               <View style={styles(colors).summaryItem}>
                 <Text style={styles(colors).summaryLabel}>Phone</Text>
                 <Text style={styles(colors).summaryValue}>
-                  {userData.phoneNumber}
+                  {userData.phone}
                 </Text>
               </View>
 

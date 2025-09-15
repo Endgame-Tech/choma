@@ -19,7 +19,7 @@ import * as Location from 'expo-location';
 // Core imports
 import { useTheme } from '../../styles/theme';
 import { useAuth } from '../../hooks/useAuth';
-import enhancedDriverTrackingService from '../../services/enhancedDriverTrackingService';
+import driverTrackingService from '../../services/driverTrackingService';
 import { COLORS } from '../../utils/colors';
 
 // Components
@@ -67,8 +67,10 @@ const MapTrackingScreen = ({ route, navigation }) => {
     initializeTracking();
     return () => {
       // Cleanup tracking when component unmounts
-      enhancedDriverTrackingService.unsubscribeFromOrder(orderId);
-      enhancedDriverTrackingService.disconnect();
+      driverTrackingService.stopTrackingOrder(orderId);
+      driverTrackingService.removeListener(orderId, 'driver_location');
+      driverTrackingService.removeListener(orderId, 'driver_info');
+      driverTrackingService.removeListener(orderId, 'tracking_status');
     };
   }, [orderId]);
 
@@ -133,11 +135,14 @@ const MapTrackingScreen = ({ route, navigation }) => {
       }
 
       // Try to connect to enhanced driver tracking service
-      await enhancedDriverTrackingService.connect();
+      const connected = await driverTrackingService.connect();
+      if (!connected) {
+        throw new Error('Failed to connect to tracking service');
+      }
       setIsConnected(true);
       
       // Subscribe to driver location updates with user location for route calculations
-      enhancedDriverTrackingService.subscribeToDriverLocation(orderId, (locationData) => {
+      driverTrackingService.onLocationUpdate(orderId, (locationData) => {
         console.log('📍 Enhanced driver location update:', locationData);
         
         const { latitude, longitude, bearing, speed } = locationData;
@@ -158,45 +163,27 @@ const MapTrackingScreen = ({ route, navigation }) => {
         }
       }, userLocation);
 
-      // Subscribe to route updates from Google Routes API
-      enhancedDriverTrackingService.subscribeToRoute(orderId, (routeData) => {
-        console.log('🗺️ Route update:', routeData);
-        if (routeData.coordinates && routeData.coordinates.length > 0) {
-          setRouteCoordinates(routeData.coordinates);
-        }
-      });
+      // Route updates are simplified in the new service
 
       // Subscribe to driver info updates
-      enhancedDriverTrackingService.subscribeToDriverInfo(orderId, (driverData) => {
+      driverTrackingService.onDriverInfo(orderId, (driverData) => {
         console.log('👤 Driver info update:', driverData);
         setDriverInfo(driverData);
       });
 
       // Subscribe to order updates
-      enhancedDriverTrackingService.subscribeToOrderUpdates(orderId, (orderData) => {
-        console.log('📦 Order update:', orderData);
-        setOrderInfo(orderData);
+      driverTrackingService.onTrackingStatus(orderId, (statusData) => {
+        console.log('📊 Status update:', statusData);
       });
 
       // Subscribe to enhanced ETA updates with traffic data
-      enhancedDriverTrackingService.subscribeToETA(orderId, (etaData) => {
-        console.log('⏰ Enhanced ETA update:', etaData);
+      driverTrackingService.onEtaUpdate(orderId, (etaData) => {
+        console.log('⏰ ETA update:', etaData);
         setEta(etaData);
-      }, userLocation);
-
-      // Subscribe to tracking status
-      enhancedDriverTrackingService.subscribeToTrackingStatus(orderId, (statusData) => {
-        console.log('📊 Tracking status update:', statusData);
-        setTrackingData(statusData);
       });
 
-      // Subscribe to route updates
-      enhancedDriverTrackingService.subscribeToRoute(orderId, (routeData) => {
-        console.log('🗺️ Route update:', routeData);
-        if (routeData.coordinates && routeData.coordinates.length > 0) {
-          setRouteCoordinates(routeData.coordinates);
-        }
-      });
+      // Start tracking the order
+      driverTrackingService.trackOrder(orderId);
 
     } catch (error) {
       console.error('❌ Error starting enhanced driver tracking:', error);

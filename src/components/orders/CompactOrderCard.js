@@ -185,41 +185,55 @@ const CompactOrderCard = ({
     },
   ];
 
-  // Determine current step based on order status - same logic as original
+  // Determine current step based on the correct order status flow
   useEffect(() => {
     const statusMap = {
-      pending: 0,
-      confirmed: 1,
-      assigned: 1,
-      accepted: 2,
-      "in progress": 2,
-      ready: 3,
-      completed: 4,
-      Completed: 4,
-      Ready: 3,
-      Accepted: 2,
-      Assigned: 1,
-      "In Progress": 2,
-      "Quality Check": 4,
-      "quality check": 4,
-      "out for delivery": 5,
-      "Out for Delivery": 5,
-      delivered: 6,
-      Delivered: 6,
-      preparing: 2,
-      inprogress: 2,
-      "preparing food": 2,
-      "food ready": 3,
-      out_for_delivery: 5,
-      outfordelivery: 5,
+      // 1. Order Placed
+      "pending": 0,
       "not assigned": 0,
       "pending assignment": 0,
+      
+      // 2. Order Confirmed (Admin assigns chef + Chef accepts)
+      "confirmed": 1,
+      "assigned": 1,
+      "accepted": 1,
+      "Assigned": 1,
+      "Accepted": 1,
+      
+      // 3. Preparing Food (Chef updates status)
+      "preparing": 2,
+      "preparing food": 2,
+      "in progress": 2,
+      "inprogress": 2,
+      "In Progress": 2,
+      
+      // 4. Food Ready (Chef updates status)
+      "ready": 3,
+      "food ready": 3,
+      "Ready": 3,
+      
+      // 5. Quality Check (Chef marks "Completed" + Admin assigns driver + Driver accepts)
+      "completed": 4,
+      "Completed": 4,
+      "quality check": 4,
+      "Quality Check": 4,
+      
+      // 6. Out for Delivery (Driver picks up from chef)
+      "out for delivery": 5,
+      "Out for Delivery": 5,
+      "out_for_delivery": 5,
+      "outfordelivery": 5,
+      
+      // 7. Delivered (Driver delivers food)
+      "delivered": 6,
+      "Delivered": 6,
     };
 
     const orderStatus = order?.orderStatus || order?.status;
     const delegationStatus = order?.delegationStatus;
     let rawFinalStatus;
 
+    // Priority order: use orderStatus for final statuses, otherwise use delegationStatus
     if (
       orderStatus === "Delivered" ||
       orderStatus === "delivered" ||
@@ -230,14 +244,15 @@ const CompactOrderCard = ({
     ) {
       rawFinalStatus = orderStatus;
     } else {
-      rawFinalStatus = delegationStatus || orderStatus || "";
+      // Use delegationStatus for chef-related statuses, orderStatus for others
+      rawFinalStatus = delegationStatus || orderStatus || "pending";
     }
 
-    let step = statusMap[rawFinalStatus];
-    if (step === undefined) {
-      const normalizedStatus = rawFinalStatus.toLowerCase();
-      step = statusMap[normalizedStatus] || 0;
-    }
+    // Normalize and find step
+    const normalizedStatus = rawFinalStatus.toLowerCase().trim();
+    let step = statusMap[normalizedStatus] || statusMap[rawFinalStatus] || 0;
+
+    // console.log(`🔄 Order ${order?.orderNumber}: ${rawFinalStatus} → Step ${step}`);
 
     setCurrentStep(step);
 
@@ -1005,11 +1020,13 @@ const styles = (colors) =>
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       maxHeight: "90%",
+      padding: 20,
       shadowColor: colors.shadow,
       shadowOffset: { width: 0, height: -5 },
       shadowOpacity: 0.3,
       shadowRadius: 20,
       elevation: 10,
+      // bottom: 0,
     },
     modalHeader: {
       flexDirection: "row",
@@ -1030,7 +1047,7 @@ const styles = (colors) =>
       padding: 4,
     },
     modalContent: {
-      paddingHorizontal: 20,
+      padding: 20,
     },
 
     // Subscription Banner Styles

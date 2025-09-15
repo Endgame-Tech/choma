@@ -81,15 +81,15 @@ const SubscriptionDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchSubscriptionData();
-    
+
     // Listen for refresh events from child components
     const handleRefreshEvent = (event: CustomEvent) => {
       console.log('📡 Received refresh event:', event.detail);
       fetchSubscriptionData();
     };
-    
+
     window.addEventListener('refreshSubscriptionData', handleRefreshEvent as EventListener);
-    
+
     return () => {
       window.removeEventListener('refreshSubscriptionData', handleRefreshEvent as EventListener);
     };
@@ -99,7 +99,7 @@ const SubscriptionDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await chefSubscriptionsApi.getMySubscriptionAssignments();
       setData(data);
     } catch (err) {
@@ -206,7 +206,7 @@ const SubscriptionDashboard: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Today's Meals</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">My Today's Meals</p>
                 <p className="text-3xl font-semibold text-orange-600 dark:text-orange-400">
                   {data.summary.totalTodaysMeals}
                 </p>
@@ -239,11 +239,10 @@ const SubscriptionDashboard: React.FC = () => {
           <button
             key={mode}
             onClick={() => setViewMode(mode)}
-            className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === mode
+            className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === mode
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
+              }`}
           >
             {getViewModeIcon(mode)}
             <span className="ml-2">{getViewModeLabel(mode)}</span>

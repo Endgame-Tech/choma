@@ -61,11 +61,6 @@ retryDatabaseConnection(connectDB)
     const socketService = require("./services/socketService");
     socketService.initialize(server);
 
-    // Initialize Driver Tracking WebSocket service
-    const driverTrackingService = require("./services/driverTrackingWebSocketService");
-    driverTrackingService.initialize(server);
-    driverTrackingService.startHealthCheck();
-
     // Initialize Keep-Alive service only after DB is connected
     const keepAliveService = require("./services/keepAliveService");
     keepAliveService.start();
@@ -232,6 +227,18 @@ app.use("/api/payments", paymentLimiter, require("./routes/payments"));
 
 // Admin routes (with admin-specific rate limiting)
 app.use("/api/admin", adminLimiter, require("./routes/admin"));
+
+// Admin subscription management routes
+app.use("/api/admin/subscription-management", adminLimiter, require("./routes/adminSubscriptionManagement"));
+
+// Rating routes (with general rate limiting)
+app.use("/api/ratings", generalLimiter, require("./routes/ratings"));
+
+// Rating prompt routes (with general rate limiting)
+app.use("/api/rating-prompts", generalLimiter, require("./routes/ratingPrompts"));
+
+// Admin rating routes (with admin-specific rate limiting)
+app.use("/api/admin/ratings", adminLimiter, require("./routes/adminRatings"));
 
 // Admin 2FA routes (with dedicated 2FA rate limiting)
 app.use("/api/admin/2fa", twoFactorLimiter, require("./routes/twoFactor"));

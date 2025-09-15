@@ -542,7 +542,7 @@ const SignupScreen = ({ navigation, route }) => {
         dateOfBirth: dateOfBirth.trim(),
         email: email.trim(),
         password,
-        phoneNumber: phoneNumber.trim(),
+        phone: phoneNumber.trim(), // Changed from phoneNumber to phone to match backend
         deliveryAddress: deliveryAddress.trim(),
         city: city.trim(),
         state: state.trim(),

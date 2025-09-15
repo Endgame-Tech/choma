@@ -150,7 +150,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             Frequency: {assignment.subscriptionId.frequency}
           </p>
         </div>
-        
+
         <div className="relative">
           <button
             onClick={() => setShowActions(!showActions)}
@@ -159,7 +159,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           >
             <MoreVertical size={16} />
           </button>
-          
+
           {showActions && (
             <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
               <button
@@ -198,7 +198,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           </div>
           <p className="text-xs text-gray-600 dark:text-gray-300">Rating</p>
         </div>
-        
+
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Clock size={14} className="text-green-500" />
@@ -208,7 +208,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           </div>
           <p className="text-xs text-gray-600 dark:text-gray-300">On Time</p>
         </div>
-        
+
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <TrendingUp size={14} className={getPerformanceScoreColor(assignment.metrics.consistencyScore)} />
@@ -220,15 +220,15 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         </div>
       </div>
 
-      {/* Today's Meals */}
+      {/* My Today's Meals */}
       {assignment.todaysMeals.length > 0 && (
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
               <ChefHat size={14} />
-              Today's Meals ({assignment.todaysMeals.length})
+              My Today's Meals ({assignment.todaysMeals.length})
             </h4>
-            
+
             {/* Quick Actions */}
             <div className="flex gap-1">
               {pendingMealIds.length > 0 && (
@@ -240,7 +240,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
                   Start Prep
                 </button>
               )}
-              
+
               {preparingMealIds.length > 0 && (
                 <button
                   onClick={() => handleQuickAction('ready', preparingMealIds)}
@@ -252,7 +252,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               )}
             </div>
           </div>
-          
+
           <div className="space-y-2">
             {assignment.todaysMeals.slice(0, 3).map((meal, index) => (
               <div key={index} className="flex items-center justify-between text-sm">
@@ -271,7 +271,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
                 </span>
               </div>
             ))}
-            
+
             {assignment.todaysMeals.length > 3 && (
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 +{assignment.todaysMeals.length - 3} more meals
@@ -304,7 +304,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
                 {pref}
               </span>
             ))}
-            
+
             {assignment.subscriptionId.allergens.slice(0, 2).map((allergen, index) => (
               <span
                 key={index}
@@ -314,7 +314,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
                 {allergen}
               </span>
             ))}
-            
+
             {(assignment.subscriptionId.dietaryPreferences.length > 2 || assignment.subscriptionId.allergens.length > 2) && (
               <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded">
                 +more

@@ -1,4 +1,4 @@
-// src/screens/meal-plans/MealPlanDetailScreen.js - Modern Dark Theme Update
+// src/screens/meal-plans/MealPlanDetailScreen.js
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,

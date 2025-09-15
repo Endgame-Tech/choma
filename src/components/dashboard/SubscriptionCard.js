@@ -53,6 +53,22 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     try {
       setLoading(true);
 
+      // Try to get fresh subscription data to check for activation updates
+      try {
+        const subscriptionRefresh = await apiService.getSubscription(subscription._id);
+        if (subscriptionRefresh?.success && subscriptionRefresh.data) {
+          // Update the subscription object with fresh data
+          Object.assign(subscription, subscriptionRefresh.data);
+          console.log("🔄 Refreshed subscription data for activation check:", {
+            isActivated: subscription.recurringDelivery?.isActivated,
+            activationDeliveryCompleted: subscription.recurringDelivery?.activationDeliveryCompleted,
+            status: subscription.status
+          });
+        }
+      } catch (error) {
+        console.log("📊 Fresh subscription data not available, using passed data");
+      }
+
       // Calculate current meal from subscription data directly since API methods may not exist
       const currentMealData = calculateCurrentMeal();
       if (currentMealData) {
@@ -157,10 +173,16 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     );
 
     // Check if first delivery has been completed to determine if subscription is "active"
+    // Enhanced activation check - look for multiple indicators
+    const hasCompletedDeliveries = subscription.metrics?.completedMeals > 0 || 
+                                  subscription.deliveredMeals > 0 ||
+                                  subscription.totalDeliveries > 0;
+    
     const isSubscriptionActive =
       subscription.recurringDelivery?.activationDeliveryCompleted === true ||
       subscription.recurringDelivery?.isActivated === true ||
-      subscription.status === "active";
+      subscription.status === "active" ||
+      hasCompletedDeliveries; // Additional check for completed deliveries
 
     console.log("🍽️ Meal display check:", {
       subscriptionStatus: subscription.status,
@@ -437,11 +459,16 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       )
     );
 
-    // Check if subscription is active (first delivery completed)
+    // Check if subscription is active (first delivery completed) - enhanced check
+    const hasCompletedDeliveries = subscription.metrics?.completedMeals > 0 || 
+                                  subscription.deliveredMeals > 0 ||
+                                  subscription.totalDeliveries > 0;
+    
     const isSubscriptionActive =
       subscription.recurringDelivery?.activationDeliveryCompleted === true ||
       subscription.recurringDelivery?.isActivated === true ||
-      subscription.status === "active";
+      subscription.status === "active" ||
+      hasCompletedDeliveries;
 
     let currentDay, estimatedCompleted;
 
@@ -482,11 +509,16 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
   };
 
   const getStatusColor = (status) => {
-    // Check if subscription is waiting for first delivery
+    // Check if subscription is waiting for first delivery - enhanced check
+    const hasCompletedDeliveries = subscription.metrics?.completedMeals > 0 || 
+                                  subscription.deliveredMeals > 0 ||
+                                  subscription.totalDeliveries > 0;
+    
     const isSubscriptionActive =
       subscription.recurringDelivery?.activationDeliveryCompleted === true ||
       subscription.recurringDelivery?.isActivated === true ||
-      subscription.status === "active";
+      subscription.status === "active" ||
+      hasCompletedDeliveries;
 
     if (!isSubscriptionActive) {
       return "#FFA500"; // Orange color for waiting/paused state
@@ -509,11 +541,16 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
   };
 
   const getStatusText = (status) => {
-    // Check if subscription is waiting for first delivery
+    // Check if subscription is waiting for first delivery - enhanced check
+    const hasCompletedDeliveries = subscription.metrics?.completedMeals > 0 || 
+                                  subscription.deliveredMeals > 0 ||
+                                  subscription.totalDeliveries > 0;
+    
     const isSubscriptionActive =
       subscription.recurringDelivery?.activationDeliveryCompleted === true ||
       subscription.recurringDelivery?.isActivated === true ||
-      subscription.status === "active";
+      subscription.status === "active" ||
+      hasCompletedDeliveries;
 
     if (!isSubscriptionActive) {
       return "Waiting for first delivery";
@@ -694,11 +731,15 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
           <Text style={styles.progressText}>
             {(() => {
               const progress = calculateProgress();
+              const hasCompletedDeliveries = subscription.metrics?.completedMeals > 0 || 
+                                            subscription.deliveredMeals > 0 ||
+                                            subscription.totalDeliveries > 0;
+              
               const isActive =
-                subscription.recurringDelivery?.activationDeliveryCompleted ===
-                  true ||
+                subscription.recurringDelivery?.activationDeliveryCompleted === true ||
                 subscription.recurringDelivery?.isActivated === true ||
-                subscription.status === "active";
+                subscription.status === "active" ||
+                hasCompletedDeliveries;
 
               if (!isActive) {
                 return `Subscription paused - ${progress.total} meals planned`;

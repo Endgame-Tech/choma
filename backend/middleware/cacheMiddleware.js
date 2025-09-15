@@ -93,6 +93,11 @@ const cacheMiddleware = {
   // Chef workload cache
   chefWorkload: cache(120), // 2 minutes for workload data
   
+  // Admin-specific cache middleware
+  adminShort: cache(60, (req) => `admin:${req.admin?.id}:${req.originalUrl}:${JSON.stringify(req.query)}`), // 1 minute
+  adminMedium: cache(300, (req) => `admin:${req.admin?.id}:${req.originalUrl}:${JSON.stringify(req.query)}`), // 5 minutes
+  adminLong: cache(1800, (req) => `admin:${req.admin?.id}:${req.originalUrl}:${JSON.stringify(req.query)}`), // 30 minutes
+  
   // Custom cache
   custom: cache
 };

@@ -41,8 +41,118 @@ const OrdersScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [isNavigating, setIsNavigating] = useState(false);
   const { user } = useAuth();
   const [realTimeUpdateInterval, setRealTimeUpdateInterval] = useState(null);
+
+  // Silent update function that only updates status without refreshing UI
+  const silentOrderUpdate = async () => {
+    try {
+      const response = await apiService.getUserOrders();
+
+      // Enhanced error checking
+      if (!response) {
+        console.log("Silent update: No response received");
+        return;
+      }
+
+      if (!response.success) {
+        console.log("Silent update: API returned success: false");
+        return;
+      }
+
+      // Enhanced error checking and data structure handling
+      if (!response.data) {
+        console.log("Silent update: No data in response");
+        return;
+      }
+
+      // Handle different possible data structures
+      let ordersData = response.data;
+      if (!Array.isArray(ordersData)) {
+        // Check if data is nested (e.g., response.data.data)
+        if (response.data.data && Array.isArray(response.data.data)) {
+          ordersData = response.data.data;
+        } else if (
+          response.data.orders &&
+          Array.isArray(response.data.orders)
+        ) {
+          ordersData = response.data.orders;
+        } else {
+          console.log("Silent update: Invalid data structure", {
+            hasData: !!response.data,
+            isArray: Array.isArray(response.data),
+            dataType: typeof response.data,
+            hasNestedData: !!response.data.data,
+            hasOrders: !!response.data.orders,
+            responseKeys: Object.keys(response.data || {}),
+          });
+          return;
+        }
+      }
+
+      setOrders((prevOrders) => {
+        const newOrders = [...prevOrders];
+        let hasChanges = false;
+
+        // Update status for existing orders without triggering refresh
+        ordersData.forEach((newOrder) => {
+          const existingIndex = newOrders.findIndex(
+            (order) => order._id === newOrder._id || order.id === newOrder.id
+          );
+
+          if (existingIndex !== -1) {
+            const existing = newOrders[existingIndex];
+            const newStatus = newOrder.orderStatus || newOrder.status;
+            const newDelegationStatus = newOrder.delegationStatus;
+            const existingStatus = existing.orderStatus || existing.status;
+            const existingDelegationStatus = existing.delegationStatus;
+
+            // Only update if status has actually changed
+            if (
+              newStatus !== existingStatus ||
+              newDelegationStatus !== existingDelegationStatus
+            ) {
+              console.log(
+                `📱 Status update for order ${newOrder.orderNumber}: ${existingStatus} → ${newStatus}`
+              );
+              newOrders[existingIndex] = { ...existing, ...newOrder };
+              hasChanges = true;
+            }
+          }
+        });
+
+        return hasChanges ? newOrders : prevOrders;
+      });
+    } catch (error) {
+      console.log("Silent update failed:", error.message);
+      // Don't show error to user for silent updates
+    }
+  };
+
+  // Helper function to handle track driver navigation with safety checks
+  const handleTrackDriver = (driver, order, orderData) => {
+    if (isNavigating) {
+      console.log("Navigation already in progress, ignoring");
+      return;
+    }
+
+    console.log("Track driver:", driver);
+    setIsNavigating(true);
+
+    try {
+      navigation.navigate("EnhancedTracking", {
+        orderId: order._id || order.id,
+        order: orderData || order,
+        driver: driver,
+      });
+    } catch (error) {
+      console.error("Navigation error:", error);
+    } finally {
+      // Reset navigation lock after a short delay
+      setTimeout(() => setIsNavigating(false), 1000);
+    }
+  };
 
   // Dynamic tabs based on actual order counts
   const [tabs, setTabs] = useState([
@@ -56,14 +166,15 @@ const OrdersScreen = ({ navigation }) => {
     loadOrders();
   }, []);
 
-  // Set up real-time updates for active orders
+  // Set up intelligent real-time updates for active orders
   useEffect(() => {
     // Clear any existing interval
     if (realTimeUpdateInterval) {
       clearInterval(realTimeUpdateInterval);
+      setRealTimeUpdateInterval(null);
     }
 
-    // Only set up real-time updates if we have active orders
+    // Only set up real-time updates if we have active orders and user is on active tab
     const hasActiveOrders = orders.some((order) => {
       const status = (
         order.delegationStatus ||
@@ -74,16 +185,14 @@ const OrdersScreen = ({ navigation }) => {
       return status && !["cancelled", "delivered"].includes(status);
     });
 
-    if (hasActiveOrders && orders.length > 0) {
-      console.log("🔄 Starting real-time order updates...");
-      const interval = setInterval(() => {
-        console.log("🔄 Real-time order update check...");
-        loadOrders();
-      }, 60000); // Update every 60 seconds for active orders (reduced frequency)
+    if (hasActiveOrders && orders.length > 0 && selectedTab === "active") {
+      console.log("🔄 Starting intelligent order status updates...");
+      const interval = setInterval(async () => {
+        console.log("🔄 Checking for order status updates...");
+        await silentOrderUpdate(); // New function for status-only updates
+      }, 30000); // Check every 30 seconds for status changes only
 
       setRealTimeUpdateInterval(interval);
-
-      return () => clearInterval(interval);
     }
 
     return () => {
@@ -91,15 +200,21 @@ const OrdersScreen = ({ navigation }) => {
         clearInterval(realTimeUpdateInterval);
       }
     };
-  }, [orders.length]); // Remove 'orders' from dependency to prevent refresh loops
+  }, [orders.length, selectedTab]); // Add selectedTab to dependencies
 
-  // Refresh orders when screen comes into focus (chef status might have changed)
+  // Reduced focus refresh - only for major updates
   useFocusEffect(
     React.useCallback(() => {
-      // Only refresh if the screen was previously loaded to avoid double-loading on initial render
-      if (orders.length > 0) {
-        console.log("🔄 Screen focused - refreshing orders...");
+      // Only refresh after significant time away or if orders are empty
+      const lastUpdate = Date.now() - (global.lastOrderUpdate || 0);
+      const shouldRefresh = orders.length === 0 || lastUpdate > 300000; // 5 minutes
+
+      if (shouldRefresh) {
+        console.log("🔄 Screen focused - major refresh needed");
         loadOrders();
+      } else {
+        console.log("🔄 Screen focused - using silent update");
+        silentOrderUpdate();
       }
     }, [orders.length])
   );
@@ -305,6 +420,8 @@ const OrdersScreen = ({ navigation }) => {
       console.error("❌ Orders loading error:", err);
       setOrders([]); // Ensure orders is always an array
     } finally {
+      // Track last update time for smart refresh
+      global.lastOrderUpdate = Date.now();
       setLoading(false);
     }
   };
@@ -467,14 +584,7 @@ const OrdersScreen = ({ navigation }) => {
         <RecurringDeliveryCard
           key={order._id || order.id}
           order={order}
-          onContactSupport={() => navigation.navigate("Support")}
-          onTrackDriver={(driver) => {
-            console.log("Track driver:", driver);
-            navigation.navigate("MapTracking", {
-              orderId: order._id || order.id,
-              order: order,
-            });
-          }}
+          onContactSupport={() => navigation.navigate("HelpCenter")}
           style={{ marginHorizontal: 0, marginBottom: 20 }}
         />
       );
@@ -487,7 +597,7 @@ const OrdersScreen = ({ navigation }) => {
       <CompactOrderCard
         key={order._id || order.id}
         order={order}
-        onContactSupport={() => navigation.navigate("Support")}
+        onContactSupport={() => navigation.navigate("HelpCenter")}
         onReorder={(order) => {
           // Navigate to meal plan detail for reordering
           if (order.mealPlan || order.orderItems?.mealPlan) {
@@ -504,9 +614,6 @@ const OrdersScreen = ({ navigation }) => {
         }}
         onRateOrder={(order) => {
           console.log("Rate order:", order._id);
-        }}
-        onTrackDriver={(driver) => {
-          console.log("Track driver:", driver);
         }}
         style={{ marginHorizontal: 0, marginBottom: 20 }}
       />
@@ -541,14 +648,7 @@ const OrdersScreen = ({ navigation }) => {
         <RecurringDeliveryCard
           key={order._id || order.id}
           order={order}
-          onContactSupport={() => navigation.navigate("Support")}
-          onTrackDriver={(driver) => {
-            console.log("Track driver:", driver);
-            navigation.navigate("MapTracking", {
-              orderId: order._id || order.id,
-              order: order,
-            });
-          }}
+          onContactSupport={() => navigation.navigate("HelpCenter")}
           style={{ marginHorizontal: 0, marginBottom: 20 }}
         />
       );
@@ -561,7 +661,7 @@ const OrdersScreen = ({ navigation }) => {
       <CompactOrderCard
         key={order._id || order.id}
         order={order}
-        onContactSupport={() => navigation.navigate("Support")}
+        onContactSupport={() => navigation.navigate("HelpCenter")}
         onReorder={(order) => {
           // Navigate to meal plan detail for reordering
           if (order.mealPlan || order.orderItems?.mealPlan) {
@@ -578,9 +678,6 @@ const OrdersScreen = ({ navigation }) => {
         }}
         onRateOrder={(order) => {
           console.log("Rate order:", order._id);
-        }}
-        onTrackDriver={(driver) => {
-          console.log("Track driver:", driver);
         }}
         style={{ marginHorizontal: 0, marginBottom: 20 }}
       />

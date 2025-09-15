@@ -33,6 +33,7 @@ const navigationItems = [
   // Delivery Prices: permission key is 'deliveryPrices' (see AdminPermissions)
   { name: 'Delivery Prices', href: '/delivery-prices', icon: TruckIcon, permission: 'deliveryPrices' as keyof AdminPermissions },
   { name: 'Recurring Deliveries', href: '/recurring-deliveries', icon: ArrowPathIcon, permission: 'orders' as keyof AdminPermissions },
+  { name: 'Subscription Management', href: '/subscription-management', icon: CogIcon, permission: 'orders' as keyof AdminPermissions },
   { name: 'Admin Management', href: '/admin-management', icon: CogIcon, permission: 'adminManagement' as keyof AdminPermissions },
 ]
 

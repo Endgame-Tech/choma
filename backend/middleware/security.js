@@ -121,6 +121,7 @@ const corsOptions = {
       "http://localhost:3002",
       "http://localhost:3003",
       "http://localhost:3004",
+      "https://6kg2wrt6-3004.uks1.devtunnels.ms",
       "http://10.226.105.28:3000",
       "http://10.226.105.28:3001",
       "http://10.226.105.28:3002",

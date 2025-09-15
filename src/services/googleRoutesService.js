@@ -68,7 +68,7 @@ class GoogleRoutesService {
           }
         },
         travelMode: options.travelMode || 'DRIVE',
-        routingPreference: options.routingPreference || 'TRAFFIC_AWARE',
+        routingPreference: options.routingPreference || 'TRAFFIC_AWARE_OPTIMAL',
         computeAlternativeRoutes: false,
         routeModifiers: {
           avoidTolls: options.avoidTolls || false,
@@ -86,7 +86,7 @@ class GoogleRoutesService {
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': this.apiKey,
-          'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps.navigationInstruction,routes.travelAdvisory.tollInfo,routes.routeLabels'
+          'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps.navigationInstruction,routes.legs.steps.distanceMeters,routes.legs.steps.staticDuration,routes.legs.steps.polyline.encodedPolyline,routes.legs.steps.startLocation,routes.legs.steps.endLocation,routes.travelAdvisory.tollInfo,routes.routeLabels'
         },
         body: JSON.stringify(requestBody)
       });
@@ -152,14 +152,37 @@ class GoogleRoutesService {
   }
 
   /**
-   * Parse navigation steps
+   * Parse navigation steps with detailed turn-by-turn directions
    */
   parseSteps(steps) {
-    return steps.map(step => ({
-      instruction: step.navigationInstruction?.instructions || '',
+    return steps.map((step, index) => ({
+      id: index,
+      instruction: step.navigationInstruction?.instructions || 'Continue straight',
+      maneuver: step.navigationInstruction?.maneuver || 'STRAIGHT',
       distance: step.distanceMeters || 0,
-      duration: step.staticDuration ? parseInt(step.staticDuration.replace('s', '')) : 0
+      duration: step.staticDuration ? parseInt(step.staticDuration.replace('s', '')) : 0,
+      distanceText: this.formatDistance(step.distanceMeters || 0),
+      durationText: this.formatDuration(Math.ceil((step.staticDuration ? parseInt(step.staticDuration.replace('s', '')) : 0) / 60)),
+      polyline: step.polyline?.encodedPolyline || '',
+      startLocation: step.startLocation ? {
+        latitude: step.startLocation.latLng.latitude,
+        longitude: step.startLocation.latLng.longitude
+      } : null,
+      endLocation: step.endLocation ? {
+        latitude: step.endLocation.latLng.latitude,
+        longitude: step.endLocation.latLng.longitude
+      } : null
     }));
+  }
+
+  /**
+   * Format distance in human readable format
+   */
+  formatDistance(meters) {
+    if (meters < 1000) {
+      return `${Math.round(meters)} m`;
+    }
+    return `${(meters / 1000).toFixed(1)} km`;
   }
 
   /**
@@ -321,6 +344,236 @@ class GoogleRoutesService {
       size: this.cache.size,
       keys: Array.from(this.cache.keys())
     };
+  }
+
+  /**
+   * Check if route should be recalculated based on driver movement
+   */
+  shouldRecalculateRoute(currentPosition, lastRoute, options = {}) {
+    if (!lastRoute || !currentPosition) return true;
+
+    const minRecalculationDistance = options.minDistance || 100; // 100m default
+    const maxRouteAge = options.maxAge || 5 * 60 * 1000; // 5 minutes default
+
+    // Check if route is too old
+    const routeAge = Date.now() - (lastRoute.calculatedAt || 0);
+    if (routeAge > maxRouteAge) {
+      console.log('🕐 Route is older than 5 minutes, recalculating for traffic updates...');
+      return true;
+    }
+
+    // Check if driver has deviated from route
+    const nearestPoint = this.findNearestPointOnRoute(currentPosition, lastRoute);
+    if (nearestPoint) {
+      const deviation = this.calculateHaversineDistanceMeters(currentPosition, nearestPoint);
+      if (deviation > minRecalculationDistance) {
+        console.log(`🛣️ Driver deviated ${Math.round(deviation)}m from route, recalculating...`);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Find nearest point on route to current position
+   */
+  findNearestPointOnRoute(position, route) {
+    if (!route.steps || route.steps.length === 0) return null;
+
+    let minDistance = Infinity;
+    let nearestPoint = null;
+
+    route.steps.forEach(step => {
+      if (step.startLocation) {
+        const distance = this.calculateHaversineDistanceMeters(position, step.startLocation);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestPoint = step.startLocation;
+        }
+      }
+      if (step.endLocation) {
+        const distance = this.calculateHaversineDistanceMeters(position, step.endLocation);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestPoint = step.endLocation;
+        }
+      }
+    });
+
+    return nearestPoint;
+  }
+
+  /**
+   * Calculate distance in meters using Haversine formula
+   */
+  calculateHaversineDistanceMeters(point1, point2) {
+    return this.calculateHaversineDistance(point1, point2) * 1000;
+  }
+
+  /**
+   * Calculate ETA and progress for current position
+   */
+  calculateRouteProgress(currentPosition, route, destination) {
+    if (!route || !currentPosition) return null;
+
+    try {
+      const currentStep = this.findCurrentStep(currentPosition, route);
+      
+      if (!currentStep) {
+        // Driver is off route - calculate straight line ETA
+        const remainingDistance = this.calculateHaversineDistanceMeters(currentPosition, destination);
+        const estimatedSpeed = 30 * 1000 / 3600; // 30 km/h in m/s
+        const etaSeconds = remainingDistance / estimatedSpeed;
+        
+        return {
+          estimatedArrival: new Date(Date.now() + etaSeconds * 1000),
+          remainingDistance: Math.round(remainingDistance),
+          remainingTime: Math.round(etaSeconds / 60), // minutes
+          currentInstruction: 'Return to route',
+          progress: 0,
+          status: 'off_route',
+          nextTurn: null
+        };
+      }
+
+      // Calculate remaining distance and time from current step
+      let remainingDistance = 0;
+      let remainingTime = 0;
+      let nextTurn = null;
+
+      route.steps.forEach((step, index) => {
+        if (step.id >= currentStep.id) {
+          remainingDistance += step.distance;
+          remainingTime += step.duration;
+          
+          // Find next significant turn
+          if (!nextTurn && step.maneuver && step.maneuver !== 'STRAIGHT' && index > currentStep.id) {
+            nextTurn = {
+              instruction: step.instruction,
+              maneuver: step.maneuver,
+              distance: this.calculateStepDistance(currentPosition, step),
+              distanceText: this.formatDistance(this.calculateStepDistance(currentPosition, step))
+            };
+          }
+        }
+      });
+
+      // Calculate progress through current step
+      const stepProgress = this.calculateStepProgress(currentPosition, currentStep);
+      remainingDistance -= (stepProgress * currentStep.distance);
+      remainingTime -= (stepProgress * currentStep.duration);
+
+      // Calculate overall route progress
+      const totalDistance = route.distance;
+      const completedDistance = totalDistance - remainingDistance;
+      const progress = Math.min(100, Math.max(0, (completedDistance / totalDistance) * 100));
+
+      return {
+        estimatedArrival: new Date(Date.now() + remainingTime * 1000),
+        remainingDistance: Math.round(remainingDistance),
+        remainingTime: Math.round(remainingTime / 60), // minutes
+        currentInstruction: currentStep.instruction,
+        progress: Math.round(progress),
+        status: 'on_route',
+        nextTurn: nextTurn,
+        currentStep: currentStep
+      };
+
+    } catch (error) {
+      console.error('❌ Error calculating route progress:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Find which step the driver is currently on
+   */
+  findCurrentStep(position, route) {
+    if (!route.steps || route.steps.length === 0) return null;
+
+    let minDistance = Infinity;
+    let currentStep = null;
+
+    route.steps.forEach(step => {
+      if (step.startLocation && step.endLocation) {
+        // Calculate distance to the step line segment
+        const distanceToStart = this.calculateHaversineDistanceMeters(position, step.startLocation);
+        const distanceToEnd = this.calculateHaversineDistanceMeters(position, step.endLocation);
+        const stepDistance = Math.min(distanceToStart, distanceToEnd);
+
+        if (stepDistance < minDistance) {
+          minDistance = stepDistance;
+          currentStep = step;
+        }
+      }
+    });
+
+    return currentStep;
+  }
+
+  /**
+   * Calculate progress through a step (0-1)
+   */
+  calculateStepProgress(position, step) {
+    if (!step.startLocation || !step.endLocation) return 0;
+
+    const totalStepDistance = this.calculateHaversineDistanceMeters(step.startLocation, step.endLocation);
+    const distanceFromStart = this.calculateHaversineDistanceMeters(step.startLocation, position);
+    
+    if (totalStepDistance === 0) return 1;
+    return Math.min(1, Math.max(0, distanceFromStart / totalStepDistance));
+  }
+
+  /**
+   * Calculate distance from current position to a step
+   */
+  calculateStepDistance(position, step) {
+    if (!step.startLocation) return 0;
+    return this.calculateHaversineDistanceMeters(position, step.startLocation);
+  }
+
+  /**
+   * Get updated route with traffic for continuous tracking
+   */
+  async getUpdatedRouteWithTraffic(origin, destination, lastRoute = null) {
+    try {
+      // Check if we should recalculate
+      if (lastRoute && !this.shouldRecalculateRoute(origin, lastRoute)) {
+        console.log('🚗 Using existing route (no recalculation needed)');
+        return {
+          ...lastRoute,
+          progress: this.calculateRouteProgress(origin, lastRoute, destination)
+        };
+      }
+
+      console.log('🔄 Recalculating route with current traffic...');
+      const newRoute = await this.calculateRoute(origin, destination, {
+        routingPreference: 'TRAFFIC_AWARE_OPTIMAL'
+      });
+
+      // Add calculation timestamp
+      newRoute.calculatedAt = Date.now();
+      
+      // Calculate current progress
+      newRoute.progress = this.calculateRouteProgress(origin, newRoute, destination);
+
+      return newRoute;
+
+    } catch (error) {
+      console.error('❌ Error updating route:', error);
+      
+      // Return last route with updated progress if available
+      if (lastRoute) {
+        return {
+          ...lastRoute,
+          progress: this.calculateRouteProgress(origin, lastRoute, destination),
+          error: 'Failed to update route - using cached version'
+        };
+      }
+      
+      throw error;
+    }
   }
 }
 

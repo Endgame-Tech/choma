@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
+import LocationTracker from './LocationTracker';
 import {
   HomeIcon,
   TruckIcon,
@@ -244,6 +245,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
         </main>
+        
+        {/* Continuous Location Tracking */}
+        <LocationTracker 
+          isActive={true}
+          highFrequency={false} // Background tracking with lower frequency
+        />
       </div>
     </div>
   );

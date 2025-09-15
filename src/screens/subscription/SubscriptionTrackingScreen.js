@@ -131,33 +131,35 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
     return (
       <View style={styles(colors).mealsSection}>
         <Text style={styles(colors).sectionTitle}>
-          Today's Meals - Day {subscriptionDay}
+          My Today's Meals - Day {subscriptionDay}
         </Text>
 
         {availableMeals.length === 1 ? (
-          // Single meal - full width
-          <TouchableOpacity style={styles(colors).fullWidthMealCard}>
-            <View style={styles(colors).mealImageContainer}>
-              <Image
-                source={availableMeals[0].data.image}
-                style={styles(colors).mealImage}
-              />
-              <LinearGradient
-                colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.7)"]}
-                style={styles(colors).mealOverlay}
-              >
-                <Text style={styles(colors).mealType}>
-                  {availableMeals[0].type}
-                </Text>
-                <Text style={styles(colors).mealName}>
-                  {availableMeals[0].data.name}
-                </Text>
-                <Text style={styles(colors).mealTime}>
-                  {availableMeals[0].data.time}
-                </Text>
-              </LinearGradient>
-            </View>
-          </TouchableOpacity>
+          // Single meal - centered
+          <View style={styles(colors).singleMealContainer}>
+            <TouchableOpacity style={styles(colors).centeredMealCard}>
+              <View style={styles(colors).mealImageContainer}>
+                <Image
+                  source={availableMeals[0].data.image}
+                  style={styles(colors).mealImage}
+                />
+                <LinearGradient
+                  colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.7)"]}
+                  style={styles(colors).mealOverlay}
+                >
+                  <Text style={styles(colors).mealType}>
+                    {availableMeals[0].type}
+                  </Text>
+                  <Text style={styles(colors).mealName}>
+                    {availableMeals[0].data.name}
+                  </Text>
+                  <Text style={styles(colors).mealTime}>
+                    {availableMeals[0].data.time}
+                  </Text>
+                </LinearGradient>
+              </View>
+            </TouchableOpacity>
+          </View>
         ) : (
           // Multiple meals - scroll
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -293,7 +295,7 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
         style={styles(colors).content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Today's Meals */}
+        {/* My Today's Meals */}
         {renderTodaysMeals()}
 
         {/* Progress */}
@@ -376,6 +378,22 @@ const styles = (colors) =>
       fontWeight: "700",
       color: colors.text,
       marginBottom: 15,
+    },
+    singleMealContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    centeredMealCard: {
+      width: "80%",
+      maxWidth: 280,
+      height: 300,
+      borderRadius: 16,
+      overflow: "hidden",
+      elevation: 4,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
     },
     fullWidthMealCard: {
       width: "100%",

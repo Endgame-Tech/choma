@@ -57,6 +57,7 @@ const HomeScreen = ({ navigation }) => {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const popularScrollRef = useRef(null);
   const bannerScrollRef = useRef(null);
+  const mealsScrollRef = useRef(null);
   const { mealPlans, loading, error, refreshing, refreshMealPlans } =
     useMealPlans();
   const { toggleBookmark, isBookmarked } = useBookmarks();
@@ -1390,7 +1391,7 @@ const HomeScreen = ({ navigation }) => {
 
   const renderTodaysMeals = () => {
     try {
-      // Use the first active subscription for today's meals
+      // Use the first active subscription for My Today's Meals
       const primarySubscription = activeSubscriptions[0];
       if (!primarySubscription?.mealPlanId) {
         console.log("⚠️ No primary subscription or mealPlanId found");
@@ -1402,14 +1403,65 @@ const HomeScreen = ({ navigation }) => {
         console.log("⚠️ No weeklyMeals data found in mealPlanId");
         return null;
       }
-      // Calculate subscription day based on start date
-      const today = new Date();
-      const startDate = new Date(primarySubscription.startDate);
+      // Calculate subscription day using same logic as RecurringDeliveryCard
+      const getSubscriptionDay = () => {
+        // If subscription is not yet activated (first delivery not completed), always show Day 1
+        if (!primarySubscription.activationDeliveryCompleted || !primarySubscription.isActivated) {
+          console.log("🔄 Subscription not yet activated - showing Day 1");
+          return 1;
+        }
+        
+        // If subscription has nextDelivery date, calculate based on that
+        if (primarySubscription.nextDelivery && primarySubscription.startDate) {
+          const startDate = new Date(primarySubscription.startDate);
+          const nextDelivery = new Date(primarySubscription.nextDelivery);
+          
+          // Normalize dates to avoid timezone issues
+          const startDateNormalized = new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate()
+          );
+          const nextDeliveryNormalized = new Date(
+            nextDelivery.getFullYear(),
+            nextDelivery.getMonth(),
+            nextDelivery.getDate()
+          );
+          
+          const daysDiff = Math.floor(
+            (nextDeliveryNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
+          );
+          return Math.max(1, daysDiff + 1);
+        }
+        
+        // Fallback to current date calculation if nextDelivery not available
+        if (primarySubscription.startDate) {
+          const startDate = new Date(primarySubscription.startDate);
+          const currentDate = new Date();
+          
+          // Normalize dates to avoid timezone issues
+          const startDateNormalized = new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate()
+          );
+          const currentDateNormalized = new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth(),
+            currentDate.getDate()
+          );
+          
+          const daysDiff = Math.floor(
+            (currentDateNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
+          );
+          return Math.max(1, daysDiff + 1);
+        }
+        
+        // Default to day 1 if no dates available
+        return 1;
+      };
 
-      // Calculate how many days into the subscription we are (starting from day 1)
-      const timeDiff = today.getTime() - startDate.getTime();
-      const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-      const subscriptionDay = daysDiff + 1; // Day 1, 2, 3, etc.
+      const subscriptionDay = getSubscriptionDay();
 
       // Map subscription day to week and day
       // Day 1-7 = Week 1, Day 8-14 = Week 2, etc.
@@ -1431,36 +1483,16 @@ const HomeScreen = ({ navigation }) => {
       ];
       const dayName = dayNames[dayInWeek - 1]; // dayInWeek is 1-7, array is 0-6
 
-      // Get today's meals from the subscription's meal plan
+      // Get My Today's Meals from the subscription's meal plan
       const weeklyMeals = primarySubscription.mealPlanId?.weeklyMeals || {};
       const currentWeek = weeklyMeals[`week${currentWeekNumber}`] || {};
       const todaysMealsData = currentWeek[dayName] || {};
 
-      // Debug weeklyMeals structure
-      // console.log("\n=== WEEKLY MEALS DEBUG (HomeScreen) ===");
-      // console.log("Week:", `week${currentWeekNumber}`);
-      // console.log("Day:", dayName);
-      // console.log("Current week data:", JSON.stringify(currentWeek, null, 2));
-      // console.log(
-      //   "Today's meals data:",
-      //   JSON.stringify(todaysMealsData, null, 2)
-      // );
-      // console.log("=== END WEEKLY MEALS DEBUG ===\n");
 
       // Helper function to get specific meal assignment from weeklyMeals structure
       const getMealAssignment = (mealType) => {
         // Look in the organized weekly schedule for the assignment
         const assignment = todaysMealsData[mealType.toLowerCase()];
-
-        // console.log(`🍽️ HomeScreen - Looking for ${mealType} assignment:`, {
-        //   week: `week${currentWeekNumber}`,
-        //   day: dayName,
-        //   mealType: mealType.toLowerCase(),
-        //   assignment,
-        //   hasImageUrl: !!assignment?.imageUrl,
-        //   imageUrl: assignment?.imageUrl,
-        // });
-
         return assignment;
       };
 
@@ -1470,10 +1502,6 @@ const HomeScreen = ({ navigation }) => {
 
         // Use the assignment's imageUrl if available
         if (assignment?.imageUrl) {
-          // console.log(
-          //   `✅ HomeScreen - Found assignment image for ${mealType}:`,
-          //   assignment.imageUrl
-          // );
           return { uri: assignment.imageUrl };
         }
 
@@ -1499,18 +1527,8 @@ const HomeScreen = ({ navigation }) => {
       const getMealName = (mealType) => {
         const assignment = getMealAssignment(mealType);
 
-        // console.log(`🍽️ HomeScreen - getMealName for ${mealType}:`, {
-        //   assignment,
-        //   hasTitle: !!assignment?.title,
-        //   title: assignment?.title,
-        // });
-
         // Use the assignment's custom title if available
         if (assignment?.title) {
-          // console.log(
-          //   `📝 HomeScreen - Meal name result for ${mealType}:`,
-          //   assignment.title
-          // );
           return assignment.title;
         }
 
@@ -1532,11 +1550,6 @@ const HomeScreen = ({ navigation }) => {
       const getMealCalories = (mealType) => {
         const assignment = getMealAssignment(mealType);
 
-        // console.log(`🔢 HomeScreen - getMealCalories for ${mealType}:`, {
-        //   assignment,
-        //   hasCalories: !!assignment?.calories,
-        //   calories: assignment?.calories,
-        // });
 
         // Try to get calories from assignment
         if (assignment?.calories) {
@@ -1582,23 +1595,12 @@ const HomeScreen = ({ navigation }) => {
         }
       );
 
-      // console.log(
-      //   "HomeScreen - Available meals for today:",
-      //   availableMeals.map(([type, meal]) => `${type}: ${meal.name}`)
-      // );
-
-      // console.log("HomeScreen - Assignment check results:", {
-      //   breakfast: !!getMealAssignment("breakfast"),
-      //   lunch: !!getMealAssignment("lunch"),
-      //   dinner: !!getMealAssignment("dinner"),
-      // });
-
       // If no meals are available for today, show a message
       if (availableMeals.length === 0) {
         return (
           <View style={styles(colors).todaysMealsSection}>
             <Text style={styles(colors).sectionTitle}>
-              Today's Meals - Day {subscriptionDay}
+              My Today's Meals - Day {subscriptionDay}
             </Text>
             <View style={styles(colors).noMealsContainer}>
               <Ionicons
@@ -1627,6 +1629,7 @@ const HomeScreen = ({ navigation }) => {
       }
 
       // Calculate delivery status based on real subscription data
+      const today = new Date();
       const nextDelivery = new Date(primarySubscription.nextDelivery);
       const isToday = nextDelivery.toDateString() === today.toDateString();
       const deliveryTime = nextDelivery.toLocaleTimeString("en-US", {
@@ -1649,7 +1652,7 @@ const HomeScreen = ({ navigation }) => {
       return (
         <View style={styles(colors).todaysMealsSection}>
           <Text style={styles(colors).sectionTitle}>
-            Today's Meals - Day {subscriptionDay}
+            My Today's Meals - Day {subscriptionDay}
           </Text>
           <Text style={styles(colors).deliveryStatus}>{deliveryStatus}</Text>
 
@@ -1695,9 +1698,23 @@ const HomeScreen = ({ navigation }) => {
           ) : (
             // Multiple meals - horizontal scroll
             <ScrollView
+              ref={mealsScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles(colors).mealsScroll}
+              scrollEventThrottle={16}
+              decelerationRate="fast"
+              snapToInterval={215} // Card width (200) + margin (15) for snapping
+              snapToAlignment="start"
+              onMomentumScrollEnd={(event) => {
+                const cardWidth = 200;
+                const cardMargin = 15;
+                const slideIndex = Math.round(
+                  event.nativeEvent.contentOffset.x / (cardWidth + cardMargin)
+                );
+                // Optional: You can track the current meal index if needed
+                // setCurrentMealIndex(slideIndex);
+              }}
             >
               {availableMeals.map(([mealType, meal]) => (
                 <TouchableOpacity
@@ -2488,7 +2505,7 @@ const HomeScreen = ({ navigation }) => {
             return (
               // Subscription-focused UI
               <>
-                {/* Today's Meals Section - only show for single subscription */}
+                {/* My Today's Meals Section - only show for single subscription */}
                 {activeSubscriptions.length === 1 && renderTodaysMeals()}
 
                 {/* Multiple Subscription Cards Section */}
@@ -3707,13 +3724,14 @@ const styles = (colors) =>
     // Single Meal Layout Styles
     singleMealContainer: {
       paddingHorizontal: 0,
+      alignItems: "center", // Center the single meal card
+      justifyContent: "center",
     },
     fullWidthMealCard: {
       width: width - 40, // Full width minus section padding
       height: 200,
       borderRadius: 16,
       overflow: "hidden",
-      marginHorizontal: 20,
       elevation: 4,
       shadowColor: colors.shadow,
       shadowOffset: { width: 0, height: 4 },
@@ -3743,7 +3761,7 @@ const styles = (colors) =>
     subscriptionCardContent: {
       flexDirection: "row",
       alignItems: "center",
-      padding: 16,
+      // padding: 16,
     },
     subscriptionCardImage: {
       marginRight: 16,

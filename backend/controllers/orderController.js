@@ -3,6 +3,7 @@ const Customer = require("../models/Customer");
 const MealPlan = require("../models/MealPlan");
 const DriverAssignment = require("../models/DriverAssignment");
 const NotificationService = require("../services/notificationService");
+const ratingPromptService = require("../services/ratingPromptService");
 
 // Get user's orders
 exports.getUserOrders = async (req, res) => {
@@ -379,6 +380,49 @@ exports.updateOrderStatus = async (req, res) => {
         console.log(
           `Subscription ${subscription._id} activated by order delivery completion`
         );
+      }
+    }
+
+    // Trigger rating prompt for completed orders
+    if (status === "Delivered" && order.customer) {
+      try {
+        await ratingPromptService.triggerRatingPrompt({
+          triggerType: 'order_completion',
+          userId: order.customer,
+          relatedOrderId: order._id,
+          triggerContext: {
+            orderValue: order.total || order.amount || 0,
+            isFirstOrder: false, // TODO: Calculate if this is user's first order
+            isRecurringOrder: !!order.subscriptionId,
+            orderRating: order.customerRating // Existing rating if any
+          }
+        });
+        console.log(`🎯 Rating prompt triggered for order completion: ${order._id}`);
+      } catch (error) {
+        console.error('Error triggering order completion rating prompt:', error);
+        // Don't fail the order update if rating prompt fails
+      }
+    }
+
+    // Trigger delivery completion prompt (separate from order completion)
+    if (status === "Delivered" && order.customer) {
+      try {
+        await ratingPromptService.triggerRatingPrompt({
+          triggerType: 'delivery_completion',
+          userId: order.customer,
+          relatedOrderId: order._id,
+          relatedDriverId: order.assignedDriver || order.driverId,
+          triggerContext: {
+            deliveryDate: order.actualDelivery || new Date(),
+            wasOnTime: true, // TODO: Calculate if delivery was on time
+            deliveryIssues: [], // TODO: Get delivery issues if any
+            deliveryRating: order.deliveryRating // Existing rating if any
+          }
+        });
+        console.log(`🚚 Delivery rating prompt triggered for order: ${order._id}`);
+      } catch (error) {
+        console.error('Error triggering delivery completion rating prompt:', error);
+        // Don't fail the order update if rating prompt fails
       }
     }
 

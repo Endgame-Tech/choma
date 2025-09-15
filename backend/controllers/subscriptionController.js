@@ -1,29 +1,29 @@
-const Subscription = require('../models/Subscription');
-const MealPlan = require('../models/MealPlan');
-const Customer = require('../models/Customer');
-const SubscriptionDelivery = require('../models/SubscriptionDelivery');
-const SubscriptionChefAssignment = require('../models/SubscriptionChefAssignment');
-const MealPlanAssignment = require('../models/MealPlanAssignment');
-const mealProgressionService = require('../services/mealProgressionService');
+const Subscription = require("../models/Subscription");
+const MealPlan = require("../models/MealPlan");
+const Customer = require("../models/Customer");
+const SubscriptionDelivery = require("../models/SubscriptionDelivery");
+const SubscriptionChefAssignment = require("../models/SubscriptionChefAssignment");
+const MealPlanAssignment = require("../models/MealPlanAssignment");
+const mealProgressionService = require("../services/mealProgressionService");
 
 // Get user's subscriptions
 exports.getUserSubscriptions = async (req, res) => {
   try {
     const subscriptions = await Subscription.find({ userId: req.user.id })
-      .populate('mealPlanId')
+      .populate("mealPlanId")
       .sort({ createdDate: -1 });
 
     res.json({
       success: true,
       data: subscriptions,
-      count: subscriptions.length
+      count: subscriptions.length,
     });
   } catch (err) {
-    console.error('Get user subscriptions error:', err);
+    console.error("Get user subscriptions error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch subscriptions',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to fetch subscriptions",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -32,31 +32,31 @@ exports.getUserSubscriptions = async (req, res) => {
 exports.getSubscriptionById = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const subscription = await Subscription.findOne({ 
-      _id: id, 
-      userId: req.user.id 
+
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: req.user.id,
     })
-    .populate('mealPlanId')
-    .populate('userId', 'fullName email phone');
+      .populate("mealPlanId")
+      .populate("userId", "fullName email phone");
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
     res.json({
       success: true,
-      data: subscription
+      data: subscription,
     });
   } catch (err) {
-    console.error('Get subscription by ID error:', err);
+    console.error("Get subscription by ID error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch subscription',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to fetch subscription",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -64,7 +64,10 @@ exports.getSubscriptionById = async (req, res) => {
 // Create new subscription
 exports.createSubscription = async (req, res) => {
   try {
-    console.log('📋 Subscription creation request body:', JSON.stringify(req.body, null, 2));
+    console.log(
+      "📋 Subscription creation request body:",
+      JSON.stringify(req.body, null, 2)
+    );
 
     const {
       mealPlan,
@@ -83,21 +86,21 @@ exports.createSubscription = async (req, res) => {
       subscriptionId,
       paymentStatus,
       paymentReference,
-      transactionId
+      transactionId,
     } = req.body;
 
     // Validation
     if (!mealPlan) {
       return res.status(400).json({
         success: false,
-        message: 'Meal plan is required'
+        message: "Meal plan is required",
       });
     }
 
     if (!totalPrice || isNaN(totalPrice) || totalPrice <= 0) {
       return res.status(400).json({
         success: false,
-        message: 'Valid total price is required'
+        message: "Valid total price is required",
       });
     }
 
@@ -106,25 +109,25 @@ exports.createSubscription = async (req, res) => {
     if (!mealPlanDoc) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found'
+        message: "Meal plan not found",
       });
     }
 
-    console.log('📊 Meal plan found:', {
+    console.log("📊 Meal plan found:", {
       planName: mealPlanDoc.planName,
       totalPrice: mealPlanDoc.totalPrice,
       durationWeeks: mealPlanDoc.durationWeeks,
-      mealTypes: mealPlanDoc.mealTypes
+      mealTypes: mealPlanDoc.mealTypes,
     });
 
     // Use the calculated price from frontend, but validate it's reasonable
     const finalPrice = Math.round(totalPrice);
-    
+
     // Validate price is reasonable (not negative, not excessively high)
     if (finalPrice < 100 || finalPrice > 10000000) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid price calculation detected'
+        message: "Invalid price calculation detected",
       });
     }
 
@@ -135,21 +138,24 @@ exports.createSubscription = async (req, res) => {
 
     // Calculate end date based on selected duration
     const endDate = new Date(subscriptionStartDate);
-    const weeksToAdd = durationWeeks || (duration === 'Monthly' ? 4 : 1);
-    endDate.setDate(endDate.getDate() + (weeksToAdd * 7));
+    const weeksToAdd = durationWeeks || (duration === "Monthly" ? 4 : 1);
+    endDate.setDate(endDate.getDate() + weeksToAdd * 7);
 
-    console.log('📅 Date calculations:', {
+    console.log("📅 Date calculations:", {
       startDate: subscriptionStartDate,
       nextDelivery,
       endDate,
-      weeksToAdd
+      weeksToAdd,
     });
 
     const subscriptionData = {
-      subscriptionId: subscriptionId || `SUB-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      subscriptionId:
+        subscriptionId ||
+        `SUB-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
       userId: req.user.id,
       mealPlanId: mealPlan,
-      selectedMealTypes: selectedMealTypes || mealPlanDoc.mealTypes || ['lunch'],
+      selectedMealTypes: selectedMealTypes ||
+        mealPlanDoc.mealTypes || ["lunch"],
       frequency,
       duration,
       durationWeeks: weeksToAdd,
@@ -163,35 +169,59 @@ exports.createSubscription = async (req, res) => {
       durationMultiplier: durationMultiplier || 1,
       deliveryAddress,
       specialInstructions,
-      paymentStatus: paymentStatus || 'Pending',
+      paymentStatus: paymentStatus || "Pending",
       paymentReference,
-      transactionId: transactionId || `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+      transactionId:
+        transactionId ||
+        `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
     };
 
-    console.log('💾 Creating subscription with data:', JSON.stringify(subscriptionData, null, 2));
+    console.log(
+      "💾 Creating subscription with data:",
+      JSON.stringify(subscriptionData, null, 2)
+    );
 
     const subscription = await Subscription.create(subscriptionData);
 
-    await subscription.populate('mealPlanId');
+    // Update user's address if deliveryAddress is provided and different from current
+    if (deliveryAddress && deliveryAddress.trim()) {
+      try {
+        const customer = await Customer.findById(req.user.id);
+        if (customer && customer.address !== deliveryAddress.trim()) {
+          await Customer.findByIdAndUpdate(req.user.id, {
+            address: deliveryAddress.trim(),
+          });
+          console.log(
+            "📍 Updated customer address to:",
+            deliveryAddress.trim()
+          );
+        }
+      } catch (addressUpdateError) {
+        console.error("Failed to update customer address:", addressUpdateError);
+        // Don't fail the subscription creation for this
+      }
+    }
 
-    console.log('✅ Subscription created successfully:', {
+    await subscription.populate("mealPlanId");
+
+    console.log("✅ Subscription created successfully:", {
       id: subscription._id,
       subscriptionId: subscription.subscriptionId,
       totalPrice: subscription.totalPrice,
-      price: subscription.price
+      price: subscription.price,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Subscription created successfully',
-      data: subscription
+      message: "Subscription created successfully",
+      data: subscription,
     });
   } catch (err) {
-    console.error('Create subscription error:', err);
+    console.error("Create subscription error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to create subscription',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to create subscription",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -204,14 +234,14 @@ exports.updateSubscription = async (req, res) => {
 
     // Only allow certain fields to be updated
     const allowedUpdates = [
-      'frequency',
-      'duration',
-      'deliveryAddress',
-      'specialInstructions'
+      "frequency",
+      "duration",
+      "deliveryAddress",
+      "specialInstructions",
     ];
-    
+
     const filteredUpdates = {};
-    allowedUpdates.forEach(field => {
+    allowedUpdates.forEach((field) => {
       if (updates[field] !== undefined) {
         filteredUpdates[field] = updates[field];
       }
@@ -219,34 +249,35 @@ exports.updateSubscription = async (req, res) => {
 
     // If frequency or duration changed, recalculate price
     if (filteredUpdates.frequency || filteredUpdates.duration) {
-      const subscription = await Subscription.findOne({ 
-        _id: id, 
-        userId: req.user.id 
-      }).populate('mealPlanId');
+      const subscription = await Subscription.findOne({
+        _id: id,
+        userId: req.user.id,
+      }).populate("mealPlanId");
 
       if (!subscription) {
         return res.status(404).json({
           success: false,
-          message: 'Subscription not found'
+          message: "Subscription not found",
         });
       }
 
       const frequencyMultiplier = {
-        'Daily': 1,
-        'Twice Daily': 2,
-        'Thrice Daily': 3
+        Daily: 1,
+        "Twice Daily": 2,
+        "Thrice Daily": 3,
       };
 
       const durationMultiplier = {
-        'Weekly': 1,
-        'Monthly': 4
+        Weekly: 1,
+        Monthly: 4,
       };
 
       const newFrequency = filteredUpdates.frequency || subscription.frequency;
       const newDuration = filteredUpdates.duration || subscription.duration;
 
-      filteredUpdates.totalPrice = subscription.mealPlanId.basePrice * 
-        frequencyMultiplier[newFrequency] * 
+      filteredUpdates.totalPrice =
+        subscription.mealPlanId.basePrice *
+        frequencyMultiplier[newFrequency] *
         durationMultiplier[newDuration];
     }
 
@@ -254,26 +285,26 @@ exports.updateSubscription = async (req, res) => {
       { _id: id, userId: req.user.id },
       filteredUpdates,
       { new: true, runValidators: true }
-    ).populate('mealPlanId');
+    ).populate("mealPlanId");
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Subscription updated successfully',
-      data: subscription
+      message: "Subscription updated successfully",
+      data: subscription,
     });
   } catch (err) {
-    console.error('Update subscription error:', err);
+    console.error("Update subscription error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to update subscription',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to update subscription",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -282,35 +313,35 @@ exports.updateSubscription = async (req, res) => {
 exports.pauseSubscription = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const subscription = await Subscription.findOneAndUpdate(
-      { 
-        _id: id, 
+      {
+        _id: id,
         userId: req.user.id,
-        status: 'Active'
+        status: "Active",
       },
-      { status: 'Paused' },
+      { status: "Paused" },
       { new: true, runValidators: true }
-    ).populate('mealPlanId');
+    ).populate("mealPlanId");
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found or cannot be paused'
+        message: "Subscription not found or cannot be paused",
       });
     }
 
     res.json({
       success: true,
-      message: 'Subscription paused successfully',
-      data: subscription
+      message: "Subscription paused successfully",
+      data: subscription,
     });
   } catch (err) {
-    console.error('Pause subscription error:', err);
+    console.error("Pause subscription error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to pause subscription',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to pause subscription",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -319,35 +350,35 @@ exports.pauseSubscription = async (req, res) => {
 exports.resumeSubscription = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const subscription = await Subscription.findOneAndUpdate(
-      { 
-        _id: id, 
+      {
+        _id: id,
         userId: req.user.id,
-        status: 'Paused'
+        status: "Paused",
       },
-      { status: 'Active' },
+      { status: "Active" },
       { new: true, runValidators: true }
-    ).populate('mealPlanId');
+    ).populate("mealPlanId");
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found or cannot be resumed'
+        message: "Subscription not found or cannot be resumed",
       });
     }
 
     res.json({
       success: true,
-      message: 'Subscription resumed successfully',
-      data: subscription
+      message: "Subscription resumed successfully",
+      data: subscription,
     });
   } catch (err) {
-    console.error('Resume subscription error:', err);
+    console.error("Resume subscription error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to resume subscription',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to resume subscription",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -356,31 +387,31 @@ exports.resumeSubscription = async (req, res) => {
 exports.cancelSubscription = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const subscription = await Subscription.findOneAndUpdate(
       { _id: id, userId: req.user.id },
-      { status: 'Cancelled' },
+      { status: "Cancelled" },
       { new: true, runValidators: true }
-    ).populate('mealPlanId');
+    ).populate("mealPlanId");
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Subscription cancelled successfully',
-      data: subscription
+      message: "Subscription cancelled successfully",
+      data: subscription,
     });
   } catch (err) {
-    console.error('Cancel subscription error:', err);
+    console.error("Cancel subscription error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to cancel subscription',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to cancel subscription",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -393,33 +424,33 @@ exports.cancelSubscription = async (req, res) => {
 exports.getSubscriptionCurrentMeal = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Verify subscription belongs to user
     const subscription = await Subscription.findOne({
       _id: id,
-      userId: req.user.id
-    }).populate('mealPlanId');
+      userId: req.user.id,
+    }).populate("mealPlanId");
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
     // Get current meal using meal progression service
     const currentMeal = await mealProgressionService.getCurrentMeal(id);
-    
+
     res.json({
       success: true,
-      data: currentMeal
+      data: currentMeal,
     });
   } catch (err) {
-    console.error('❌ Get current meal error:', err);
+    console.error("❌ Get current meal error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to get current meal',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to get current meal",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -428,17 +459,17 @@ exports.getSubscriptionCurrentMeal = async (req, res) => {
 exports.getSubscriptionChefStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Verify subscription belongs to user
     const subscription = await Subscription.findOne({
       _id: id,
-      userId: req.user.id
+      userId: req.user.id,
     });
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
@@ -452,18 +483,18 @@ exports.getSubscriptionChefStatus = async (req, res) => {
       subscriptionId: id,
       scheduledDate: {
         $gte: today,
-        $lt: tomorrow
-      }
-    }).populate('chefAssignment.chefId', 'fullName');
+        $lt: tomorrow,
+      },
+    }).populate("chefAssignment.chefId", "fullName");
 
     if (!todaysDelivery) {
       return res.json({
         success: true,
         data: {
-          status: 'scheduled',
-          message: 'No delivery scheduled for today',
-          chefAssigned: false
-        }
+          status: "scheduled",
+          message: "No delivery scheduled for today",
+          chefAssigned: false,
+        },
       });
     }
 
@@ -471,7 +502,10 @@ exports.getSubscriptionChefStatus = async (req, res) => {
     let estimatedReadyTime = null;
     if (todaysDelivery.chefAssignment.startedCookingAt) {
       const avgPrepTime = 45; // 45 minutes average prep time
-      estimatedReadyTime = new Date(todaysDelivery.chefAssignment.startedCookingAt.getTime() + (avgPrepTime * 60 * 1000));
+      estimatedReadyTime = new Date(
+        todaysDelivery.chefAssignment.startedCookingAt.getTime() +
+          avgPrepTime * 60 * 1000
+      );
     }
 
     const chefStatus = {
@@ -481,19 +515,19 @@ exports.getSubscriptionChefStatus = async (req, res) => {
       assignedAt: todaysDelivery.chefAssignment.assignedAt,
       startedCookingAt: todaysDelivery.chefAssignment.startedCookingAt,
       estimatedReadyTime,
-      notes: todaysDelivery.chefAssignment.notes
+      notes: todaysDelivery.chefAssignment.notes,
     };
 
     res.json({
       success: true,
-      data: chefStatus
+      data: chefStatus,
     });
   } catch (err) {
-    console.error('❌ Get chef status error:', err);
+    console.error("❌ Get chef status error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to get chef status',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to get chef status",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -502,17 +536,17 @@ exports.getSubscriptionChefStatus = async (req, res) => {
 exports.getSubscriptionNextDelivery = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Verify subscription belongs to user
     const subscription = await Subscription.findOne({
       _id: id,
-      userId: req.user.id
-    }).populate('mealPlanId');
+      userId: req.user.id,
+    }).populate("mealPlanId");
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
@@ -523,38 +557,41 @@ exports.getSubscriptionNextDelivery = async (req, res) => {
       return res.json({
         success: true,
         data: null,
-        message: 'No next delivery scheduled'
+        message: "No next delivery scheduled",
       });
     }
 
     // Get next meal assignment if available
     let nextMealAssignment = null;
     if (nextDelivery.assignmentId) {
-      nextMealAssignment = await MealPlanAssignment.findById(nextDelivery.assignmentId)
-        .populate('mealIds');
+      nextMealAssignment = await MealPlanAssignment.findById(
+        nextDelivery.assignmentId
+      ).populate("mealIds");
     }
 
     // Check for active order for this delivery to get real status
-    let actualStatus = 'scheduled';
+    let actualStatus = "scheduled";
     let activeOrder = null;
-    
+
     try {
-      const Order = require('../models/Order');
+      const Order = require("../models/Order");
       activeOrder = await Order.findOne({
         userId: req.user.id,
         subscriptionId: id,
         deliveryDate: {
           $gte: new Date(new Date(nextDelivery.date).setHours(0, 0, 0, 0)),
-          $lt: new Date(new Date(nextDelivery.date).setHours(23, 59, 59, 999))
-        }
+          $lt: new Date(new Date(nextDelivery.date).setHours(23, 59, 59, 999)),
+        },
       }).sort({ createdAt: -1 });
 
       if (activeOrder && activeOrder.orderStatus) {
         actualStatus = activeOrder.orderStatus;
-        console.log(`📦 Found active order ${activeOrder._id} with status: ${actualStatus}`);
+        console.log(
+          `📦 Found active order ${activeOrder._id} with status: ${actualStatus}`
+        );
       }
     } catch (error) {
-      console.error('Error checking for active order:', error);
+      console.error("Error checking for active order:", error);
     }
 
     const deliveryInfo = {
@@ -563,19 +600,19 @@ exports.getSubscriptionNextDelivery = async (req, res) => {
       mealAssignment: nextMealAssignment,
       status: actualStatus,
       orderId: activeOrder?._id,
-      trackingId: activeOrder?.trackingId
+      trackingId: activeOrder?.trackingId,
     };
 
     res.json({
       success: true,
-      data: deliveryInfo
+      data: deliveryInfo,
     });
   } catch (err) {
-    console.error('❌ Get next delivery error:', err);
+    console.error("❌ Get next delivery error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to get next delivery info',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to get next delivery info",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -585,33 +622,36 @@ exports.getSubscriptionMealTimeline = async (req, res) => {
   try {
     const { id } = req.params;
     const daysAhead = parseInt(req.query.days) || 7;
-    
+
     // Verify subscription belongs to user
     const subscription = await Subscription.findOne({
       _id: id,
-      userId: req.user.id
-    }).populate('mealPlanId');
+      userId: req.user.id,
+    }).populate("mealPlanId");
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
     // Get meal progression timeline
-    const timeline = await mealProgressionService.getMealProgressionTimeline(id, daysAhead);
-    
+    const timeline = await mealProgressionService.getMealProgressionTimeline(
+      id,
+      daysAhead
+    );
+
     res.json({
       success: true,
-      data: timeline
+      data: timeline,
     });
   } catch (err) {
-    console.error('❌ Get meal timeline error:', err);
+    console.error("❌ Get meal timeline error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to get meal timeline',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to get meal timeline",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -621,49 +661,53 @@ exports.skipMealDelivery = async (req, res) => {
   try {
     const { id } = req.params;
     const { skipDate, reason } = req.body;
-    
+
     // Validation
     if (!skipDate || !reason) {
       return res.status(400).json({
         success: false,
-        message: 'Skip date and reason are required'
+        message: "Skip date and reason are required",
       });
     }
 
     // Verify subscription belongs to user
     const subscription = await Subscription.findOne({
       _id: id,
-      userId: req.user.id
+      userId: req.user.id,
     });
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
     // Skip the meal using meal progression service
-    const skipResult = await mealProgressionService.skipMeal(id, skipDate, reason);
-    
+    const skipResult = await mealProgressionService.skipMeal(
+      id,
+      skipDate,
+      reason
+    );
+
     if (!skipResult) {
       return res.status(400).json({
         success: false,
-        message: 'Unable to skip meal for specified date'
+        message: "Unable to skip meal for specified date",
       });
     }
 
     res.json({
       success: true,
-      message: 'Meal delivery skipped successfully',
-      data: { skipDate, reason }
+      message: "Meal delivery skipped successfully",
+      data: { skipDate, reason },
     });
   } catch (err) {
-    console.error('❌ Skip meal delivery error:', err);
+    console.error("❌ Skip meal delivery error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to skip meal delivery',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to skip meal delivery",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -673,44 +717,47 @@ exports.updateDeliveryPreferences = async (req, res) => {
   try {
     const { id } = req.params;
     const { frequency, timeSlot, daysOfWeek, specialInstructions } = req.body;
-    
+
     // Verify subscription belongs to user
     const subscription = await Subscription.findOne({
       _id: id,
-      userId: req.user.id
+      userId: req.user.id,
     });
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
     // Update delivery preferences
     const updateData = {};
-    if (frequency) updateData['deliveryPreferences.frequency'] = frequency;
-    if (timeSlot) updateData['recurringDelivery.deliverySchedule.timeSlot'] = timeSlot;
-    if (daysOfWeek) updateData['recurringDelivery.deliverySchedule.daysOfWeek'] = daysOfWeek;
-    if (specialInstructions) updateData['specialInstructions'] = specialInstructions;
+    if (frequency) updateData["deliveryPreferences.frequency"] = frequency;
+    if (timeSlot)
+      updateData["recurringDelivery.deliverySchedule.timeSlot"] = timeSlot;
+    if (daysOfWeek)
+      updateData["recurringDelivery.deliverySchedule.daysOfWeek"] = daysOfWeek;
+    if (specialInstructions)
+      updateData["specialInstructions"] = specialInstructions;
 
     const updatedSubscription = await Subscription.findByIdAndUpdate(
       id,
       { $set: updateData },
       { new: true, runValidators: true }
-    ).populate('mealPlanId');
+    ).populate("mealPlanId");
 
     res.json({
       success: true,
-      message: 'Delivery preferences updated successfully',
-      data: updatedSubscription
+      message: "Delivery preferences updated successfully",
+      data: updatedSubscription,
     });
   } catch (err) {
-    console.error('❌ Update delivery preferences error:', err);
+    console.error("❌ Update delivery preferences error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to update delivery preferences',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to update delivery preferences",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -722,33 +769,33 @@ exports.getSubscriptionDeliveryHistory = async (req, res) => {
     const limit = parseInt(req.query.limit) || 30;
     const page = parseInt(req.query.page) || 1;
     const skip = (page - 1) * limit;
-    
+
     // Verify subscription belongs to user
     const subscription = await Subscription.findOne({
       _id: id,
-      userId: req.user.id
+      userId: req.user.id,
     });
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
     // Get delivery history
     const deliveries = await SubscriptionDelivery.find({
-      subscriptionId: id
+      subscriptionId: id,
     })
-    .populate('mealAssignment.assignmentId')
-    .populate('chefAssignment.chefId', 'fullName')
-    .populate('driverAssignment.driverId', 'fullName')
-    .sort({ scheduledDate: -1 })
-    .limit(limit)
-    .skip(skip);
+      .populate("mealAssignment.assignmentId")
+      .populate("chefAssignment.chefId", "fullName")
+      .populate("driverAssignment.driverId", "fullName")
+      .sort({ scheduledDate: -1 })
+      .limit(limit)
+      .skip(skip);
 
     const totalCount = await SubscriptionDelivery.countDocuments({
-      subscriptionId: id
+      subscriptionId: id,
     });
 
     res.json({
@@ -758,16 +805,16 @@ exports.getSubscriptionDeliveryHistory = async (req, res) => {
         currentPage: page,
         totalPages: Math.ceil(totalCount / limit),
         totalCount,
-        hasNext: (skip + deliveries.length) < totalCount,
-        hasPrev: page > 1
-      }
+        hasNext: skip + deliveries.length < totalCount,
+        hasPrev: page > 1,
+      },
     });
   } catch (err) {
-    console.error('❌ Get delivery history error:', err);
+    console.error("❌ Get delivery history error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to get delivery history',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to get delivery history",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -777,59 +824,60 @@ exports.requestChefReassignment = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    
+
     // Validation
     if (!reason || reason.trim().length < 10) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a detailed reason (minimum 10 characters)'
+        message: "Please provide a detailed reason (minimum 10 characters)",
       });
     }
 
     // Verify subscription belongs to user
     const subscription = await Subscription.findOne({
       _id: id,
-      userId: req.user.id
+      userId: req.user.id,
     });
 
     if (!subscription) {
       return res.status(404).json({
         success: false,
-        message: 'Subscription not found'
+        message: "Subscription not found",
       });
     }
 
     // Find current chef assignment
     const chefAssignment = await SubscriptionChefAssignment.findOne({
       subscriptionId: id,
-      assignmentStatus: 'active'
+      assignmentStatus: "active",
     });
 
     if (!chefAssignment) {
       return res.status(404).json({
         success: false,
-        message: 'No active chef assignment found'
+        message: "No active chef assignment found",
       });
     }
 
     // Request reassignment using the model method
-    await chefAssignment.requestReassignment('customer', reason.trim());
+    await chefAssignment.requestReassignment("customer", reason.trim());
 
     res.json({
       success: true,
-      message: 'Chef reassignment request submitted successfully. Our team will review and respond within 24 hours.',
+      message:
+        "Chef reassignment request submitted successfully. Our team will review and respond within 24 hours.",
       data: {
         requestId: chefAssignment.assignmentId,
         reason: reason.trim(),
-        requestedAt: new Date()
-      }
+        requestedAt: new Date(),
+      },
     });
   } catch (err) {
-    console.error('❌ Request chef reassignment error:', err);
+    console.error("❌ Request chef reassignment error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to submit chef reassignment request',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to submit chef reassignment request",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -839,25 +887,25 @@ exports.rateDelivery = async (req, res) => {
   try {
     const { deliveryId } = req.params;
     const { rating, feedback } = req.body;
-    
+
     // Validation
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({
         success: false,
-        message: 'Rating must be between 1 and 5'
+        message: "Rating must be between 1 and 5",
       });
     }
 
     // Find the delivery and verify it belongs to user's subscription
     const delivery = await SubscriptionDelivery.findOne({
       _id: deliveryId,
-      status: 'delivered'
-    }).populate('subscriptionId');
+      status: "delivered",
+    }).populate("subscriptionId");
 
     if (!delivery) {
       return res.status(404).json({
         success: false,
-        message: 'Delivered subscription not found'
+        message: "Delivered subscription not found",
       });
     }
 
@@ -865,13 +913,13 @@ exports.rateDelivery = async (req, res) => {
     if (delivery.subscriptionId.userId.toString() !== req.user.id) {
       return res.status(403).json({
         success: false,
-        message: 'You can only rate your own deliveries'
+        message: "You can only rate your own deliveries",
       });
     }
 
     // Update delivery rating
     delivery.customer.rating = rating;
-    delivery.customer.feedback = feedback?.trim() || '';
+    delivery.customer.feedback = feedback?.trim() || "";
     delivery.customer.ratedAt = new Date();
     delivery.metrics.customerSatisfaction = rating;
 
@@ -882,34 +930,34 @@ exports.rateDelivery = async (req, res) => {
       const chefAssignment = await SubscriptionChefAssignment.findOne({
         subscriptionId: delivery.subscriptionId._id,
         chefId: delivery.chefAssignment.chefId,
-        assignmentStatus: 'active'
+        assignmentStatus: "active",
       });
 
       if (chefAssignment) {
         await chefAssignment.updatePerformanceMetrics({
           rating,
           onTime: delivery.metrics.onTimeDelivery,
-          preparationTime: delivery.metrics.preparationTime
+          preparationTime: delivery.metrics.preparationTime,
         });
       }
     }
 
     res.json({
       success: true,
-      message: 'Thank you for your feedback! Your rating helps us improve.',
+      message: "Thank you for your feedback! Your rating helps us improve.",
       data: {
         deliveryId,
         rating,
-        feedback: feedback?.trim() || '',
-        ratedAt: new Date()
-      }
+        feedback: feedback?.trim() || "",
+        ratedAt: new Date(),
+      },
     });
   } catch (err) {
-    console.error('❌ Rate delivery error:', err);
+    console.error("❌ Rate delivery error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to submit rating',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Failed to submit rating",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
