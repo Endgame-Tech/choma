@@ -7,23 +7,34 @@ interface AspectRating {
   [key: string]: number | null;
 }
 
+interface RatingData {
+  ratingType: string;
+  ratedEntity: string;
+  ratedEntityType: string;
+  overallRating: number;
+  aspectRatings?: AspectRating;
+  comment?: string;
+  tags?: string[];
+  contextData?: Record<string, unknown>;
+}
+
 interface RatingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (ratingData: any) => Promise<void>;
+  onSubmit: (ratingData: RatingData) => Promise<void>;
   ratingType: string;
   entityType: string;
   entityId: string;
   entityName?: string;
-  contextData?: any;
-  existingRating?: any;
+  contextData?: Record<string, unknown>;
+  existingRating?: Partial<RatingData> & { aspectRatings?: AspectRating };
   aspects?: string[];
   title?: string;
   description?: string;
   loading?: boolean;
 }
 
-const ASPECT_CONFIGS = {
+const ASPECT_CONFIGS: Record<string, { key: string; label: string; description: string }[]> = {
   meal_plan: [
     { key: 'taste', label: 'Taste', description: 'How did the food taste?' },
     { key: 'presentation', label: 'Presentation', description: 'How was the visual presentation?' },
@@ -70,7 +81,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
   aspects,
   title,
   description,
-  loading = false
+  // loading = false
 }) => {
   const [overallRating, setOverallRating] = useState<number>(0);
   const [aspectRatings, setAspectRatings] = useState<AspectRating>({});
@@ -80,7 +91,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get aspect configuration based on rating type
-  const aspectConfig = aspects ? 
+  const aspectConfig = aspects ?
     aspects.map(aspect => ({ key: aspect, label: aspect, description: '' })) :
     ASPECT_CONFIGS[ratingType] || [];
 
@@ -154,7 +165,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      
+
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto max-w-lg w-full bg-white rounded-lg shadow-xl">
           {/* Header */}
@@ -170,6 +181,8 @@ const RatingModal: React.FC<RatingModalProps> = ({
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close rating modal"
+              title="Close"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>

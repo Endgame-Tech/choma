@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  ChefHat, 
-  Star, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  X,
+  ChefHat,
+  Star,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertTriangle,
   User,
-  Phone,
-  Mail,
-  Award,
-  TrendingUp,
-  Calendar,
   MessageSquare
 } from 'lucide-react';
 import { subscriptionManagementApi } from '../../services/subscriptionManagementApi';
@@ -58,10 +53,10 @@ interface ChefReassignmentModalProps {
   onUpdate: () => void;
 }
 
-const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({ 
-  requests, 
-  onClose, 
-  onUpdate 
+const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
+  requests,
+  onClose,
+  onUpdate
 }) => {
   const [selectedRequest, setSelectedRequest] = useState<ChefReassignmentRequest | null>(null);
   const [availableChefs, setAvailableChefs] = useState<AvailableChef[]>([]);
@@ -103,7 +98,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
         selectedChef,
         adminNotes
       );
-      
+
       if (response.success) {
         alert('Chef reassignment approved successfully');
         onUpdate();
@@ -129,7 +124,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
         selectedRequest._id,
         rejectionReason
       );
-      
+
       if (response.success) {
         alert('Chef reassignment request rejected');
         onUpdate();
@@ -165,13 +160,6 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
     }
   };
 
-  const getWorkloadColor = (workload: number, maxCapacity: number) => {
-    const percentage = (workload / maxCapacity) * 100;
-    if (percentage >= 90) return 'text-red-600 bg-red-100';
-    if (percentage >= 70) return 'text-yellow-600 bg-yellow-100';
-    return 'text-green-600 bg-green-100';
-  };
-
   const pendingRequests = requests.filter(r => r.status === 'pending');
 
   return (
@@ -193,6 +181,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
+            aria-label="Close modal"
           >
             <X className="w-6 h-6" />
           </button>
@@ -203,7 +192,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
           <div className="w-1/2 border-r border-gray-200 overflow-y-auto">
             <div className="p-4">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Pending Requests</h3>
-              
+
               {pendingRequests.length === 0 ? (
                 <div className="text-center py-8">
                   <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
@@ -215,11 +204,10 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
                   {pendingRequests.map((request) => (
                     <div
                       key={request._id}
-                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                        selectedRequest?._id === request._id
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${selectedRequest?._id === request._id
                           ? 'border-primary-500 bg-primary-50'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
+                        }`}
                       onClick={() => setSelectedRequest(request)}
                     >
                       {/* Priority Badge */}
@@ -260,7 +248,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
               <div className="p-6">
                 <div className="mb-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Request Details</h3>
-                  
+
                   {/* Customer Information */}
                   <div className="bg-gray-50 rounded-lg p-4 mb-6">
                     <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
@@ -270,7 +258,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
                     <div className="space-y-2 text-sm">
                       <div><span className="font-medium">Name:</span> {selectedRequest.customerName}</div>
                       <div><span className="font-medium">Request Date:</span> {new Date(selectedRequest.requestedAt).toLocaleString()}</div>
-                      <div><span className="font-medium">Priority:</span> 
+                      <div><span className="font-medium">Priority:</span>
                         <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(selectedRequest.priority)}`}>
                           {selectedRequest.priority.toUpperCase()}
                         </span>
@@ -308,7 +296,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
                     <CheckCircle className="w-4 h-4" />
                     <span>Approve & Assign New Chef</span>
                   </button>
-                  
+
                   <button
                     onClick={() => setShowRejectionModal(true)}
                     className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center justify-center space-x-2"
@@ -342,6 +330,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
               <button
                 onClick={() => setShowChefSelection(false)}
                 className="text-gray-400 hover:text-gray-600"
+                aria-label="Close chef selection"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -357,11 +346,10 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
                   {availableChefs.map((chef) => (
                     <div
                       key={chef._id}
-                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                        selectedChef === chef._id
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${selectedChef === chef._id
                           ? 'border-primary-500 bg-primary-50'
                           : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                        }`}
                       onClick={() => setSelectedChef(chef._id)}
                     >
                       <div className="flex items-start justify-between mb-3">
@@ -383,13 +371,12 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
-                            className={`h-2 rounded-full ${
-                              (chef.currentWorkload / chef.maxCapacity) * 100 >= 90
+                            className={`h-2 rounded-full ${(chef.currentWorkload / chef.maxCapacity) * 100 >= 90
                                 ? 'bg-red-500'
                                 : (chef.currentWorkload / chef.maxCapacity) * 100 >= 70
-                                ? 'bg-yellow-500'
-                                : 'bg-green-500'
-                            }`}
+                                  ? 'bg-yellow-500'
+                                  : 'bg-green-500'
+                              }`}
                             style={{ width: `${Math.min((chef.currentWorkload / chef.maxCapacity) * 100, 100)}%` }}
                           />
                         </div>
@@ -472,6 +459,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
               <button
                 onClick={() => setShowRejectionModal(false)}
                 className="text-gray-400 hover:text-gray-600"
+                aria-label="Close rejection modal"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -479,7 +467,7 @@ const ChefReassignmentModal: React.FC<ChefReassignmentModalProps> = ({
 
             <div className="p-6">
               <p className="text-sm text-gray-600 mb-4">
-                Please provide a reason for rejecting this chef reassignment request. 
+                Please provide a reason for rejecting this chef reassignment request.
                 This will be communicated to the customer.
               </p>
 

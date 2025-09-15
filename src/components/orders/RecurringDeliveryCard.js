@@ -315,11 +315,11 @@ const styles = (colors) =>
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
-      elevation: 3,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
+      // elevation: 3,
+      // shadowColor: colors.shadow,
+      // shadowOffset: { width: 0, height: 2 },
+      // shadowOpacity: 0.15,
+      // shadowRadius: 8,
     },
 
     // Header Section

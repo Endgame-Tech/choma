@@ -51,7 +51,7 @@
     "expo-constants": "~17.1.7",
     "expo-dev-client": "~5.2.4",
     "expo-device": "~7.1.4",
-    "expo-font": "^14.0.8",
+    "expo-font": "~13.3.2",
     "expo-haptics": "~14.1.4",
     "expo-image-picker": "~16.1.4",
     "expo-linear-gradient": "~14.1.5",
@@ -81,17 +81,19 @@
     "react-native-paystack-webview": "^5.0.1",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-svg": "^15.12.1",
+    "react-native-svg": "15.11.2",
     "react-native-web": "^0.20.0",
     "react-native-webview": "13.13.5",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@react-native-community/cli": "^20.0.2",
     "@types/axios": "^0.9.36",
     "@types/node": "^24.3.1",
     "@types/react": "~19.0.10",
     "nodemon": "^3.1.0",
+    "react-native-svg-transformer": "^1.5.1",
     "typescript": "~5.8.3"
   },
   "private": true

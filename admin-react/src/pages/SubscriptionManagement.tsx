@@ -1,23 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
+import {
   AlertTriangle,
   Clock,
   CheckCircle,
   XCircle,
   Pause,
   Play,
-  SkipForward,
-  Settings,
   ChefHat,
   Eye,
   Filter,
   Search,
   Calendar,
   MapPin,
-  Phone,
   Mail,
   Star,
-  TrendingUp,
   Users,
   Package
 } from 'lucide-react';
@@ -98,12 +94,12 @@ const SubscriptionManagement: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'active' | 'paused' | 'issues'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionOverview | null>(null);
-  
+
   // Modal states
   const [showChefReassignmentModal, setShowChefReassignmentModal] = useState(false);
   const [showSubscriptionDetailsModal, setShowSubscriptionDetailsModal] = useState(false);
   const [showTimelineModal, setShowTimelineModal] = useState(false);
-  
+
   // Statistics
   const [stats, setStats] = useState({
     totalSubscriptions: 0,
@@ -125,7 +121,7 @@ const SubscriptionManagement: React.FC = () => {
       setLoading(true);
       const response = await subscriptionManagementApi.getAllSubscriptions();
       if (response.success) {
-        setSubscriptions(response.data);
+        setSubscriptions(response.data ?? []);
       }
     } catch (error) {
       console.error('Failed to load subscriptions:', error);
@@ -138,7 +134,7 @@ const SubscriptionManagement: React.FC = () => {
     try {
       const response = await subscriptionManagementApi.getChefReassignmentRequests();
       if (response.success) {
-        setReassignmentRequests(response.data);
+        setReassignmentRequests(response.data ?? []);
       }
     } catch (error) {
       console.error('Failed to load reassignment requests:', error);
@@ -148,7 +144,7 @@ const SubscriptionManagement: React.FC = () => {
   const loadStats = async () => {
     try {
       const response = await subscriptionManagementApi.getSubscriptionStats();
-      if (response.success) {
+      if (response.success && response.data) {
         setStats(response.data);
       }
     } catch (error) {
@@ -163,7 +159,7 @@ const SubscriptionManagement: React.FC = () => {
     // Apply status filter
     if (filter !== 'all') {
       if (filter === 'issues') {
-        filtered = filtered.filter(sub => 
+        filtered = filtered.filter(sub =>
           (sub.issues?.pendingReassignmentRequests || 0) > 0 ||
           (sub.issues?.customerComplaints || 0) > 0 ||
           sub.status === 'paused'
@@ -241,16 +237,6 @@ const SubscriptionManagement: React.FC = () => {
       case 'cancelled': return <XCircle className="w-4 h-4" />;
       case 'pending': return <Clock className="w-4 h-4" />;
       default: return null;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'text-red-600 bg-red-100';
-      case 'high': return 'text-orange-600 bg-orange-100';
-      case 'medium': return 'text-yellow-600 bg-yellow-100';
-      case 'low': return 'text-green-600 bg-green-100';
-      default: return 'text-gray-600 bg-gray-100';
     }
   };
 
@@ -355,7 +341,7 @@ const SubscriptionManagement: React.FC = () => {
                 <Filter className="w-5 h-5 text-gray-400" />
                 <select
                   value={filter}
-                  onChange={(e) => setFilter(e.target.value as any)}
+                  onChange={(e) => setFilter(e.target.value as 'all' | 'active' | 'paused' | 'issues')}
                   className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value="all">All Subscriptions</option>
@@ -440,8 +426,8 @@ const SubscriptionManagement: React.FC = () => {
                     <div className="mt-2">
                       <div className="flex items-center">
                         <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
-                          <div 
-                            className="bg-primary-600 h-2 rounded-full" 
+                          <div
+                            className="bg-primary-600 h-2 rounded-full"
                             style={{ width: `${subscription.metrics.progressPercentage}%` }}
                           ></div>
                         </div>
@@ -478,9 +464,9 @@ const SubscriptionManagement: React.FC = () => {
                       {new Date(subscription.nextDelivery).toLocaleDateString()}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {new Date(subscription.nextDelivery).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
+                      {new Date(subscription.nextDelivery).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
                       })}
                     </div>
                     <div className="text-xs text-gray-400 flex items-center mt-1">
@@ -520,7 +506,7 @@ const SubscriptionManagement: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      
+
                       <button
                         onClick={() => handleViewTimeline(subscription)}
                         className="text-blue-600 hover:text-blue-900"

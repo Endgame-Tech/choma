@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
 import apiService from "../../services/api";
+import ratingPromptManager from "../../services/ratingPromptManager";
 
 const { width } = Dimensions.get("window");
 
@@ -27,6 +28,13 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
   useEffect(() => {
     loadFullSubscriptionData();
   }, []);
+
+  useEffect(() => {
+    // Check for subscription milestones when subscription data changes
+    if (subscription && subscription.metrics?.totalMealsDelivered) {
+      checkSubscriptionMilestone();
+    }
+  }, [subscription?.metrics?.totalMealsDelivered]);
 
   const loadFullSubscriptionData = async () => {
     if (!subscription?.mealPlanId?._id) return;
@@ -47,6 +55,28 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
       console.error("Error loading meal plan data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkSubscriptionMilestone = async () => {
+    try {
+      if (!subscription?.metrics?.totalMealsDelivered) return;
+
+      const subscriptionDay = subscription.metrics.totalMealsDelivered;
+      const milestones = [1, 7, 14, 30, 60, 90];
+
+      if (milestones.includes(subscriptionDay)) {
+        console.log(`🎯 Checking milestone for Day ${subscriptionDay}`);
+        
+        await ratingPromptManager.triggerSubscriptionMilestone({
+          ...subscription,
+          userId: subscription.userId,
+          subscriptionDay,
+          totalMealsReceived: subscriptionDay
+        });
+      }
+    } catch (error) {
+      console.error('Error checking subscription milestone:', error);
     }
   };
 

@@ -5,6 +5,7 @@ const DriverAssignment = require('../models/DriverAssignment');
 const Driver = require('../models/Driver');
 const Chef = require('../models/Chef');
 const notificationService = require('./notificationService');
+const ratingPromptService = require('./ratingPromptService');
 const mongoose = require('mongoose');
 
 /**
@@ -451,6 +452,9 @@ class WorkflowAutomationService {
           // Check if subscription should move to next phase
           await this.checkSubscriptionPhaseProgression(subscription, session);
 
+          // Check for subscription milestones and trigger rating prompts
+          await this.checkSubscriptionMilestones(subscription, delivery);
+
           // Mark delivery as progression updated
           delivery.progressionUpdated = true;
           await delivery.save({ session });
@@ -560,6 +564,42 @@ class WorkflowAutomationService {
       // Auto-renew subscription
       console.log(`🔄 Auto-renewing subscription ${subscription._id}`);
       // Implementation would handle renewal logic
+    }
+  }
+
+  async checkSubscriptionMilestones(subscription, delivery) {
+    try {
+      // Calculate subscription day
+      const subscriptionDay = subscription.metrics.totalMealsDelivered;
+      
+      // Define milestone days when rating prompts should be triggered
+      const milestones = [1, 7, 14, 30, 60, 90];
+      
+      if (milestones.includes(subscriptionDay)) {
+        console.log(`🎯 Subscription milestone reached: Day ${subscriptionDay} for subscription ${subscription._id}`);
+        
+        // Trigger subscription milestone rating prompt
+        await ratingPromptService.triggerRatingPrompt({
+          triggerType: 'subscription_milestone',
+          userId: subscription.userId,
+          relatedSubscriptionId: subscription._id,
+          relatedOrderId: delivery.orderId || null,
+          triggerContext: {
+            subscriptionDay,
+            subscriptionWeek: Math.ceil(subscriptionDay / 7),
+            isMilestone: true,
+            totalMealsReceived: subscriptionDay,
+            subscriptionFrequency: subscription.frequency,
+            subscriptionStatus: subscription.status,
+            planName: subscription.mealPlanId?.planName || 'Unknown Plan'
+          }
+        });
+        
+        console.log(`✅ Subscription milestone rating prompt triggered for Day ${subscriptionDay}`);
+      }
+    } catch (error) {
+      console.error('Error checking subscription milestones:', error);
+      // Don't fail progression update if milestone prompt fails
     }
   }
 

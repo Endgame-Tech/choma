@@ -36,6 +36,8 @@ import { OfflineProvider } from "./src/context/OfflineContext";
 import { ThemeProvider } from "./src/styles/theme";
 import { AlertProvider } from "./src/contexts/AlertContext";
 import { ToastProvider } from "./src/contexts/ToastContext";
+import { loadFonts } from "./src/utils/fontLoader";
+import { applyDefaultFont } from "./src/utils/fontUtils";
 
 // Navigation
 import AppNavigator from "./src/navigation/AppNavigator";
@@ -62,18 +64,38 @@ Notifications.setNotificationHandler({
 export default function App() {
   const [isFirstLaunch, setIsFirstLaunch] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
   const navigationRef = React.useRef();
 
   useEffect(() => {
-    checkFirstLaunch();
-    registerForPushNotifications();
-    setupNotificationListeners();
-
-    // Initialize deep linking
-    deepLinking.initialize(navigationRef);
-
-    // Development logging removed for production
+    initializeApp();
   }, []);
+
+  const initializeApp = async () => {
+    try {
+      // Load fonts first
+      console.log('📱 Initializing Choma app...');
+      await loadFonts(); // Load essential DM Sans fonts
+      
+      // Apply font overrides after fonts are loaded
+      applyDefaultFont();
+      
+      setFontsLoaded(true);
+      
+      // Then proceed with other initialization
+      await checkFirstLaunch();
+      registerForPushNotifications();
+      setupNotificationListeners();
+
+      // Initialize deep linking
+      deepLinking.initialize(navigationRef);
+
+      console.log('✅ App initialization complete');
+    } catch (error) {
+      console.error('❌ Error during app initialization:', error);
+      setFontsLoaded(true); // Continue even if fonts fail to load
+    }
+  };
 
   const checkFirstLaunch = async () => {
     try {
@@ -159,8 +181,26 @@ export default function App() {
     }
   };
 
-  if (isLoading) {
-    return null;
+  // Show loading screen while fonts are loading or app is initializing
+  if (isLoading || !fontsLoaded) {
+    const { View, Text } = require('react-native');
+    return (
+      <SafeAreaProvider>
+        <View style={{ 
+          flex: 1, 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          backgroundColor: '#fff' 
+        }}>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
+            Choma
+          </Text>
+          <Text style={{ fontSize: 16, color: '#666' }}>
+            {!fontsLoaded ? 'Loading fonts...' : 'Initializing app...'}
+          </Text>
+        </View>
+      </SafeAreaProvider>
+    );
   }
 
   // Use the key from APP_CONFIG or fallback to hardcoded

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Types
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -139,7 +139,7 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => response,
   (error) => {
     console.error('Subscription Management API Error:', error);
     throw error;
@@ -164,32 +164,38 @@ export const subscriptionManagementApi = {
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
-    return api.get(`/subscriptions?${params.toString()}`);
+    const response = await api.get(`/subscriptions?${params.toString()}`);
+    return response.data as ApiResponse<SubscriptionOverview[]>;
   },
 
   // Get subscription statistics
   async getSubscriptionStats(): Promise<ApiResponse<SubscriptionStats>> {
-    return api.get('/subscriptions/stats');
+    const response = await api.get('/subscriptions/stats');
+    return response.data as ApiResponse<SubscriptionStats>;
   },
 
   // Get detailed subscription information
   async getSubscriptionDetails(subscriptionId: string): Promise<ApiResponse<SubscriptionOverview>> {
-    return api.get(`/subscriptions/${subscriptionId}`);
+    const response = await api.get(`/subscriptions/${subscriptionId}`);
+    return response.data as ApiResponse<SubscriptionOverview>;
   },
 
   // Admin pause subscription with reason
   async adminPauseSubscription(subscriptionId: string, reason: string): Promise<ApiResponse> {
-    return api.put(`/subscriptions/${subscriptionId}/pause`, { reason, pausedBy: 'admin' });
+    const response = await api.put(`/subscriptions/${subscriptionId}/pause`, { reason, pausedBy: 'admin' });
+    return response.data as ApiResponse;
   },
 
   // Admin resume subscription
   async adminResumeSubscription(subscriptionId: string): Promise<ApiResponse> {
-    return api.put(`/subscriptions/${subscriptionId}/resume`, { resumedBy: 'admin' });
+    const response = await api.put(`/subscriptions/${subscriptionId}/resume`, { resumedBy: 'admin' });
+    return response.data as ApiResponse;
   },
 
   // Admin cancel subscription with reason
   async adminCancelSubscription(subscriptionId: string, reason: string): Promise<ApiResponse> {
-    return api.put(`/subscriptions/${subscriptionId}/cancel`, { reason, cancelledBy: 'admin' });
+    const response = await api.put(`/subscriptions/${subscriptionId}/cancel`, { reason, cancelledBy: 'admin' });
+    return response.data as ApiResponse;
   },
 
   // Update subscription delivery preferences (admin override)
@@ -199,10 +205,11 @@ export const subscriptionManagementApi = {
     daysOfWeek?: string[];
     specialInstructions?: string;
   }): Promise<ApiResponse> {
-    return api.put(`/subscriptions/${subscriptionId}/delivery-preferences`, {
+    const response = await api.put(`/subscriptions/${subscriptionId}/delivery-preferences`, {
       ...preferences,
       updatedBy: 'admin'
     });
+    return response.data as ApiResponse;
   },
 
   // ==========================================
@@ -222,38 +229,43 @@ export const subscriptionManagementApi = {
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
-    return api.get(`/chef-reassignment-requests?${params.toString()}`);
+    const response = await api.get(`/chef-reassignment-requests?${params.toString()}`);
+    return response.data as ApiResponse<ChefReassignmentRequest[]>;
   },
 
   // Get available chefs for reassignment
   async getAvailableChefs(subscriptionId: string): Promise<ApiResponse<AvailableChef[]>> {
-    return api.get(`/subscriptions/${subscriptionId}/available-chefs`);
+    const response = await api.get(`/subscriptions/${subscriptionId}/available-chefs`);
+    return response.data as ApiResponse<AvailableChef[]>;
   },
 
   // Approve chef reassignment request
   async approveChefReassignment(requestId: string, newChefId: string, adminNotes?: string): Promise<ApiResponse> {
-    return api.put(`/chef-reassignment-requests/${requestId}/approve`, {
+    const response = await api.put(`/chef-reassignment-requests/${requestId}/approve`, {
       newChefId,
       adminNotes,
       approvedBy: 'admin'
     });
+    return response.data as ApiResponse;
   },
 
   // Reject chef reassignment request
   async rejectChefReassignment(requestId: string, reason: string): Promise<ApiResponse> {
-    return api.put(`/chef-reassignment-requests/${requestId}/reject`, {
+    const response = await api.put(`/chef-reassignment-requests/${requestId}/reject`, {
       reason,
       rejectedBy: 'admin'
     });
+    return response.data as ApiResponse;
   },
 
   // Manually assign chef to subscription (admin override)
   async manuallyAssignChef(subscriptionId: string, chefId: string, reason: string): Promise<ApiResponse> {
-    return api.put(`/subscriptions/${subscriptionId}/assign-chef`, {
+    const response = await api.put(`/subscriptions/${subscriptionId}/assign-chef`, {
       chefId,
       reason,
       assignedBy: 'admin'
     });
+    return response.data as ApiResponse;
   },
 
   // ==========================================
@@ -271,26 +283,29 @@ export const subscriptionManagementApi = {
     if (options?.endDate) params.append('endDate', options.endDate);
     if (options?.daysAhead) params.append('daysAhead', options.daysAhead.toString());
 
-    return api.get(`/subscriptions/${subscriptionId}/timeline?${params.toString()}`);
+    const response = await api.get(`/subscriptions/${subscriptionId}/timeline?${params.toString()}`);
+    return response.data as ApiResponse<MealTimelineItem[]>;
   },
 
   // Admin skip meal delivery
   async adminSkipMealDelivery(subscriptionId: string, skipDate: string, reason: string): Promise<ApiResponse> {
-    return api.post(`/subscriptions/${subscriptionId}/skip-meal`, {
+    const response = await api.post(`/subscriptions/${subscriptionId}/skip-meal`, {
       skipDate,
       reason,
       skippedBy: 'admin'
     });
+    return response.data as ApiResponse;
   },
 
   // Reschedule meal delivery
   async rescheduleMealDelivery(subscriptionId: string, currentDate: string, newDate: string, reason: string): Promise<ApiResponse> {
-    return api.put(`/subscriptions/${subscriptionId}/reschedule-meal`, {
+    const response = await api.put(`/subscriptions/${subscriptionId}/reschedule-meal`, {
       currentDate,
       newDate,
       reason,
       rescheduledBy: 'admin'
     });
+    return response.data as ApiResponse;
   },
 
   // ==========================================
@@ -300,18 +315,21 @@ export const subscriptionManagementApi = {
   // Get subscription performance analytics
   async getSubscriptionAnalytics(period?: 'week' | 'month' | 'quarter' | 'year'): Promise<ApiResponse> {
     const params = period ? `?period=${period}` : '';
-    return api.get(`/analytics/subscription-performance${params}`);
+    const response = await api.get(`/analytics/subscription-performance${params}`);
+    return response.data as ApiResponse;
   },
 
   // Get chef performance analytics
   async getChefPerformanceAnalytics(chefId?: string): Promise<ApiResponse> {
     const params = chefId ? `?chefId=${chefId}` : '';
-    return api.get(`/analytics/chef-performance${params}`);
+    const response = await api.get(`/analytics/chef-performance${params}`);
+    return response.data as ApiResponse;
   },
 
   // Get customer satisfaction metrics
   async getCustomerSatisfactionMetrics(): Promise<ApiResponse> {
-    return api.get('/analytics/customer-satisfaction');
+    const response = await api.get('/analytics/customer-satisfaction');
+    return response.data as ApiResponse;
   },
 
   // ==========================================
@@ -325,12 +343,14 @@ export const subscriptionManagementApi = {
     message: string;
     urgent?: boolean;
   }): Promise<ApiResponse> {
-    return api.post(`/subscriptions/${subscriptionId}/notify-customer`, notification);
+    const response = await api.post(`/subscriptions/${subscriptionId}/notify-customer`, notification);
+    return response.data as ApiResponse;
   },
 
   // Get customer communication history
   async getCustomerCommunicationHistory(subscriptionId: string): Promise<ApiResponse> {
-    return api.get(`/subscriptions/${subscriptionId}/communication-history`);
+    const response = await api.get(`/subscriptions/${subscriptionId}/communication-history`);
+    return response.data as ApiResponse;
   },
 
   // ==========================================
@@ -339,21 +359,24 @@ export const subscriptionManagementApi = {
 
   // Get subscriptions requiring attention
   async getSubscriptionsRequiringAttention(): Promise<ApiResponse<SubscriptionOverview[]>> {
-    return api.get('/subscriptions/requiring-attention');
+    const response = await api.get('/subscriptions/requiring-attention');
+    return response.data as ApiResponse<SubscriptionOverview[]>;
   },
 
   // Get subscription health score
   async getSubscriptionHealthScore(subscriptionId: string): Promise<ApiResponse> {
-    return api.get(`/subscriptions/${subscriptionId}/health-score`);
+    const response = await api.get(`/subscriptions/${subscriptionId}/health-score`);
+    return response.data as ApiResponse;
   },
 
   // Flag subscription for review
   async flagSubscriptionForReview(subscriptionId: string, reason: string, priority: 'low' | 'medium' | 'high'): Promise<ApiResponse> {
-    return api.post(`/subscriptions/${subscriptionId}/flag-review`, {
+    const response = await api.post(`/subscriptions/${subscriptionId}/flag-review`, {
       reason,
       priority,
       flaggedBy: 'admin'
     });
+    return response.data as ApiResponse;
   }
 };
 

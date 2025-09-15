@@ -11,6 +11,7 @@ import { BlurView } from "expo-blur";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import CustomNavigationIcon from "../components/ui/CustomNavigationIcon";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../styles/theme";
 // import { THEME } from '../utils/colors';
@@ -252,12 +253,11 @@ const TabNavigator = () => {
         // Add transition animation type
         animationTypeForReplace: "push",
         tabBarIcon: ({ focused, color, size }) => (
-          <TabIcon
-            focused={focused}
+          <CustomNavigationIcon
             route={route}
-            color={color}
+            focused={focused}
+            color={focused ? colors.background : color}
             size={size}
-            colors={darkTabColors}
           />
         ),
         tabBarActiveTintColor: darkTabColors.primary,
@@ -280,7 +280,7 @@ const TabNavigator = () => {
         tabBarButton: (props) => (
           <TouchableOpacity
             {...props}
-            activeOpacity={0.8}
+            activeOpacity={0.9}
             style={[
               props.style,
               {

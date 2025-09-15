@@ -1,24 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  User, 
-  Package, 
-  Calendar, 
-  MapPin, 
-  Phone, 
-  Mail, 
+import {
+  X,
+  User,
+  Package,
+  MapPin,
+  Phone,
+  Mail,
   ChefHat,
   Clock,
   Star,
-  TrendingUp,
   Settings,
   Pause,
   Play,
   AlertTriangle,
   CheckCircle,
   Edit3,
-  Save,
-  RotateCcw
+  Save
 } from 'lucide-react';
 import { subscriptionManagementApi } from '../../services/subscriptionManagementApi';
 
@@ -77,10 +74,10 @@ interface SubscriptionDetailsModalProps {
   onUpdate: () => void;
 }
 
-const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({ 
-  subscription, 
-  onClose, 
-  onUpdate 
+const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
+  subscription,
+  onClose,
+  onUpdate
 }) => {
   const [loading, setLoading] = useState(false);
   const [editingPreferences, setEditingPreferences] = useState(false);
@@ -107,10 +104,10 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
     try {
       setLoading(true);
       const response = await subscriptionManagementApi.adminPauseSubscription(
-        subscription._id, 
+        subscription._id,
         'Admin override - subscription paused for review'
       );
-      
+
       if (response.success) {
         alert('Subscription paused successfully');
         onUpdate();
@@ -130,7 +127,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
     try {
       setLoading(true);
       const response = await subscriptionManagementApi.adminResumeSubscription(subscription._id);
-      
+
       if (response.success) {
         alert('Subscription resumed successfully');
         onUpdate();
@@ -153,10 +150,10 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
     try {
       setLoading(true);
       const response = await subscriptionManagementApi.adminCancelSubscription(
-        subscription._id, 
+        subscription._id,
         reason.trim()
       );
-      
+
       if (response.success) {
         alert('Subscription cancelled successfully');
         onUpdate();
@@ -177,7 +174,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
         subscription._id,
         preferences
       );
-      
+
       if (response.success) {
         alert('Delivery preferences updated successfully');
         setEditingPreferences(false);
@@ -230,6 +227,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
+            aria-label="Close modal"
           >
             <X className="w-6 h-6" />
           </button>
@@ -243,7 +241,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                 <User className="w-5 h-5 mr-2" />
                 Customer Information
               </h3>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Name:</span>
@@ -251,7 +249,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                     {subscription.userId.fullName}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Email:</span>
                   <div className="flex items-center space-x-2">
@@ -261,7 +259,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Phone:</span>
                   <div className="flex items-center space-x-2">
@@ -271,7 +269,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Address:</span>
                   <div className="flex items-center space-x-2">
@@ -290,7 +288,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                 <Package className="w-5 h-5 mr-2" />
                 Subscription Status
               </h3>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Status:</span>
@@ -299,14 +297,14 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                     <span className="ml-1">{subscription.status}</span>
                   </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Start Date:</span>
                   <span className="text-sm text-gray-900">
                     {new Date(subscription.startDate).toLocaleDateString()}
                   </span>
                 </div>
-                
+
                 {subscription.endDate && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">End Date:</span>
@@ -315,14 +313,14 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                     </span>
                   </div>
                 )}
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Next Delivery:</span>
                   <span className="text-sm text-gray-900">
                     {new Date(subscription.nextDelivery).toLocaleDateString()}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Total Price:</span>
                   <span className="text-sm font-medium text-gray-900">
@@ -338,7 +336,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                 <Package className="w-5 h-5 mr-2" />
                 Meal Plan Details
               </h3>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Plan Name:</span>
@@ -346,14 +344,14 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                     {subscription.mealPlanId.planName}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Duration:</span>
                   <span className="text-sm text-gray-900">
                     {subscription.mealPlanId.durationWeeks} weeks
                   </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Meals per Week:</span>
                   <span className="text-sm text-gray-900">
@@ -371,8 +369,8 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-primary-600 h-2 rounded-full" 
+                  <div
+                    className="bg-primary-600 h-2 rounded-full"
                     style={{ width: `${subscription.metrics.progressPercentage}%` }}
                   ></div>
                 </div>
@@ -391,7 +389,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                   <ChefHat className="w-5 h-5 mr-2" />
                   Assigned Chef
                 </h3>
-                
+
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Name:</span>
@@ -399,21 +397,21 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                       {subscription.chefAssignment.chefId.fullName}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Email:</span>
                     <span className="text-sm text-gray-900">
                       {subscription.chefAssignment.chefId.email}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Phone:</span>
                     <span className="text-sm text-gray-900">
                       {subscription.chefAssignment.chefId.phone}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Rating:</span>
                     <div className="flex items-center space-x-1">
@@ -423,21 +421,21 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Assigned:</span>
                     <span className="text-sm text-gray-900">
                       {new Date(subscription.chefAssignment.assignedAt).toLocaleDateString()}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Completed Deliveries:</span>
                     <span className="text-sm text-gray-900">
                       {subscription.chefAssignment.performance.completedDeliveries}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">On Time %:</span>
                     <span className="text-sm text-gray-900">
@@ -479,7 +477,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Time Slot
@@ -556,7 +554,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                     <AlertTriangle className="w-5 h-5 mr-2" />
                     Issues Requiring Attention
                   </h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {subscription.issues?.pendingReassignmentRequests && (
                       <div className="bg-white rounded-lg p-4">
@@ -568,7 +566,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                         </div>
                       </div>
                     )}
-                    
+
                     {subscription.issues?.customerComplaints && (
                       <div className="bg-white rounded-lg p-4">
                         <div className="text-center">
@@ -579,7 +577,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
                         </div>
                       </div>
                     )}
-                    
+
                     {subscription.issues?.skippedMeals && (
                       <div className="bg-white rounded-lg p-4">
                         <div className="text-center">
@@ -605,7 +603,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
           >
             Close
           </button>
-          
+
           {subscription.status === 'active' && (
             <button
               onClick={handlePauseSubscription}
@@ -616,7 +614,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
               <span>{loading ? 'Processing...' : 'Pause Subscription'}</span>
             </button>
           )}
-          
+
           {subscription.status === 'paused' && (
             <button
               onClick={handleResumeSubscription}
@@ -627,7 +625,7 @@ const SubscriptionDetailsModal: React.FC<SubscriptionDetailsModalProps> = ({
               <span>{loading ? 'Processing...' : 'Resume Subscription'}</span>
             </button>
           )}
-          
+
           {subscription.status !== 'cancelled' && (
             <button
               onClick={handleCancelSubscription}

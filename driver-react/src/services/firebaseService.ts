@@ -32,9 +32,6 @@ class DriverFirebaseService {
       // Try to get Realtime Database
       this.database = getDatabase(this.app);
       
-      // Test connection by trying to get a reference
-      const testRef = ref(this.database, '.info/connected');
-      
       this.driverId = driverId;
       this.isInitialized = true;
       console.log('✅ Firebase initialized successfully for driver:', driverId);

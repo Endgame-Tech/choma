@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import StarRating from './StarRating';
 
@@ -54,7 +54,10 @@ interface Rating {
   response?: {
     text: string;
     respondedAt: string;
-    respondedBy: any;
+    respondedBy: {
+      name: string;
+      email?: string;
+    };
   };
 }
 
@@ -123,7 +126,8 @@ const RatingDisplay: React.FC<RatingDisplayProps> = ({
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-gray-700">Rating Distribution</h4>
         {[5, 4, 3, 2, 1].map(rating => {
-          const count = ratingCounts[rating.toString()] || 0;
+          const key = rating.toString() as '5' | '4' | '3' | '2' | '1';
+          const count = ratingCounts[key] || 0;
           const percentage = totalRatings > 0 ? (count / totalRatings) * 100 : 0;
           
           return (
@@ -147,8 +151,8 @@ const RatingDisplay: React.FC<RatingDisplayProps> = ({
     if (!summary?.aspectStats || !showAspects) return null;
 
     const aspects = Object.entries(summary.aspectStats)
-      .filter(([_, data]) => data.count >= 3) // Only show aspects with enough data
-      .sort(([_, a], [__, b]) => b.average - a.average)
+      .filter(([, data]) => data.count >= 3) // Only show aspects with enough data
+      .sort(([, a], [, b]) => b.average - a.average)
       .slice(0, expandedAspects ? undefined : 5);
 
     if (aspects.length === 0) return null;
@@ -345,7 +349,7 @@ const RatingDisplay: React.FC<RatingDisplayProps> = ({
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div data-entity-id={entityId} data-entity-type={entityType} className={`space-y-6 ${className}`}>
       {/* Summary Section */}
       {showSummary && summary && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">

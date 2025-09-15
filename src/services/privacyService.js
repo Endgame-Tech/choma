@@ -69,7 +69,7 @@ class PrivacyService {
   // Request data export
   static async requestDataExport(email) {
     try {
-      const response = await apiService.post('/user/data-export', { email });
+      const response = await apiService.post('/users/data-export', { email });
       
       if (response.success) {
         console.log('✅ Data export requested');
@@ -86,7 +86,7 @@ class PrivacyService {
   // Delete all user data
   static async requestDataDeletion(reason) {
     try {
-      const response = await apiService.post('/user/data-deletion', { reason });
+      const response = await apiService.post('/users/data-deletion', { reason });
       
       if (response.success) {
         console.log('✅ Data deletion requested');
@@ -103,7 +103,7 @@ class PrivacyService {
   // Log privacy action
   static async logPrivacyAction(action, details) {
     try {
-      await apiService.post('/user/privacy-log', {
+      await apiService.post('/users/privacy-log', {
         action,
         details,
         timestamp: new Date().toISOString()
@@ -128,18 +128,16 @@ class PrivacyService {
 
   // Get privacy policy URL
   static getPrivacyPolicyUrl() {
-    // For now, point to main landing page until specific policy pages are created
     return __DEV__ 
-      ? 'https://choma.vercel.app'
-      : 'https://choma.vercel.app';
+      ? 'https://choma.vercel.app/privacy'
+      : 'https://choma.vercel.app/privacy';
   }
 
   // Get terms of service URL  
   static getTermsOfServiceUrl() {
-    // For now, point to main landing page until specific terms pages are created
     return __DEV__
-      ? 'https://choma.vercel.app' 
-      : 'https://choma.vercel.app';
+      ? 'https://choma.vercel.app/terms' 
+      : 'https://choma.vercel.app/terms';
   }
 
   // Get main website URL

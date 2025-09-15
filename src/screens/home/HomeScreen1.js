@@ -41,6 +41,8 @@ import RecurringDeliveryCard from "../../components/orders/RecurringDeliveryCard
 import SubscriptionCard from "../../components/dashboard/SubscriptionCard";
 import MealProgressionTimeline from "../../components/subscription/MealProgressionTimeline";
 import SubscriptionManagementModal from "../../components/subscription/SubscriptionManagementModal";
+import CustomText from "../../components/ui/CustomText";
+import { DMSansFonts } from "../../constants/fonts";
 
 const { width } = Dimensions.get("window");
 
@@ -1163,7 +1165,9 @@ const HomeScreen = ({ navigation }) => {
 
     return (
       <View style={styles(colors).activeOrdersSection}>
-        <Text style={styles(colors).sectionTitle}>Active Orders</Text>
+        <Text variant="h2" style={styles(colors).sectionTitle}>
+          Active Orders
+        </Text>
         {activeOrders.map((order) => renderActiveOrder(order))}
       </View>
     );
@@ -1219,7 +1223,9 @@ const HomeScreen = ({ navigation }) => {
     // Multiple subscriptions - show card list
     return (
       <View style={styles(colors).subscriptionsSection}>
-        <Text style={styles(colors).sectionTitle}>Your Meal Plans</Text>
+        <Text variant="h2" style={styles(colors).sectionTitle}>
+          Your Meal Plans
+        </Text>
         {activeSubscriptions.map((subscription, index) => (
           <TouchableOpacity
             key={subscription._id}
@@ -1364,25 +1370,33 @@ const HomeScreen = ({ navigation }) => {
     };
     return (
       <View style={styles(colors).quickStatsSection}>
-        <Text style={styles(colors).sectionTitle}>Your Progress</Text>
+        <Text variant="h2" style={styles(colors).sectionTitle}>
+          Your Progress
+        </Text>
         <View style={styles(colors).statsGrid}>
           <View style={styles(colors).statCard}>
-            <Text style={styles(colors).statNumber}>
+            <Text variant="h3" style={styles(colors).statNumber}>
               {aggregateStats.totalMealsDelivered}
             </Text>
-            <Text style={styles(colors).statLabel}>Meals Delivered</Text>
+            <Text variant="caption" style={styles(colors).statLabel}>
+              Meals Delivered
+            </Text>
           </View>
           <View style={styles(colors).statCard}>
-            <Text style={styles(colors).statNumber}>
+            <Text variant="h3" style={styles(colors).statNumber}>
               ₦{formatNumber(aggregateStats.totalSpent)}
             </Text>
-            <Text style={styles(colors).statLabel}>Total Spent</Text>
+            <Text variant="caption" style={styles(colors).statLabel}>
+              Total Spent
+            </Text>
           </View>
           <View style={styles(colors).statCard}>
-            <Text style={styles(colors).statNumber}>
+            <Text variant="h3" style={styles(colors).statNumber}>
               {aggregateStats.maxConsecutiveDays}
             </Text>
-            <Text style={styles(colors).statLabel}>Best Streak</Text>
+            <Text variant="caption" style={styles(colors).statLabel}>
+              Best Streak
+            </Text>
           </View>
         </View>
       </View>
@@ -1406,16 +1420,19 @@ const HomeScreen = ({ navigation }) => {
       // Calculate subscription day using same logic as RecurringDeliveryCard
       const getSubscriptionDay = () => {
         // If subscription is not yet activated (first delivery not completed), always show Day 1
-        if (!primarySubscription.activationDeliveryCompleted || !primarySubscription.isActivated) {
+        if (
+          !primarySubscription.activationDeliveryCompleted ||
+          !primarySubscription.isActivated
+        ) {
           console.log("🔄 Subscription not yet activated - showing Day 1");
           return 1;
         }
-        
+
         // If subscription has nextDelivery date, calculate based on that
         if (primarySubscription.nextDelivery && primarySubscription.startDate) {
           const startDate = new Date(primarySubscription.startDate);
           const nextDelivery = new Date(primarySubscription.nextDelivery);
-          
+
           // Normalize dates to avoid timezone issues
           const startDateNormalized = new Date(
             startDate.getFullYear(),
@@ -1427,18 +1444,19 @@ const HomeScreen = ({ navigation }) => {
             nextDelivery.getMonth(),
             nextDelivery.getDate()
           );
-          
+
           const daysDiff = Math.floor(
-            (nextDeliveryNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
+            (nextDeliveryNormalized - startDateNormalized) /
+              (1000 * 60 * 60 * 24)
           );
           return Math.max(1, daysDiff + 1);
         }
-        
+
         // Fallback to current date calculation if nextDelivery not available
         if (primarySubscription.startDate) {
           const startDate = new Date(primarySubscription.startDate);
           const currentDate = new Date();
-          
+
           // Normalize dates to avoid timezone issues
           const startDateNormalized = new Date(
             startDate.getFullYear(),
@@ -1450,13 +1468,14 @@ const HomeScreen = ({ navigation }) => {
             currentDate.getMonth(),
             currentDate.getDate()
           );
-          
+
           const daysDiff = Math.floor(
-            (currentDateNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
+            (currentDateNormalized - startDateNormalized) /
+              (1000 * 60 * 60 * 24)
           );
           return Math.max(1, daysDiff + 1);
         }
-        
+
         // Default to day 1 if no dates available
         return 1;
       };
@@ -1487,7 +1506,6 @@ const HomeScreen = ({ navigation }) => {
       const weeklyMeals = primarySubscription.mealPlanId?.weeklyMeals || {};
       const currentWeek = weeklyMeals[`week${currentWeekNumber}`] || {};
       const todaysMealsData = currentWeek[dayName] || {};
-
 
       // Helper function to get specific meal assignment from weeklyMeals structure
       const getMealAssignment = (mealType) => {
@@ -1549,7 +1567,6 @@ const HomeScreen = ({ navigation }) => {
       // Helper function to get meal calories from assignment data
       const getMealCalories = (mealType) => {
         const assignment = getMealAssignment(mealType);
-
 
         // Try to get calories from assignment
         if (assignment?.calories) {
@@ -2768,6 +2785,7 @@ const styles = (colors) =>
     },
     locationText: {
       fontSize: 14,
+      fontFamily: DMSansFonts.medium,
       color: colors.textSecondary,
       marginLeft: 4,
       fontWeight: "500",
@@ -2904,6 +2922,7 @@ const styles = (colors) =>
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",
+      fontFamily: DMSansFonts.semiBold,
       marginBottom: 15,
       opacity: 0.7,
       color: colors.text,
@@ -3413,11 +3432,13 @@ const styles = (colors) =>
     statNumber: {
       fontSize: 24,
       fontWeight: "bold",
+      fontFamily: DMSansFonts.bold,
       color: colors.text,
       marginBottom: 4,
     },
     statLabel: {
       fontSize: 12,
+      fontFamily: DMSansFonts.medium,
       color: colors.textSecondary,
       textAlign: "center",
     },
@@ -3506,6 +3527,7 @@ const styles = (colors) =>
     modalTitle: {
       fontSize: 20,
       fontWeight: "bold",
+      fontFamily: DMSansFonts.bold,
       color: colors.text,
       textAlign: "center",
       marginBottom: 8,
@@ -3864,6 +3886,7 @@ const styles = (colors) =>
       color: COLORS.primary,
       fontSize: 12,
       fontWeight: "600",
+      fontFamily: DMSansFonts.semiBold,
       marginRight: 4,
     },
     modalHeader: {

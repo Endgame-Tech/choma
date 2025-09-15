@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   User,
   MapPin,
   ChefHat,
@@ -74,7 +74,6 @@ const NextAssignments: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState(7); // days
-  const [statusUpdates, setStatusUpdates] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     fetchNextAssignments();
@@ -124,9 +123,7 @@ const NextAssignments: React.FC = () => {
       });
 
       if (response.ok) {
-        // Update local state
-        setStatusUpdates(prev => ({ ...prev, [deliveryId]: status }));
-        // Refresh data
+        // Refresh data to show updated status
         await fetchNextAssignments();
       } else {
         throw new Error('Failed to update cooking status');
@@ -216,7 +213,7 @@ const NextAssignments: React.FC = () => {
 
   if (error) {
     return (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
         <div className="flex items-center">
           <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
           <p className="text-red-700 dark:text-red-400">{error}</p>
@@ -239,7 +236,7 @@ const NextAssignments: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Next Cooking Assignments</h2>
           <p className="text-gray-600 dark:text-gray-300">
-            {assignments.length} active subscription{assignments.length !== 1 ? 's' : ''} • 
+            {assignments.length} active subscription{assignments.length !== 1 ? 's' : ''} •
             {assignments.reduce((sum, a) => sum + a.totalUpcomingMeals, 0)} upcoming deliveries
           </p>
         </div>
@@ -256,7 +253,7 @@ const NextAssignments: React.FC = () => {
             <option value={14}>Next 14 days</option>
           </select>
 
-          <button 
+          <button
             onClick={() => fetchNextAssignments()}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
@@ -320,10 +317,10 @@ const NextAssignments: React.FC = () => {
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
                   Upcoming Deliveries ({assignment.upcomingDeliveries.length})
                 </h4>
-                
+
                 <div className="space-y-3">
                   {assignment.upcomingDeliveries.map((delivery) => (
-                    <div 
+                    <div
                       key={delivery._id}
                       className={`p-4 rounded-lg border ${getPriorityColor(delivery.priority)}`}
                     >
@@ -334,8 +331,8 @@ const NextAssignments: React.FC = () => {
                           </span>
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">
-                              {delivery.mealAssignment.customTitle || 
-                               `${delivery.mealAssignment.mealTime.charAt(0).toUpperCase() + delivery.mealAssignment.mealTime.slice(1)}`}
+                              {delivery.mealAssignment.customTitle ||
+                                `${delivery.mealAssignment.mealTime.charAt(0).toUpperCase() + delivery.mealAssignment.mealTime.slice(1)}`}
                             </p>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                               Week {delivery.mealAssignment.weekNumber}, Day {delivery.mealAssignment.dayOfWeek}
@@ -361,7 +358,7 @@ const NextAssignments: React.FC = () => {
                               ~{delivery.estimatedPrepTime}min prep
                             </span>
                           </div>
-                          
+
                           <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(delivery.status)}`}>
                             {delivery.status.replace('_', ' ')}
                           </span>
@@ -377,7 +374,7 @@ const NextAssignments: React.FC = () => {
                               Start Cooking
                             </button>
                           ) : null}
-                          
+
                           {delivery.status === 'preparing' ? (
                             <button
                               onClick={() => updateCookingStatus(delivery._id, 'ready', 'Food is ready for pickup')}

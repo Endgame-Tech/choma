@@ -614,8 +614,8 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.title}>Today's Meal</Text>
-            <Text style={styles.subtitle}>
+            {/* <Text style={styles.title}>Today's Meal</Text> */}
+            <Text style={styles.title}>
               {subscription.mealPlanId?.planName || subscription.planName}
             </Text>
           </View>

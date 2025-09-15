@@ -490,7 +490,7 @@ const CompactOrderCard = ({
               }}
             >
               <Ionicons name="key" size={14} color={colors.white} />
-              <Text style={styles(colors).codeButtonText}>View Code</Text>
+              <Text style={styles(colors).codeButtonText}>Code</Text>
             </TouchableOpacity>
           )}
 
@@ -503,7 +503,7 @@ const CompactOrderCard = ({
               size={16}
               color={colors.primary}
             />
-            <Text style={styles(colors).detailsButtonText}>Details</Text>
+            {/* <Text style={styles(colors).detailsButtonText}>Details</Text> */}
           </TouchableOpacity>
         </View>
       </View>
@@ -884,11 +884,11 @@ const styles = (colors) =>
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
-      elevation: 3,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
+      // elevation: 3,
+      // shadowColor: colors.shadow,
+      // shadowOffset: { width: 0, height: 2 },
+      // shadowOpacity: 0.15,
+      // shadowRadius: 8,
     },
 
     // Compact Header

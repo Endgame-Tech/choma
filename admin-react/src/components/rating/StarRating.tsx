@@ -46,7 +46,7 @@ const StarRating: React.FC<StarRatingProps> = ({
 
   const handleMouseEnter = useCallback((starIndex: number, isHalf: boolean = false) => {
     if (disabled || readOnly) return;
-    
+
     const rating = isHalf ? starIndex + 0.5 : starIndex + 1;
     setHoverValue(rating);
     setIsHovering(true);
@@ -55,7 +55,7 @@ const StarRating: React.FC<StarRatingProps> = ({
 
   const handleMouseLeave = useCallback(() => {
     if (disabled || readOnly) return;
-    
+
     setHoverValue(null);
     setIsHovering(false);
     onHover?.(null);
@@ -63,7 +63,7 @@ const StarRating: React.FC<StarRatingProps> = ({
 
   const handleClick = useCallback((starIndex: number, isHalf: boolean = false) => {
     if (disabled || readOnly) return;
-    
+
     const rating = isHalf ? starIndex + 0.5 : starIndex + 1;
     onChange?.(rating);
   }, [disabled, readOnly, onChange]);
@@ -74,10 +74,9 @@ const StarRating: React.FC<StarRatingProps> = ({
   const renderStar = (index: number) => {
     const starValue = index + 1;
     const halfStarValue = index + 0.5;
-    
+
     const isFullyFilled = displayValue >= starValue;
     const isHalfFilled = allowHalf && displayValue >= halfStarValue && displayValue < starValue;
-    const isEmpty = displayValue < halfStarValue;
 
     const baseClasses = `
       ${sizeClasses[size]}
@@ -104,7 +103,7 @@ const StarRating: React.FC<StarRatingProps> = ({
           >
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
-          
+
           {/* Half-filled star */}
           <svg
             className={`${baseClasses} ${halfStarClassName}`}
@@ -147,7 +146,7 @@ const StarRating: React.FC<StarRatingProps> = ({
       <div className="flex items-center">
         {Array.from({ length: 5 }, (_, index) => renderStar(index))}
       </div>
-      
+
       {showValue && (
         <span className="ml-2 text-sm font-medium text-gray-700">
           {displayValue.toFixed(1)}

@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
-  AlertTriangle, 
-  Pause, 
+import {
+  X,
+  Calendar,
+  Clock,
+  CheckCircle,
   SkipForward,
   ChefHat,
-  Truck,
   Star,
   MessageSquare,
-  Edit3,
   RotateCcw
 } from 'lucide-react';
 import { subscriptionManagementApi } from '../../services/subscriptionManagementApi';
@@ -98,9 +94,9 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
   const loadTimeline = async () => {
     try {
       setLoading(true);
-      
-      const options: any = { daysAhead: 30 };
-      
+
+      const options: { daysAhead?: number; startDate?: string; endDate?: string } = { daysAhead: 30 };
+
       if (viewMode === 'past') {
         options.startDate = new Date(subscription.startDate).toISOString();
         options.endDate = new Date().toISOString();
@@ -113,9 +109,15 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
         subscription._id,
         options
       );
-      
+
       if (response.success) {
-        setTimeline(response.data || []);
+        // Ensure each item contains the required `canModify` property to match the local MealTimelineItem type.
+        setTimeline(
+          ((response.data || []) as unknown as MealTimelineItem[]).map((d) => ({
+            ...d,
+            canModify: d.canModify ?? false,
+          }))
+        );
       }
     } catch (error) {
       console.error('Failed to load timeline:', error);
@@ -134,7 +136,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
         selectedMeal.date,
         skipReason
       );
-      
+
       if (response.success) {
         alert('Meal skipped successfully');
         loadTimeline();
@@ -161,7 +163,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
         newDate,
         rescheduleReason
       );
-      
+
       if (response.success) {
         alert('Meal rescheduled successfully');
         loadTimeline();
@@ -205,7 +207,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
   const filteredTimeline = timeline.filter(item => {
     const itemDate = new Date(item.date);
     const now = new Date();
-    
+
     switch (viewMode) {
       case 'upcoming':
         return itemDate >= now;
@@ -236,6 +238,8 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
+            title="Close"
+            aria-label="Close"
           >
             <X className="w-6 h-6" />
           </button>
@@ -246,31 +250,28 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setViewMode('upcoming')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                viewMode === 'upcoming'
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${viewMode === 'upcoming'
                   ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Upcoming
             </button>
             <button
               onClick={() => setViewMode('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                viewMode === 'all'
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${viewMode === 'all'
                   ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               All
             </button>
             <button
               onClick={() => setViewMode('past')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                viewMode === 'past'
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${viewMode === 'past'
                   ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Past
             </button>
@@ -307,7 +308,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
                           {getStatusIcon(item.status)}
                           <span className="ml-1">{item.status}</span>
                         </span>
-                        
+
                         <span className="text-sm font-medium text-gray-900">
                           {new Date(item.date).toLocaleDateString('en-US', {
                             weekday: 'long',
@@ -323,14 +324,14 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
                           <h4 className="text-sm font-medium text-gray-900">{item.mealName}</h4>
                           <p className="text-xs text-gray-600">{item.mealType}</p>
                         </div>
-                        
+
                         {item.chefName && (
                           <div className="flex items-center space-x-2">
                             <ChefHat className="w-3 h-3 text-gray-400" />
                             <span className="text-sm text-gray-700">{item.chefName}</span>
                           </div>
                         )}
-                        
+
                         {item.estimatedTime && (
                           <div className="flex items-center space-x-2">
                             <Clock className="w-3 h-3 text-gray-400" />
@@ -355,7 +356,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
                       {/* Customer Feedback */}
                       {item.customerFeedback && (
                         <div className="bg-gray-50 rounded-lg p-3 mb-2">
-                          <p className="text-sm text-gray-700 italic">"{item.customerFeedback}"</p>
+                          <p className="text-sm text-gray-700 italic">&quot;{item.customerFeedback}&quot;</p>
                         </div>
                       )}
 
@@ -382,7 +383,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
                         >
                           <SkipForward className="w-4 h-4" />
                         </button>
-                        
+
                         <button
                           onClick={() => {
                             setSelectedMeal(item);
@@ -422,6 +423,8 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
               <button
                 onClick={() => setShowSkipModal(false)}
                 className="text-gray-400 hover:text-gray-600"
+                title="Close"
+                aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -466,13 +469,15 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ subscription, onClose }) 
 
       {/* Reschedule Meal Modal */}
       {showRescheduleModal && selectedMeal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Reschedule Meal</h3>
               <button
                 onClick={() => setShowRescheduleModal(false)}
                 className="text-gray-400 hover:text-gray-600"
+                title="Close"
+                aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>

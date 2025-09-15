@@ -35,6 +35,7 @@ import StatusMessage from "../../components/StatusMessage";
 import NetworkUtils from "../../utils/networkUtils";
 import { useAlert } from "../../contexts/AlertContext";
 import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
+import ratingPromptManager from "../../services/ratingPromptManager";
 
 const { width } = Dimensions.get("window");
 
@@ -1199,6 +1200,7 @@ Your meal plan has been updated with fresh options.`;
     }));
   };
 
+
   const handleAchievementPress = async (achievement) => {
     if (achievement.earned && !achievement.claimed) {
       // Claim the achievement
@@ -2078,6 +2080,7 @@ Your meal plan has been updated with fresh options.`;
       </View>
     </View>
   );
+
 
   if (!user) {
     return (
@@ -3256,6 +3259,76 @@ const styles = (colors) =>
       shadowOpacity: 0.2,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
+    },
+    // Settings Tab Styles
+    settingInfo: {
+      flex: 1,
+      marginRight: 15,
+    },
+    settingLabel: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    settingDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    settingControl: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    // Frequency Options
+    frequencyOption: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 15,
+      backgroundColor: colors.cardBackground,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginHorizontal: 2,
+      minWidth: 60,
+      alignItems: 'center',
+    },
+    frequencyOptionActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    frequencyOptionText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    frequencyOptionTextActive: {
+      color: colors.white,
+    },
+    // Toggle Switch
+    toggleSwitch: {
+      width: 50,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.border,
+      padding: 2,
+      justifyContent: 'center',
+    },
+    toggleSwitchActive: {
+      backgroundColor: colors.primary,
+    },
+    toggleKnob: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: colors.white,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    toggleKnobActive: {
+      transform: [{ translateX: 22 }],
     },
   });
 

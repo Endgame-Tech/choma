@@ -35,11 +35,21 @@ const SettingsScreen = ({ navigation }) => {
     autoDownload: true,
     dataCollection: false,
   });
+  
+  // Rating preferences state
+  const [ratingPreferences, setRatingPreferences] = useState({
+    promptFrequency: 'after_every_order',
+    orderCompletionPrompts: true,
+    subscriptionMilestonePrompts: true,
+    deliveryRatingPrompts: true,
+    optOut: false,
+  });
   const [loading, setLoading] = useState(false);
 
   // Initialize settings from storage and services
   useEffect(() => {
     loadSettings();
+    loadRatingPreferences();
   }, []);
 
   const loadSettings = async () => {
@@ -81,6 +91,17 @@ const SettingsScreen = ({ navigation }) => {
         autoDownload: true,
         dataCollection: false,
       });
+    }
+  };
+
+  const loadRatingPreferences = async () => {
+    try {
+      const savedPreferences = await AsyncStorage.getItem('ratingPreferences');
+      if (savedPreferences) {
+        setRatingPreferences(JSON.parse(savedPreferences));
+      }
+    } catch (error) {
+      console.warn('Could not load rating preferences:', error);
     }
   };
 
@@ -230,6 +251,49 @@ const SettingsScreen = ({ navigation }) => {
     );
   };
 
+  const handleRatingPreferenceToggle = async (preference) => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      let updatedPreferences;
+
+      if (preference === 'promptFrequency') {
+        // Cycle through frequency options
+        const frequencies = ['after_every_order', 'after_delivery', 'weekly', 'monthly'];
+        const currentIndex = frequencies.indexOf(ratingPreferences.promptFrequency);
+        const nextIndex = (currentIndex + 1) % frequencies.length;
+        updatedPreferences = {
+          ...ratingPreferences,
+          promptFrequency: frequencies[nextIndex],
+        };
+      } else {
+        // Toggle boolean preferences
+        updatedPreferences = {
+          ...ratingPreferences,
+          [preference]: !ratingPreferences[preference],
+        };
+      }
+
+      setRatingPreferences(updatedPreferences);
+      await AsyncStorage.setItem('ratingPreferences', JSON.stringify(updatedPreferences));
+
+      if (preference === 'optOut') {
+        showInfo(
+          updatedPreferences.optOut ? "Rating Prompts Disabled" : "Rating Prompts Enabled",
+          updatedPreferences.optOut 
+            ? "You won't receive rating prompts anymore."
+            : "You'll receive rating prompts based on your preferences."
+        );
+      }
+    } catch (error) {
+      console.error('Error updating rating preferences:', error);
+      showError('Error', 'Failed to update rating preferences.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Sign out logic
   const handleSignOut = async () => {
     try {
@@ -258,17 +322,16 @@ const SettingsScreen = ({ navigation }) => {
   const handlePrivacy = () => {
     showConfirm(
       "Privacy Policy",
-      "Your privacy is important to us. We collect only necessary data to provide you with the best experience.\n\nWould you like to:",
+      "This will take you out of the app to view our complete Privacy Policy on our website.\n\nYour privacy is important to us. We collect only necessary data to provide you with the best experience.\n\nWould you like to:",
       () => {},
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Visit Website",
+          text: "View Privacy Policy",
           onPress: () => {
-            // Use PrivacyService to get the website URL
-            const websiteUrl = PrivacyService.getWebsiteUrl();
-            Linking.openURL(websiteUrl).catch(() => {
-              showInfo("Website", "Visit us at: " + websiteUrl);
+            const privacyUrl = PrivacyService.getPrivacyPolicyUrl();
+            Linking.openURL(privacyUrl).catch(() => {
+              showInfo("Privacy Policy", "Visit our privacy policy at: " + privacyUrl);
             });
           },
         },
@@ -298,16 +361,16 @@ const SettingsScreen = ({ navigation }) => {
   const handleTerms = () => {
     showConfirm(
       "Terms of Service",
-      "By using Choma, you agree to our terms and conditions.",
+      "This will take you out of the app to view our complete Terms of Service on our website.\n\nBy using Choma, you agree to our terms and conditions.",
       () => {},
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Visit Website",
+          text: "View Terms",
           onPress: () => {
-            const websiteUrl = PrivacyService.getWebsiteUrl();
-            Linking.openURL(websiteUrl).catch(() => {
-              showInfo("Website", "Visit us at: " + websiteUrl);
+            const termsUrl = PrivacyService.getTermsOfServiceUrl();
+            Linking.openURL(termsUrl).catch(() => {
+              showInfo("Terms of Service", "Visit our terms at: " + termsUrl);
             });
           },
         },
@@ -399,6 +462,21 @@ const SettingsScreen = ({ navigation }) => {
         <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       )}
     </View>
+  );
+
+  const renderFrequencyItem = (icon, title, subtitle, currentValue, onPress) => (
+    <TouchableOpacity style={styles(colors).actionItem} onPress={onPress}>
+      <View style={styles(colors).settingIcon}>
+        <Ionicons name={icon} size={20} color={colors.primary} />
+      </View>
+      <View style={styles(colors).settingContent}>
+        <Text style={styles(colors).settingTitle}>{title}</Text>
+        <Text style={styles(colors).settingSubtitle}>
+          {subtitle} • Current: {currentValue.replace('_', ' ').toUpperCase()}
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+    </TouchableOpacity>
   );
 
   const renderActionItem = (
@@ -509,6 +587,53 @@ const SettingsScreen = ({ navigation }) => {
               "Terms of Service",
               "Read our terms and conditions",
               handleTerms
+            )}
+          </View>
+        </View>
+
+        {/* Rating Preferences */}
+        <View style={styles(colors).section}>
+          <Text style={styles(colors).sectionTitle}>Rating Preferences</Text>
+
+          <View style={styles(colors).settingsGroup}>
+            {renderFrequencyItem(
+              "time",
+              "Prompt Frequency",
+              "How often you want to be asked for ratings",
+              ratingPreferences.promptFrequency,
+              () => handleRatingPreferenceToggle("promptFrequency")
+            )}
+
+            {renderSettingItem(
+              "checkmark-circle",
+              "Order Completion Prompts",
+              "Ask for ratings when orders are completed",
+              ratingPreferences.orderCompletionPrompts,
+              () => handleRatingPreferenceToggle("orderCompletionPrompts")
+            )}
+
+            {renderSettingItem(
+              "calendar",
+              "Subscription Milestone Prompts",
+              "Ask for ratings at subscription milestones",
+              ratingPreferences.subscriptionMilestonePrompts,
+              () => handleRatingPreferenceToggle("subscriptionMilestonePrompts")
+            )}
+
+            {renderSettingItem(
+              "car",
+              "Delivery Rating Prompts",
+              "Ask for ratings after deliveries",
+              ratingPreferences.deliveryRatingPrompts,
+              () => handleRatingPreferenceToggle("deliveryRatingPrompts")
+            )}
+
+            {renderSettingItem(
+              "close-circle",
+              "Opt Out of All Rating Prompts",
+              "Disable all rating prompts completely",
+              ratingPreferences.optOut,
+              () => handleRatingPreferenceToggle("optOut")
             )}
           </View>
         </View>

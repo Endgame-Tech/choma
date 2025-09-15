@@ -137,6 +137,9 @@ export interface Location {
   latitude: number;
   longitude: number;
   timestamp?: string;
+  bearing?: number;
+  speed?: number;
+  accuracy?: number;
 }
 
 export interface LocationPermission {
