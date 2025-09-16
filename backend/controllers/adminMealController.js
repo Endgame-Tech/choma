@@ -3,6 +3,7 @@ const MealPlan = require("../models/MealPlan");
 const Meal = require("../models/DailyMeal");
 const MealPlanAssignment = require("../models/MealPlanAssignment");
 const Subscription = require("../models/Subscription");
+const { cacheService } = require('../middleware/cacheMiddleware');
 const {
   uploadMealPlanMainImage,
   uploadMealImages,
@@ -1555,6 +1556,11 @@ exports.publishMealPlan = async (req, res) => {
 
     await mealPlan.publish();
 
+    // Clear meal plan caches when publishing
+    await cacheService.clearPattern('meal-plans:*');
+    await cacheService.clearPattern('public:*mealplans*');
+    console.log('🗑️ Cleared meal plan caches after publishing');
+
     res.json({
       success: true,
       message: "Meal plan published successfully",
@@ -1583,6 +1589,11 @@ exports.unpublishMealPlan = async (req, res) => {
     }
 
     await mealPlan.unpublish();
+
+    // Clear meal plan caches when unpublishing
+    await cacheService.clearPattern('meal-plans:*');
+    await cacheService.clearPattern('public:*mealplans*');
+    console.log('🗑️ Cleared meal plan caches after unpublishing');
 
     res.json({
       success: true,

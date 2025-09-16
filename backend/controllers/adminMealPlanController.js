@@ -2,6 +2,7 @@ const MealPlan = require('../models/MealPlan');
 const DailyMeal = require('../models/DailyMeal');
 const Subscription = require('../models/Subscription');
 const { uploadMealPlanMainImage, uploadMealImages, deleteImageFromCloudinary, extractPublicIdFromUrl } = require('../utils/imageUpload');
+const { cacheService } = require('../middleware/cacheMiddleware');
 const mongoose = require('mongoose');
 
 // ============= ENHANCED MEAL PLAN MANAGEMENT =============
@@ -888,6 +889,11 @@ exports.publishMealPlan = async (req, res) => {
       { new: true }
     );
 
+    // Clear meal plan caches when publishing
+    await cacheService.clearPattern('meal-plans:*');
+    await cacheService.clearPattern('public:*mealplans*');
+    console.log('🗑️ Cleared meal plan caches after publishing');
+
     res.json({
       success: true,
       message: 'Meal plan published successfully',
@@ -928,6 +934,11 @@ exports.unpublishMealPlan = async (req, res) => {
       { isPublished: false },
       { new: true }
     );
+
+    // Clear meal plan caches when unpublishing
+    await cacheService.clearPattern('meal-plans:*');
+    await cacheService.clearPattern('public:*mealplans*');
+    console.log('🗑️ Cleared meal plan caches after unpublishing');
 
     res.json({
       success: true,
