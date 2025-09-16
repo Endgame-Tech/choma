@@ -29,30 +29,15 @@ exports.createDeliveryPrice = async (req, res) => {
       });
     }
 
-    // Handle coordinates - use provided lat/lng or geocode the address
+    // Handle coordinates - use provided lat/lng, skip geocoding for now
     let lat = latitude, lng = longitude;
     
+    // Skip geocoding to avoid API key issues - coordinates are optional for delivery zones
+    // Geocoding can be added later as an optional enhancement
     if (!lat || !lng) {
-      if (!isDefault) {
-        const geocodeResponse = await googleMapsClient.geocode({
-          params: {
-            address: actualLocationName,
-            key: process.env.GOOGLE_MAPS_API_KEY
-          }
-        });
-
-        if (geocodeResponse.data.status !== 'OK') {
-          return res.status(400).json({
-            success: false,
-            message: 'Could not geocode the location. Please provide a more specific location or coordinates.',
-            error: geocodeResponse.data.status
-          });
-        }
-
-        const location = geocodeResponse.data.results[0].geometry.location;
-        lat = location.lat;
-        lng = location.lng;
-      }
+      console.log(`📍 Creating delivery zone "${actualLocationName}" without coordinates (geocoding skipped)`);
+      lat = null;
+      lng = null;
     }
 
     const deliveryPrice = new DeliveryPrice({
