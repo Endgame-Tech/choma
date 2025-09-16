@@ -15,6 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
 import StandardHeader from "../../components/layout/Header";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const OrderDetailScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
@@ -75,8 +76,8 @@ const OrderDetailScreen = ({ route, navigation }) => {
                     order.status === "paid"
                       ? "checkmark-circle"
                       : order.status === "processing"
-                      ? "time"
-                      : "hourglass"
+                        ? "time"
+                        : "hourglass"
                   }
                   size={40}
                   color={colors.white}
@@ -142,12 +143,12 @@ const OrderDetailScreen = ({ route, navigation }) => {
                     (order.orderNumber
                       ? order.orderNumber.toString().slice(-6).toUpperCase()
                       : order.id
-                      ? order.id
-                          .toString()
-                          .slice(-6)
-                          .toUpperCase()
-                          .padStart(6, "0")
-                      : "N/A")}
+                        ? order.id
+                            .toString()
+                            .slice(-6)
+                            .toUpperCase()
+                            .padStart(6, "0")
+                        : "N/A")}
                 </Text>
               </View>
               <Text style={styles(colors).confirmationText}>
@@ -482,7 +483,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

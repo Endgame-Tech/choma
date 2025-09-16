@@ -36,6 +36,7 @@ import NetworkUtils from "../../utils/networkUtils";
 import { useAlert } from "../../contexts/AlertContext";
 import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
 import ratingPromptManager from "../../services/ratingPromptManager";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -346,8 +347,8 @@ const ProfileScreen = ({ navigation, route }) => {
         const orders = Array.isArray(ordersResult.data)
           ? ordersResult.data
           : Array.isArray(ordersResult.data.data)
-          ? ordersResult.data.data
-          : [];
+            ? ordersResult.data.data
+            : [];
         const subscriptionOrders = orders.filter(
           (order) =>
             order.subscription &&
@@ -441,8 +442,8 @@ const ProfileScreen = ({ navigation, route }) => {
         const orders = Array.isArray(ordersResult.data)
           ? ordersResult.data
           : Array.isArray(ordersResult.data.data)
-          ? ordersResult.data.data
-          : [];
+            ? ordersResult.data.data
+            : [];
 
         console.log("🔍 ACTIVITY DEBUG - Extracted Orders:", {
           ordersCount: orders.length,
@@ -692,8 +693,8 @@ const ProfileScreen = ({ navigation, route }) => {
       const orders = Array.isArray(rawOrders)
         ? rawOrders
         : Array.isArray(rawOrders?.data)
-        ? rawOrders.data
-        : [];
+          ? rawOrders.data
+          : [];
       const userProfile = profileResult.success ? profileResult.data || {} : {};
 
       // 1. Welcome Achievement - Always earned when user exists
@@ -834,9 +835,8 @@ const ProfileScreen = ({ navigation, route }) => {
       const updatedPreferences = { ...notificationPreferences, [key]: value };
       setNotificationPreferences(updatedPreferences);
 
-      const response = await apiService.updateNotificationPreferences(
-        updatedPreferences
-      );
+      const response =
+        await apiService.updateNotificationPreferences(updatedPreferences);
 
       if (!response.success) {
         // Revert on failure
@@ -1199,7 +1199,6 @@ Your meal plan has been updated with fresh options.`;
         : [...(prev.dietaryPreferences || []), preference],
     }));
   };
-
 
   const handleAchievementPress = async (achievement) => {
     if (achievement.earned && !achievement.claimed) {
@@ -2081,7 +2080,6 @@ Your meal plan has been updated with fresh options.`;
     </View>
   );
 
-
   if (!user) {
     return (
       <SafeAreaView style={styles(colors).container}>
@@ -2463,7 +2461,7 @@ Your meal plan has been updated with fresh options.`;
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,
@@ -3267,7 +3265,7 @@ const styles = (colors) =>
     },
     settingLabel: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 4,
     },
@@ -3277,8 +3275,8 @@ const styles = (colors) =>
       lineHeight: 20,
     },
     settingControl: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
     },
     // Frequency Options
     frequencyOption: {
@@ -3290,7 +3288,7 @@ const styles = (colors) =>
       borderColor: colors.border,
       marginHorizontal: 2,
       minWidth: 60,
-      alignItems: 'center',
+      alignItems: "center",
     },
     frequencyOptionActive: {
       backgroundColor: colors.primary,
@@ -3298,7 +3296,7 @@ const styles = (colors) =>
     },
     frequencyOptionText: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.textSecondary,
     },
     frequencyOptionTextActive: {
@@ -3311,7 +3309,7 @@ const styles = (colors) =>
       borderRadius: 14,
       backgroundColor: colors.border,
       padding: 2,
-      justifyContent: 'center',
+      justifyContent: "center",
     },
     toggleSwitchActive: {
       backgroundColor: colors.primary,

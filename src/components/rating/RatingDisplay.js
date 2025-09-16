@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  ActivityIndicator
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import StarRating from './StarRating';
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import StarRating from "./StarRating";
+import { useTheme } from "../../styles/theme";
 
 const RatingDisplay = ({
   entityId,
@@ -23,45 +24,49 @@ const RatingDisplay = ({
   onLoadMore,
   onRatingPress,
   loading = false,
-  style
+  style,
 }) => {
   const [expandedAspects, setExpandedAspects] = useState(false);
   const [expandedRating, setExpandedRating] = useState(null);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const getMomentumColor = (momentum) => {
     switch (momentum) {
-      case 'improving': return '#10B981';
-      case 'declining': return '#EF4444';
-      default: return '#6B7280';
+      case "improving":
+        return "#10B981";
+      case "declining":
+        return "#EF4444";
+      default:
+        return "#6B7280";
     }
   };
 
   const getTrendIcon = (trend) => {
-    if (trend > 0) return '↗';
-    if (trend < 0) return '↘';
-    return '→';
+    if (trend > 0) return "↗";
+    if (trend < 0) return "↘";
+    return "→";
   };
 
   const renderRatingDistribution = () => {
     if (!summary?.overallStats.ratingCounts) return null;
 
     const { ratingCounts, totalRatings } = summary.overallStats;
-    
+
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Rating Distribution</Text>
-        {[5, 4, 3, 2, 1].map(rating => {
+        {[5, 4, 3, 2, 1].map((rating) => {
           const count = ratingCounts[rating.toString()] || 0;
-          const percentage = totalRatings > 0 ? (count / totalRatings) * 100 : 0;
-          
+          const percentage =
+            totalRatings > 0 ? (count / totalRatings) * 100 : 0;
+
           return (
             <View key={rating} style={styles.distributionRow}>
               <Text style={styles.distributionStar}>{rating}★</Text>
@@ -70,7 +75,7 @@ const RatingDisplay = ({
                   <View
                     style={[
                       styles.distributionBarFill,
-                      { width: `${percentage}%` }
+                      { width: `${percentage}%` },
                     ]}
                   />
                 </View>
@@ -103,10 +108,10 @@ const RatingDisplay = ({
               style={styles.expandButton}
             >
               <Text style={styles.expandButtonText}>
-                {expandedAspects ? 'Show Less' : 'Show More'}
+                {expandedAspects ? "Show Less" : "Show More"}
               </Text>
               <Ionicons
-                name={expandedAspects ? 'chevron-up' : 'chevron-down'}
+                name={expandedAspects ? "chevron-up" : "chevron-down"}
                 size={16}
                 color="#2563EB"
               />
@@ -117,15 +122,10 @@ const RatingDisplay = ({
           {aspects.map(([aspect, data]) => (
             <View key={aspect} style={styles.aspectItem}>
               <Text style={styles.aspectLabel}>
-                {aspect.replace(/([A-Z])/g, ' $1').trim()}
+                {aspect.replace(/([A-Z])/g, " $1").trim()}
               </Text>
               <View style={styles.aspectRating}>
-                <StarRating
-                  value={data.average}
-                  readOnly
-                  size={16}
-                  showValue
-                />
+                <StarRating value={data.average} readOnly size={16} showValue />
                 <Text style={styles.aspectCount}>({data.count})</Text>
               </View>
             </View>
@@ -146,28 +146,51 @@ const RatingDisplay = ({
         <View style={styles.trendsGrid}>
           <View style={styles.trendItem}>
             <Text style={styles.trendLabel}>Weekly:</Text>
-            <Text style={[
-              styles.trendValue,
-              { color: getTrendIcon(weeklyTrend) === '↗' ? '#10B981' : getTrendIcon(weeklyTrend) === '↘' ? '#EF4444' : '#6B7280' }
-            ]}>
+            <Text
+              style={[
+                styles.trendValue,
+                {
+                  color:
+                    getTrendIcon(weeklyTrend) === "↗"
+                      ? "#10B981"
+                      : getTrendIcon(weeklyTrend) === "↘"
+                        ? "#EF4444"
+                        : "#6B7280",
+                },
+              ]}
+            >
               {getTrendIcon(weeklyTrend)} {Math.abs(weeklyTrend).toFixed(1)}%
             </Text>
           </View>
           <View style={styles.trendItem}>
             <Text style={styles.trendLabel}>Monthly:</Text>
-            <Text style={[
-              styles.trendValue,
-              { color: getTrendIcon(monthlyTrend) === '↗' ? '#10B981' : getTrendIcon(monthlyTrend) === '↘' ? '#EF4444' : '#6B7280' }
-            ]}>
+            <Text
+              style={[
+                styles.trendValue,
+                {
+                  color:
+                    getTrendIcon(monthlyTrend) === "↗"
+                      ? "#10B981"
+                      : getTrendIcon(monthlyTrend) === "↘"
+                        ? "#EF4444"
+                        : "#6B7280",
+                },
+              ]}
+            >
               {getTrendIcon(monthlyTrend)} {Math.abs(monthlyTrend).toFixed(1)}%
             </Text>
           </View>
           <View style={[styles.trendItem, styles.trendItemFull]}>
             <Text style={styles.trendLabel}>Momentum:</Text>
-            <Text style={[
-              styles.trendValue,
-              { color: getMomentumColor(momentum), textTransform: 'capitalize' }
-            ]}>
+            <Text
+              style={[
+                styles.trendValue,
+                {
+                  color: getMomentumColor(momentum),
+                  textTransform: "capitalize",
+                },
+              ]}
+            >
               {momentum}
             </Text>
           </View>
@@ -179,7 +202,8 @@ const RatingDisplay = ({
   const renderRatingItem = (rating) => {
     const isExpanded = expandedRating === rating._id;
     const hasComment = rating.comment && rating.comment.trim().length > 0;
-    const hasAspects = rating.aspectRatings && Object.keys(rating.aspectRatings).length > 0;
+    const hasAspects =
+      rating.aspectRatings && Object.keys(rating.aspectRatings).length > 0;
 
     return (
       <TouchableOpacity
@@ -195,7 +219,9 @@ const RatingDisplay = ({
             <View style={styles.ratingMeta}>
               <Text style={styles.raterName}>{rating.ratedBy.name}</Text>
               <View style={styles.ratingDetails}>
-                <Text style={styles.ratingDate}>{formatDate(rating.createdAt)}</Text>
+                <Text style={styles.ratingDate}>
+                  {formatDate(rating.createdAt)}
+                </Text>
                 {rating.isVerifiedExperience && (
                   <View style={styles.verifiedBadge}>
                     <Text style={styles.verifiedText}>Verified</Text>
@@ -204,9 +230,10 @@ const RatingDisplay = ({
               </View>
             </View>
           </View>
-          
+
           {/* Helpful votes */}
-          {(rating.helpfulVotes.positive > 0 || rating.helpfulVotes.negative > 0) && (
+          {(rating.helpfulVotes.positive > 0 ||
+            rating.helpfulVotes.negative > 0) && (
             <Text style={styles.helpfulVotes}>
               {rating.helpfulVotes.positive} helpful
             </Text>
@@ -223,7 +250,7 @@ const RatingDisplay = ({
         {/* Tags */}
         {rating.tags && rating.tags.length > 0 && (
           <View style={styles.tagsContainer}>
-            {rating.tags.map(tag => (
+            {rating.tags.map((tag) => (
               <View key={tag} style={styles.tag}>
                 <Text style={styles.tagText}>{tag}</Text>
               </View>
@@ -240,7 +267,7 @@ const RatingDisplay = ({
             >
               <Text style={styles.expandAspectsText}>View Details</Text>
               <Ionicons
-                name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                name={isExpanded ? "chevron-up" : "chevron-down"}
                 size={16}
                 color="#2563EB"
               />
@@ -251,7 +278,7 @@ const RatingDisplay = ({
                 {Object.entries(rating.aspectRatings).map(([aspect, value]) => (
                   <View key={aspect} style={styles.expandedAspectItem}>
                     <Text style={styles.expandedAspectLabel}>
-                      {aspect.replace(/([A-Z])/g, ' $1').trim()}
+                      {aspect.replace(/([A-Z])/g, " $1").trim()}
                     </Text>
                     <StarRating value={value} readOnly size={14} />
                   </View>
@@ -284,7 +311,10 @@ const RatingDisplay = ({
   }
 
   return (
-    <ScrollView style={[styles.container, style]} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={[styles.container, style]}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Summary Section */}
       {showSummary && summary && (
         <View style={styles.summaryCard}>
@@ -300,11 +330,13 @@ const RatingDisplay = ({
               />
             </View>
             <Text style={styles.totalRatings}>
-              Based on {summary.overallStats.totalRatings} rating{summary.overallStats.totalRatings !== 1 ? 's' : ''}
+              Based on {summary.overallStats.totalRatings} rating
+              {summary.overallStats.totalRatings !== 1 ? "s" : ""}
             </Text>
             {summary.overallStats.recent30Days.totalRatings > 0 && (
               <Text style={styles.recentRatings}>
-                {summary.overallStats.recent30Days.totalRatings} in the last 30 days
+                {summary.overallStats.recent30Days.totalRatings} in the last 30
+                days
               </Text>
             )}
           </View>
@@ -328,7 +360,10 @@ const RatingDisplay = ({
 
           {/* Load More */}
           {onLoadMore && ratings.length >= (limit || 10) && (
-            <TouchableOpacity onPress={onLoadMore} style={styles.loadMoreButton}>
+            <TouchableOpacity
+              onPress={onLoadMore}
+              style={styles.loadMoreButton}
+            >
               <Text style={styles.loadMoreText}>Load More Reviews</Text>
             </TouchableOpacity>
           )}
@@ -348,22 +383,22 @@ const RatingDisplay = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
   },
   loadingText: {
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 16,
     fontSize: 16,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -373,13 +408,13 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   overallStats: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
   },
   overallTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 12,
   },
   overallRating: {
@@ -387,45 +422,45 @@ const styles = StyleSheet.create({
   },
   totalRatings: {
     fontSize: 14,
-    color: '#6B7280',
+    color: "#6B7280",
     marginBottom: 4,
   },
   recentRatings: {
     fontSize: 14,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   section: {
     marginBottom: 20,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
+    fontWeight: "500",
+    color: "#374151",
   },
   expandButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   expandButtonText: {
     fontSize: 14,
-    color: '#2563EB',
+    color: "#2563EB",
   },
   distributionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   distributionStar: {
     width: 32,
     fontSize: 14,
-    color: '#374151',
+    color: "#374151",
   },
   distributionBarContainer: {
     flex: 1,
@@ -433,80 +468,80 @@ const styles = StyleSheet.create({
   },
   distributionBarBackground: {
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
     borderRadius: 4,
   },
   distributionBarFill: {
     height: 8,
-    backgroundColor: '#FBBF24',
+    backgroundColor: "#FBBF24",
     borderRadius: 4,
   },
   distributionCount: {
     width: 32,
     fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'right',
+    color: "#6B7280",
+    textAlign: "right",
   },
   aspectsList: {
     gap: 8,
   },
   aspectItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   aspectLabel: {
     fontSize: 14,
-    color: '#374151',
-    textTransform: 'capitalize',
+    color: "#374151",
+    textTransform: "capitalize",
   },
   aspectRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   aspectCount: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   trendsGrid: {
     gap: 8,
   },
   trendItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   trendItemFull: {
     marginTop: 4,
   },
   trendLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   trendValue: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   ratingsSection: {
     gap: 16,
   },
   ratingsSectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
   ratingCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
   },
   ratingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 8,
   },
   ratingInfo: {
@@ -518,129 +553,129 @@ const styles = StyleSheet.create({
   },
   raterName: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#111827',
+    fontWeight: "500",
+    color: "#111827",
   },
   ratingDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   ratingDate: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   verifiedBadge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: "#D1FAE5",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   verifiedText: {
     fontSize: 10,
-    color: '#065F46',
-    fontWeight: '500',
+    color: "#065F46",
+    fontWeight: "500",
   },
   helpfulVotes: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   commentContainer: {
     marginBottom: 12,
   },
   commentText: {
     fontSize: 14,
-    color: '#374151',
+    color: "#374151",
     lineHeight: 20,
   },
   tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 6,
     marginBottom: 12,
   },
   tag: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: "#DBEAFE",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   tagText: {
     fontSize: 12,
-    color: '#1D4ED8',
-    fontWeight: '500',
+    color: "#1D4ED8",
+    fontWeight: "500",
   },
   aspectsContainer: {
     marginBottom: 12,
   },
   expandAspectsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   expandAspectsText: {
     fontSize: 14,
-    color: '#2563EB',
+    color: "#2563EB",
   },
   expandedAspects: {
     marginTop: 12,
     paddingLeft: 16,
     borderLeftWidth: 2,
-    borderLeftColor: '#E5E7EB',
+    borderLeftColor: "#E5E7EB",
     gap: 8,
   },
   expandedAspectItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   expandedAspectLabel: {
     fontSize: 14,
-    color: '#6B7280',
-    textTransform: 'capitalize',
+    color: "#6B7280",
+    textTransform: "capitalize",
   },
   responseContainer: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: "#F9FAFB",
     padding: 12,
     borderRadius: 8,
     marginTop: 12,
   },
   responseHeader: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
     marginBottom: 4,
   },
   responseText: {
     fontSize: 14,
-    color: '#374151',
+    color: "#374151",
   },
   loadMoreButton: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: "#EFF6FF",
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: "#BFDBFE",
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
   },
   loadMoreText: {
     fontSize: 14,
-    color: '#2563EB',
-    fontWeight: '500',
+    color: "#2563EB",
+    fontWeight: "500",
   },
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 40,
   },
   emptyStateTitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: "#6B7280",
     marginBottom: 8,
   },
   emptyStateSubtitle: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
 });
 

@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import SubscriptionCard from "../dashboard/SubscriptionCard";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const SubscriptionsSection = ({
   subscriptions = [],
@@ -26,7 +27,9 @@ const SubscriptionsSection = ({
         key={subscription._id || subscription.id || index}
         subscription={subscription}
         onPress={() => onSubscriptionPress && onSubscriptionPress(subscription)}
-        onMenuPress={() => onSubscriptionMenuPress && onSubscriptionMenuPress(subscription)}
+        onMenuPress={() =>
+          onSubscriptionMenuPress && onSubscriptionMenuPress(subscription)
+        }
         style={styles(colors).subscriptionCard}
       />
     );
@@ -40,7 +43,9 @@ const SubscriptionsSection = ({
         </View>
         <View style={styles(colors).loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles(colors).loadingText}>Loading your subscriptions...</Text>
+          <Text style={styles(colors).loadingText}>
+            Loading your subscriptions...
+          </Text>
         </View>
       </View>
     );
@@ -62,7 +67,9 @@ const SubscriptionsSection = ({
             style={styles(colors).subscribeButton}
             onPress={() => navigation.navigate("Search")}
           >
-            <Text style={styles(colors).subscribeButtonText}>Find Subscription Plans</Text>
+            <Text style={styles(colors).subscribeButtonText}>
+              Find Subscription Plans
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -98,7 +105,11 @@ const SubscriptionsSection = ({
           style={styles(colors).quickActionButton}
           onPress={() => navigation.navigate("Search")}
         >
-          <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+          <Ionicons
+            name="add-circle-outline"
+            size={20}
+            color={colors.primary}
+          />
           <Text style={styles(colors).quickActionText}>Add Subscription</Text>
         </TouchableOpacity>
 
@@ -115,7 +126,7 @@ const SubscriptionsSection = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     section: {
       marginBottom: 24,
     },

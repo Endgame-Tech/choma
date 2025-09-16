@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
 import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -393,7 +394,7 @@ const FilterModal = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

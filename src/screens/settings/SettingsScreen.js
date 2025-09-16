@@ -22,6 +22,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiService from "../../services/api";
 import SettingsService from "../../services/settingsService";
 import PrivacyService from "../../services/privacyService";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const SettingsScreen = ({ navigation }) => {
   const { logout } = useAuth();
@@ -35,10 +36,10 @@ const SettingsScreen = ({ navigation }) => {
     autoDownload: true,
     dataCollection: false,
   });
-  
+
   // Rating preferences state
   const [ratingPreferences, setRatingPreferences] = useState({
-    promptFrequency: 'after_every_order',
+    promptFrequency: "after_every_order",
     orderCompletionPrompts: true,
     subscriptionMilestonePrompts: true,
     deliveryRatingPrompts: true,
@@ -96,12 +97,12 @@ const SettingsScreen = ({ navigation }) => {
 
   const loadRatingPreferences = async () => {
     try {
-      const savedPreferences = await AsyncStorage.getItem('ratingPreferences');
+      const savedPreferences = await AsyncStorage.getItem("ratingPreferences");
       if (savedPreferences) {
         setRatingPreferences(JSON.parse(savedPreferences));
       }
     } catch (error) {
-      console.warn('Could not load rating preferences:', error);
+      console.warn("Could not load rating preferences:", error);
     }
   };
 
@@ -258,10 +259,17 @@ const SettingsScreen = ({ navigation }) => {
     try {
       let updatedPreferences;
 
-      if (preference === 'promptFrequency') {
+      if (preference === "promptFrequency") {
         // Cycle through frequency options
-        const frequencies = ['after_every_order', 'after_delivery', 'weekly', 'monthly'];
-        const currentIndex = frequencies.indexOf(ratingPreferences.promptFrequency);
+        const frequencies = [
+          "after_every_order",
+          "after_delivery",
+          "weekly",
+          "monthly",
+        ];
+        const currentIndex = frequencies.indexOf(
+          ratingPreferences.promptFrequency
+        );
         const nextIndex = (currentIndex + 1) % frequencies.length;
         updatedPreferences = {
           ...ratingPreferences,
@@ -276,19 +284,24 @@ const SettingsScreen = ({ navigation }) => {
       }
 
       setRatingPreferences(updatedPreferences);
-      await AsyncStorage.setItem('ratingPreferences', JSON.stringify(updatedPreferences));
+      await AsyncStorage.setItem(
+        "ratingPreferences",
+        JSON.stringify(updatedPreferences)
+      );
 
-      if (preference === 'optOut') {
+      if (preference === "optOut") {
         showInfo(
-          updatedPreferences.optOut ? "Rating Prompts Disabled" : "Rating Prompts Enabled",
-          updatedPreferences.optOut 
+          updatedPreferences.optOut
+            ? "Rating Prompts Disabled"
+            : "Rating Prompts Enabled",
+          updatedPreferences.optOut
             ? "You won't receive rating prompts anymore."
             : "You'll receive rating prompts based on your preferences."
         );
       }
     } catch (error) {
-      console.error('Error updating rating preferences:', error);
-      showError('Error', 'Failed to update rating preferences.');
+      console.error("Error updating rating preferences:", error);
+      showError("Error", "Failed to update rating preferences.");
     } finally {
       setLoading(false);
     }
@@ -331,7 +344,10 @@ const SettingsScreen = ({ navigation }) => {
           onPress: () => {
             const privacyUrl = PrivacyService.getPrivacyPolicyUrl();
             Linking.openURL(privacyUrl).catch(() => {
-              showInfo("Privacy Policy", "Visit our privacy policy at: " + privacyUrl);
+              showInfo(
+                "Privacy Policy",
+                "Visit our privacy policy at: " + privacyUrl
+              );
             });
           },
         },
@@ -464,7 +480,13 @@ const SettingsScreen = ({ navigation }) => {
     </View>
   );
 
-  const renderFrequencyItem = (icon, title, subtitle, currentValue, onPress) => (
+  const renderFrequencyItem = (
+    icon,
+    title,
+    subtitle,
+    currentValue,
+    onPress
+  ) => (
     <TouchableOpacity style={styles(colors).actionItem} onPress={onPress}>
       <View style={styles(colors).settingIcon}>
         <Ionicons name={icon} size={20} color={colors.primary} />
@@ -472,7 +494,7 @@ const SettingsScreen = ({ navigation }) => {
       <View style={styles(colors).settingContent}>
         <Text style={styles(colors).settingTitle}>{title}</Text>
         <Text style={styles(colors).settingSubtitle}>
-          {subtitle} • Current: {currentValue.replace('_', ' ').toUpperCase()}
+          {subtitle} • Current: {currentValue.replace("_", " ").toUpperCase()}
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
@@ -731,7 +753,7 @@ const SettingsScreen = ({ navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

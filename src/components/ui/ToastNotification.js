@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -161,7 +162,7 @@ const ToastNotification = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       position: "absolute",
       top: 60,

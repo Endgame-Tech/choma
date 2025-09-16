@@ -1,8 +1,9 @@
 // src/components/ui/Skeleton.js
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../../styles/theme';
+import React, { useEffect, useRef } from "react";
+import { View, StyleSheet, Animated } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const Skeleton = ({ width, height, style }) => {
   const { colors } = useTheme();
@@ -19,17 +20,11 @@ const Skeleton = ({ width, height, style }) => {
   }, [width]);
 
   return (
-    <View
-      style={[
-        styles(colors).container,
-        { width, height },
-        style,
-      ]}
-    >
+    <View style={[styles(colors).container, { width, height }, style]}>
       <Animated.View
         style={{
-          width: '100%',
-          height: '100%',
+          width: "100%",
+          height: "100%",
           transform: [{ translateX: translateX }],
         }}
       >
@@ -44,12 +39,13 @@ const Skeleton = ({ width, height, style }) => {
   );
 };
 
-const styles = (colors) => StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardBackground,
-    overflow: 'hidden',
-    borderRadius: 8,
-  },
-});
+const styles = (colors) =>
+  createStylesWithDMSans({
+    container: {
+      backgroundColor: colors.cardBackground,
+      overflow: "hidden",
+      borderRadius: 8,
+    },
+  });
 
 export default Skeleton;

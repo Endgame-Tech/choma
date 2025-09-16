@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
 import apiService from "../../services/api";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -1190,7 +1191,7 @@ const SubscriptionManagementModal = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

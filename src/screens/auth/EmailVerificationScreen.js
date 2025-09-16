@@ -22,6 +22,7 @@ import { THEME } from "../../utils/colors";
 import ChomaLogo from "../../components/ui/ChomaLogo";
 import { useAlert } from "../../contexts/AlertContext";
 import apiService from "../../services/api";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width, height } = Dimensions.get("window");
 
@@ -325,7 +326,9 @@ const EmailVerificationScreen = ({ navigation, route }) => {
             {/* Welcome text */}
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Verify Your Email</Text>
-              <Text style={styles.welcomeSubtitle}>We've sent a 6-digit code to</Text>
+              <Text style={styles.welcomeSubtitle}>
+                We've sent a 6-digit code to
+              </Text>
               <Text style={styles.emailText}>{email}</Text>
             </View>
 
@@ -336,10 +339,7 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                   <TextInput
                     key={index}
                     ref={(ref) => (inputRefs.current[index] = ref)}
-                    style={[
-                      styles.codeInput,
-                      digit && styles.codeInputFilled,
-                    ]}
+                    style={[styles.codeInput, digit && styles.codeInputFilled]}
                     value={digit}
                     onChangeText={(text) =>
                       handleCodeChange(text.replace(/[^0-9]/g, ""), index)
@@ -375,9 +375,7 @@ const EmailVerificationScreen = ({ navigation, route }) => {
 
               {/* Resend Code */}
               <View style={styles.resendContainer}>
-                <Text style={styles.resendText}>
-                  Didn't receive the code?{" "}
-                </Text>
+                <Text style={styles.resendText}>Didn't receive the code? </Text>
                 <TouchableOpacity
                   onPress={handleResendCode}
                   disabled={!canResend || isResending}
@@ -393,8 +391,8 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                     {isResending
                       ? "Sending..."
                       : canResend
-                      ? "Resend Code"
-                      : `Resend in ${formatTime(countdown)}`}
+                        ? "Resend Code"
+                        : `Resend in ${formatTime(countdown)}`}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -416,7 +414,7 @@ const EmailVerificationScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
     backgroundColor: "#652815",

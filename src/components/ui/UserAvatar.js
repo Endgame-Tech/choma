@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const UserAvatar = ({
   user,
@@ -134,7 +135,7 @@ const UserAvatar = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     overflow: "hidden",
     position: "relative",

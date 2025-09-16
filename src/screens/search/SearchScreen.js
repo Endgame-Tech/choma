@@ -24,6 +24,7 @@ import { useAuth } from "../../hooks/useAuth";
 import FilterModal from "../../components/meal-plans/FilterModal";
 import apiService from "../../services/api";
 import discountService from "../../services/discountService";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const SearchScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
@@ -144,12 +145,15 @@ const SearchScreen = ({ navigation }) => {
       const mealPlansResponse = await apiService.getMealPlans();
       if (mealPlansResponse?.success && Array.isArray(mealPlansResponse.data)) {
         const mealPlanNames = mealPlansResponse.data
-          .filter(plan => plan?.planName || plan?.name) // Only plans with names
+          .filter((plan) => plan?.planName || plan?.name) // Only plans with names
           .slice(0, 5) // Take first 5
-          .map(plan => plan.planName || plan.name);
-        
+          .map((plan) => plan.planName || plan.name);
+
         if (mealPlanNames.length > 0) {
-          console.log("📋 Using meal plan names as popular searches:", mealPlanNames);
+          console.log(
+            "📋 Using meal plan names as popular searches:",
+            mealPlanNames
+          );
           setPopularSearches(mealPlanNames);
           return;
         }
@@ -157,13 +161,13 @@ const SearchScreen = ({ navigation }) => {
     } catch (error) {
       console.log("Could not fetch meal plans for fallback searches:", error);
     }
-    
+
     // Final fallback to meal plan-like names if API fails
     console.log("📋 Using final fallback popular searches");
     setPopularSearches([
       "FitFuel Plan",
       "Wellness Hub",
-      "Recharge Plan", 
+      "Recharge Plan",
       "HealthyFam Plan",
       "Premium Plan",
     ]);
@@ -190,7 +194,9 @@ const SearchScreen = ({ navigation }) => {
           await setFallbackPopularSearches();
         }
       } catch (error) {
-        console.log("Popular searches not available, using fallback from meal plans");
+        console.log(
+          "Popular searches not available, using fallback from meal plans"
+        );
         await setFallbackPopularSearches();
       }
     } catch (error) {
@@ -867,7 +873,7 @@ const SearchScreen = ({ navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

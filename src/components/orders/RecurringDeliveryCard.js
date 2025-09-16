@@ -12,6 +12,9 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import apiService from "../../services/api";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
+
+
 
 const { width } = Dimensions.get("window");
 
@@ -22,7 +25,8 @@ const RecurringDeliveryCard = ({
   style,
 }) => {
   const { colors } = useTheme();
-  const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
+  const [confirmationModalVisible, setConfirmationModalVisible] =
+    useState(false);
   const [actualConfirmationCode, setActualConfirmationCode] = useState(null);
   const [loadingCode, setLoadingCode] = useState(false);
 
@@ -32,50 +36,54 @@ const RecurringDeliveryCard = ({
     if (order?.deliveryDay) {
       return parseInt(order.deliveryDay);
     }
-    
+
     if (order?.dayNumber) {
       return parseInt(order.dayNumber);
     }
-    
+
     // Check if this is an activation order (first delivery)
     if (order?.recurringOrder?.isActivationOrder === true) {
       return 1;
     }
-    
+
     // Check order type - "one-time" is usually the first/activation delivery
     if (order?.recurringOrder?.orderType === "one-time") {
       return 1;
     }
-    
+
     // Check order type - "subscription-recurring" is usually Day 2+
     if (order?.recurringOrder?.orderType === "subscription-recurring") {
       return 2; // Or calculate based on subscription progression
     }
-    
+
     // If we have subscription and delivery date info, calculate from that
     if (order?.subscription?.startDate && order?.deliveryDate) {
       const startDate = new Date(order.subscription.startDate);
       const deliveryDate = new Date(order.deliveryDate);
-      const daysDiff = Math.floor((deliveryDate - startDate) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor(
+        (deliveryDate - startDate) / (1000 * 60 * 60 * 24)
+      );
       return Math.max(1, daysDiff + 1);
     }
-    
+
     // Fallback to current date calculation if subscription start date exists
     if (order?.subscription?.startDate) {
       const startDate = new Date(order.subscription.startDate);
       const currentDate = new Date();
-      const daysDiff = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor(
+        (currentDate - startDate) / (1000 * 60 * 60 * 24)
+      );
       return Math.max(1, daysDiff + 1);
     }
-    
+
     // Default to day 1 if no information is available
     return 1;
   };
 
   const getMealPlanName = () => {
     return (
-      order?.orderItems?.planName || 
-      order?.mealPlan?.name || 
+      order?.orderItems?.planName ||
+      order?.mealPlan?.name ||
       order?.subscription?.planName ||
       "Meal Plan"
     );
@@ -86,13 +94,13 @@ const RecurringDeliveryCard = ({
     if (actualConfirmationCode) {
       return actualConfirmationCode; // Use cached value
     }
-    
+
     setLoadingCode(true);
     try {
       // For now, just simulate loading since we need to find the correct API endpoint
       // TODO: Replace with actual API call once backend provides the endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Check if order has confirmation code in any field
       const code = getConfirmationCode();
       if (code && code !== "PENDING") {
@@ -103,7 +111,7 @@ const RecurringDeliveryCard = ({
     } catch (error) {
       console.log("Could not fetch driver assignment:", error);
     }
-    
+
     setLoadingCode(false);
     return "PENDING";
   };
@@ -113,39 +121,42 @@ const RecurringDeliveryCard = ({
     if (actualConfirmationCode) {
       return actualConfirmationCode;
     }
-    
+
     // Check for driver assignment confirmation code first (from backend)
     if (order?.driverAssignment?.confirmationCode) {
       return order.driverAssignment.confirmationCode;
     }
-    
+
     // Check direct order confirmation code field (added by backend)
     if (order?.confirmationCode) {
       return order.confirmationCode;
     }
-    
+
     // Check other possible fields
     if (order?.deliveryCode) {
       return order.deliveryCode;
     }
-    
+
     if (order?.pickupCode) {
       return order.pickupCode;
     }
-    
+
     // For recurring deliveries, if no confirmation code is available,
     // temporarily show last 6 characters of order number until backend provides confirmation code
     if (order?.orderNumber) {
       const orderNumber = order.orderNumber.toString();
       return orderNumber.slice(-6).toUpperCase();
     }
-    
+
     // Show pending status if no confirmation code is available yet
     return "PENDING";
   };
 
   const isOutForDelivery = () => {
-    return order?.orderStatus === "Out for Delivery" || order?.status === "Out for Delivery";
+    return (
+      order?.orderStatus === "Out for Delivery" ||
+      order?.status === "Out for Delivery"
+    );
   };
 
   const isDelivered = () => {
@@ -184,7 +195,12 @@ const RecurringDeliveryCard = ({
       {/* Status Section */}
       <View style={styles(colors).statusSection}>
         <View style={styles(colors).statusInfo}>
-          <View style={[styles(colors).statusIcon, { backgroundColor: status.color }]}>
+          <View
+            style={[
+              styles(colors).statusIcon,
+              { backgroundColor: status.color },
+            ]}
+          >
             <Ionicons name={status.icon} size={16} color="white" />
           </View>
           <Text style={[styles(colors).statusText, { color: status.color }]}>
@@ -236,9 +252,18 @@ const RecurringDeliveryCard = ({
         {isOutForDelivery() && (
           <TouchableOpacity
             style={styles(colors).actionButton}
-            onPress={() => onTrackDriver?.(order.driverAssignment?.driver || order.driver, order)}
+            onPress={() =>
+              onTrackDriver?.(
+                order.driverAssignment?.driver || order.driver,
+                order
+              )
+            }
           >
-            <Ionicons name="location-outline" size={16} color={colors.primary} />
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color={colors.primary}
+            />
             <Text style={styles(colors).actionButtonText}>Track</Text>
           </TouchableOpacity>
         )}
@@ -265,7 +290,9 @@ const RecurringDeliveryCard = ({
 
             <View style={styles(colors).modalContent}>
               <View style={styles(colors).codeDisplay}>
-                <Text style={styles(colors).codeLabel}>Show this code to your driver:</Text>
+                <Text style={styles(colors).codeLabel}>
+                  Show this code to your driver:
+                </Text>
                 <View style={styles(colors).codeContainer}>
                   {loadingCode ? (
                     <ActivityIndicator size="large" color={colors.primary} />
@@ -279,13 +306,21 @@ const RecurringDeliveryCard = ({
 
               <View style={styles(colors).instructions}>
                 <View style={styles(colors).instructionRow}>
-                  <Ionicons name="information-circle" size={16} color={colors.primary} />
+                  <Ionicons
+                    name="information-circle"
+                    size={16}
+                    color={colors.primary}
+                  />
                   <Text style={styles(colors).instructionText}>
                     Your driver will ask for this code when delivering your meal
                   </Text>
                 </View>
                 <View style={styles(colors).instructionRow}>
-                  <Ionicons name="shield-checkmark" size={16} color={colors.success} />
+                  <Ionicons
+                    name="shield-checkmark"
+                    size={16}
+                    color={colors.success}
+                  />
                   <Text style={styles(colors).instructionText}>
                     This ensures secure delivery to the right person
                   </Text>
@@ -307,7 +342,7 @@ const RecurringDeliveryCard = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       backgroundColor: colors.cardBackground,
       borderRadius: 16,

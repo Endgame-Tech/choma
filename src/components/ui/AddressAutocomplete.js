@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
 import * as Location from "expo-location";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const AddressAutocomplete = ({
   placeholder = "Search for delivery address",
@@ -244,18 +245,6 @@ const AddressAutocomplete = ({
     }
   };
 
-  const renderSuggestion = ({ item }) => (
-    <TouchableOpacity
-      style={styles(colors).suggestionItem}
-      onPress={() => handleSuggestionPress(item)}
-    >
-      <Ionicons name="location-outline" size={16} color={colors.textMuted} />
-      <Text style={styles(colors).suggestionText} numberOfLines={2}>
-        {item.description}
-      </Text>
-    </TouchableOpacity>
-  );
-
   return (
     <View style={[styles(colors).container, style]}>
       <View style={styles(colors).inputContainer}>
@@ -301,7 +290,22 @@ const AddressAutocomplete = ({
       {showSuggestions && suggestions.length > 0 && (
         <View style={styles(colors).suggestionsContainer}>
           <View style={styles(colors).suggestionsList}>
-            {suggestions.map((item) => renderSuggestion({ item }))}
+            {suggestions.map((item) => (
+              <TouchableOpacity
+                key={item.place_id}
+                style={styles(colors).suggestionItem}
+                onPress={() => handleSuggestionPress(item)}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={16}
+                  color={colors.textMuted}
+                />
+                <Text style={styles(colors).suggestionText} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       )}
@@ -310,7 +314,7 @@ const AddressAutocomplete = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       zIndex: 1000,

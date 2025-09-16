@@ -18,6 +18,7 @@ import apiService from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import { useAlert } from '../../contexts/AlertContext';
 import { useTheme } from '../../styles/theme';
+import { createStylesWithDMSans } from '../../utils/fontUtils';
 
 const PrivacySecurityScreen = ({ navigation }) => {
   const { user, deleteAccount } = useAuth();
@@ -119,6 +120,7 @@ const PrivacySecurityScreen = ({ navigation }) => {
                 setSaveLoading(false);
               }
         }
+      );
     } catch (error) {
       console.error('Data export error:', error);
     }
@@ -332,7 +334,7 @@ const PrivacySecurityScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles =createStylesWithDMSans({
   container: {
     flex: 1,
     backgroundColor: colors.background,

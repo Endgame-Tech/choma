@@ -1,24 +1,19 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import NotificationIcon from "../ui/NotificationIcon";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-const HomeHeader = ({ 
-  user, 
-  navigation, 
+const HomeHeader = ({
+  user,
+  navigation,
   onLocationPress,
   showBrowseMode = false,
   onToggleBrowseMode,
 }) => {
   const { colors } = useTheme();
-  
+
   if (!colors) {
     console.error("❌ HomeHeader: colors is undefined - theme context missing");
     return null;
@@ -34,7 +29,9 @@ const HomeHeader = ({
   const formatUserName = (name) => {
     if (!name) return "Guest";
     const firstName = name.split(" ")[0];
-    return firstName.length > 12 ? firstName.substring(0, 12) + "..." : firstName;
+    return firstName.length > 12
+      ? firstName.substring(0, 12) + "..."
+      : firstName;
   };
 
   return (
@@ -64,7 +61,11 @@ const HomeHeader = ({
                 {user?.address?.slice(0, 30) || "Set delivery address"}
                 {user?.address?.length > 30 && "..."}
               </Text>
-              <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -75,7 +76,7 @@ const HomeHeader = ({
             <TouchableOpacity
               style={[
                 styles(colors).browseButton,
-                { backgroundColor: colors.primary }
+                { backgroundColor: colors.primary },
               ]}
               onPress={onToggleBrowseMode}
             >
@@ -93,7 +94,7 @@ const HomeHeader = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       backgroundColor: colors.background,
       paddingHorizontal: 20,

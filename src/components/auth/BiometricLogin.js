@@ -12,6 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useAlert } from "../../contexts/AlertContext";
 import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const BiometricLogin = ({ onSuccess, onError, style }) => {
   const { isDark, colors } = useTheme();
@@ -155,7 +156,7 @@ const BiometricLogin = ({ onSuccess, onError, style }) => {
   );
 };
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       alignItems: "center",
       marginVertical: 20,

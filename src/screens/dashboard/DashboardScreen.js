@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const DashboardScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -28,7 +29,7 @@ const DashboardScreen = ({ navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

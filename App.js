@@ -74,14 +74,14 @@ export default function App() {
   const initializeApp = async () => {
     try {
       // Load fonts first
-      console.log('📱 Initializing Choma app...');
+      console.log("📱 Initializing Choma app...");
       await loadFonts(); // Load essential DM Sans fonts
-      
+
       // Apply font overrides after fonts are loaded
       applyDefaultFont();
-      
+
       setFontsLoaded(true);
-      
+
       // Then proceed with other initialization
       await checkFirstLaunch();
       registerForPushNotifications();
@@ -90,9 +90,9 @@ export default function App() {
       // Initialize deep linking
       deepLinking.initialize(navigationRef);
 
-      console.log('✅ App initialization complete');
+      console.log("✅ App initialization complete");
     } catch (error) {
-      console.error('❌ Error during app initialization:', error);
+      console.error("❌ Error during app initialization:", error);
       setFontsLoaded(true); // Continue even if fonts fail to load
     }
   };
@@ -183,20 +183,28 @@ export default function App() {
 
   // Show loading screen while fonts are loading or app is initializing
   if (isLoading || !fontsLoaded) {
-    const { View, Text } = require('react-native');
+    const { View, Text } = require("react-native");
     return (
       <SafeAreaProvider>
-        <View style={{ 
-          flex: 1, 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          backgroundColor: '#fff' 
-        }}>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#fff",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 24,
+              fontWeight: "bold",
+              marginBottom: 10,
+            }}
+          >
             Choma
           </Text>
-          <Text style={{ fontSize: 16, color: '#666' }}>
-            {!fontsLoaded ? 'Loading fonts...' : 'Initializing app...'}
+          <Text style={{ fontSize: 16, color: "#666" }}>
+            {!fontsLoaded ? "Loading fonts..." : "Initializing app..."}
           </Text>
         </View>
       </SafeAreaProvider>

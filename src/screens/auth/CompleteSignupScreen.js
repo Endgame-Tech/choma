@@ -19,6 +19,7 @@ import ChomaLogo from "../../components/ui/ChomaLogo";
 import { useAuth } from "../../context/AuthContext";
 import { useAlert } from "../../contexts/AlertContext";
 import ErrorBoundary from "../../components/ErrorBoundary";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const CompleteSignupScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -204,7 +205,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -189,44 +190,44 @@ const CompactOrderCard = ({
   useEffect(() => {
     const statusMap = {
       // 1. Order Placed
-      "pending": 0,
+      pending: 0,
       "not assigned": 0,
       "pending assignment": 0,
-      
+
       // 2. Order Confirmed (Admin assigns chef + Chef accepts)
-      "confirmed": 1,
-      "assigned": 1,
-      "accepted": 1,
-      "Assigned": 1,
-      "Accepted": 1,
-      
+      confirmed: 1,
+      assigned: 1,
+      accepted: 1,
+      Assigned: 1,
+      Accepted: 1,
+
       // 3. Preparing Food (Chef updates status)
-      "preparing": 2,
+      preparing: 2,
       "preparing food": 2,
       "in progress": 2,
-      "inprogress": 2,
+      inprogress: 2,
       "In Progress": 2,
-      
+
       // 4. Food Ready (Chef updates status)
-      "ready": 3,
+      ready: 3,
       "food ready": 3,
-      "Ready": 3,
-      
+      Ready: 3,
+
       // 5. Quality Check (Chef marks "Completed" + Admin assigns driver + Driver accepts)
-      "completed": 4,
-      "Completed": 4,
+      completed: 4,
+      Completed: 4,
       "quality check": 4,
       "Quality Check": 4,
-      
+
       // 6. Out for Delivery (Driver picks up from chef)
       "out for delivery": 5,
       "Out for Delivery": 5,
-      "out_for_delivery": 5,
-      "outfordelivery": 5,
-      
+      out_for_delivery: 5,
+      outfordelivery: 5,
+
       // 7. Delivered (Driver delivers food)
-      "delivered": 6,
-      "Delivered": 6,
+      delivered: 6,
+      Delivered: 6,
     };
 
     const orderStatus = order?.orderStatus || order?.status;
@@ -521,7 +522,12 @@ const CompactOrderCard = ({
         {canTrackDriver && (
           <TouchableOpacity
             style={styles(colors).actionButton}
-            onPress={() => onTrackDriver?.(order.driverAssignment?.driver || order.driver, order)}
+            onPress={() =>
+              onTrackDriver?.(
+                order.driverAssignment?.driver || order.driver,
+                order
+              )
+            }
           >
             <Ionicons
               name="location-outline"
@@ -657,7 +663,12 @@ const CompactOrderCard = ({
                     </View>
                     <TouchableOpacity
                       style={styles(colors).callButton}
-                      onPress={() => onTrackDriver?.(order.driverAssignment?.driver || order.driver, order)}
+                      onPress={() =>
+                        onTrackDriver?.(
+                          order.driverAssignment?.driver || order.driver,
+                          order
+                        )
+                      }
                     >
                       <Ionicons name="call" size={16} color={colors.white} />
                     </TouchableOpacity>
@@ -876,7 +887,7 @@ const CompactOrderCard = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       backgroundColor: colors.cardBackground,
       borderRadius: 16,

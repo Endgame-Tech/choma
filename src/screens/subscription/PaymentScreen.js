@@ -27,8 +27,10 @@ import { THEME } from "../../utils/colors";
 import StandardHeader from "../../components/layout/Header";
 import { useAlert } from "../../contexts/AlertContext";
 import discountService from "../../services/discountService";
+import { formatCurrency } from "../../utils/formatting";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-const PaymentScreen = ({ route, navigation }) => {
+function PaymentScreen({ route, navigation }) {
   const { colors } = useTheme();
   const { showError, showInfo, showSuccess } = useAlert();
   const { subscriptionData, mealPlan } = route.params || {};
@@ -379,8 +381,8 @@ const PaymentScreen = ({ route, navigation }) => {
                     ? { uri: mealPlan.image }
                     : mealPlan.image
                   : mealPlan.planImageUrl
-                  ? { uri: mealPlan.planImageUrl }
-                  : require("../../assets/images/meal-plans/fitfuel.jpg")
+                    ? { uri: mealPlan.planImageUrl }
+                    : require("../../assets/images/meal-plans/fitfuel.jpg")
               }
               style={styles(colors).mealPlanImage}
               resizeMode="cover"
@@ -645,7 +647,7 @@ const PaymentScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

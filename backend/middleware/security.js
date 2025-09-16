@@ -121,6 +121,7 @@ const corsOptions = {
       "http://localhost:3002",
       "http://localhost:3003",
       "http://localhost:3004",
+      "http://localhost:5858",
       "https://6kg2wrt6-3004.uks1.devtunnels.ms",
       "http://10.226.105.28:3000",
       "http://10.226.105.28:3001",
@@ -135,6 +136,7 @@ const corsOptions = {
         process.env.ADMIN_URL,
         process.env.CHEF_URL,
         process.env.DRIVER_URL,
+        process.env.LANDING_URL,
         process.env.API_URL,
       ].filter(Boolean); // Remove any undefined values
 

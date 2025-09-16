@@ -1,7 +1,111 @@
 // src/utils/fontUtils.js
-import { Text, TextInput } from "react-native";
-import { DEFAULT_FONT_FAMILY } from "../constants/fonts";
+import { Text, TextInput, StyleSheet } from "react-native";
+import { DMSansFonts, DEFAULT_FONT_FAMILY } from "../constants/fonts";
 import { areFontsLoaded, getFallbackFont } from "./fontLoader";
+
+/**
+ * Maps numeric and string font weights to DM Sans font families
+ */
+const FONT_WEIGHT_MAP = {
+  // Numeric weights
+  100: DMSansFonts.thin,
+  200: DMSansFonts.extraLight,
+  300: DMSansFonts.light,
+  400: DMSansFonts.regular,
+  500: DMSansFonts.medium,
+  600: DMSansFonts.semiBold,
+  700: DMSansFonts.bold,
+  800: DMSansFonts.extraBold,
+  900: DMSansFonts.black,
+  
+  // String weights
+  'thin': DMSansFonts.thin,
+  'extralight': DMSansFonts.extraLight,
+  'light': DMSansFonts.light,
+  'normal': DMSansFonts.regular,
+  'regular': DMSansFonts.regular,
+  'medium': DMSansFonts.medium,
+  'semibold': DMSansFonts.semiBold,
+  'bold': DMSansFonts.bold,
+  'extrabold': DMSansFonts.extraBold,
+  'black': DMSansFonts.black,
+  
+  // React Native standard weights
+  '100': DMSansFonts.thin,
+  '200': DMSansFonts.extraLight,
+  '300': DMSansFonts.light,
+  '400': DMSansFonts.regular,
+  '500': DMSansFonts.medium,
+  '600': DMSansFonts.semiBold,
+  '700': DMSansFonts.bold,
+  '800': DMSansFonts.extraBold,
+  '900': DMSansFonts.black,
+};
+
+/**
+ * Convert fontWeight to appropriate DM Sans fontFamily
+ * @param {string|number} fontWeight - The font weight to convert
+ * @returns {string} - The appropriate DM Sans font family
+ */
+export const mapFontWeight = (fontWeight) => {
+  if (!fontWeight) return DEFAULT_FONT_FAMILY;
+  
+  const weight = typeof fontWeight === 'string' ? fontWeight.toLowerCase() : fontWeight;
+  return FONT_WEIGHT_MAP[weight] || DEFAULT_FONT_FAMILY;
+};
+
+/**
+ * Transform a style object to use DM Sans fonts instead of fontWeight
+ * @param {object} style - The style object to transform
+ * @returns {object} - Transformed style object
+ */
+export const transformStyleWithDMSans = (style) => {
+  if (!style || typeof style !== 'object') return style;
+  
+  const transformedStyle = { ...style };
+  
+  // If fontWeight is specified but no fontFamily, map it to DM Sans
+  if (transformedStyle.fontWeight && !transformedStyle.fontFamily) {
+    transformedStyle.fontFamily = mapFontWeight(transformedStyle.fontWeight);
+    // Remove fontWeight since we're using specific font families
+    delete transformedStyle.fontWeight;
+  }
+  
+  // If no fontFamily is specified at all, use default DM Sans
+  if (!transformedStyle.fontFamily && !transformedStyle.fontWeight) {
+    transformedStyle.fontFamily = DEFAULT_FONT_FAMILY;
+  }
+  
+  return transformedStyle;
+};
+
+/**
+ * Enhanced StyleSheet.create that automatically maps fontWeight to DM Sans
+ * @param {object} styles - Style definitions
+ * @returns {object} - StyleSheet with DM Sans fonts applied
+ */
+export const createStylesWithDMSans = (styles) => {
+  if (!styles || typeof styles !== 'object') return StyleSheet.create(styles);
+  
+  const transformedStyles = {};
+  
+  Object.keys(styles).forEach(key => {
+    const style = styles[key];
+    
+    if (Array.isArray(style)) {
+      // Handle array of styles
+      transformedStyles[key] = style.map(transformStyleWithDMSans);
+    } else if (style && typeof style === 'object') {
+      // Handle single style object
+      transformedStyles[key] = transformStyleWithDMSans(style);
+    } else {
+      // Keep non-object values as is
+      transformedStyles[key] = style;
+    }
+  });
+  
+  return StyleSheet.create(transformedStyles);
+};
 
 // Function to apply default font to all Text components (now works with loaded fonts)
 export const applyDefaultFont = () => {
@@ -46,6 +150,9 @@ export const getTextStyleWithFont = (customStyle = {}) => ({
 });
 
 export default {
+  mapFontWeight,
+  transformStyleWithDMSans,
+  createStylesWithDMSans,
   applyDefaultFont,
   getTextStyleWithFont,
 };

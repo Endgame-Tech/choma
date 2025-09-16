@@ -15,6 +15,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
 import apiService from "../../services/api";
 import ratingPromptManager from "../../services/ratingPromptManager";
+import { THEME } from "../../utils/colors";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -67,16 +69,16 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
 
       if (milestones.includes(subscriptionDay)) {
         console.log(`🎯 Checking milestone for Day ${subscriptionDay}`);
-        
+
         await ratingPromptManager.triggerSubscriptionMilestone({
           ...subscription,
           userId: subscription.userId,
           subscriptionDay,
-          totalMealsReceived: subscriptionDay
+          totalMealsReceived: subscriptionDay,
         });
       }
     } catch (error) {
-      console.error('Error checking subscription milestone:', error);
+      console.error("Error checking subscription milestone:", error);
     }
   };
 
@@ -120,14 +122,14 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
           image: mealData.imageUrl
             ? { uri: mealData.imageUrl }
             : subscription.mealPlanId?.planImageUrl
-            ? { uri: subscription.mealPlanId?.planImageUrl }
-            : require("../../assets/images/meal-plans/fitfuel.jpg"),
+              ? { uri: subscription.mealPlanId?.planImageUrl }
+              : require("../../assets/images/meal-plans/fitfuel.jpg"),
           time:
             mealType === "breakfast"
               ? "8:00 AM"
               : mealType === "lunch"
-              ? "1:00 PM"
-              : "7:00 PM",
+                ? "1:00 PM"
+                : "7:00 PM",
         };
       }
       return null;
@@ -369,7 +371,7 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

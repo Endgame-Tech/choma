@@ -36,6 +36,7 @@ import {
 import CloudStorageService from "../../services/cloudStorage";
 import { useAlert } from "../../contexts/AlertContext";
 import apiService from "../../services/api";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width, height } = Dimensions.get("window");
 
@@ -520,7 +521,7 @@ const SignupScreen = ({ navigation, route }) => {
       if (profileImage?.uri) {
         try {
           console.log("Uploading profile image to cloud storage...");
-          cloudImageUrl = await CloudStorageService.uploadImage(
+          cloudImageUrl = await CloudStorageService.uploadToBackend(
             profileImage.uri,
             email
           );
@@ -1114,8 +1115,8 @@ const SignupScreen = ({ navigation, route }) => {
                 {currentStep === 1
                   ? "Tell us about yourself"
                   : currentStep === 2
-                  ? "Create a secure password"
-                  : "Where should we deliver your meals?"}
+                    ? "Create a secure password"
+                    : "Where should we deliver your meals?"}
               </Text>
               {renderStepIndicator()}
             </View>
@@ -1183,7 +1184,7 @@ const SignupScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
     backgroundColor: "#652815",

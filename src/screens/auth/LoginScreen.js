@@ -26,6 +26,7 @@ import { useTheme } from "../../styles/theme";
 import BiometricLogin from "../../components/auth/BiometricLogin";
 import ChomaLogo from "../../components/ui/ChomaLogo";
 import { useAlert } from "../../contexts/AlertContext";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width, height } = Dimensions.get("window");
 
@@ -423,7 +424,7 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
     backgroundColor: "#652815",

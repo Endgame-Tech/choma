@@ -14,6 +14,8 @@ import { useTheme } from "../../styles/theme";
 import { useBookmarks } from "../../context/BookmarkContext";
 import MealCardSkeleton from "../meal-plans/MealCardSkeleton";
 import discountService from "../../services/discountService";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
+
 
 const MealPlansSection = ({
   mealPlans = [],
@@ -77,7 +79,8 @@ const MealPlansSection = ({
         const discounts = {};
 
         // Fetch discount for each meal plan
-        for (const plan of mealPlans.slice(0, 10)) { // Limit to first 10 plans
+        for (const plan of mealPlans.slice(0, 10)) {
+          // Limit to first 10 plans
           try {
             const discount = await discountService.getDiscountForMealPlan(
               plan.planId || plan._id,
@@ -128,14 +131,16 @@ const MealPlansSection = ({
             key={category.id}
             style={[
               styles(colors).categoryButton,
-              selectedCategory === category.id && styles(colors).activeCategoryButton,
+              selectedCategory === category.id &&
+                styles(colors).activeCategoryButton,
             ]}
             onPress={() => onCategoryChange && onCategoryChange(category.id)}
           >
             <Text
               style={[
                 styles(colors).categoryText,
-                selectedCategory === category.id && styles(colors).activeCategoryText,
+                selectedCategory === category.id &&
+                  styles(colors).activeCategoryText,
               ]}
             >
               {category.label}
@@ -164,8 +169,11 @@ const MealPlansSection = ({
         <View style={styles(colors).cardImageContainer}>
           <Image
             source={{
-              uri: plan.planImageUrl || plan.image || plan.coverImage || 
-                   "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
+              uri:
+                plan.planImageUrl ||
+                plan.image ||
+                plan.coverImage ||
+                "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
             }}
             style={styles(colors).cardImage}
             defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
@@ -193,9 +201,15 @@ const MealPlansSection = ({
             onPress={() => toggleBookmark(plan)}
           >
             <Ionicons
-              name={isBookmarked(plan._id || plan.planId) ? "heart" : "heart-outline"}
+              name={
+                isBookmarked(plan._id || plan.planId)
+                  ? "heart"
+                  : "heart-outline"
+              }
               size={20}
-              color={isBookmarked(plan._id || plan.planId) ? "#FF6B6B" : colors.text}
+              color={
+                isBookmarked(plan._id || plan.planId) ? "#FF6B6B" : colors.text
+              }
             />
           </TouchableOpacity>
         </View>
@@ -211,13 +225,21 @@ const MealPlansSection = ({
           <View style={styles(colors).planDetails}>
             <View style={styles(colors).planMetrics}>
               <View style={styles(colors).metric}>
-                <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+                <Ionicons
+                  name="time-outline"
+                  size={14}
+                  color={colors.textSecondary}
+                />
                 <Text style={styles(colors).metricText}>
                   {plan.durationWeeks || 4} weeks
                 </Text>
               </View>
               <View style={styles(colors).metric}>
-                <Ionicons name="restaurant-outline" size={14} color={colors.textSecondary} />
+                <Ionicons
+                  name="restaurant-outline"
+                  size={14}
+                  color={colors.textSecondary}
+                />
                 <Text style={styles(colors).metricText}>
                   {plan.mealsPerWeek || 21} meals/week
                 </Text>
@@ -273,7 +295,11 @@ const MealPlansSection = ({
 
       {filteredPlans.length === 0 ? (
         <View style={styles(colors).emptyContainer}>
-          <Ionicons name="restaurant-outline" size={60} color={colors.textMuted} />
+          <Ionicons
+            name="restaurant-outline"
+            size={60}
+            color={colors.textMuted}
+          />
           <Text style={styles(colors).emptyTitle}>No meal plans found</Text>
           <Text style={styles(colors).emptySubtitle}>
             Try selecting a different category or check back later for new plans
@@ -289,7 +315,7 @@ const MealPlansSection = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     section: {
       marginBottom: 24,
     },

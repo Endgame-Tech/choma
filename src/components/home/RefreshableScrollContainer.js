@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const RefreshableScrollContainer = ({
   children,
@@ -19,7 +20,9 @@ const RefreshableScrollContainer = ({
   const { colors } = useTheme();
 
   if (!colors) {
-    console.error("❌ RefreshableScrollContainer: colors is undefined - theme context missing");
+    console.error(
+      "❌ RefreshableScrollContainer: colors is undefined - theme context missing"
+    );
     return null;
   }
 
@@ -44,7 +47,7 @@ const RefreshableScrollContainer = ({
       {...props}
     >
       {children}
-      
+
       {/* Bottom padding to account for tab bar */}
       <View style={styles(colors).bottomPadding} />
     </ScrollView>
@@ -52,7 +55,7 @@ const RefreshableScrollContainer = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

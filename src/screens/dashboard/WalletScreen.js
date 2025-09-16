@@ -16,6 +16,7 @@ import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
 import apiService from "../../services/api";
 import * as Clipboard from "expo-clipboard";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -200,7 +201,7 @@ const WalletScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
   },

@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const HelpCenterScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -285,7 +286,7 @@ const HelpCenterScreen = ({ navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

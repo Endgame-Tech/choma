@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const AddMoneyScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
@@ -194,7 +195,7 @@ const AddMoneyScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
   },

@@ -28,6 +28,7 @@ import RecurringDeliveryCard from "../../components/orders/RecurringDeliveryCard
 import { useNotification } from "../../context/NotificationContext";
 import { useAlert } from "../../contexts/AlertContext";
 import { useFocusEffect } from "@react-navigation/native";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -891,7 +892,7 @@ const OrdersScreen = ({ navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

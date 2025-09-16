@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,43 +9,120 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Alert
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import StarRating from './StarRating';
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import StarRating from "./StarRating";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const ASPECT_CONFIGS = {
   meal_plan: [
-    { key: 'taste', label: 'Taste', description: 'How did the food taste?' },
-    { key: 'presentation', label: 'Presentation', description: 'How was the visual presentation?' },
-    { key: 'portionSize', label: 'Portion Size', description: 'Was the portion size appropriate?' },
-    { key: 'valueForMoney', label: 'Value for Money', description: 'Was it worth the price?' },
-    { key: 'healthiness', label: 'Healthiness', description: 'How healthy was the meal?' }
+    { key: "taste", label: "Taste", description: "How did the food taste?" },
+    {
+      key: "presentation",
+      label: "Presentation",
+      description: "How was the visual presentation?",
+    },
+    {
+      key: "portionSize",
+      label: "Portion Size",
+      description: "Was the portion size appropriate?",
+    },
+    {
+      key: "valueForMoney",
+      label: "Value for Money",
+      description: "Was it worth the price?",
+    },
+    {
+      key: "healthiness",
+      label: "Healthiness",
+      description: "How healthy was the meal?",
+    },
   ],
   chef_performance: [
-    { key: 'cookingQuality', label: 'Cooking Quality', description: 'How well was the food prepared?' },
-    { key: 'consistency', label: 'Consistency', description: 'How consistent is the chef?' },
-    { key: 'communication', label: 'Communication', description: 'How was the communication?' },
-    { key: 'punctuality', label: 'Punctuality', description: 'Was the chef on time?' },
-    { key: 'professionalism', label: 'Professionalism', description: 'How professional was the chef?' }
+    {
+      key: "cookingQuality",
+      label: "Cooking Quality",
+      description: "How well was the food prepared?",
+    },
+    {
+      key: "consistency",
+      label: "Consistency",
+      description: "How consistent is the chef?",
+    },
+    {
+      key: "communication",
+      label: "Communication",
+      description: "How was the communication?",
+    },
+    {
+      key: "punctuality",
+      label: "Punctuality",
+      description: "Was the chef on time?",
+    },
+    {
+      key: "professionalism",
+      label: "Professionalism",
+      description: "How professional was the chef?",
+    },
   ],
   driver_service: [
-    { key: 'timeliness', label: 'Timeliness', description: 'Was the delivery on time?' },
-    { key: 'courteous', label: 'Courtesy', description: 'How courteous was the driver?' },
-    { key: 'packaging', label: 'Packaging', description: 'How was the food packaged?' },
-    { key: 'tracking', label: 'Tracking', description: 'How accurate was the tracking?' }
+    {
+      key: "timeliness",
+      label: "Timeliness",
+      description: "Was the delivery on time?",
+    },
+    {
+      key: "courteous",
+      label: "Courtesy",
+      description: "How courteous was the driver?",
+    },
+    {
+      key: "packaging",
+      label: "Packaging",
+      description: "How was the food packaged?",
+    },
+    {
+      key: "tracking",
+      label: "Tracking",
+      description: "How accurate was the tracking?",
+    },
   ],
   delivery_experience: [
-    { key: 'temperature', label: 'Temperature', description: 'Was the food at the right temperature?' },
-    { key: 'condition', label: 'Condition', description: 'What condition was the food in?' },
-    { key: 'accuracy', label: 'Accuracy', description: 'Was the order accurate?' }
+    {
+      key: "temperature",
+      label: "Temperature",
+      description: "Was the food at the right temperature?",
+    },
+    {
+      key: "condition",
+      label: "Condition",
+      description: "What condition was the food in?",
+    },
+    {
+      key: "accuracy",
+      label: "Accuracy",
+      description: "Was the order accurate?",
+    },
   ],
   app_experience: [
-    { key: 'easeOfUse', label: 'Ease of Use', description: 'How easy was the app to use?' },
-    { key: 'performance', label: 'Performance', description: 'How well did the app perform?' },
-    { key: 'design', label: 'Design', description: 'How was the app design?' },
-    { key: 'features', label: 'Features', description: 'How useful were the features?' }
-  ]
+    {
+      key: "easeOfUse",
+      label: "Ease of Use",
+      description: "How easy was the app to use?",
+    },
+    {
+      key: "performance",
+      label: "Performance",
+      description: "How well did the app perform?",
+    },
+    { key: "design", label: "Design", description: "How was the app design?" },
+    {
+      key: "features",
+      label: "Features",
+      description: "How useful were the features?",
+    },
+  ],
 };
 
 const RatingModal = ({
@@ -61,57 +138,57 @@ const RatingModal = ({
   aspects,
   title,
   description,
-  loading = false
+  loading = false,
 }) => {
   const [overallRating, setOverallRating] = useState(0);
   const [aspectRatings, setAspectRatings] = useState({});
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const [tags, setTags] = useState([]);
-  const [currentTag, setCurrentTag] = useState('');
+  const [currentTag, setCurrentTag] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get aspect configuration based on rating type
-  const aspectConfig = aspects ? 
-    aspects.map(aspect => ({ key: aspect, label: aspect, description: '' })) :
-    ASPECT_CONFIGS[ratingType] || [];
+  const aspectConfig = aspects
+    ? aspects.map((aspect) => ({ key: aspect, label: aspect, description: "" }))
+    : ASPECT_CONFIGS[ratingType] || [];
 
   // Initialize form with existing rating data
   useEffect(() => {
     if (existingRating) {
       setOverallRating(existingRating.overallRating || 0);
       setAspectRatings(existingRating.aspectRatings || {});
-      setComment(existingRating.comment || '');
+      setComment(existingRating.comment || "");
       setTags(existingRating.tags || []);
     } else {
       // Reset form for new rating
       setOverallRating(0);
       setAspectRatings({});
-      setComment('');
+      setComment("");
       setTags([]);
     }
   }, [existingRating, visible]);
 
   const handleAspectRatingChange = (aspectKey, rating) => {
-    setAspectRatings(prev => ({
+    setAspectRatings((prev) => ({
       ...prev,
-      [aspectKey]: rating
+      [aspectKey]: rating,
     }));
   };
 
   const handleAddTag = () => {
     if (currentTag.trim() && !tags.includes(currentTag.trim())) {
-      setTags(prev => [...prev, currentTag.trim()]);
-      setCurrentTag('');
+      setTags((prev) => [...prev, currentTag.trim()]);
+      setCurrentTag("");
     }
   };
 
   const handleRemoveTag = (tagToRemove) => {
-    setTags(prev => prev.filter(tag => tag !== tagToRemove));
+    setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
   const handleSubmit = async () => {
     if (overallRating === 0) {
-      Alert.alert('Rating Required', 'Please provide an overall rating');
+      Alert.alert("Rating Required", "Please provide an overall rating");
       return;
     }
 
@@ -123,24 +200,26 @@ const RatingModal = ({
         ratedEntity: entityId,
         ratedEntityType: entityType,
         overallRating,
-        aspectRatings: Object.keys(aspectRatings).length > 0 ? aspectRatings : undefined,
+        aspectRatings:
+          Object.keys(aspectRatings).length > 0 ? aspectRatings : undefined,
         comment: comment.trim() || undefined,
         tags: tags.length > 0 ? tags : undefined,
-        contextData
+        contextData,
       };
 
       await onSubmit(ratingData);
       onClose();
     } catch (error) {
-      console.error('Failed to submit rating:', error);
-      Alert.alert('Error', 'Failed to submit rating. Please try again.');
+      console.error("Failed to submit rating:", error);
+      Alert.alert("Error", "Failed to submit rating. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const modalTitle = title || `Rate ${entityName || entityType}`;
-  const modalDescription = description || `Share your experience with this ${entityType}`;
+  const modalDescription =
+    description || `Share your experience with this ${entityType}`;
 
   return (
     <Modal
@@ -151,7 +230,7 @@ const RatingModal = ({
     >
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -183,17 +262,21 @@ const RatingModal = ({
           {aspectConfig.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Detailed Ratings</Text>
-              {aspectConfig.map(aspect => (
+              {aspectConfig.map((aspect) => (
                 <View key={aspect.key} style={styles.aspectItem}>
                   <View style={styles.aspectInfo}>
                     <Text style={styles.aspectLabel}>{aspect.label}</Text>
                     {aspect.description && (
-                      <Text style={styles.aspectDescription}>{aspect.description}</Text>
+                      <Text style={styles.aspectDescription}>
+                        {aspect.description}
+                      </Text>
                     )}
                   </View>
                   <StarRating
                     value={aspectRatings[aspect.key] || 0}
-                    onChange={(rating) => handleAspectRatingChange(aspect.key, rating)}
+                    onChange={(rating) =>
+                      handleAspectRatingChange(aspect.key, rating)
+                    }
                     size={24}
                   />
                 </View>
@@ -214,7 +297,9 @@ const RatingModal = ({
               style={styles.textInput}
               textAlignVertical="top"
             />
-            <Text style={styles.characterCount}>{comment.length}/1000 characters</Text>
+            <Text style={styles.characterCount}>
+              {comment.length}/1000 characters
+            </Text>
           </View>
 
           {/* Tags */}
@@ -222,7 +307,7 @@ const RatingModal = ({
             <Text style={styles.sectionTitle}>Tags (Optional)</Text>
             {tags.length > 0 && (
               <View style={styles.tagsContainer}>
-                {tags.map(tag => (
+                {tags.map((tag) => (
                   <View key={tag} style={styles.tag}>
                     <Text style={styles.tagText}>{tag}</Text>
                     <TouchableOpacity onPress={() => handleRemoveTag(tag)}>
@@ -244,9 +329,17 @@ const RatingModal = ({
               <TouchableOpacity
                 onPress={handleAddTag}
                 disabled={!currentTag.trim()}
-                style={[styles.addTagButton, !currentTag.trim() && styles.disabledButton]}
+                style={[
+                  styles.addTagButton,
+                  !currentTag.trim() && styles.disabledButton,
+                ]}
               >
-                <Text style={[styles.addTagText, !currentTag.trim() && styles.disabledText]}>
+                <Text
+                  style={[
+                    styles.addTagText,
+                    !currentTag.trim() && styles.disabledText,
+                  ]}
+                >
                   Add
                 </Text>
               </TouchableOpacity>
@@ -266,10 +359,23 @@ const RatingModal = ({
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={isSubmitting || overallRating === 0}
-            style={[styles.button, styles.submitButton, (isSubmitting || overallRating === 0) && styles.disabledButton]}
+            style={[
+              styles.button,
+              styles.submitButton,
+              (isSubmitting || overallRating === 0) && styles.disabledButton,
+            ]}
           >
-            <Text style={[styles.submitButtonText, (isSubmitting || overallRating === 0) && styles.disabledText]}>
-              {isSubmitting ? 'Submitting...' : existingRating ? 'Update Rating' : 'Submit Rating'}
+            <Text
+              style={[
+                styles.submitButtonText,
+                (isSubmitting || overallRating === 0) && styles.disabledText,
+              ]}
+            >
+              {isSubmitting
+                ? "Submitting..."
+                : existingRating
+                  ? "Update Rating"
+                  : "Submit Rating"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -278,19 +384,19 @@ const RatingModal = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingTop: Platform.OS === "ios" ? 60 : 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: "#E5E7EB",
   },
   headerContent: {
     flex: 1,
@@ -298,13 +404,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 4,
   },
   description: {
     fontSize: 14,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   closeButton: {
     padding: 4,
@@ -318,24 +424,24 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
+    fontWeight: "500",
+    color: "#374151",
     marginBottom: 12,
   },
   ratingContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 16,
   },
   overallRating: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   aspectItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: "#F3F4F6",
   },
   aspectInfo: {
     flex: 1,
@@ -343,39 +449,39 @@ const styles = StyleSheet.create({
   },
   aspectLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
+    fontWeight: "500",
+    color: "#374151",
   },
   aspectDescription: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
     marginTop: 2,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: "#D1D5DB",
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
-    color: '#111827',
-    backgroundColor: '#FFFFFF',
+    color: "#111827",
+    backgroundColor: "#FFFFFF",
     minHeight: 100,
   },
   characterCount: {
     fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'right',
+    color: "#6B7280",
+    textAlign: "right",
     marginTop: 4,
   },
   tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginBottom: 12,
   },
   tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DBEAFE',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#DBEAFE",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -384,74 +490,74 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 12,
-    color: '#1D4ED8',
+    color: "#1D4ED8",
     marginRight: 4,
   },
   tagInputContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   tagInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: "#D1D5DB",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
-    color: '#111827',
+    color: "#111827",
   },
   addTagButton: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: "#EFF6FF",
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: "#BFDBFE",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   addTagText: {
     fontSize: 14,
-    color: '#2563EB',
-    fontWeight: '500',
+    color: "#2563EB",
+    fontWeight: "500",
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20,
     borderTopWidth: 1,
-    borderTopColor: '#F9FAFB',
-    backgroundColor: '#F9FAFB',
+    borderTopColor: "#F9FAFB",
+    backgroundColor: "#F9FAFB",
   },
   button: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   cancelButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: "#D1D5DB",
     marginRight: 8,
   },
   cancelButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
+    fontWeight: "500",
+    color: "#374151",
   },
   submitButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: "#2563EB",
     marginLeft: 8,
   },
   submitButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#FFFFFF',
+    fontWeight: "500",
+    color: "#FFFFFF",
   },
   disabledButton: {
     opacity: 0.5,

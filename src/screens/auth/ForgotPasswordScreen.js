@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,60 +10,64 @@ import {
   ScrollView,
   Platform,
   StatusBar,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, THEME } from '../../utils/colors';
-import { useTheme } from '../../styles/theme';
-import { APP_CONFIG } from '../../utils/constants';
-import { useAlert } from '../../contexts/AlertContext';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { COLORS, THEME } from "../../utils/colors";
+import { useTheme } from "../../styles/theme";
+import { APP_CONFIG } from "../../utils/constants";
+import { useAlert } from "../../contexts/AlertContext";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const { colors } = useTheme();
   const { showError, showSuccess } = useAlert();
   const [step, setStep] = useState(1); // 1: Enter email, 2: Enter code, 3: New password
-  const [email, setEmail] = useState('');
-  const [resetCode, setResetCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSendCode = async () => {
     if (!email.trim()) {
-      showError('Error', 'Please enter your email address');
+      showError("Error", "Please enter your email address");
       return;
     }
 
-    if (!email.includes('@')) {
-      showError('Error', 'Please enter a valid email address');
+    if (!email.includes("@")) {
+      showError("Error", "Please enter a valid email address");
       return;
     }
 
     try {
       setIsLoading(true);
 
-      const response = await fetch(`${APP_CONFIG.API_BASE_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: email.trim() }),
-      });
+      const response = await fetch(
+        `${APP_CONFIG.API_BASE_URL}/auth/forgot-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: email.trim() }),
+        }
+      );
 
       const data = await response.json();
 
       if (data.success) {
         setStep(2);
-        showSuccess('Success', 'Reset code sent to your email address');
+        showSuccess("Success", "Reset code sent to your email address");
       } else {
-        showError('Error', data.message || 'Failed to send reset code');
+        showError("Error", data.message || "Failed to send reset code");
       }
     } catch (error) {
-      console.error('Send code error:', error);
-      showError('Error', 'Network error. Please try again.');
+      console.error("Send code error:", error);
+      showError("Error", "Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -71,12 +75,12 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const handleVerifyCode = () => {
     if (!resetCode.trim()) {
-      showError('Error', 'Please enter the reset code');
+      showError("Error", "Please enter the reset code");
       return;
     }
 
     if (resetCode.length !== 6) {
-      showError('Error', 'Reset code must be 6 digits');
+      showError("Error", "Reset code must be 6 digits");
       return;
     }
 
@@ -85,54 +89,57 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const handleResetPassword = async () => {
     if (!newPassword.trim() || !confirmPassword.trim()) {
-      showError('Error', 'Please fill in all fields');
+      showError("Error", "Please fill in all fields");
       return;
     }
 
     if (newPassword.length < 6) {
-      showError('Error', 'Password must be at least 6 characters long');
+      showError("Error", "Password must be at least 6 characters long");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      showError('Error', 'Passwords do not match');
+      showError("Error", "Passwords do not match");
       return;
     }
 
     try {
       setIsLoading(true);
 
-      const response = await fetch(`${APP_CONFIG.API_BASE_URL}/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          resetCode: resetCode.trim(),
-          newPassword: newPassword.trim(),
-        }),
-      });
+      const response = await fetch(
+        `${APP_CONFIG.API_BASE_URL}/auth/reset-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            resetCode: resetCode.trim(),
+            newPassword: newPassword.trim(),
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (data.success) {
         showSuccess(
-          'Success',
-          'Password reset successfully. You can now login with your new password.',
+          "Success",
+          "Password reset successfully. You can now login with your new password.",
           [
             {
-              text: 'OK',
-              onPress: () => navigation.navigate('Login'),
+              text: "OK",
+              onPress: () => navigation.navigate("Login"),
             },
           ]
         );
       } else {
-        showError('Error', data.message || 'Failed to reset password');
+        showError("Error", data.message || "Failed to reset password");
       }
     } catch (error) {
-      console.error('Reset password error:', error);
-      showError('Error', 'Network error. Please try again.');
+      console.error("Reset password error:", error);
+      showError("Error", "Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -192,7 +199,9 @@ const ForgotPasswordScreen = ({ navigation }) => {
             {isLoading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles(colors).actionButtonText}>Send Reset Code</Text>
+              <Text style={styles(colors).actionButtonText}>
+                Send Reset Code
+              </Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -250,7 +259,9 @@ const ForgotPasswordScreen = ({ navigation }) => {
           style={styles(colors).linkButton}
           onPress={() => setStep(1)}
         >
-          <Text style={styles(colors).linkButtonText}>Change email address</Text>
+          <Text style={styles(colors).linkButtonText}>
+            Change email address
+          </Text>
         </TouchableOpacity>
       </View>
     </>
@@ -266,9 +277,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           <Ionicons name="create-outline" size={40} color={colors.white} />
         </LinearGradient>
         <Text style={styles(colors).title}>Create New Password</Text>
-        <Text style={styles(colors).subtitle}>
-          Enter your new password
-        </Text>
+        <Text style={styles(colors).subtitle}>Enter your new password</Text>
       </View>
 
       <View style={styles(colors).form}>
@@ -292,7 +301,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             style={styles(colors).eyeIcon}
           >
             <Ionicons
-              name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+              name={showPassword ? "eye-outline" : "eye-off-outline"}
               size={20}
               color={colors.textMuted}
             />
@@ -319,7 +328,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             style={styles(colors).eyeIcon}
           >
             <Ionicons
-              name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
+              name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
               size={20}
               color={colors.textMuted}
             />
@@ -345,7 +354,9 @@ const ForgotPasswordScreen = ({ navigation }) => {
             {isLoading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles(colors).actionButtonText}>Reset Password</Text>
+              <Text style={styles(colors).actionButtonText}>
+                Reset Password
+              </Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -359,7 +370,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
       <KeyboardAvoidingView
         style={styles(colors).container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView contentContainerStyle={styles(colors).scrollContainer}>
           <View style={styles(colors).header}>
@@ -378,9 +389,9 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
             <View style={styles(colors).footer}>
               <Text style={styles(colors).footerText}>
-                Remember your password?{' '}
+                Remember your password?{" "}
               </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <TouchableOpacity onPress={() => navigation.navigate("Login")}>
                 <Text style={styles(colors).signInLink}>Sign In</Text>
               </TouchableOpacity>
             </View>
@@ -392,7 +403,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,
@@ -401,8 +412,8 @@ const styles = (colors) =>
       flexGrow: 1,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingTop: 10,
     },
@@ -414,39 +425,39 @@ const styles = (colors) =>
     content: {
       flex: 1,
       paddingHorizontal: 20,
-      justifyContent: 'center',
+      justifyContent: "center",
     },
     logoContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: 40,
     },
     logoBackground: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       marginBottom: 20,
     },
     title: {
       fontSize: 28,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 8,
-      textAlign: 'center',
+      textAlign: "center",
     },
     subtitle: {
       fontSize: 16,
       color: colors.textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
       paddingHorizontal: 20,
     },
     form: {
       marginBottom: 30,
     },
     inputContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor: colors.cardBackground,
       borderRadius: THEME.borderRadius.medium,
       marginBottom: 16,
@@ -468,13 +479,13 @@ const styles = (colors) =>
     },
     actionButton: {
       borderRadius: THEME.borderRadius.medium,
-      overflow: 'hidden',
+      overflow: "hidden",
       marginTop: 20,
     },
     buttonGradient: {
       height: 50,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     actionButtonDisabled: {
       opacity: 0.6,
@@ -482,21 +493,21 @@ const styles = (colors) =>
     actionButtonText: {
       color: colors.black,
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     linkButton: {
       marginTop: 16,
-      alignItems: 'center',
+      alignItems: "center",
     },
     linkButtonText: {
       color: colors.primary,
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     footer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
       marginTop: 30,
     },
     footerText: {
@@ -506,7 +517,7 @@ const styles = (colors) =>
     signInLink: {
       color: colors.primary,
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
   });
 

@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomText from "../../components/ui/CustomText";
 import { DMSansFonts } from "../../constants/fonts";
@@ -8,18 +15,22 @@ import { areFontsLoaded, loadAllFonts } from "../../utils/fontLoader";
 
 const DmSansDemoHomeScreen = ({ navigation }) => {
   const { colors } = useTheme();
-  const [fontsStatus, setFontsStatus] = useState('Loading...');
+  const [fontsStatus, setFontsStatus] = useState("Loading...");
 
   useEffect(() => {
     // Load all fonts for demo
     loadAllFonts().then(() => {
-      setFontsStatus(areFontsLoaded() ? 'Loaded Successfully' : 'Failed to Load');
+      setFontsStatus(
+        areFontsLoaded() ? "Loaded Successfully" : "Failed to Load"
+      );
     });
   }, []);
 
   const showFontStatus = () => {
-    const status = areFontsLoaded() ? 'Loaded Successfully ✅' : 'Not Loaded ❌';
-    Alert.alert('Font Status', `DM Sans fonts are: ${status}`);
+    const status = areFontsLoaded()
+      ? "Loaded Successfully ✅"
+      : "Not Loaded ❌";
+    Alert.alert("Font Status", `DM Sans fonts are: ${status}`);
   };
 
   return (
@@ -41,8 +52,8 @@ const DmSansDemoHomeScreen = ({ navigation }) => {
           >
             See how DM Sans looks in your Choma app
           </CustomText>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.statusButton, { backgroundColor: colors.primary }]}
             onPress={showFontStatus}
           >
@@ -208,7 +219,7 @@ const DmSansDemoHomeScreen = ({ navigation }) => {
           <Text
             style={[
               styles.fontDemo,
-              { fontFamily: DMSansFonts.bold, color: colors.text },
+              { fontWeight: "bold", color: colors.text },
             ]}
           >
             DM Sans Bold (700) - {DMSansFonts.bold}
@@ -284,7 +295,7 @@ const DmSansDemoHomeScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
   },
@@ -340,13 +351,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
   },
   statusButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 

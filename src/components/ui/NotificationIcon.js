@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useNotification } from "../../context/NotificationContext";
 import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const NotificationIcon = ({ size = 24, color }) => {
   const { unreadCount, loadNotifications } = useNotification();
@@ -42,7 +43,7 @@ const NotificationIcon = ({ size = 24, color }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       position: "relative",
       padding: 5,

@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../../styles/theme';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const HelpScreen = () => {
   const { colors } = useTheme();
@@ -11,18 +12,19 @@ const HelpScreen = () => {
   );
 };
 
-const styles = (colors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  text: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-});
+const styles = (colors) =>
+  createStylesWithDMSans({
+    container: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.background,
+    },
+    text: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.text,
+    },
+  });
 
 export default HelpScreen;

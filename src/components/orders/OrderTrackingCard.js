@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
 import { useNavigation } from "@react-navigation/native";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -32,7 +33,8 @@ const OrderTrackingCard = ({
   const navigation = useNavigation();
   const [expandedDetails, setExpandedDetails] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
+  const [confirmationModalVisible, setConfirmationModalVisible] =
+    useState(false);
   const progressAnimation = new Animated.Value(0);
 
   // Order status steps with enhanced details - Updated to match real workflow
@@ -102,39 +104,39 @@ const OrderTrackingCard = ({
       // Order statuses
       pending: 0,
       confirmed: 1,
-      
+
       // Chef delegation statuses (from updateChefStatus) - EXACT MATCHES
-      assigned: 1,        // When admin assigns chef → "Order Confirmed"
-      accepted: 2,        // When chef accepts → "Preparing Food"
-      "in progress": 2,   // When chef starts cooking → "Preparing Food" 
-      ready: 3,           // When chef marks food ready → "Food Ready"
-      completed: 4,       // When chef completes → "Quality Check"
-      
+      assigned: 1, // When admin assigns chef → "Order Confirmed"
+      accepted: 2, // When chef accepts → "Preparing Food"
+      "in progress": 2, // When chef starts cooking → "Preparing Food"
+      ready: 3, // When chef marks food ready → "Food Ready"
+      completed: 4, // When chef completes → "Quality Check"
+
       // CRITICAL FIX: Backend sends "Completed" with capital C
-      "Completed": 4,     // When chef completes → "Quality Check" (backend format)
-      "Ready": 3,         // When chef marks ready → "Food Ready" (backend format)
-      "Accepted": 2,      // When chef accepts → "Preparing Food" (backend format) 
-      "Assigned": 1,      // When admin assigns → "Order Confirmed" (backend format)
-      "In Progress": 2,   // When chef starts cooking → "Preparing Food" (backend format)
-      
+      Completed: 4, // When chef completes → "Quality Check" (backend format)
+      Ready: 3, // When chef marks ready → "Food Ready" (backend format)
+      Accepted: 2, // When chef accepts → "Preparing Food" (backend format)
+      Assigned: 1, // When admin assigns → "Order Confirmed" (backend format)
+      "In Progress": 2, // When chef starts cooking → "Preparing Food" (backend format)
+
       // Quality Check status
-      "Quality Check": 4,     // Quality inspection step
-      "quality check": 4,     // lowercase variant
-      
+      "Quality Check": 4, // Quality inspection step
+      "quality check": 4, // lowercase variant
+
       // Delivery statuses - THESE ARE THE IMPORTANT ONES
-      "out for delivery": 5,  // When driver assigned → "Out for Delivery"
-      "Out for Delivery": 5,  // Backend format → "Out for Delivery"
-      delivered: 6,           // Final step → "Delivered"
-      "Delivered": 6,         // Backend format → "Delivered"
-      
+      "out for delivery": 5, // When driver assigned → "Out for Delivery"
+      "Out for Delivery": 5, // Backend format → "Out for Delivery"
+      delivered: 6, // Final step → "Delivered"
+      Delivered: 6, // Backend format → "Delivered"
+
       // Alternative spellings/formats that might come from backend
       preparing: 2,
       inprogress: 2,
       "preparing food": 2,
       "food ready": 3,
-      "out_for_delivery": 5,
+      out_for_delivery: 5,
       outfordelivery: 5,
-      
+
       // Handle any unexpected variations
       "not assigned": 0,
       "pending assignment": 0,
@@ -146,24 +148,29 @@ const OrderTrackingCard = ({
     let rawFinalStatus;
 
     // Prioritize delivery statuses (Delivered, Out for Delivery, Cancelled)
-    if (orderStatus === 'Delivered' || orderStatus === 'delivered' || 
-        orderStatus === 'Cancelled' || orderStatus === 'cancelled' ||
-        orderStatus === 'Out for Delivery' || orderStatus === 'out for delivery') {
+    if (
+      orderStatus === "Delivered" ||
+      orderStatus === "delivered" ||
+      orderStatus === "Cancelled" ||
+      orderStatus === "cancelled" ||
+      orderStatus === "Out for Delivery" ||
+      orderStatus === "out for delivery"
+    ) {
       rawFinalStatus = orderStatus;
     } else {
       rawFinalStatus = delegationStatus || orderStatus || "";
     }
-    
+
     // Try exact case match first, then lowercase
     let step = statusMap[rawFinalStatus];
     if (step === undefined) {
       const normalizedStatus = rawFinalStatus.toLowerCase();
       step = statusMap[normalizedStatus] || 0;
     }
-    
+
     setCurrentStep(step);
-    
-    console.log('🔄 Order tracking status update:', {
+
+    console.log("🔄 Order tracking status update:", {
       orderId: order?._id,
       rawDelegationStatus: order?.delegationStatus,
       rawOrderStatus: order?.orderStatus,
@@ -218,7 +225,7 @@ const OrderTrackingCard = ({
       deliveryNumber: order?.deliveryNumber,
       weekNumber: order?.weekNumber,
       // Full object for complete inspection
-      fullOrder: order
+      fullOrder: order,
     });
 
     // Log the detection results
@@ -226,7 +233,7 @@ const OrderTrackingCard = ({
       isRecurringDetected: isRecurringDelivery(),
       titleGenerated: getRecurringDeliveryTitle(),
       shouldShowCode: shouldShowConfirmationCode(),
-      codeValue: getConfirmationCode()
+      codeValue: getConfirmationCode(),
     });
   }, [order]);
 
@@ -234,14 +241,14 @@ const OrderTrackingCard = ({
   const isRecurringDelivery = () => {
     // Check multiple possible indicators for recurring/subscription orders
     return !!(
-      order?.subscription || 
+      order?.subscription ||
       order?.recurringOrder ||
-      order?.subscriptionId || 
-      order?.isSubscriptionOrder || 
+      order?.subscriptionId ||
+      order?.isSubscriptionOrder ||
       order?.isRecurring ||
       order?.subscriptionInfo ||
       // Check if this looks like a recurring delivery based on naming patterns
-      (order?.orderItems?.type === "subscription_pickup") ||
+      order?.orderItems?.type === "subscription_pickup" ||
       order?.deliveryNumber > 1 ||
       order?.weekNumber > 0
     );
@@ -249,42 +256,48 @@ const OrderTrackingCard = ({
 
   const getRecurringDeliveryTitle = () => {
     console.log("🔍 Building recurring delivery title...");
-    
+
     // Try to get meal plan name from subscription data
     let planName = "Meal Plan"; // fallback
-    
+
     if (order?.subscription?.mealPlanId) {
       // If we have subscription data, we can get plan name from there
       planName = "FitFam Fuel"; // We know from logs this is the plan name
     } else {
-      planName = order?.orderItems?.planName || order?.mealPlan?.name || "Meal Plan";
+      planName =
+        order?.orderItems?.planName || order?.mealPlan?.name || "Meal Plan";
     }
-    
+
     // Calculate delivery day based on subscription start date and current date
     let deliveryDay = 1; // default
-    
+
     if (order?.subscription?.startDate) {
       const startDate = new Date(order.subscription.startDate);
       const currentDate = new Date();
-      const daysDiff = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor(
+        (currentDate - startDate) / (1000 * 60 * 60 * 24)
+      );
       deliveryDay = Math.max(1, daysDiff + 1); // Start from day 1
     }
-    
+
     // Try other sources for day number
-    const explicitDay = 
-      order?.deliveryDay || 
-      order?.dayNumber || 
+    const explicitDay =
+      order?.deliveryDay ||
+      order?.dayNumber ||
       order?.deliveryNumber ||
       order?.day ||
       null;
-      
+
     if (explicitDay && explicitDay > 0) {
       deliveryDay = explicitDay;
     }
 
     // If this is clearly a recurring delivery, show the format
     if (isRecurringDelivery()) {
-      console.log("✅ Showing recurring format:", `Day ${deliveryDay} of ${planName}`);
+      console.log(
+        "✅ Showing recurring format:",
+        `Day ${deliveryDay} of ${planName}`
+      );
       return `Day ${deliveryDay} of ${planName}`;
     }
 
@@ -294,14 +307,18 @@ const OrderTrackingCard = ({
   };
 
   const getConfirmationCode = () => {
-    return order?.confirmationCode || order?.deliveryCode || order?.code || null;
+    return (
+      order?.confirmationCode || order?.deliveryCode || order?.code || null
+    );
   };
 
   const shouldShowConfirmationCode = () => {
-    return isRecurringDelivery() && 
-           getConfirmationCode() && 
-           (currentStep >= 5) && // Out for delivery or delivered
-           !isDelivered; // Don't show for completed orders
+    return (
+      isRecurringDelivery() &&
+      getConfirmationCode() &&
+      currentStep >= 5 && // Out for delivery or delivered
+      !isDelivered
+    ); // Don't show for completed orders
   };
 
   // Get meal plan image with multiple fallback options
@@ -310,10 +327,14 @@ const OrderTrackingCard = ({
     if (order?.image) return { uri: order.image };
     if (order?.mealPlan?.image) return { uri: order.mealPlan.image };
     if (order?.orderItems?.image) return { uri: order.orderItems.image };
-    
+
     // Use local images based on meal plan name
-    const planName = (order?.orderItems?.planName || order?.mealPlan?.name || "").toLowerCase();
-    
+    const planName = (
+      order?.orderItems?.planName ||
+      order?.mealPlan?.name ||
+      ""
+    ).toLowerCase();
+
     if (planName.includes("fitfuel") || planName.includes("fit fuel")) {
       return require("../../assets/images/meal-plans/fitfuel.jpg");
     } else if (planName.includes("wellness") || planName.includes("healthy")) {
@@ -323,7 +344,7 @@ const OrderTrackingCard = ({
     } else if (planName.includes("family") || planName.includes("healthyfam")) {
       return require("../../assets/images/meal-plans/healthyfam.jpg");
     }
-    
+
     // Default fallback
     return require("../../assets/images/meal-plans/fitfuel.jpg");
   };
@@ -438,7 +459,7 @@ const OrderTrackingCard = ({
   };
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles(colors).container, style]}
       onPress={() => setExpandedDetails(!expandedDetails)}
       activeOpacity={0.98}
@@ -468,16 +489,18 @@ const OrderTrackingCard = ({
               color="white"
             />
           </View>
-          
         </View>
 
         {/* Meal Info */}
         <View style={styles(colors).compactMealInfo}>
           <View style={styles(colors).mealTitleRow}>
-            <Text style={[
-              styles(colors).mealTitle, 
-              isRecurringDelivery() && styles(colors).recurringMealTitle
-            ]} numberOfLines={1}>
+            <Text
+              style={[
+                styles(colors).mealTitle,
+                isRecurringDelivery() && styles(colors).recurringMealTitle,
+              ]}
+              numberOfLines={1}
+            >
               {getRecurringDeliveryTitle()}
             </Text>
             {isRecurringDelivery() && (
@@ -494,7 +517,7 @@ const OrderTrackingCard = ({
               />
             </View>
           </View>
-          
+
           <View style={styles(colors).mealMetaRow}>
             <Text style={styles(colors).orderNumber}>
               #{order?.orderNumber || order?.id?.slice(-6) || "CHM001"}
@@ -509,25 +532,41 @@ const OrderTrackingCard = ({
           {/* Status & ETA Row */}
           <View style={styles(colors).statusRow}>
             <View style={styles(colors).statusLeftSection}>
-              <View style={[styles(colors).statusPill, { backgroundColor: orderSteps[currentStep]?.color + "20" }]}>
-                <Text style={[styles(colors).statusPillText, { color: orderSteps[currentStep]?.color }]}>
+              <View
+                style={[
+                  styles(colors).statusPill,
+                  { backgroundColor: orderSteps[currentStep]?.color + "20" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles(colors).statusPillText,
+                    { color: orderSteps[currentStep]?.color },
+                  ]}
+                >
                   {orderSteps[currentStep]?.title}
                 </Text>
               </View>
-              
+
               {shouldShowConfirmationCode() && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles(colors).confirmationCodeButton}
                   onPress={() => setConfirmationModalVisible(true)}
                 >
                   <Ionicons name="key" size={12} color={colors.white} />
-                  <Text style={styles(colors).confirmationCodeButtonText}>Code</Text>
+                  <Text style={styles(colors).confirmationCodeButtonText}>
+                    Code
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
 
             <View style={styles(colors).etaContainer}>
-              <Ionicons name="time-outline" size={12} color={colors.textMuted} />
+              <Ionicons
+                name="time-outline"
+                size={12}
+                color={colors.textMuted}
+              />
               <Text style={styles(colors).etaText}>
                 {isDelivered ? "Delivered!" : getTimeRemaining()}
               </Text>
@@ -543,7 +582,9 @@ const OrderTrackingCard = ({
           <View style={styles(colors).progressSection}>
             <View style={styles(colors).progressHeader}>
               <Text style={styles(colors).progressTitle}>🚀 Order Journey</Text>
-              <Text style={styles(colors).progressSubtitle}>Track your delicious meal</Text>
+              <Text style={styles(colors).progressSubtitle}>
+                Track your delicious meal
+              </Text>
             </View>
 
             <View style={styles(colors).progressContainer}>
@@ -554,7 +595,9 @@ const OrderTrackingCard = ({
           {/* Driver Information (only when out for delivery) */}
           {canTrackDriver && order?.driver && (
             <View style={styles(colors).driverSection}>
-              <Text style={styles(colors).sectionTitle}>🏍️ Your Delivery Hero</Text>
+              <Text style={styles(colors).sectionTitle}>
+                🏍️ Your Delivery Hero
+              </Text>
               <View style={styles(colors).driverInfo}>
                 <Image
                   source={{
@@ -585,18 +628,28 @@ const OrderTrackingCard = ({
           {/* Order Details */}
           <View style={styles(colors).orderDetailsSection}>
             <Text style={styles(colors).sectionTitle}>📋 Order Details</Text>
-            
+
             <View style={styles(colors).detailsGrid}>
               <View style={styles(colors).detailCard}>
-                <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+                <Ionicons
+                  name="calendar-outline"
+                  size={16}
+                  color={colors.primary}
+                />
                 <Text style={styles(colors).detailLabel}>Order Date</Text>
                 <Text style={styles(colors).detailValue}>
-                  {new Date(order?.createdAt || Date.now()).toLocaleDateString()}
+                  {new Date(
+                    order?.createdAt || Date.now()
+                  ).toLocaleDateString()}
                 </Text>
               </View>
 
               <View style={styles(colors).detailCard}>
-                <Ionicons name="location-outline" size={16} color={colors.primary} />
+                <Ionicons
+                  name="location-outline"
+                  size={16}
+                  color={colors.primary}
+                />
                 <Text style={styles(colors).detailLabel}>Delivery Address</Text>
                 <Text style={styles(colors).detailValue} numberOfLines={2}>
                   {order?.deliveryAddress || "Lagos, Nigeria"}
@@ -604,7 +657,11 @@ const OrderTrackingCard = ({
               </View>
 
               <View style={styles(colors).detailCard}>
-                <Ionicons name="card-outline" size={16} color={colors.primary} />
+                <Ionicons
+                  name="card-outline"
+                  size={16}
+                  color={colors.primary}
+                />
                 <Text style={styles(colors).detailLabel}>Payment</Text>
                 <Text style={styles(colors).detailValue}>
                   {order?.paymentMethod || "Card ***1234"}
@@ -612,7 +669,11 @@ const OrderTrackingCard = ({
               </View>
 
               <View style={styles(colors).detailCard}>
-                <Ionicons name="checkmark-circle-outline" size={16} color={colors.primary} />
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={16}
+                  color={colors.primary}
+                />
                 <Text style={styles(colors).detailLabel}>Status</Text>
                 <Text style={styles(colors).detailValue}>
                   {order?.paymentStatus || "Paid"}
@@ -622,8 +683,14 @@ const OrderTrackingCard = ({
 
             {order?.instructions && (
               <View style={styles(colors).instructionsCard}>
-                <Ionicons name="chatbox-outline" size={16} color={colors.primary} />
-                <Text style={styles(colors).instructionsLabel}>Special Instructions</Text>
+                <Ionicons
+                  name="chatbox-outline"
+                  size={16}
+                  color={colors.primary}
+                />
+                <Text style={styles(colors).instructionsLabel}>
+                  Special Instructions
+                </Text>
                 <Text style={styles(colors).instructionsText}>
                   {order.instructions}
                 </Text>
@@ -638,36 +705,82 @@ const OrderTrackingCard = ({
                 style={styles(colors).actionButton}
                 onPress={handleContactSupport}
               >
-                <Ionicons name="headset-outline" size={18} color={colors.primary} />
+                <Ionicons
+                  name="headset-outline"
+                  size={18}
+                  color={colors.primary}
+                />
                 <Text style={styles(colors).actionButtonText}>Support</Text>
               </TouchableOpacity>
 
               {canCancel && (
                 <TouchableOpacity
-                  style={[styles(colors).actionButton, styles(colors).cancelActionButton]}
+                  style={[
+                    styles(colors).actionButton,
+                    styles(colors).cancelActionButton,
+                  ]}
                   onPress={handleCancelOrder}
                 >
-                  <Ionicons name="close-circle-outline" size={18} color={colors.error} />
-                  <Text style={[styles(colors).actionButtonText, { color: colors.error }]}>Cancel</Text>
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={18}
+                    color={colors.error}
+                  />
+                  <Text
+                    style={[
+                      styles(colors).actionButtonText,
+                      { color: colors.error },
+                    ]}
+                  >
+                    Cancel
+                  </Text>
                 </TouchableOpacity>
               )}
 
               {isDelivered && (
                 <>
                   <TouchableOpacity
-                    style={[styles(colors).actionButton, styles(colors).reorderActionButton]}
+                    style={[
+                      styles(colors).actionButton,
+                      styles(colors).reorderActionButton,
+                    ]}
                     onPress={() => onReorder?.(order)}
                   >
-                    <Ionicons name="repeat-outline" size={18} color={colors.success} />
-                    <Text style={[styles(colors).actionButtonText, { color: colors.success }]}>Reorder</Text>
+                    <Ionicons
+                      name="repeat-outline"
+                      size={18}
+                      color={colors.success}
+                    />
+                    <Text
+                      style={[
+                        styles(colors).actionButtonText,
+                        { color: colors.success },
+                      ]}
+                    >
+                      Reorder
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles(colors).actionButton, styles(colors).rateActionButton]}
+                    style={[
+                      styles(colors).actionButton,
+                      styles(colors).rateActionButton,
+                    ]}
                     onPress={() => onRateOrder?.(order)}
                   >
-                    <Ionicons name="star-outline" size={18} color={colors.warning} />
-                    <Text style={[styles(colors).actionButtonText, { color: colors.warning }]}>Rate</Text>
+                    <Ionicons
+                      name="star-outline"
+                      size={18}
+                      color={colors.warning}
+                    />
+                    <Text
+                      style={[
+                        styles(colors).actionButtonText,
+                        { color: colors.warning },
+                      ]}
+                    >
+                      Rate
+                    </Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -686,7 +799,9 @@ const OrderTrackingCard = ({
         <View style={styles(colors).modalOverlay}>
           <View style={styles(colors).modalContainer}>
             <View style={styles(colors).modalHeader}>
-              <Text style={styles(colors).modalTitle}>Delivery Confirmation Code</Text>
+              <Text style={styles(colors).modalTitle}>
+                Delivery Confirmation Code
+              </Text>
               <TouchableOpacity
                 style={styles(colors).modalCloseButton}
                 onPress={() => setConfirmationModalVisible(false)}
@@ -697,7 +812,9 @@ const OrderTrackingCard = ({
 
             <View style={styles(colors).modalContent}>
               <View style={styles(colors).codeDisplay}>
-                <Text style={styles(colors).codeLabel}>Show this code to your driver:</Text>
+                <Text style={styles(colors).codeLabel}>
+                  Show this code to your driver:
+                </Text>
                 <View style={styles(colors).codeContainer}>
                   <Text style={styles(colors).confirmationCodeText}>
                     {getConfirmationCode()}
@@ -707,13 +824,21 @@ const OrderTrackingCard = ({
 
               <View style={styles(colors).codeInstructions}>
                 <View style={styles(colors).instructionRow}>
-                  <Ionicons name="information-circle" size={16} color={colors.primary} />
+                  <Ionicons
+                    name="information-circle"
+                    size={16}
+                    color={colors.primary}
+                  />
                   <Text style={styles(colors).instructionText}>
                     Your driver will ask for this code when delivering your meal
                   </Text>
                 </View>
                 <View style={styles(colors).instructionRow}>
-                  <Ionicons name="shield-checkmark" size={16} color={colors.success} />
+                  <Ionicons
+                    name="shield-checkmark"
+                    size={16}
+                    color={colors.success}
+                  />
                   <Text style={styles(colors).instructionText}>
                     This ensures secure delivery to the right person
                   </Text>
@@ -735,7 +860,7 @@ const OrderTrackingCard = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       backgroundColor: colors.cardBackground,
       borderRadius: 16,

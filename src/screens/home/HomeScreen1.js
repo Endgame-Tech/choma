@@ -43,6 +43,7 @@ import MealProgressionTimeline from "../../components/subscription/MealProgressi
 import SubscriptionManagementModal from "../../components/subscription/SubscriptionManagementModal";
 import CustomText from "../../components/ui/CustomText";
 import { DMSansFonts } from "../../constants/fonts";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -283,8 +284,8 @@ const HomeScreen = ({ navigation }) => {
         const bannersData = Array.isArray(result.data?.data)
           ? result.data.data
           : Array.isArray(result.data)
-          ? result.data
-          : [];
+            ? result.data
+            : [];
         setBanners(bannersData);
         console.log(
           `✅ Loaded ${bannersData.length} banners:`,
@@ -588,9 +589,8 @@ const HomeScreen = ({ navigation }) => {
             const mealPlanId =
               subscription.mealPlanId?._id || subscription.mealPlanId;
             if (mealPlanId) {
-              const mealPlanResult = await apiService.getMealPlanById(
-                mealPlanId
-              );
+              const mealPlanResult =
+                await apiService.getMealPlanById(mealPlanId);
               if (mealPlanResult.success && mealPlanResult.data) {
                 return {
                   ...subscription,
@@ -896,27 +896,27 @@ const HomeScreen = ({ navigation }) => {
     return () => clearInterval(bannerInterval);
   }, [banners?.length]);
 
-  // Auto-slide effect for popular meal plans
-  useEffect(() => {
-    if (!displayPlans || displayPlans.length <= 1) return;
+  // Auto-slide effect for popular meal plans - DISABLED
+  // useEffect(() => {
+  //   if (!displayPlans || displayPlans.length <= 1) return;
 
-    const popularInterval = setInterval(() => {
-      setCurrentPopularIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % displayPlans.length;
-        const cardWidth = width * 0.75; // Same as popularPlanCard width
-        const cardMargin = 20; // Same as marginRight in popularPlanCard
-        const scrollPosition = nextIndex * (cardWidth + cardMargin);
+  //   const popularInterval = setInterval(() => {
+  //     setCurrentPopularIndex((prevIndex) => {
+  //       const nextIndex = (prevIndex + 1) % displayPlans.length;
+  //       const cardWidth = width * 0.75; // Same as popularPlanCard width
+  //       const cardMargin = 20; // Same as marginRight in popularPlanCard
+  //       const scrollPosition = nextIndex * (cardWidth + cardMargin);
 
-        popularScrollRef.current?.scrollTo({
-          x: scrollPosition,
-          animated: true,
-        });
-        return nextIndex;
-      });
-    }, 4000); // 4 seconds per slide (faster than banners)
+  //       popularScrollRef.current?.scrollTo({
+  //         x: scrollPosition,
+  //         animated: true,
+  //       });
+  //       return nextIndex;
+  //     });
+  //   }, 4000); // 4 seconds per slide (faster than banners)
 
-    return () => clearInterval(popularInterval);
-  }, [displayPlans?.length]);
+  //   return () => clearInterval(popularInterval);
+  // }, [displayPlans?.length]);
 
   // Helper function to calculate delivery day
   const getDeliveryDay = (order) => {
@@ -1104,9 +1104,8 @@ const HomeScreen = ({ navigation }) => {
             } else {
               // We only have an ID, fetch the meal plan first
               console.log(`🔍 Fetching meal plan for reorder: ${mealPlanId}`);
-              const mealPlanResult = await apiService.getMealPlanById(
-                mealPlanId
-              );
+              const mealPlanResult =
+                await apiService.getMealPlanById(mealPlanId);
 
               if (mealPlanResult.success && mealPlanResult.data) {
                 navigation.navigate("MealPlanDetail", {
@@ -2208,43 +2207,8 @@ const HomeScreen = ({ navigation }) => {
     }
 
     if (!banners || banners.length === 0) {
-      // Fallback to default banner when no banners are available
-      return (
-        <View style={styles(colors).heroBannerContainer}>
-          <View style={styles(colors).heroBanner}>
-            <View style={styles(colors).heroContent}>
-              <View style={styles(colors).heroTextSection}>
-                <Text style={styles(colors).heroTitle}>Welcome to Choma</Text>
-                <Text style={styles(colors).heroSubtitle}>
-                  Discover delicious and healthy meal plans crafted just for
-                  you!
-                </Text>
-                <TouchableOpacity
-                  style={styles(colors).heroButton}
-                  activeOpacity={0.8}
-                  onPress={() => navigation.navigate("Search")}
-                >
-                  <Text style={styles(colors).heroButtonText}>
-                    Explore Meals
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color="#000"
-                    style={styles(colors).heroButtonIcon}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles(colors).heroImageSection}>
-                <Image
-                  source={require("../../assets/images/meal-plans/fitfuel.jpg")}
-                  style={styles(colors).heroImage}
-                />
-              </View>
-            </View>
-          </View>
-        </View>
-      );
+      // Hide banner section when no banners are available
+      return null;
     }
 
     // Show dynamic banners
@@ -2765,7 +2729,7 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,
@@ -3432,7 +3396,7 @@ const styles = (colors) =>
     statNumber: {
       fontSize: 24,
       fontWeight: "bold",
-      fontFamily: DMSansFonts.bold,
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 4,
     },
@@ -3527,7 +3491,7 @@ const styles = (colors) =>
     modalTitle: {
       fontSize: 20,
       fontWeight: "bold",
-      fontFamily: DMSansFonts.bold,
+      fontWeight: "bold",
       color: colors.text,
       textAlign: "center",
       marginBottom: 8,

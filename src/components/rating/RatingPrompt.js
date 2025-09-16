@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,21 +6,22 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
-  Alert
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import StarRating from './StarRating';
-import RatingModal from './RatingModal';
-import { ratingApi } from '../../services/ratingApi';
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import StarRating from "./StarRating";
+import RatingModal from "./RatingModal";
+import { ratingApi } from "../../services/ratingApi";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
-const RatingPrompt = ({ 
-  promptData, 
-  onResponse, 
+const RatingPrompt = ({
+  promptData,
+  onResponse,
   onDismiss,
   style,
-  position = 'bottom' // 'top', 'bottom', 'center'
+  position = "bottom", // 'top', 'bottom', 'center'
 }) => {
   const [visible, setVisible] = useState(false);
   const [slideAnim] = useState(new Animated.Value(0));
@@ -40,7 +41,7 @@ const RatingPrompt = ({
       toValue: 1,
       useNativeDriver: true,
       tension: 100,
-      friction: 8
+      friction: 8,
     }).start();
   };
 
@@ -48,7 +49,7 @@ const RatingPrompt = ({
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 300,
-      useNativeDriver: true
+      useNativeDriver: true,
     }).start(() => {
       setVisible(false);
       if (callback) callback();
@@ -57,7 +58,7 @@ const RatingPrompt = ({
 
   const handleQuickRating = async (rating) => {
     if (isSubmitting) return;
-    
+
     setQuickRating(rating);
     setIsSubmitting(true);
 
@@ -66,21 +67,26 @@ const RatingPrompt = ({
       const ratingData = {
         ...promptData,
         overallRating: rating,
-        comment: rating >= 4 ? 'Quick positive rating' : rating <= 2 ? 'Quick negative rating' : 'Quick neutral rating'
+        comment:
+          rating >= 4
+            ? "Quick positive rating"
+            : rating <= 2
+              ? "Quick negative rating"
+              : "Quick neutral rating",
       };
 
       const response = await ratingApi.createRating(ratingData);
-      
+
       if (response.success) {
         hidePrompt(() => {
-          onResponse?.('completed', promptData.triggerId, response.data._id);
+          onResponse?.("completed", promptData.triggerId, response.data._id);
         });
       } else {
-        throw new Error(response.message || 'Failed to submit rating');
+        throw new Error(response.message || "Failed to submit rating");
       }
     } catch (error) {
-      console.error('Error submitting quick rating:', error);
-      Alert.alert('Error', 'Failed to submit rating. Please try again.');
+      console.error("Error submitting quick rating:", error);
+      Alert.alert("Error", "Failed to submit rating. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -93,31 +99,31 @@ const RatingPrompt = ({
   const handleModalSubmit = async (ratingData) => {
     try {
       const response = await ratingApi.createRating(ratingData);
-      
+
       if (response.success) {
         setRatingModalVisible(false);
         hidePrompt(() => {
-          onResponse?.('completed', promptData.triggerId, response.data._id);
+          onResponse?.("completed", promptData.triggerId, response.data._id);
         });
       } else {
-        throw new Error(response.message || 'Failed to submit rating');
+        throw new Error(response.message || "Failed to submit rating");
       }
     } catch (error) {
-      console.error('Error submitting detailed rating:', error);
+      console.error("Error submitting detailed rating:", error);
       throw error;
     }
   };
 
   const handleDismiss = () => {
     hidePrompt(() => {
-      onResponse?.('dismissed', promptData.triggerId);
+      onResponse?.("dismissed", promptData.triggerId);
       onDismiss?.();
     });
   };
 
   const handlePostpone = () => {
     hidePrompt(() => {
-      onResponse?.('postponed', promptData.triggerId);
+      onResponse?.("postponed", promptData.triggerId);
       onDismiss?.();
     });
   };
@@ -127,39 +133,40 @@ const RatingPrompt = ({
   }
 
   const getTransform = () => {
-    if (position === 'top') {
+    if (position === "top") {
       return {
         translateY: slideAnim.interpolate({
           inputRange: [0, 1],
-          outputRange: [-200, 0]
-        })
+          outputRange: [-200, 0],
+        }),
       };
-    } else if (position === 'center') {
+    } else if (position === "center") {
       return {
         scale: slideAnim,
-        opacity: slideAnim
+        opacity: slideAnim,
       };
-    } else { // bottom
+    } else {
+      // bottom
       return {
         translateY: slideAnim.interpolate({
           inputRange: [0, 1],
-          outputRange: [200, 0]
-        })
+          outputRange: [200, 0],
+        }),
       };
     }
   };
 
   const getContainerStyle = () => {
     const baseStyle = [styles.container];
-    
-    if (position === 'top') {
+
+    if (position === "top") {
       baseStyle.push(styles.topContainer);
-    } else if (position === 'center') {
+    } else if (position === "center") {
       baseStyle.push(styles.centerContainer);
     } else {
       baseStyle.push(styles.bottomContainer);
     }
-    
+
     return baseStyle;
   };
 
@@ -169,9 +176,9 @@ const RatingPrompt = ({
         style={[
           getContainerStyle(),
           {
-            transform: [getTransform()]
+            transform: [getTransform()],
           },
-          style
+          style,
         ]}
       >
         <View style={styles.promptCard}>
@@ -181,7 +188,7 @@ const RatingPrompt = ({
               <Text style={styles.title}>{promptData.title}</Text>
               <Text style={styles.description}>{promptData.description}</Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleDismiss}
               style={styles.closeButton}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -211,7 +218,7 @@ const RatingPrompt = ({
             >
               <Text style={styles.detailedButtonText}>Add Details</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               onPress={handlePostpone}
               style={styles.postponeButton}
@@ -249,9 +256,9 @@ const RatingPrompt = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
-    position: 'absolute',
+    position: "absolute",
     left: 16,
     right: 16,
     zIndex: 1000,
@@ -263,14 +270,14 @@ const styles = StyleSheet.create({
     bottom: 100,
   },
   centerContainer: {
-    top: '50%',
+    top: "50%",
     marginTop: -100,
   },
   promptCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -279,11 +286,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: 16,
   },
   headerContent: {
@@ -292,72 +299,72 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 4,
   },
   description: {
     fontSize: 14,
-    color: '#6B7280',
+    color: "#6B7280",
     lineHeight: 20,
   },
   closeButton: {
     padding: 4,
   },
   ratingSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 16,
   },
   ratingLabel: {
     fontSize: 14,
-    color: '#374151',
+    color: "#374151",
     marginBottom: 8,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   starRating: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   detailedButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: "#2563EB",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
     flex: 1,
     marginRight: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   detailedButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   postponeButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: "#F3F4F6",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   postponeButtonText: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   debugInfo: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: "#E5E7EB",
   },
   debugText: {
     fontSize: 12,
-    color: '#9CA3AF',
-    textAlign: 'center',
+    color: "#9CA3AF",
+    textAlign: "center",
   },
 });
 

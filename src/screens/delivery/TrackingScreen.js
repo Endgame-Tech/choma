@@ -16,12 +16,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-// NOTE: react-native-maps is an optional native dependency. We avoid a static import
-// here to prevent bundler errors in environments where the package isn't installed.
-// If map features are added, require('react-native-maps') dynamically where needed.
 import ApiService from "../../services/api";
 import { useTheme } from "../../styles/theme";
 import { useAlert } from "../../contexts/AlertContext";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 export const TrackingScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
@@ -42,14 +40,12 @@ export const TrackingScreen = ({ route, navigation }) => {
       refreshInterval.current = setInterval(loadTrackingData, 120000);
     }
 
-
     return () => {
       if (refreshInterval.current) {
         clearInterval(refreshInterval.current);
       }
     };
   }, [trackingId]);
-
 
   const loadTrackingData = async () => {
     try {
@@ -59,7 +55,9 @@ export const TrackingScreen = ({ route, navigation }) => {
       // First, get fresh order data if we have an order ID (similar to meal plan pattern)
       if (orderId || order?._id) {
         try {
-          const orderResult = await ApiService.getOrderDetails(orderId || order._id);
+          const orderResult = await ApiService.getOrderDetails(
+            orderId || order._id
+          );
           if (orderResult.success && orderResult.order) {
             console.log("✅ Fresh order data loaded for tracking");
             freshOrderData = orderResult.order;
@@ -82,15 +80,16 @@ export const TrackingScreen = ({ route, navigation }) => {
         // Try to get customer deliveries and find by order ID
         const deliveriesResult = await ApiService.getUserOrders();
         if (deliveriesResult.success) {
-          const orderData = freshOrderData || { _id: orderId, orderStatus: "Preparing" };
+          const orderData = freshOrderData || {
+            _id: orderId,
+            orderStatus: "Preparing",
+          };
           setTracking(createTrackingFromOrder(orderData));
           setLoading(false);
           setRefreshing(false);
           return;
         }
-      }
-        
-      else if (freshOrderData) {
+      } else if (freshOrderData) {
         setTracking(createTrackingFromOrder(freshOrderData));
         setLoading(false);
         setRefreshing(false);
@@ -131,21 +130,28 @@ export const TrackingScreen = ({ route, navigation }) => {
       cancelled: "Cancelled",
     };
 
-    const deliveryStatus = orderStatusToDeliveryStatus[orderData.orderStatus?.toLowerCase()] || "Pending Assignment";
-    
+    const deliveryStatus =
+      orderStatusToDeliveryStatus[orderData.orderStatus?.toLowerCase()] ||
+      "Pending Assignment";
+
     return {
       trackingId: orderData._id?.slice(-8).toUpperCase() || "TRACK001",
       deliveryStatus: deliveryStatus,
       order: orderData,
       deliveryLocation: {
-        address: orderData.deliveryAddress || orderData.address || "Address not provided",
+        address:
+          orderData.deliveryAddress ||
+          orderData.address ||
+          "Address not provided",
         instructions: orderData.deliveryInstructions || "",
       },
       timeline: [
         {
           status: deliveryStatus,
           timestamp: orderData.updatedAt || new Date().toISOString(),
-          notes: orderData.orderStatus ? `Order status: ${orderData.orderStatus}` : "",
+          notes: orderData.orderStatus
+            ? `Order status: ${orderData.orderStatus}`
+            : "",
         },
       ],
       estimatedDeliveryTime: orderData.deliveryDate || null,
@@ -300,7 +306,7 @@ export const TrackingScreen = ({ route, navigation }) => {
         <TouchableOpacity
           onPress={() => {
             // Navigate to the enhanced tracking screen
-            navigation.navigate('EnhancedTracking', {
+            navigation.navigate("EnhancedTracking", {
               orderId: tracking.order._id || orderId,
               order: tracking.order || order,
             });
@@ -398,7 +404,6 @@ export const TrackingScreen = ({ route, navigation }) => {
             </View>
           </View>
         )}
-
 
         {/* Delivery Timeline */}
         <View style={styles(colors).timelineCard}>
@@ -542,7 +547,7 @@ export const TrackingScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

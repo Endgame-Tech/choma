@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import apiService from "../../services/api";
 import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const SubscriptionDetailsScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
@@ -447,8 +448,8 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                       subscription.durationWeeks === 1 ? "week" : "weeks"
                     }`
                   : subscription.duration
-                  ? subscription.duration
-                  : "1 week"}
+                    ? subscription.duration
+                    : "1 week"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
@@ -492,10 +493,10 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                 {subscription.paymentDate
                   ? formatDate(subscription.paymentDate)
                   : subscription.createdAt || subscription.createdDate
-                  ? formatDate(
-                      subscription.createdAt || subscription.createdDate
-                    )
-                  : "N/A"}
+                    ? formatDate(
+                        subscription.createdAt || subscription.createdDate
+                      )
+                    : "N/A"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
@@ -574,7 +575,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

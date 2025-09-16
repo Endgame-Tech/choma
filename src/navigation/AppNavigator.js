@@ -15,6 +15,7 @@ import CustomNavigationIcon from "../components/ui/CustomNavigationIcon";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../styles/theme";
 // import { THEME } from '../utils/colors';
+import { createStylesWithDMSans } from "../utils/fontUtils";
 
 // Import all screen components
 import HomeScreen from "../screens/home/HomeScreen1";
@@ -347,7 +348,7 @@ const TabNavigator = () => {
     </Tab.Navigator>
   );
 };
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   tabBarBackgroundContainer: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 50,

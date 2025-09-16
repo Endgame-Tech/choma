@@ -14,6 +14,9 @@ import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
+import CustomText from "../../components/ui/CustomText";
+import { DMSansFonts } from "../../constants/fonts";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -83,8 +86,38 @@ const MealDetailModal = ({
   };
 
   const formatNutrition = (value) => {
-    if (!value) return "0";
+    if (value === null || value === undefined) return "No data";
+    if (value === 0) return "0";
     return typeof value === "number" ? value.toString() : value;
+  };
+
+  const getNutritionValue = (field) => {
+    // Get nutrition value from the correct schema structure
+    const meal = currentMeal;
+    
+    // Debug: Log the meal structure to understand data flow
+    console.log('🔍 Meal nutrition debug:', {
+      mealName: meal.name || meal.label,
+      nutrition: meal.nutrition,
+      nutritionInfo: meal.nutritionInfo,
+      field: field
+    });
+    
+    // Primary source: meal.nutrition (from DailyMeal model)
+    if (meal.nutrition && meal.nutrition[field] !== undefined && meal.nutrition[field] !== null) {
+      console.log(`✅ Found ${field} in meal.nutrition:`, meal.nutrition[field]);
+      return meal.nutrition[field];
+    }
+    
+    // Secondary source: meal.nutritionInfo (from schema)
+    if (meal.nutritionInfo && meal.nutritionInfo[field] !== undefined && meal.nutritionInfo[field] !== null) {
+      console.log(`✅ Found ${field} in meal.nutritionInfo:`, meal.nutritionInfo[field]);
+      return meal.nutritionInfo[field];
+    }
+    
+    console.log(`❌ No nutrition data found for ${field}`);
+    // If no data available, return null to show "No data"
+    return null;
   };
 
   if (!visible) return null;
@@ -160,31 +193,44 @@ const MealDetailModal = ({
                   <View style={styles(colors).statsGrid}>
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>
-                        {formatNutrition(currentMeal.nutrition?.protein || "0")}{" "}
-                        g
+                        {formatNutrition(getNutritionValue("calories"))}
+                      </Text>
+                      <Text style={styles(colors).statLabel}>Calories</Text>
+                    </View>
+
+                    <View style={styles(colors).statCard}>
+                      <Text style={styles(colors).statValue}>
+                        {formatNutrition(getNutritionValue("protein"))}g
                       </Text>
                       <Text style={styles(colors).statLabel}>Protein</Text>
                     </View>
 
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>
-                        {formatNutrition(currentMeal.nutrition?.carbs || "0")} g
+                        {formatNutrition(getNutritionValue("carbs"))}g
                       </Text>
                       <Text style={styles(colors).statLabel}>Carbs</Text>
                     </View>
 
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>
-                        {formatNutrition(currentMeal.nutrition?.fat || "0")} g
+                        {formatNutrition(getNutritionValue("fat"))}g
                       </Text>
                       <Text style={styles(colors).statLabel}>Fat</Text>
                     </View>
 
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>
-                        {formatNutrition(currentMeal.nutrition?.fiber || "0")} g
+                        {formatNutrition(getNutritionValue("fiber"))}g
                       </Text>
                       <Text style={styles(colors).statLabel}>Fiber</Text>
+                    </View>
+
+                    <View style={styles(colors).statCard}>
+                      <Text style={styles(colors).statValue}>
+                        {formatNutrition(getNutritionValue("sugar"))}g
+                      </Text>
+                      <Text style={styles(colors).statLabel}>Sugar</Text>
                     </View>
                   </View>
                 </View>
@@ -193,11 +239,46 @@ const MealDetailModal = ({
                 <View style={styles(colors).bottomScrollPadding} />
               </ScrollView>
 
-              {/* Close Button - Outside ScrollView */}
-            <View style={styles(colors).closeButtonContainer}>
-              <TouchableOpacity style={styles(colors).closeButton} onPress={onClose}>
-                <Ionicons name="close" size={34} color="#000" />
-              </TouchableOpacity>
+              {/* Navigation Buttons - Outside ScrollView */}
+            <View style={styles(colors).navigationContainerParent}>
+              <View style={styles(colors).navigationContainer}>
+                {/* Left Chevron - Previous Meal */}
+                <TouchableOpacity 
+                  style={[
+                    styles(colors).navButton,
+                    currentIndex === 0 && styles(colors).navButtonDisabled
+                  ]} 
+                  onPress={() => handleSwipe("right")}
+                  disabled={currentIndex === 0}
+                >
+                  <Ionicons 
+                    name="chevron-back" 
+                    size={28} 
+                    color={currentIndex === 0 ? "#666" : "#000"} 
+                  />
+                </TouchableOpacity>
+
+                {/* Close Button - Center */}
+                <TouchableOpacity style={styles(colors).closeButton} onPress={onClose}>
+                  <Ionicons name="close" size={34} color="#000" />
+                </TouchableOpacity>
+
+                {/* Right Chevron - Next Meal */}
+                <TouchableOpacity 
+                  style={[
+                    styles(colors).navButton,
+                    currentIndex === meals.length - 1 && styles(colors).navButtonDisabled
+                  ]} 
+                  onPress={() => handleSwipe("left")}
+                  disabled={currentIndex === meals.length - 1}
+                >
+                  <Ionicons 
+                    name="chevron-forward" 
+                    size={28} 
+                    color={currentIndex === meals.length - 1 ? "#666" : "#000"} 
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             </View>
@@ -224,7 +305,7 @@ const MealDetailModal = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: "#000",
@@ -246,10 +327,10 @@ const styles = (colors) =>
     },
     titleBadge: {
       position: "absolute",
-      bottom: 60,
+      top: screenHeight * 0.44,
       left: 30,
       right: 30,
-      backgroundColor: "#000",
+      backgroundColor: "#1b1b1b",
       borderRadius: 35,
       paddingVertical: 15,
       paddingHorizontal: 20,
@@ -266,7 +347,7 @@ const styles = (colors) =>
       bottom: 0,
       left: 0,
       right: 0,
-      height: screenHeight * 0.55,
+      height: screenHeight * 0.43,
       backgroundColor: "#1a1a1a",
       borderTopLeftRadius: 30,
       borderTopRightRadius: 30,
@@ -340,19 +421,44 @@ const styles = (colors) =>
     bottomScrollPadding: {
       height: 100,
     },
-    closeButtonContainer: {
+    navigationContainerParent: {
+      width: "100%",
+      height: 70,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       position: "absolute",
       bottom: 70,
       width: "100%",
-      height: 70,
+    },
+    navigationContainer: {
+      flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
+      width: "100%",
+      gap: 30,
+    },
+    navButton: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: "#FFA726",
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    navButtonDisabled: {
+      backgroundColor: "#333",
+      opacity: 0.5,
     },
     closeButton: {
-      position: "relative",
       width: 70,
       height: 70,
-      borderRadius: 75,
+      borderRadius: 35,
       backgroundColor: "#FFA726",
       justifyContent: "center",
       alignItems: "center",

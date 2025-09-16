@@ -23,6 +23,7 @@ import googleRoutesService from "../../services/googleRoutesService";
 import { APP_CONFIG } from "../../utils/constants";
 import { THEME } from "../../utils/colors";
 import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 // Constants
 
@@ -1476,7 +1477,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

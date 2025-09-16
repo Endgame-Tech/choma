@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
-import chomablob1 from '../assets/images/chomablob.svg'
+import chomablob1 from '../assets/images/chomablob1.svg'
 import chomablob2 from '../assets/images/chomablob2.svg'
 import herofood1 from '../assets/images/herofood/herofood1.png'
 import herofood2 from '../assets/images/herofood/herofood2.png'
@@ -24,57 +24,57 @@ const Home: React.FC = () => {
   // Feature Cards Data
   const featureCards = [
     {
-      title: "Premium Quality",
-      description: "Every meal is prepared by certified chefs using fresh, high-quality ingredients sourced locally.",
+      title: "Chef-Crafted Excellence",
+      description: "Every dish is a masterpiece prepared by certified Nigerian chefs using premium, locally-sourced ingredients. Taste the difference quality makes.",
       image: femaleChefGif,
-      imageAlt: "Female Chef Cooking",
+      imageAlt: "Professional Chef Cooking",
       badges: [
         { text: "4.9/5 Rating", type: "rating" as const },
       ]
     },
     {
-      title: "Best Prices",
-      description: "Enjoy restaurant-quality meals at pocket-friendly prices. No hidden charges, ever.",
+      title: "Unbeatable Value",
+      description: "Savor restaurant-quality meals without breaking the bank. Transparent pricing, zero hidden fees, maximum satisfaction guaranteed.",
       image: bestPrice,
-      imageAlt: "Best Price Deals",
+      imageAlt: "Best Price Value",
       badges: [
-        { text: "From ₦3500", type: "price" as const }
+        { text: "From ₦3,500", type: "price" as const }
       ]
     },
     {
-      title: "Local & International",
-      description: "From traditional Nigerian dishes to international cuisines, we have something for everyone.",
+      title: "Cultural Fusion Menu",
+      description: "From mama's secret Jollof recipe to international gourmet dishes - explore a world of flavors that celebrate Nigerian heritage and global cuisine.",
       image: takeAwayGif,
-      imageAlt: "Take Away Delivery",
+      imageAlt: "Diverse Cuisine Selection",
       badges: [
-        { text: "4.9/5 Rating", type: "rating" as const },
+        { text: "100+ Dishes", type: "rating" as const },
       ]
     },
     {
-      title: "Premium Quality",
-      description: "Every meal is prepared by certified chefs using fresh, high-quality ingredients sourced locally.",
+      title: "Lightning-Fast Delivery",
+      description: "Craving satisfaction can't wait! Our dedicated riders ensure your hot, fresh meals arrive in record time across Lagos, Abuja, and Port Harcourt.",
       image: femaleChefGif,
-      imageAlt: "Female Chef Cooking",
+      imageAlt: "Fast Delivery Service",
       badges: [
-        { text: "4.9/5 Rating", type: "rating" as const },
+        { text: "30 Min Avg", type: "rating" as const },
       ]
     },
     {
-      title: "Best Prices",
-      description: "Enjoy restaurant-quality meals at pocket-friendly prices. No hidden charges, ever.",
+      title: "Smart Meal Planning",
+      description: "Let our AI-powered meal planner create personalized nutrition plans that fit your lifestyle, dietary needs, and taste preferences perfectly.",
       image: bestPrice,
-      imageAlt: "Best Price Deals",
+      imageAlt: "Meal Planning Technology",
       badges: [
-        { text: "From ₦3500", type: "price" as const }
+        { text: "AI-Powered", type: "price" as const }
       ]
     },
     {
-      title: "Local & International",
-      description: "From traditional Nigerian dishes to international cuisines, we have something for everyone.",
+      title: "Community-Driven",
+      description: "Join thousands of food lovers sharing recipes, reviews, and culinary adventures. Choma isn't just food delivery - it's a food community.",
       image: takeAwayGif,
-      imageAlt: "Take Away Delivery",
+      imageAlt: "Food Community",
       badges: [
-        { text: "4.9/5 Rating", type: "rating" as const },
+        { text: "15K+ Members", type: "rating" as const },
       ]
     }
   ]
@@ -155,7 +155,7 @@ const Home: React.FC = () => {
   }, [foodImages.length])
 
   return (
-    <>
+    <div className="relative">
 
 
       <div className='h-20 md:h-48'></div>
@@ -173,20 +173,20 @@ const Home: React.FC = () => {
       ></div>
 
       {/* Hero */}
-      <section className="py-10 ">
+      <section className="py-10 relative">
 
         <h1 ref={titleRef} className='text-choma-brown text-center text-7xl lg:text-9xl font-medium tracking-tighter relative'>
-          Get <span className='font-extrabold'>Choma</span>
+          Get <span className='font-extrabold text-choma-orange'>Choma</span>
         </h1>
 
-        <p ref={subtitleRef} className='text-choma-black px-[12]  md:px-[25%] lg:px-[30%] text-center text-[2rem] lg:text-5xl mt-4 tracking-tighter relative z-20'>
-          Delicious Home Cooked Meals,<span className='font-bold'> Delivered To Your Doorstep</span>
+        <p ref={subtitleRef} className='text-choma-black px-[12]  md:px-[25%] lg:px-[30%] text-center text-[2rem] lg:text-5xl mt-4 tracking-tighter relative z-20 leading-tight'>
+          <span className='text-choma-brown font-bold'>Authentic Nigerian Flavors</span> Delivered Fresh to Your Doorstep in <span className='text-choma-orange font-extrabold'>30 Minutes</span>
         </p>
 
         {/* Blob1 */}
-        <div className="absolute overflow-x-clip h-[150rem] w-full flex justify-center mt-40 pointer-events-none">
-          <div className='absolute w-[1000px] md:w-[2900px] flex justify-center translate-x-12 z-[-11]'>
-            <img src={chomablob1} className="object-contain" alt="Choma blob" />
+        <div className="absolute overflow-x-hidden w-full h-[120%] md:h-[126%] flex justify-center mt-[45%] md:mt-[15%] pointer-events-none top-0">
+          <div className='absolute w-[210%] md:w-[120%] flex justify-center translate-x-12 z-[-11]'>
+            <img src={chomablob1} className="object-contain w-full h-auto" alt="Choma blob" />
           </div>
         </div>
 
@@ -231,11 +231,35 @@ const Home: React.FC = () => {
         </div>
 
         <div className="container-width flex w-full justify-center md:mt-36">
-          <h2 className='text-choma-white text-center text-3xl md:text-5xl px-3 font-medium tracking-tighter 
-            md:max-w-[600px]'>
-            Experience the authentic taste of Nigeria with our carefully crafted meals. From Jollof rice to Suya,
-            we bring your favorite local dishes right to you.
-          </h2>
+          <div className='text-center max-w-4xl'>
+            <h2 className='text-choma-white text-center text-3xl md:text-5xl px-3 font-bold tracking-tighter mb-6'>
+              Taste the Soul of Nigeria 🇳🇬
+            </h2>
+            <p className='text-choma-white/90 text-xl md:text-2xl leading-relaxed'>
+              From <span className='text-choma-orange font-semibold'>grandma's secret Jollof rice</span> to
+              perfectly grilled <span className='text-choma-orange font-semibold'>suya</span>, we bring the
+              authentic taste of Nigerian street food and home cooking directly to you. Every bite tells
+              a story of tradition, passion, and culinary excellence.
+            </p>
+            <div className='mt-8 flex flex-wrap justify-center gap-8 text-choma-white/80'>
+              <div className='flex items-center gap-2'>
+                <span className='text-2xl'>🍛</span>
+                <span className='font-medium'>Traditional Recipes</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='text-2xl'>👨‍🍳</span>
+                <span className='font-medium'>Local Chefs</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='text-2xl'>⚡</span>
+                <span className='font-medium'>30-Min Delivery</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='text-2xl'>💯</span>
+                <span className='font-medium'>Fresh Ingredients</span>
+              </div>
+            </div>
+          </div>
         </div>
 
       </section>
@@ -245,9 +269,16 @@ const Home: React.FC = () => {
       {/* Meal Plan Section */}
       <section className="py-20 top-60 relative">
         <div className="container-width relative z-10">
-          <h2 className='text-choma-black text-center text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter mb-16'>
-            A meal plan made for you
-          </h2>
+          <div className='text-center mb-16'>
+            <h2 className='text-choma-black text-center text-3xl sm:text-4xl md:text-6xl font-bold tracking-tighter mb-6'>
+              Personalized Nutrition, <span className='text-choma-orange'>Perfected</span>
+            </h2>
+            <p className='text-choma-black/80 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed'>
+              Say goodbye to meal planning stress! Our AI-powered nutrition system creates custom meal plans
+              tailored to your fitness goals, dietary preferences, and lifestyle. Whether you're bulking,
+              cutting, or maintaining - we've got the perfect fuel for your journey.
+            </p>
+          </div>
 
           {/* Meal Plan Card */}
           <div className="flex justify-center px-4 md:px-20">
@@ -278,11 +309,14 @@ const Home: React.FC = () => {
                 {/* Mobile Content */}
                 <div className="text-left pl-3">
                   <h3 className="text-choma-black text-2xl sm:text-3xl font-bold mb-2 tracking-tight">
-                    FitFam Fuel
+                    FitFam Fuel 💪
                   </h3>
-                  <p className="text-choma-black text-sm sm:text-base font-medium mb-6">
-                    Gym-goers, athletes, and health-conscious professionals
+                  <p className="text-choma-black text-sm sm:text-base font-medium mb-4">
+                    Premium nutrition for gym-goers, athletes, and health champions
                   </p>
+                  <div className="text-choma-black/70 text-xs sm:text-sm mb-6">
+                    ✓ High-protein meals ✓ Balanced macros ✓ Performance-focused
+                  </div>
 
                   {/* Order Now Button */}
                   <button className="bg-choma-black text-choma-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold text-sm sm:text-base hover:bg-choma-brown/90 transition-colors flex items-center gap-2">
@@ -317,12 +351,14 @@ const Home: React.FC = () => {
                   </div>
 
                   <h3 className="text-choma-black text-5xl lg:text-7xl font-bold mb-8 tracking-tight">
-                    FitFam Fuel
+                    FitFam Fuel 💪
                   </h3>
-                  <p className="text-choma-black lg:text-[2.6rem] font-medium">
-                    Gym-goers, athletes, and
-                    health-conscious professionals
+                  <p className="text-choma-black lg:text-[2.2rem] font-medium mb-6 leading-relaxed">
+                    Premium nutrition designed for gym-goers, athletes, and health champions who demand excellence
                   </p>
+                  <div className="text-choma-black/70 lg:text-xl">
+                    ✓ High-protein meals ✓ Balanced macros ✓ Performance-focused nutrition
+                  </div>
                 </div>
 
                 {/* Right Image */}
@@ -387,21 +423,30 @@ const Home: React.FC = () => {
       </section>
 
       {/* Blob2 */}
-      <div className="absolute md:pt-0 overflow-x-clip -translate-y-[4%] md:-translate-y-[10%] h-[100%] 
-                z-[-11] w-full flex justify-center pointer-events-none">
+      <div className="absolute overflow-x-hidden -translate-y-[10%] md:-translate-y-[15%] 
+                z-[-11] w-full flex justify-center pointer-events-none inset-x-0">
         <div className='absolute w-[270rem] md:w-[2400px] translate-x-[20rem]
-                  md:translate-x-[5rem] scale-125 md:scale-10 '>
-          <img src={chomablob2} alt="Choma blob" />
+                  md:translate-x-[5rem] scale-100 md:scale-110 opacity-80'>
+          <img src={chomablob2} alt="Choma blob" className="object-contain w-full h-auto" />
         </div>
       </div>
 
       <section>
 
         <div className="py-20 relative">
-          <p className='text-[#FBE0CE] text-center text-5xl md:text-7xl mt-4 font-bold tracking-tighter relative 
-                  z-20 mb-20 md:mb-28'>
-            You don Chop?<br /> <span className='text-choma-orange'>Choma got you!</span>
-          </p>
+          <div className='text-center mb-20'>
+            <p className='text-[#FBE0CE] text-center text-4xl md:text-6xl mt-4 font-bold tracking-tighter relative 
+                    z-20 mb-6'>
+              Still Hungry?
+            </p>
+            <h2 className='text-choma-orange text-center text-5xl md:text-8xl font-extrabold tracking-tighter relative z-20'>
+              Choma Got You Covered!
+            </h2>
+            <p className='text-[#FBE0CE] text-center text-lg md:text-xl mt-6 max-w-2xl mx-auto leading-relaxed'>
+              Discover why over <span className='text-choma-orange font-bold'>15,000+ food lovers</span> trust Choma
+              for their daily dose of deliciousness. Join the revolution that's changing how Nigeria eats!
+            </p>
+          </div>
 
           {/* Feature Cards */}
           <div className="container-width relative z-10">
@@ -422,7 +467,72 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-    </>
+      {/* Call to Action Section */}
+      <section className="py-20 bg-[#c1840a] relative overflow-hidden">
+
+        <div className="container-width relative z-10 text-center">
+          <h2 className="text-white text-4xl md:text-6xl font-bold mb-6 tracking-tight">
+            Ready to Transform Your Meals?
+          </h2>
+          <p className="text-white/90 text-xl md:text-2xl mb-12 max-w-3xl mx-auto leading-relaxed">
+            Join thousands of satisfied customers who've made Choma their go-to food companion.
+            Download now and get <span className="font-bold text-yellow-300">₦1,000 OFF</span> your first order!
+          </p>
+
+          {/* Download Buttons */}
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+            <a
+              href="#"
+              className="flex items-center gap-4 bg-black hover:bg-gray-900 text-white rounded-2xl px-8 py-4 transition-all duration-300 hover:scale-105 shadow-2xl group min-w-[200px]"
+            >
+              <img src={googleplayStoreLogo} alt="Google Play" className="w-8 h-8" />
+              <div className="text-left">
+                <div className="text-sm opacity-80">Download on</div>
+                <div className="text-lg font-bold">Google Play</div>
+              </div>
+            </a>
+            <a
+              href="#"
+              className="flex items-center gap-4 bg-black hover:bg-gray-900 text-white rounded-2xl px-8 py-4 transition-all duration-300 hover:scale-105 shadow-2xl group min-w-[200px]"
+            >
+              <img src={appleLogo} alt="App Store" className="w-8 h-8" />
+              <div className="text-left">
+                <div className="text-sm opacity-80">Download on</div>
+                <div className="text-lg font-bold">App Store</div>
+              </div>
+            </a>
+          </div>
+
+          {/* Trust Indicators */}
+          <div className="flex flex-wrap justify-center gap-8 text-white/80">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">⭐</span>
+              <span className="font-medium">4.9/5 Rating</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">📱</span>
+              <span className="font-medium">50,000+ Downloads</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🚚</span>
+              <span className="font-medium">30-Min Delivery</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🔒</span>
+              <span className="font-medium">Secure Payments</span>
+            </div>
+          </div>
+
+          {/* Special Offer Badge */}
+          <div className="mt-12">
+            <div className="inline-flex items-center gap-3 bg-yellow-400 text-black px-6 py-3 rounded-full font-bold text-lg shadow-lg animate-pulse">
+              <span>Limited Time: ₦1,000 OFF + Free Delivery!</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
   )
 }
 

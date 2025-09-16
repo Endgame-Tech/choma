@@ -26,6 +26,7 @@ import { useAlert } from "../../contexts/AlertContext";
 import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
 import DeliveryZoneModal from "../../components/delivery/DeliveryZoneModal";
 import discountService from "../../services/discountService";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const CheckoutScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
@@ -972,12 +973,12 @@ const CheckoutScreen = ({ route, navigation }) => {
                   mealPlan.coverImage
                     ? { uri: mealPlan.coverImage }
                     : mealPlan.planImageUrl
-                    ? { uri: mealPlan.planImageUrl }
-                    : mealPlan.image
-                    ? typeof mealPlan.image === "string"
-                      ? { uri: mealPlan.image }
+                      ? { uri: mealPlan.planImageUrl }
                       : mealPlan.image
-                    : require("../../assets/images/meal-plans/fitfuel.jpg")
+                        ? typeof mealPlan.image === "string"
+                          ? { uri: mealPlan.image }
+                          : mealPlan.image
+                        : require("../../assets/images/meal-plans/fitfuel.jpg")
                 }
                 style={styles(colors).mealPlanImage}
                 resizeMode="cover"
@@ -1515,7 +1516,7 @@ const CheckoutScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

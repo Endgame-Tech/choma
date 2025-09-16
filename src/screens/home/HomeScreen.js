@@ -18,7 +18,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { useAlert } from "../../contexts/AlertContext";
 import { useMealPlans } from "../../hooks/useMealPlans";
 import apiService from "../../services/api";
-import NotificationService from "../../services/notificationService";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
+
 
 // Component imports
 import {
@@ -44,7 +45,8 @@ const HomeScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
   const { user } = useAuth();
   const { showSuccess, showError } = useAlert();
-  const { mealPlans, loading, error, refreshing, refreshMealPlans } = useMealPlans();
+  const { mealPlans, loading, error, refreshing, refreshMealPlans } =
+    useMealPlans();
 
   // State management
   const [selectedCategory, setSelectedCategory] = useState("All Plans");
@@ -88,16 +90,21 @@ const HomeScreen = ({ navigation }) => {
     try {
       setOrdersLoading(true);
       const result = await apiService.getUserOrders();
-      
+
       if (result.success) {
         const orders = result.data?.data || result.data || result.orders || [];
-        const activeOrdersList = Array.isArray(orders) 
-          ? orders.filter(order => {
-              const status = (order.delegationStatus || order.status || order.orderStatus || "").toLowerCase();
+        const activeOrdersList = Array.isArray(orders)
+          ? orders.filter((order) => {
+              const status = (
+                order.delegationStatus ||
+                order.status ||
+                order.orderStatus ||
+                ""
+              ).toLowerCase();
               return status && !["cancelled", "delivered"].includes(status);
             })
           : [];
-        
+
         setActiveOrders(activeOrdersList);
       }
     } catch (error) {
@@ -112,16 +119,21 @@ const HomeScreen = ({ navigation }) => {
     try {
       setSubscriptionLoading(true);
       const result = await apiService.getUserSubscriptions();
-      
+
       if (result.success) {
-        const subscriptions = result.data?.data || result.data || result.subscriptions || [];
+        const subscriptions =
+          result.data?.data || result.data || result.subscriptions || [];
         const activeSubsList = Array.isArray(subscriptions)
-          ? subscriptions.filter(sub => {
+          ? subscriptions.filter((sub) => {
               const status = sub.status?.toLowerCase();
-              return status === "active" || status === "paid" || sub.paymentStatus === "Paid";
+              return (
+                status === "active" ||
+                status === "paid" ||
+                sub.paymentStatus === "Paid"
+              );
             })
           : [];
-        
+
         setActiveSubscriptions(activeSubsList);
       }
     } catch (error) {
@@ -162,8 +174,8 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleSubscriptionUpdate = (updatedSubscription) => {
-    setActiveSubscriptions(prev =>
-      prev.map(sub =>
+    setActiveSubscriptions((prev) =>
+      prev.map((sub) =>
         sub._id === updatedSubscription._id ? updatedSubscription : sub
       )
     );
@@ -192,11 +204,17 @@ const HomeScreen = ({ navigation }) => {
       if (response.success) {
         setShowAddressModal(false);
       } else {
-        showError("Update Failed", response.message || "Failed to update address");
+        showError(
+          "Update Failed",
+          response.message || "Failed to update address"
+        );
       }
     } catch (error) {
       console.error("Error updating address:", error);
-      showError("Update Failed", "An error occurred while updating your address");
+      showError(
+        "Update Failed",
+        "An error occurred while updating your address"
+      );
     }
   };
 
@@ -217,10 +235,16 @@ const HomeScreen = ({ navigation }) => {
     try {
       const result = await apiService.cancelOrder(orderId);
       if (result.success) {
-        showSuccess("Order Cancelled", "Your order has been cancelled successfully");
+        showSuccess(
+          "Order Cancelled",
+          "Your order has been cancelled successfully"
+        );
         await loadActiveOrders();
       } else {
-        showError("Cancellation Failed", result.error || "Unable to cancel order at this time");
+        showError(
+          "Cancellation Failed",
+          result.error || "Unable to cancel order at this time"
+        );
       }
     } catch (error) {
       showError("Error", "Unable to cancel order. Please try again.");
@@ -235,11 +259,12 @@ const HomeScreen = ({ navigation }) => {
 
   const handleTrackDriver = (driver, order) => {
     // Extract driver from driverAssignment if not directly provided
-    const actualDriver = driver || order?.driverAssignment?.driver || order?.driver;
+    const actualDriver =
+      driver || order?.driverAssignment?.driver || order?.driver;
     console.log("Track driver:", actualDriver);
-    navigation.navigate("MapTracking", { 
-      orderId: order?._id || order?.id, 
-      order: order 
+    navigation.navigate("MapTracking", {
+      orderId: order?._id || order?.id,
+      order: order,
     });
   };
 
@@ -342,7 +367,9 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => {}}
           >
             <View style={styles(colors).modalHeader}>
-              <Text style={styles(colors).modalTitle}>Change Delivery Address</Text>
+              <Text style={styles(colors).modalTitle}>
+                Change Delivery Address
+              </Text>
               <TouchableOpacity
                 onPress={() => setShowAddressModal(false)}
                 style={styles(colors).modalCloseButton}
@@ -395,7 +422,7 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

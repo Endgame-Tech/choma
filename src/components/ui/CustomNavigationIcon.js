@@ -1,15 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated } from "react-native";
-
-// Import your custom SVG icons directly using react-native-svg-transformer
-import HomeFilled from "../../../assets/images/icons/navigation/home-filled.svg";
-import HomeOutline from "../../../assets/images/icons/navigation/home-outline.svg";
-import SearchFilled from "../../../assets/images/icons/navigation/search-filled.svg";
-import SearchOutline from "../../../assets/images/icons/navigation/search-outline.svg";
-import CartFilled from "../../../assets/images/icons/navigation/cart-filled.svg";
-import CartOutline from "../../../assets/images/icons/navigation/cart-outline.svg";
-import ProfileFilled from "../../../assets/images/icons/navigation/profile-filled.svg";
-import ProfileOutline from "../../../assets/images/icons/navigation/profile-outline.svg";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
+import CustomIcon, { ICON_SETS } from "./CustomIcon";
 
 const CustomNavigationIcon = ({ route, focused, color, size = 24, colors }) => {
   // Animation values
@@ -53,39 +45,28 @@ const CustomNavigationIcon = ({ route, focused, color, size = 24, colors }) => {
 
   const getIconComponent = () => {
     const iconProps = {
-      width: size,
-      height: size,
-      fill: focused ? colors?.background || "#1a1a1a" : color,
+      size: size,
+      color: focused ? colors?.background || "#1a1a1a" : color,
     };
 
-    switch (route.name) {
-      case "Home":
-        return focused ? (
-          <HomeFilled {...iconProps} />
-        ) : (
-          <HomeOutline {...iconProps} />
-        );
-      case "Search":
-        return focused ? (
-          <SearchFilled {...iconProps} />
-        ) : (
-          <SearchOutline {...iconProps} />
-        );
-      case "Orders":
-        return focused ? (
-          <CartFilled {...iconProps} />
-        ) : (
-          <CartOutline {...iconProps} />
-        );
-      case "Profile":
-        return focused ? (
-          <ProfileFilled {...iconProps} />
-        ) : (
-          <ProfileOutline {...iconProps} />
-        );
-      default:
-        return null;
+    // Route name to icon mapping
+    const routeIconMap = {
+      "Home": "home",
+      "Search": "search", 
+      "Orders": "cart",
+      "Profile": "profile",
+    };
+
+    const iconBaseName = routeIconMap[route.name];
+    if (!iconBaseName) {
+      console.warn(`CustomNavigationIcon: No icon mapping found for route "${route.name}"`);
+      return null;
     }
+
+    // Get the appropriate icon (filled for focused, outline for unfocused)
+    const iconName = focused ? `${iconBaseName}-filled` : `${iconBaseName}-outline`;
+    
+    return <CustomIcon name={iconName} {...iconProps} />;
   };
 
   return (
@@ -124,7 +105,7 @@ const CustomNavigationIcon = ({ route, focused, color, size = 24, colors }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     width: 55,
     height: 55,

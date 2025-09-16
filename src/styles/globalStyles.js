@@ -1,9 +1,10 @@
 // src/styles/globalStyles.js
 import { StyleSheet } from "react-native";
 import { Typography, DEFAULT_FONT_FAMILY } from "../constants/fonts";
+import { createStylesWithDMSans } from "../utils/fontUtils";
 
 // Global text styles using DM Sans
-export const globalTextStyles = StyleSheet.create({
+export const globalTextStyles = createStylesWithDMSans({
   // Default text style - apply this to Text components
   defaultText: {
     fontFamily: DEFAULT_FONT_FAMILY,
@@ -35,7 +36,7 @@ export const globalTextStyles = StyleSheet.create({
 });
 
 // Global container styles
-export const globalContainerStyles = StyleSheet.create({
+export const globalContainerStyles = createStylesWithDMSans({
   container: {
     flex: 1,
     backgroundColor: "#ffffff", // Will be overridden by theme colors
@@ -54,7 +55,7 @@ export const globalContainerStyles = StyleSheet.create({
 });
 
 // Global input styles with DM Sans
-export const globalInputStyles = StyleSheet.create({
+export const globalInputStyles = createStylesWithDMSans({
   textInput: {
     fontFamily: DEFAULT_FONT_FAMILY,
     fontSize: 16,
@@ -77,7 +78,7 @@ export const globalInputStyles = StyleSheet.create({
 });
 
 // Global button styles with DM Sans
-export const globalButtonStyles = StyleSheet.create({
+export const globalButtonStyles = createStylesWithDMSans({
   button: {
     paddingVertical: 12,
     paddingHorizontal: 24,

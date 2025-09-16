@@ -2,6 +2,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { createStylesWithDMSans } from "../utils/fontUtils";
 
 const StatusMessage = ({ type, message, visible = true }) => {
   if (!visible) return null;
@@ -84,7 +85,7 @@ const StatusMessage = ({ type, message, visible = true }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flexDirection: "row",
     alignItems: "center",

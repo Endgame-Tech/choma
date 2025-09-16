@@ -1,5 +1,5 @@
 // src/screens/meal-plans/MealPlanDetailScreen.js
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ import { THEME } from "../../utils/colors";
 import MealPlanDetailSkeleton from "../../components/meal-plans/MealPlanDetailSkeleton";
 import StandardHeader from "../../components/layout/Header";
 import MealDetailModal from "../../components/modals/MealDetailModal";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width, height } = Dimensions.get("window");
 
@@ -39,6 +40,8 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   const [quantity, setQuantity] = useState(1);
   const [mealPlanDetails, setMealPlanDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedMealIndex, setSelectedMealIndex] = useState(0);
   const [currentDayMeals, setCurrentDayMeals] = useState([]);
@@ -49,6 +52,19 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
   // Animation states for smooth expand/collapse
   const animationValues = useRef({}).current;
+
+  // Image loading handlers
+  const handleImageLoad = (imageKey) => {
+    setImageLoadingStates(prev => ({ ...prev, [imageKey]: 'loaded' }));
+  };
+
+  const handleImageError = (imageKey) => {
+    setImageLoadingStates(prev => ({ ...prev, [imageKey]: 'error' }));
+  };
+
+  const handleImageLoadStart = (imageKey) => {
+    setImageLoadingStates(prev => ({ ...prev, [imageKey]: 'loading' }));
+  };
 
   // Open meal modal with swipe functionality
   const openMealModal = (dayMeals, initialMealIndex = 0) => {
@@ -117,41 +133,35 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     const fetchMealPlanDetails = async () => {
       try {
         setLoading(true);
+        setError(null);
 
         // Try multiple ID formats: planId (MP001), _id (ObjectId), or id
         const mealPlanId = bundle.planId || bundle._id || bundle.id;
+        
+        if (!mealPlanId) {
+          throw new Error("No meal plan ID found");
+        }
+
         console.log(
           "🔍 MealPlanDetailScreen: Fetching details for ID:",
           mealPlanId
-        );
-        console.log(
-          "🔍 MealPlanDetailScreen: Bundle structure:",
-          JSON.stringify(bundle, null, 2)
         );
 
         const result = await apiService.getMealPlanDetails(mealPlanId);
 
         if (result.success && result.mealPlan) {
-          console.log(
-            "✅ Meal plan details received:",
-            JSON.stringify(result.mealPlan, null, 2)
-          );
-          console.log(
-            "📋 Weekly meals data:",
-            JSON.stringify(result.mealPlan.weeklyMeals, null, 2)
-          );
-          console.log(
-            "🖼️ Meal images data:",
-            JSON.stringify(result.mealPlan.mealImages, null, 2)
-          );
+          console.log("✅ Meal plan details received");
           setMealPlanDetails(result.mealPlan);
+          setError(null);
         } else {
           console.error("Failed to fetch meal plan details:", result.message);
+          setError("Failed to load meal plan details");
           // Fallback to the bundle data if API call fails
           setMealPlanDetails(bundle);
         }
       } catch (error) {
         console.error("Error fetching meal plan details:", error);
+        setError(error.message || "An error occurred while loading meal plan");
         // Fallback to the bundle data on exception
         setMealPlanDetails(bundle);
       } finally {
@@ -403,8 +413,8 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     </View>
   );
 
-  // Enhanced meal card for horizontal slider (similar to popular meal plans)
-  const renderMealSliderCard = (meal) => {
+  // Enhanced meal card for horizontal slider - memoized
+  const renderMealSliderCard = useCallback((meal) => {
     const defaultImage = require("../../assets/images/meal-plans/fitfuel.jpg");
     const imageSource = meal.image
       ? typeof meal.image === "string"
@@ -477,8 +487,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         </LinearGradient>
       </TouchableOpacity>
     );
-  }; // Toggle day expansion with smooth animation
-  const toggleDayExpansion = (day) => {
+  }, [colors, discountInfo, openMealModal]);
+
+  // Toggle day expansion with smooth animation - memoized
+  const toggleDayExpansion = useCallback((day) => {
     const isExpanding = expandedDay !== day;
 
     if (!animationValues[day]) {
@@ -487,15 +499,19 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
     setExpandedDay(isExpanding ? day : null);
 
+    // Enhanced spring animation for smoother expand/collapse
     Animated.spring(animationValues[day], {
       toValue: isExpanding ? 1 : 0,
       useNativeDriver: false,
-      tension: 100,
-      friction: 8,
+      tension: 120,      // Increased tension for snappier feel
+      friction: 9,       // Slightly increased friction for better control
+      overshootClamping: false, // Allow slight bounce
+      restDisplacementThreshold: 0.01,
+      restSpeedThreshold: 0.01,
     }).start();
-  };
+  }, [expandedDay, animationValues]);
 
-  const renderDayCard = (dayData) => {
+  const renderDayCard = useCallback((dayData) => {
     if (
       dayData.breakfast === "Breakfast not specified" &&
       dayData.lunch === "Lunch not specified" &&
@@ -506,33 +522,55 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     const animationValue =
       animationValues[dayData.day] || new Animated.Value(0);
 
-    // Prepare meal data for horizontal slider
-    const meals = [
-      {
-        icon: "🌅",
-        label: "Breakfast",
-        name: dayData.breakfast,
-        description: dayData.breakfastDescription,
-        image: dayData.breakfastImage,
-        nutrition: dayData.breakfastNutrition,
-      },
-      {
-        icon: "☀️",
-        label: "Lunch",
-        name: dayData.lunch,
-        description: dayData.lunchDescription,
-        image: dayData.lunchImage,
-        nutrition: dayData.lunchNutrition,
-      },
-      {
-        icon: "🌙",
-        label: "Dinner",
-        name: dayData.dinner,
-        description: dayData.dinnerDescription,
-        image: dayData.dinnerImage,
-        nutrition: dayData.dinnerNutrition,
-      },
-    ];
+    // Get available meal types from actual day data (filter out "not specified")
+    const getAllAvailableMealTypes = () => {
+      const mealTypeMap = {
+        breakfast: {
+          icon: "🌅",
+          label: "Breakfast",
+          name: dayData.breakfast,
+          description: dayData.breakfastDescription,
+          image: dayData.breakfastImage,
+          nutrition: dayData.breakfastNutrition,
+        },
+        lunch: {
+          icon: "☀️", 
+          label: "Lunch",
+          name: dayData.lunch,
+          description: dayData.lunchDescription,
+          image: dayData.lunchImage,
+          nutrition: dayData.lunchNutrition,
+        },
+        dinner: {
+          icon: "🌙",
+          label: "Dinner", 
+          name: dayData.dinner,
+          description: dayData.dinnerDescription,
+          image: dayData.dinnerImage,
+          nutrition: dayData.dinnerNutrition,
+        },
+        snack: {
+          icon: "🥜",
+          label: "Snack",
+          name: dayData.snack,
+          description: dayData.snackDescription,
+          image: dayData.snackImage,
+          nutrition: dayData.snackNutrition,
+        },
+      };
+
+      // Filter out meal types that are not specified or missing
+      return Object.entries(mealTypeMap)
+        .filter(([mealType, mealData]) => {
+          return mealData.name && 
+                 mealData.name !== `${mealData.label} not specified` &&
+                 mealData.name.trim() !== '';
+        })
+        .map(([mealType, mealData]) => mealData);
+    };
+
+    // Prepare meal data for horizontal slider (only available meals)
+    const meals = getAllAvailableMealTypes();
 
     return (
       <View
@@ -546,6 +584,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           style={styles(colors).dayHeader}
           onPress={() => toggleDayExpansion(dayData.day)}
           activeOpacity={0.7}
+          accessibilityLabel={`${dayData.day} meals`}
+          accessibilityHint={`Tap to ${expandedDay === dayData.day ? 'collapse' : 'expand'} meal details for ${dayData.day}`}
+          accessibilityRole="button"
+          accessible={true}
         >
           <Text style={styles(colors).dayName}>{dayData.day}</Text>
           <Animated.View
@@ -590,15 +632,25 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               {/* Horizontal Meal Slider */}
               <View style={styles(colors).mealSliderWrapper}>
                 <FlatList
-                  horizontal
+                  horizontal={meals.length > 1}
                   data={meals}
                   keyExtractor={(item) => item.label}
                   renderItem={({ item, index }) => (
-                    <View style={styles(colors).mealCardWrapper}>
+                    <View style={[
+                      styles(colors).mealCardWrapper,
+                      meals.length === 1 && styles(colors).mealCardWrapperSingle
+                    ]}>
                       <TouchableOpacity
-                        style={styles(colors).mealSliderCard}
+                        style={[
+                          styles(colors).mealSliderCard,
+                          meals.length === 1 && styles(colors).mealSliderCardSingle
+                        ]}
                         onPress={() => openMealModal(meals, index)}
                         activeOpacity={0.8}
+                        accessibilityLabel={`${item.label}: ${item.name}`}
+                        accessibilityHint={`Tap to view details about ${item.label}`}
+                        accessibilityRole="button"
+                        accessible={true}
                       >
                         <View style={styles(colors).mealSliderImageContainer}>
                           <Image
@@ -651,10 +703,15 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   decelerationRate="fast"
                   bounces={true}
                   pagingEnabled={false}
-                  removeClippedSubviews={false}
-                  initialNumToRender={3}
-                  maxToRenderPerBatch={3}
-                  windowSize={30}
+                  removeClippedSubviews={true}
+                  initialNumToRender={2}
+                  maxToRenderPerBatch={2}
+                  windowSize={10}
+                  getItemLayout={(data, index) => ({
+                    length: 130,
+                    offset: 130 * index,
+                    index,
+                  })}
                   nestedScrollEnabled={true}
                 />
               </View>
@@ -671,64 +728,52 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           )}
         </Animated.View>
 
-        {/* Collapsed preview (keeps the original compact view when closed) */}
+        {/* Collapsed preview (dynamic meal types based on available data) - Clickable to expand */}
         {expandedDay !== dayData.day && (
-          <View style={styles(colors).mealPreviewContainer}>
-            {dayData.breakfast !== "Breakfast not specified" && (
-              <View style={styles(colors).mealPreview}>
-                <Text style={styles(colors).mealIcon}>🌅</Text>
-                <Text style={styles(colors).mealPreviewText} numberOfLines={1}>
-                  {dayData.breakfast}
+          <TouchableOpacity 
+            style={styles(colors).mealPreviewContainer}
+            onPress={() => toggleDayExpansion(dayData.day)}
+            activeOpacity={0.9}
+            accessibilityLabel={`${dayData.day} meal preview`}
+            accessibilityHint={`Tap to expand and view detailed meal information for ${dayData.day}`}
+            accessibilityRole="button"
+            accessible={true}
+          >
+            {meals.map((meal, index) => (
+              <View 
+                key={`${dayData.day}-${meal.label}-${index}`} 
+                style={[
+                  styles(colors).mealPreview,
+                  meals.length === 1 && styles(colors).mealPreviewSingle
+                ]}
+              >
+                <Text style={styles(colors).mealIcon}>{meal.icon}</Text>
+                <Text 
+                  style={[
+                    styles(colors).mealPreviewText,
+                    meals.length === 1 && styles(colors).mealPreviewTextSingle
+                  ]} 
+                  numberOfLines={1}
+                >
+                  {meal.name}
                 </Text>
-                {dayData.breakfastImage && (
+                {meal.image && (
                   <View style={styles(colors).mealPreviewImageContainer}>
                     <Image
-                      source={{ uri: dayData.breakfastImage }}
+                      source={{ uri: meal.image }}
                       style={styles(colors).mealPreviewImage}
                     />
                   </View>
                 )}
               </View>
-            )}
-            {dayData.lunch !== "Lunch not specified" && (
-              <View style={styles(colors).mealPreview}>
-                <Text style={styles(colors).mealIcon}>☀️</Text>
-                <Text style={styles(colors).mealPreviewText} numberOfLines={1}>
-                  {dayData.lunch}
-                </Text>
-                {dayData.lunchImage && (
-                  <View style={styles(colors).mealPreviewImageContainer}>
-                    <Image
-                      source={{ uri: dayData.lunchImage }}
-                      style={styles(colors).mealPreviewImage}
-                    />
-                  </View>
-                )}
-              </View>
-            )}
-            {dayData.dinner !== "Dinner not specified" && (
-              <View style={styles(colors).mealPreview}>
-                <Text style={styles(colors).mealIcon}>🌙</Text>
-                <Text style={styles(colors).mealPreviewText} numberOfLines={1}>
-                  {dayData.dinner}
-                </Text>
-                {dayData.dinnerImage && (
-                  <View style={styles(colors).mealPreviewImageContainer}>
-                    <Image
-                      source={{ uri: dayData.dinnerImage }}
-                      style={styles(colors).mealPreviewImage}
-                    />
-                  </View>
-                )}
-              </View>
-            )}
-          </View>
+            ))}
+          </TouchableOpacity>
         )}
       </View>
     );
-  };
+  }, [animationValues, expandedDay, toggleDayExpansion, openMealModal, colors, discountInfo]);
 
-  const renderWeekTabs = () => {
+  const renderWeekTabs = useCallback(() => {
     const availableWeeks = Object.keys(weeklyMealPlan)
       .map((weekNum) => parseInt(weekNum))
       .filter(
@@ -759,6 +804,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               setSelectedWeek(week);
               setExpandedDay(null);
             }}
+            accessibilityLabel={`Week ${week}`}
+            accessibilityHint={`Tap to view meal plan for week ${week}`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: selectedWeek === week }}
+            accessible={true}
           >
             <Text
               style={[
@@ -772,9 +822,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         ))}
       </View>
     );
-  };
+  }, [weeklyMealPlan, selectedWeek, setSelectedWeek, setExpandedDay, colors]);
 
-  const renderFeature = (feature) => (
+  const renderFeature = useCallback((feature) => (
     <View key={feature.title} style={styles(colors).featureItem}>
       <View style={styles(colors).featureIcon}>
         <Ionicons name={feature.icon} size={24} color={colors.primary} />
@@ -786,12 +836,65 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         </Text>
       </View>
     </View>
-  );
+  ), [colors]);
 
-  const weeklyMealPlan = getWeeklyMealPlan();
+  const weeklyMealPlan = getWeeklyMealPlan;
 
   if (loading) {
     return <MealPlanDetailSkeleton />;
+  }
+
+  // Error state with retry option
+  if (error && !mealPlanDetails) {
+    return (
+      <SafeAreaView style={styles(colors).container}>
+        <StandardHeader
+          title="Details"
+          onBackPress={() => navigation.goBack()}
+          showRightIcon={false}
+        />
+        <View style={styles(colors).errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={colors.error} />
+          <Text style={styles(colors).errorTitle}>Oops! Something went wrong</Text>
+          <Text style={styles(colors).errorMessage}>{error}</Text>
+          <TouchableOpacity
+            style={styles(colors).retryButton}
+            accessibilityLabel="Retry loading meal plan"
+            accessibilityHint="Tap to try loading the meal plan details again"
+            accessibilityRole="button"
+            accessible={true}
+            onPress={() => {
+              setError(null);
+              setLoading(true);
+              // Re-trigger the useEffect by updating a dependency
+              const fetchMealPlanDetails = async () => {
+                try {
+                  setLoading(true);
+                  setError(null);
+                  const mealPlanId = bundle.planId || bundle._id || bundle.id;
+                  const result = await apiService.getMealPlanDetails(mealPlanId);
+                  if (result.success && result.mealPlan) {
+                    setMealPlanDetails(result.mealPlan);
+                  } else {
+                    setError("Failed to load meal plan details");
+                    setMealPlanDetails(bundle);
+                  }
+                } catch (error) {
+                  setError(error.message || "An error occurred");
+                  setMealPlanDetails(bundle);
+                } finally {
+                  setLoading(false);
+                }
+              };
+              fetchMealPlanDetails();
+            }}
+          >
+            <Ionicons name="refresh" size={20} color={colors.white} />
+            <Text style={styles(colors).retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -807,9 +910,18 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       <ScrollView
         style={styles(colors).scrollView}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Hero Section */}
         <View style={styles(colors).heroContainer}>
+          {/* Loading overlay for hero image */}
+          {imageLoadingStates['hero'] === 'loading' && (
+            <View style={styles(colors).imageLoadingOverlay}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          )}
+          
           <Image
             source={
               mealPlanDetails?.planImageUrl
@@ -818,6 +930,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             }
             style={styles(colors).heroImage}
             defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+            onLoadStart={() => handleImageLoadStart('hero')}
+            onLoad={() => handleImageLoad('hero')}
+            onError={() => handleImageError('hero')}
           />
 
           {/* Quantity Controls */}
@@ -825,19 +940,41 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             <TouchableOpacity
               style={styles(colors).quantityButton}
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
+              accessibilityLabel="Decrease quantity"
+              accessibilityHint="Tap to reduce the number of meal plans"
+              accessibilityRole="button"
+              disabled={quantity <= 1}
+              accessible={true}
             >
               <Ionicons name="remove" size={20} color={"#FFFFFF"} />
             </TouchableOpacity>
-            <Text style={styles(colors).quantityText}>{quantity}</Text>
+            <Text 
+              style={styles(colors).quantityText}
+              accessibilityLabel={`Quantity: ${quantity}`}
+              accessibilityRole="text"
+              accessible={true}
+            >
+              {quantity}
+            </Text>
             <TouchableOpacity
               style={styles(colors).quantityButton}
               onPress={() => setQuantity(quantity + 1)}
+              accessibilityLabel="Increase quantity"
+              accessibilityHint="Tap to add more meal plans"
+              accessibilityRole="button"
+              accessible={true}
             >
               <Ionicons name="add" size={20} color={"#FFFFFF"} />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles(colors).bookmarkButton}>
+          <TouchableOpacity 
+            style={styles(colors).bookmarkButton}
+            accessibilityLabel="Add to favorites"
+            accessibilityHint="Tap to save this meal plan to your favorites"
+            accessibilityRole="button"
+            accessible={true}
+          >
             <Ionicons name="heart-outline" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -1178,6 +1315,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         <TouchableOpacity
           style={styles(colors).customizeButton}
           onPress={() => navigation.navigate("Customize", { bundle })}
+          accessibilityLabel="Customize meal plan"
+          accessibilityHint="Tap to customize this meal plan to your preferences"
+          accessibilityRole="button"
+          accessible={true}
         >
           <Ionicons name="options" size={20} color={colors.border2} />
           <Text style={styles(colors).customizeText}></Text>
@@ -1195,6 +1336,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 bundle?.id,
             });
           }}
+          accessibilityLabel={`Add ${quantity} meal plan${quantity > 1 ? 's' : ''} to subscription`}
+          accessibilityHint="Tap to proceed to checkout with this meal plan"
+          accessibilityRole="button"
+          accessible={true}
         >
           <Text style={styles(colors).addToCartText}>
             {width < 375
@@ -1216,7 +1361,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,
@@ -1254,6 +1399,41 @@ const styles = (colors) =>
     scrollView: {
       flex: 1,
     },
+    errorContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 40,
+    },
+    errorTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: colors.text,
+      marginTop: 20,
+      marginBottom: 10,
+      textAlign: "center",
+    },
+    errorMessage: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: 30,
+      lineHeight: 24,
+    },
+    retryButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 25,
+      gap: 8,
+    },
+    retryButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.black,
+    },
     heroContainer: {
       position: "relative",
       margin: 15,
@@ -1266,6 +1446,18 @@ const styles = (colors) =>
     heroImage: {
       width: "100%",
       height: "100%",
+    },
+    imageLoadingOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: colors.cardBackground,
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1,
+      borderRadius: 30,
     },
     imageGradientOverlay: {
       position: "absolute",
@@ -1560,11 +1752,22 @@ const styles = (colors) =>
     },
     mealPreviewContainer: {
       gap: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
     },
     mealPreview: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+    },
+    mealPreviewSingle: {
+      width: "100%",
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      backgroundColor: colors.cardBackground,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     mealIcon: {
       fontSize: 16,
@@ -1574,6 +1777,11 @@ const styles = (colors) =>
       fontSize: 12,
       color: colors.textMuted,
       flex: 1,
+    },
+    mealPreviewTextSingle: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: "500",
     },
     mealPreviewImageContainer: {
       position: "relative",
@@ -1974,11 +2182,15 @@ const styles = (colors) =>
     },
     mealSliderContainer: {
       paddingHorizontal: 15,
-      paddingVertical: 15,
+      // paddingVertical: 15,
       alignItems: "center",
     },
     mealCardWrapper: {
       marginRight: 15,
+    },
+    mealCardWrapperSingle: {
+      marginRight: 0,
+      width: "100%",
     },
     mealSliderCard: {
       width: 130,
@@ -1991,6 +2203,12 @@ const styles = (colors) =>
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 4,
+    },
+    mealSliderCardSingle: {
+      width: "100%",
+      height: 125,
+      flexDirection: "row",
+      // alignItems: "center",
     },
     mealSliderImageContainer: {
       width: "100%",
@@ -2021,7 +2239,7 @@ const styles = (colors) =>
     mealSliderLabel: {
       fontSize: 12,
       fontWeight: "bold",
-      color: colors.black,
+      color: colors.white,
       flexShrink: 1,
       minWidth: 0,
       marginBottom: 1,
@@ -2030,7 +2248,7 @@ const styles = (colors) =>
       fontSize: 14,
       color: colors.white,
       marginTop: 5,
-      fontWeight: "bold",
+      fontWeight: 300,
       flexShrink: 1,
       minWidth: 0,
     },

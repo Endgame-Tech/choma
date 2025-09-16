@@ -11,12 +11,13 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import apiService from "../../services/api";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-const QuickSearchBar = ({ 
+const QuickSearchBar = ({
   navigation,
   onSearchFocus,
   onSearchSubmit,
-  placeholder = "Search for meal plans..."
+  placeholder = "Search for meal plans...",
 }) => {
   const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,7 +25,9 @@ const QuickSearchBar = ({
   const [loadingPopular, setLoadingPopular] = useState(true);
 
   if (!colors) {
-    console.error("❌ QuickSearchBar: colors is undefined - theme context missing");
+    console.error(
+      "❌ QuickSearchBar: colors is undefined - theme context missing"
+    );
     return null;
   }
 
@@ -35,21 +38,21 @@ const QuickSearchBar = ({
   const loadPopularSearches = async () => {
     try {
       setLoadingPopular(true);
-      
+
       // Try to get meal plan names from API first
       const mealPlansResult = await apiService.getMealPlans();
-      
+
       if (mealPlansResult.success && mealPlansResult.data) {
-        const mealPlans = Array.isArray(mealPlansResult.data) 
-          ? mealPlansResult.data 
+        const mealPlans = Array.isArray(mealPlansResult.data)
+          ? mealPlansResult.data
           : mealPlansResult.data.data || [];
-        
+
         // Extract unique plan names
         const planNames = mealPlans
-          .map(plan => plan.planName || plan.name || plan.title)
-          .filter(name => name && name.length > 0)
+          .map((plan) => plan.planName || plan.name || plan.title)
+          .filter((name) => name && name.length > 0)
           .slice(0, 6); // Limit to 6 popular searches
-        
+
         if (planNames.length > 0) {
           console.log("✅ Loaded popular searches from meal plans:", planNames);
           setPopularSearches(planNames);
@@ -75,7 +78,7 @@ const QuickSearchBar = ({
       "Family Feast",
       "Wellness Wonder",
       "Quick Bites",
-      "Healthy Choice"
+      "Healthy Choice",
     ];
   };
 
@@ -103,10 +106,10 @@ const QuickSearchBar = ({
       {/* Search Input */}
       <View style={styles(colors).searchContainer}>
         <View style={styles(colors).searchInputContainer}>
-          <Ionicons 
-            name="search" 
-            size={20} 
-            color={colors.textSecondary} 
+          <Ionicons
+            name="search"
+            size={20}
+            color={colors.textSecondary}
             style={styles(colors).searchIcon}
           />
           <TextInput
@@ -124,7 +127,11 @@ const QuickSearchBar = ({
               onPress={() => setSearchQuery("")}
               style={styles(colors).clearButton}
             >
-              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -138,7 +145,7 @@ const QuickSearchBar = ({
             <ActivityIndicator size="small" color={colors.primary} />
           )}
         </View>
-        
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -160,7 +167,7 @@ const QuickSearchBar = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       backgroundColor: colors.background,
       paddingHorizontal: 20,

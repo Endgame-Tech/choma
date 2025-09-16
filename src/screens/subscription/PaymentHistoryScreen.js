@@ -14,8 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import paymentService from '../../services/paymentService';
 import { useAuth } from '../../hooks/useAuth';
-import { useTheme } '../../styles/theme';
+import { useTheme } from '../../styles/theme';
 import { APP_CONFIG } from '../../utils/constants';
+import { createStylesWithDMSans } from '../../utils/fontUtils';
 
 const PaymentHistoryScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -255,7 +256,7 @@ const PaymentHistoryScreen = ({ navigation }) => {
   );
 };
 
-const styles = (colors) => StyleSheet.create({
+const styles = (colors) =>createStylesWithDMSans({
   container: {
     flex: 1,
     backgroundColor: colors.background,

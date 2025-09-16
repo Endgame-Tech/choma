@@ -1,14 +1,9 @@
 import React from "react";
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import MealProgressionTimeline from "../subscription/MealProgressionTimeline";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const MealTimelineModal = ({
   visible = false,
@@ -51,7 +46,7 @@ const MealTimelineModal = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

@@ -817,6 +817,41 @@ function organizeScheduleByWeek(assignments, useV2Format = false) {
         imageUrl:
           assignment.imageUrl ||
           (assignment.mealIds[0] ? assignment.mealIds[0].image : ""),
+        // Include nutrition data from individual meals
+        nutrition: {
+          calories: assignment.mealIds.reduce(
+            (sum, meal) => sum + (meal?.nutrition?.calories || 0),
+            0
+          ),
+          protein: assignment.mealIds.reduce(
+            (sum, meal) => sum + (meal?.nutrition?.protein || 0),
+            0
+          ),
+          carbs: assignment.mealIds.reduce(
+            (sum, meal) => sum + (meal?.nutrition?.carbs || 0),
+            0
+          ),
+          fat: assignment.mealIds.reduce(
+            (sum, meal) => sum + (meal?.nutrition?.fat || 0),
+            0
+          ),
+          fiber: assignment.mealIds.reduce(
+            (sum, meal) => sum + (meal?.nutrition?.fiber || 0),
+            0
+          ),
+          sugar: assignment.mealIds.reduce(
+            (sum, meal) => sum + (meal?.nutrition?.sugar || 0),
+            0
+          ),
+        },
+        // Include individual meal details with nutrition
+        mealDetails: assignment.mealIds.map((meal) => ({
+          id: meal._id,
+          name: meal.name,
+          image: meal.image,
+          nutrition: meal.nutrition || {},
+          pricing: meal.pricing || {},
+        })),
       };
     } else {
       // Original format for other uses

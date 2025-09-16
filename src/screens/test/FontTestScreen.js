@@ -131,7 +131,7 @@ const FontTestScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
   },

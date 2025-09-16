@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../utils/colors";
 import { useTheme } from "../../styles/theme";
 import apiService from "../../services/api";
+import { formatDateRelative } from "../../utils/dateUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -49,18 +50,18 @@ const MealProgressionTimeline = ({
         subscriptionId,
         14 // Show 2 weeks instead of 7 days
       );
-      
+
       // Enhanced error checking
       if (!result) {
         console.log("Silent timeline update: No response received");
         return;
       }
-      
+
       if (!result.success) {
         console.log("Silent timeline update: API returned success: false");
         return;
       }
-      
+
       if (!result.data) {
         console.log("Silent timeline update: No data received");
         return;
@@ -72,10 +73,7 @@ const MealProgressionTimeline = ({
         timelineData = result.data;
       } else if (Array.isArray(result.data.data)) {
         timelineData = result.data.data;
-      } else if (
-        result.data.timeline &&
-        Array.isArray(result.data.timeline)
-      ) {
+      } else if (result.data.timeline && Array.isArray(result.data.timeline)) {
         timelineData = result.data.timeline;
       }
 
@@ -86,36 +84,47 @@ const MealProgressionTimeline = ({
 
       // Group meals by day
       const groupedByDay = groupMealsByDay(timelineData);
-      
+
       setTimeline((prevTimeline) => {
         const newTimeline = [...prevTimeline];
         let hasChanges = false;
-        
+
         // Update status for existing timeline items without triggering refresh
         groupedByDay.forEach((newItem) => {
           const existingIndex = newTimeline.findIndex(
-            (item) => new Date(item.date).toDateString() === new Date(newItem.date).toDateString()
+            (item) =>
+              new Date(item.date).toDateString() ===
+              new Date(newItem.date).toDateString()
           );
-          
+
           if (existingIndex !== -1) {
             const existing = newTimeline[existingIndex];
-            const newOrder = newItem.order || newItem.mealAssignment?.order || {};
-            const newStatus = newOrder.orderStatus || newOrder.status || newOrder.delegationStatus;
-            const existingOrder = existing.order || existing.mealAssignment?.order || {};
-            const existingStatus = existingOrder.orderStatus || existingOrder.status || existingOrder.delegationStatus;
-            
+            const newOrder =
+              newItem.order || newItem.mealAssignment?.order || {};
+            const newStatus =
+              newOrder.orderStatus ||
+              newOrder.status ||
+              newOrder.delegationStatus;
+            const existingOrder =
+              existing.order || existing.mealAssignment?.order || {};
+            const existingStatus =
+              existingOrder.orderStatus ||
+              existingOrder.status ||
+              existingOrder.delegationStatus;
+
             // Only update if status has actually changed
             if (newStatus && newStatus !== existingStatus) {
-              console.log(`📱 Meal status update for ${newItem.date}: ${existingStatus} → ${newStatus}`);
+              console.log(
+                `📱 Meal status update for ${newItem.date}: ${existingStatus} → ${newStatus}`
+              );
               newTimeline[existingIndex] = { ...existing, ...newItem };
               hasChanges = true;
             }
           }
         });
-        
+
         return hasChanges ? newTimeline : prevTimeline;
       });
-      
     } catch (error) {
       console.log("Silent timeline update failed:", error.message);
       // Don't show error to user for silent updates
@@ -139,7 +148,10 @@ const MealProgressionTimeline = ({
         order.orderStatus ||
         ""
       ).toLowerCase();
-      return status && !["cancelled", "delivered"].includes(status) || item.dayType === "current";
+      return (
+        (status && !["cancelled", "delivered"].includes(status)) ||
+        item.dayType === "current"
+      );
     });
 
     if (hasActiveMeals && timeline.length > 0 && subscriptionId) {
@@ -352,9 +364,8 @@ const MealProgressionTimeline = ({
 
     try {
       // Try to get subscription details to generate timeline
-      const subscriptionResult = await apiService.getSubscription(
-        subscriptionId
-      );
+      const subscriptionResult =
+        await apiService.getSubscription(subscriptionId);
       const subscription = subscriptionResult?.data || {};
 
       console.log(
@@ -413,8 +424,8 @@ const MealProgressionTimeline = ({
               dayType === "past"
                 ? "delivered"
                 : dayType === "current"
-                ? "ready"
-                : "scheduled",
+                  ? "ready"
+                  : "scheduled",
           },
           meals: [
             {
@@ -466,8 +477,8 @@ const MealProgressionTimeline = ({
             dayType === "past"
               ? "Delivered"
               : dayType === "current"
-              ? "Ready"
-              : "Upcoming"
+                ? "Ready"
+                : "Upcoming"
           } Meal`,
           customDescription: `Delicious ${
             i < 0 ? "delivered" : "prepared"
@@ -488,8 +499,8 @@ const MealProgressionTimeline = ({
             dayType === "past"
               ? "delivered"
               : dayType === "current"
-              ? "ready"
-              : "scheduled",
+                ? "ready"
+                : "scheduled",
         },
         meals: [
           {
@@ -734,7 +745,7 @@ const MealProgressionTimeline = ({
     const order = item.order || item.mealAssignment?.order || {};
     const orderStatus = order?.orderStatus || order?.status;
     const delegationStatus = order?.delegationStatus;
-    
+
     // Use the same logic as CompactOrderCard - prioritize delegationStatus first (chef updates), then fallback
     const rawFinalStatus = delegationStatus || orderStatus || "";
 
@@ -743,49 +754,52 @@ const MealProgressionTimeline = ({
       // Step 1: Order Placed
       pending: "Order Placed",
       "order placed": "Order Placed",
-      
+
       // Step 2: Admin assigns chef
       "pending assignment": "Pending Assignment",
       "not assigned": "Pending Assignment",
-      
+
       // Step 3: Chef accepts order
       assigned: "Order Confirmed",
       accepted: "Order Confirmed",
       confirmed: "Order Confirmed",
-      
+
       // Step 4: Chef prepares food
       "in progress": "Preparing",
       preparing: "Preparing",
       "preparing food": "Preparing",
       inprogress: "Preparing",
-      
+
       // Step 5: Quality check and ready
       ready: "Ready",
       "food ready": "Ready",
       "quality check": "Quality Check",
       qualitycheck: "Quality Check",
-      
+
       // Step 6: Out for delivery
       delivering: "Out for Delivery",
       "out for delivery": "Out for Delivery",
       outfordelivery: "Out for Delivery",
-      
+
       // Step 7: Delivered
       delivered: "Delivered",
       completed: "Delivered",
-      
+
       // Cancellation
       cancelled: "Cancelled",
     };
 
     const normalizedStatus = rawFinalStatus.toLowerCase();
-    const mappedStatus = statusMap[normalizedStatus] || rawFinalStatus || "Processing";
-    
+    const mappedStatus =
+      statusMap[normalizedStatus] || rawFinalStatus || "Processing";
+
     // Debug logging to track status mapping
     if (rawFinalStatus) {
-      console.log(`📊 Timeline status mapping: "${rawFinalStatus}" → "${mappedStatus}"`);
+      console.log(
+        `📊 Timeline status mapping: "${rawFinalStatus}" → "${mappedStatus}"`
+      );
     }
-    
+
     return mappedStatus;
   };
 
@@ -1403,7 +1417,7 @@ const MealProgressionTimeline = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = createStylesWithDMSans({
   container: {
     flex: 1,
   },

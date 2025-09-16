@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import CompactOrderCard from "../orders/CompactOrderCard";
 import RecurringDeliveryCard from "../orders/RecurringDeliveryCard";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const ActiveOrdersSection = ({
   orders = [],
@@ -107,7 +108,9 @@ const ActiveOrdersSection = ({
             style={styles(colors).browseButton}
             onPress={() => navigation.navigate("Search")}
           >
-            <Text style={styles(colors).browseButtonText}>Browse Meal Plans</Text>
+            <Text style={styles(colors).browseButtonText}>
+              Browse Meal Plans
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -139,7 +142,7 @@ const ActiveOrdersSection = ({
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     section: {
       marginBottom: 24,
     },
