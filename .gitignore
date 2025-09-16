@@ -75,6 +75,8 @@ claude/
 google-services.json
 GoogleService-Info.plist
 firebase-service-account.json
+getchoma-bca76-firebase-adminsdk-fbsvc-*.json
+*-firebase-adminsdk-*.json
 
 #Ignore vscode AI rules
 .github\copilot-instructions.md
