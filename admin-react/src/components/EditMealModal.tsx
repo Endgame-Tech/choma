@@ -2,6 +2,7 @@ import React from 'react'
 import { useState, useEffect } from 'react'
 import { type Meal } from '../services/mealApi'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import ImageUpload from './ImageUpload'
 
 interface EditMealModalProps {
   isOpen: boolean
@@ -297,29 +298,17 @@ export default function EditMealModal({ isOpen, onClose, onSubmit, meal }: EditM
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                Image URL
+                Meal Image
               </label>
-              <input
-                type="url"
-                name="image"
-                value={formData.image}
-                onChange={handleInputChange}
-                title="Enter image URL"
-                placeholder="https://example.com/image.jpg"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              <ImageUpload
+                currentImageUrl={formData.image}
+                onImageUpload={(imageUrl) => setFormData(prev => ({ ...prev, image: imageUrl }))}
+                uploadEndpoint="/upload/meal-image"
+                label="Upload Meal Image"
+                className="w-full"
+                enableCropping={true}
+                cropAspectRatio={1080 / 1350}
               />
-              {formData.image && (
-                <div className="mt-2">
-                  <img
-                    src={formData.image}
-                    alt="Meal preview"
-                    className="h-20 w-20 object-cover rounded-lg"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Pricing Information */}

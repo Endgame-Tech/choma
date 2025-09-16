@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { uploadFile } from '../services/api'
+import ImageCropModal from './ImageCropModal'
 
 interface ImageUploadProps {
   currentImageUrl?: string
@@ -9,6 +10,9 @@ interface ImageUploadProps {
   maxSizeMB?: number
   disabled?: boolean
   label?: string
+  uploadEndpoint?: string  // New prop for different upload endpoints
+  enableCropping?: boolean // New prop to enable/disable cropping
+  cropAspectRatio?: number // Custom aspect ratio for cropping
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -18,12 +22,67 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   accept = 'image/*',
   maxSizeMB = 5,
   disabled = false,
-  label = 'Upload Image'
+  label = 'Upload Image',
+  uploadEndpoint = '/upload/banner-image',  // Default to banner endpoint
+  enableCropping = true, // Enable cropping by default
+  cropAspectRatio = 1080 / 1350 // Default to 1080x1350 aspect ratio
 }) => {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null)
+  const [compressionInfo, setCompressionInfo] = useState<string | null>(null)
+  const [showCropModal, setShowCropModal] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const compressImage = (file: File, maxWidth: number = 1200, quality: number = 0.8): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width
+            width = maxWidth
+          }
+        } else {
+          if (height > maxWidth) {
+            width = (width * maxWidth) / height
+            height = maxWidth
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height)
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              })
+              resolve(compressedFile)
+            } else {
+              resolve(file) // Fallback to original file
+            }
+          },
+          'image/jpeg',
+          quality
+        )
+      }
+
+      img.onerror = () => resolve(file) // Fallback to original file
+      img.src = URL.createObjectURL(file)
+    })
+  }
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -42,15 +101,63 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       return
     }
 
+    setError(null)
+
+    // If cropping is enabled, show crop modal
+    if (enableCropping) {
+      setSelectedFile(file)
+      setShowCropModal(true)
+    } else {
+      // Process file directly without cropping
+      await processAndUploadFile(file)
+    }
+  }
+
+  const processAndUploadFile = async (file: File) => {
+    // Compress image before upload if it's large
+    let fileToUpload = file
+    const fileSizeMB = file.size / (1024 * 1024)
+
+    if (fileSizeMB > 1) { // Compress files larger than 1MB
+      try {
+        // For cropped images, use higher max dimensions to preserve the 1080×1350 crop
+        const maxDimension = enableCropping ? 1400 : 1200
+        fileToUpload = await compressImage(file, maxDimension, 0.8)
+        const compressionRatio = ((file.size - fileToUpload.size) / file.size * 100).toFixed(1)
+        setCompressionInfo(`Compressed by ${compressionRatio}% (${(file.size / 1024 / 1024).toFixed(1)}MB → ${(fileToUpload.size / 1024 / 1024).toFixed(1)}MB)`)
+        console.log(`📦 Image compressed: ${file.size} → ${fileToUpload.size} bytes`)
+      } catch (error) {
+        console.warn('Image compression failed, using original file:', error)
+        setCompressionInfo(null)
+      }
+    } else {
+      setCompressionInfo(null)
+    }
+
     // Create preview
     const reader = new FileReader()
     reader.onload = (e) => {
       setPreviewUrl(e.target?.result as string)
     }
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(fileToUpload)
 
     // Upload file
-    await handleUpload(file)
+    await handleUpload(fileToUpload)
+  }
+
+  const handleCropComplete = async (croppedFile: File) => {
+    setShowCropModal(false)
+    setSelectedFile(null)
+    await processAndUploadFile(croppedFile)
+  }
+
+  const handleCropCancel = () => {
+    setShowCropModal(false)
+    setSelectedFile(null)
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const handleUpload = async (file: File) => {
@@ -61,7 +168,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const formData = new FormData()
       formData.append('image', file)
 
-      const response = await uploadFile('/upload/banner-image', formData)
+      const response = await uploadFile(uploadEndpoint, formData)
 
       if (response.success) {
         onImageUpload(response.imageUrl || '')
@@ -79,6 +186,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const handleRemove = () => {
     setPreviewUrl(null)
+    setCompressionInfo(null)
     onImageUpload('')
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -173,6 +281,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-500">
                     PNG, JPG, GIF up to {maxSizeMB}MB
+                    {enableCropping && <span className="block">Images will be cropped to 1080×1350</span>}
                   </p>
                 </div>
               </div>
@@ -180,6 +289,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           </div>
         )}
       </div>
+
+      {/* Compression Info */}
+      {compressionInfo && (
+        <div className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-2">
+          📦 {compressionInfo}
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -208,6 +324,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             Remove
           </button>
         </div>
+      )}
+
+      {/* Image Crop Modal */}
+      {selectedFile && (
+        <ImageCropModal
+          isOpen={showCropModal}
+          onClose={handleCropCancel}
+          onCropComplete={handleCropComplete}
+          imageFile={selectedFile}
+          aspectRatio={cropAspectRatio}
+        />
       )}
     </div>
   )

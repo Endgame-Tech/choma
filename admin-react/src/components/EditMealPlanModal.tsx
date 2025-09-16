@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import type { MealPlan as ApiMealPlan } from '../services/mealApi'
 import type { MealPlan as UiMealPlan } from '../types'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import ImageUpload from './ImageUpload'
 
 interface EditMealPlanModalProps {
   isOpen: boolean
@@ -49,8 +50,8 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
         coverImage: typeof mealPlanRec.coverImage === 'string' ? mealPlanRec.coverImage as string : '',
         durationWeeks: typeof mealPlanRec.durationWeeks === 'number' ? String(mealPlanRec.durationWeeks as number) : (typeof mealPlanRec.durationWeeks === 'string' ? mealPlanRec.durationWeeks as string : '4'),
         targetAudience: typeof mealPlanRec.targetAudience === 'string' ? mealPlanRec.targetAudience as string : 'Family',
-        mealTypes: Array.isArray(mealPlanRec.mealTypes) && mealPlanRec.mealTypes.length > 0 
-          ? (mealPlanRec.mealTypes as string[]) 
+        mealTypes: Array.isArray(mealPlanRec.mealTypes) && mealPlanRec.mealTypes.length > 0
+          ? (mealPlanRec.mealTypes as string[])
           : ['breakfast', 'lunch', 'dinner'], // Only default if no meal types or empty array
         planFeatures: Array.isArray(mealPlanRec.planFeatures) ? (mealPlanRec.planFeatures as string[]).join(', ') : (typeof mealPlanRec.planFeatures === 'string' ? mealPlanRec.planFeatures as string : ''),
         adminNotes: typeof mealPlanRec.adminNotes === 'string' ? mealPlanRec.adminNotes as string : ''
@@ -198,40 +199,28 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
-                  Cover Image URL
+                  Cover Image
                 </label>
-                <input
-                  type="url"
-                  name="coverImage"
-                  value={formData.coverImage}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://example.com/plan-cover.jpg"
+                <ImageUpload
+                  currentImageUrl={formData.coverImage}
+                  onImageUpload={(imageUrl) => setFormData(prev => ({ ...prev, coverImage: imageUrl }))}
+                  uploadEndpoint="/upload/meal-plan-image"
+                  label="Upload Cover Image"
+                  className="w-full"
+                  enableCropping={true}
+                  cropAspectRatio={1080 / 1350}
                 />
-                {formData.coverImage && (
-                  <div className="mt-2 flex space-x-4">
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Current Image</div>
-                      <img
-                        src={mealPlan.coverImage}
-                        alt="Current plan cover"
-                        className="h-20 w-28 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">New Image Preview</div>
-                      <img
-                        src={formData.coverImage}
-                        alt="New plan cover preview"
-                        className="h-20 w-28 object-cover rounded-lg border-2 border-blue-200"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                        }}
-                      />
-                    </div>
+                {mealPlan.coverImage && formData.coverImage !== mealPlan.coverImage && (
+                  <div className="mt-2">
+                    <div className="text-xs text-gray-500 mb-1">Original Image</div>
+                    <img
+                      src={mealPlan.coverImage}
+                      alt="Original plan cover"
+                      className="h-20 w-28 object-cover rounded-lg opacity-60"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
                   </div>
                 )}
               </div>

@@ -2,6 +2,7 @@ import React from 'react'
 import { useState } from 'react'
 import { type MealPlan } from '../services/mealApi'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import ImageUpload from './ImageUpload'
 
 interface CreateMealPlanModalProps {
   isOpen: boolean
@@ -11,7 +12,7 @@ interface CreateMealPlanModalProps {
 
 const targetAudiences = [
   'Fitness',
-  'Professional', 
+  'Professional',
   'Family',
   'Wellness',
   'Weight Loss',
@@ -53,7 +54,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.planName || !formData.description) {
       alert('Please fill in all required fields')
       return
@@ -79,7 +80,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
 
 
       await onSubmit(planData)
-      
+
       // Reset form
       setFormData({
         planName: '',
@@ -168,28 +169,17 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
-                  Cover Image URL
+                  Cover Image
                 </label>
-                <input
-                  type="url"
-                  name="coverImage"
-                  value={formData.coverImage}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://example.com/plan-cover.jpg"
+                <ImageUpload
+                  currentImageUrl={formData.coverImage}
+                  onImageUpload={(imageUrl) => setFormData(prev => ({ ...prev, coverImage: imageUrl }))}
+                  uploadEndpoint="/upload/meal-plan-image"
+                  label="Upload Cover Image"
+                  className="w-full"
+                  enableCropping={true}
+                  cropAspectRatio={1080 / 1350}
                 />
-                {formData.coverImage && (
-                  <div className="mt-2">
-                    <img 
-                      src={formData.coverImage} 
-                      alt="Plan cover preview" 
-                      className="h-24 w-32 object-cover rounded-lg"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                      }}
-                    />
-                  </div>
-                )}
               </div>
             </div>
 
@@ -249,11 +239,10 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
                   ].map(mealType => (
                     <label
                       key={mealType.id}
-                      className={`flex items-center space-x-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        formData.mealTypes.includes(mealType.id)
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                          : 'border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 hover:border-gray-300 dark:hover:border-neutral-500 text-gray-700 dark:text-neutral-200'
-                      }`}
+                      className={`flex items-center space-x-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all ${formData.mealTypes.includes(mealType.id)
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 hover:border-gray-300 dark:hover:border-neutral-500 text-gray-700 dark:text-neutral-200'
+                        }`}
                     >
                       <input
                         type="checkbox"
@@ -267,7 +256,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-neutral-400 mt-2">
-                  Selected: {formData.mealTypes.length} meal type{formData.mealTypes.length !== 1 ? 's' : ''} 
+                  Selected: {formData.mealTypes.length} meal type{formData.mealTypes.length !== 1 ? 's' : ''}
                   {formData.mealTypes.length > 0 && (
                     <span className="ml-1">
                       ({formData.mealTypes.map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ')})
