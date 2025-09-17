@@ -205,4 +205,42 @@ router.post(
   }
 );
 
+// Upload tag image endpoint (admin only)
+router.post(
+  "/tag-image",
+  adminAuth.authenticateAdmin,
+  uploadToFolder("tags").single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No tag image file provided",
+        });
+      }
+
+      // The file is already uploaded to Cloudinary by multer
+      const imageUrl = req.file.path;
+      const publicId = req.file.filename;
+
+      console.log("✅ Tag image uploaded successfully to:", imageUrl);
+
+      res.json({
+        success: true,
+        message: "Tag image uploaded successfully",
+        imageUrl: imageUrl,
+        publicId: publicId,
+      });
+    } catch (error) {
+      console.error("Tag image upload error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to upload tag image",
+        error:
+          process.env.NODE_ENV === "development" ? error.message : undefined,
+      });
+    }
+  }
+);
+
 module.exports = router;

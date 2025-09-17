@@ -112,6 +112,7 @@ exports.getAllMealPlans = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .populate("sampleMeals", "mealName mealType")
+      .populate("tagId", "name image")
       .lean();
 
     const total = await MealPlan.countDocuments(filter);
@@ -389,7 +390,7 @@ exports.updateMealPlan = async (req, res) => {
     const mealPlan = await MealPlan.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true,
-    });
+    }).populate("tagId", "name image");
 
     if (!mealPlan) {
       return res.status(404).json({
@@ -680,7 +681,7 @@ exports.duplicateMealPlan = async (req, res) => {
       planName: newPlanName || `${originalPlan.planName} (Copy)`,
       createdAt: new Date(),
       updatedAt: new Date(),
-      isPublished: false, // Always create duplicates as drafts
+      isPublished: modifications.isPublished || false, // Use modification or default to draft
       totalPrice: modifications.totalPrice || originalPlan.totalPrice || 0, // Use modified price if provided
       ...modifications,
     });

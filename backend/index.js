@@ -207,6 +207,8 @@ app.use("/api/admin/auth", adminLimiter, require("./routes/adminAuth"));
 // API routes (with general rate limiting)
 app.use("/api/meal-plans", require("./routes/mealplans"));
 app.use("/api/mealplans", require("./routes/mealplans"));
+app.use("/api/tags", require("./routes/tags"));
+app.use("/api/admin/tags", adminLimiter, require("./routes/adminTags"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/subscriptions", require("./routes/subscriptions"));
 

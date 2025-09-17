@@ -133,36 +133,69 @@ export const NotificationProvider = ({ children, showToastNotification }) => {
       // For development, fall back to Expo notifications
       let pushToken = null;
 
-      try {
-        // Try to get Firebase FCM token first (for production)
-        pushToken = await firebaseService.initializeFirebase();
+      // Skip Firebase entirely in development mode - go straight to Expo
+      if (__DEV__) {
+        console.log("🔄 Development mode: Skipping Firebase, using Expo notifications only");
+      } else {
+        try {
+          // Try to get Firebase FCM token first (for production only)
+          pushToken = await firebaseService.initializeFirebase();
 
-        if (pushToken) {
-          console.log("✅ Using Firebase FCM for push notifications");
-          setExpoPushToken(pushToken);
+          if (pushToken) {
+            console.log("✅ Using Firebase FCM for push notifications");
+            setExpoPushToken(pushToken);
 
-          // Set up Firebase message handlers
-          firebaseService.onMessage((remoteMessage) => {
-            console.log("📱 Firebase message received:", remoteMessage);
-            // Handle foreground messages
-          });
+            // Set up Firebase message handlers
+            firebaseService.onMessage((remoteMessage) => {
+              console.log("📱 Firebase message received:", remoteMessage);
+              
+              // Show in-app toast for Firebase messages
+              if (showToastNotification && remoteMessage.notification) {
+                showToastNotification({
+                  title: remoteMessage.notification.title,
+                  body: remoteMessage.notification.body,
+                  type: remoteMessage.data?.type || "info",
+                  onPress: () => {
+                    handleNotificationPress({
+                      data: remoteMessage.data,
+                      title: remoteMessage.notification.title,
+                      body: remoteMessage.notification.body
+                    });
+                  }
+                });
+              }
+              
+              // Increment unread count
+              setUnreadCount((prev) => prev + 1);
+              
+              // Refresh notifications
+              loadNotifications();
+            });
 
-          // Register token with backend
-          await registerPushToken(pushToken, "fcm");
+            // Register token with backend
+            await registerPushToken(pushToken, "fcm");
+          }
+        } catch (firebaseError) {
+          console.warn(
+            "Firebase not available, falling back to Expo:",
+            firebaseError.message
+          );
         }
-      } catch (firebaseError) {
-        console.warn(
-          "Firebase not available, falling back to Expo:",
-          firebaseError.message
-        );
+      }
+
+      // If no Firebase token, try Expo notifications
+      if (!pushToken) {
 
         // Fallback to Expo push notifications
         try {
+          console.log("🔄 Setting up Expo push notifications...");
+          
           const { status: existingStatus } =
             await Notifications.getPermissionsAsync();
           let finalStatus = existingStatus;
 
           if (existingStatus !== "granted") {
+            console.log("🔐 Requesting notification permissions...");
             const { status } = await Notifications.requestPermissionsAsync();
             finalStatus = status;
           }
@@ -172,33 +205,52 @@ export const NotificationProvider = ({ children, showToastNotification }) => {
             return;
           }
 
-          const token = await Notifications.getExpoPushTokenAsync({
-            projectId: process.env.EXPO_PROJECT_ID || "choma-project",
-          });
+          console.log("✅ Notification permissions granted");
 
-          pushToken = token.data;
-          setExpoPushToken(pushToken);
+          // Configure notification channel for Android
+          if (Platform.OS === "android") {
+            await Notifications.setNotificationChannelAsync("default", {
+              name: "default",
+              importance: Notifications.AndroidImportance.MAX,
+              vibrationPattern: [0, 250, 250, 250],
+              lightColor: "#FF231F7C",
+            });
+            console.log("📱 Android notification channel configured");
+          }
 
-          // Register token with backend
-          await registerPushToken(pushToken, "expo");
+          // Try to get Expo token without project ID (classic method)
+          let token;
+          try {
+            console.log("📱 Getting Expo push token (classic method)...");
+            token = await Notifications.getExpoPushTokenAsync();
+            console.log("✅ Got Expo push token successfully");
+          } catch (tokenError) {
+            console.error("❌ Failed to get Expo push token:", tokenError);
+            // Don't throw here, just log and continue without push notifications
+            console.warn("⚠️ Continuing without push notifications");
+            return;
+          }
 
-          console.log("✅ Using Expo push notifications");
+          if (token?.data) {
+            pushToken = token.data;
+            setExpoPushToken(pushToken);
+
+            // Register token with backend
+            try {
+              await registerPushToken(pushToken, "expo");
+              console.log("✅ Using Expo push notifications");
+            } catch (registerError) {
+              console.error("❌ Failed to register push token with backend:", registerError);
+            }
+          } else {
+            console.warn("⚠️ No push token data received");
+          }
         } catch (expoError) {
           console.error(
-            "Both Firebase and Expo push notifications failed:",
+            "Expo push notifications setup failed:",
             expoError
           );
         }
-      }
-
-      // Configure notification channel for Android
-      if (Platform.OS === "android") {
-        await Notifications.setNotificationChannelAsync("default", {
-          name: "default",
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: "#FF231F7C",
-        });
       }
 
       console.log("✅ Push notifications initialized successfully");
@@ -218,18 +270,28 @@ export const NotificationProvider = ({ children, showToastNotification }) => {
         `${Platform.OS}-device-${Date.now()}`;
       const platform = Platform.OS;
 
-      await apiService.post("/auth/push-token", {
+      console.log(`📱 Registering ${tokenType.toUpperCase()} push token:`, {
+        token: token.substring(0, 20) + "...",
+        deviceId,
+        platform,
+        tokenType
+      });
+
+      const response = await apiService.post("/auth/push-token", {
         token,
         deviceId,
         platform,
         tokenType, // 'expo' or 'fcm'
       });
 
-      console.log(
-        `✅ ${tokenType.toUpperCase()} push token registered with backend`
-      );
+      console.log(`✅ ${tokenType.toUpperCase()} push token registered with backend:`, response);
     } catch (error) {
-      console.error("❌ Failed to register push token:", error);
+      console.error(`❌ Failed to register ${tokenType} push token:`, error);
+      console.error("Token registration error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
     }
   };
 

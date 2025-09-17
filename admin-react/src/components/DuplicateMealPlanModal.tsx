@@ -85,6 +85,7 @@ const DuplicateMealPlanModal: React.FC<DuplicateMealPlanModalProps> = ({
     }
 
     try {
+      console.log('🔄 Submitting duplicate with modifications:', modifications)
       await onSubmit(newPlanName.trim(), modifications)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to duplicate meal plan'

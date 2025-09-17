@@ -44,13 +44,22 @@ import SubscriptionManagementModal from "../../components/subscription/Subscript
 import CustomText from "../../components/ui/CustomText";
 import { DMSansFonts } from "../../constants/fonts";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import TagFilterBar from "../../components/home/TagFilterBar";
+import tagService from "../../services/tagService";
 
 const { width } = Dimensions.get("window");
 
 const HomeScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
   const { user } = useAuth();
-  const { showSuccess, showError } = useAlert();
+  const {
+    showSuccess,
+    showError,
+    showDeleteConfirm,
+    showPaymentSuccess,
+    showUpdateReminder,
+    showRetryError,
+  } = useAlert();
   const [selectedCategory, setSelectedCategory] = useState("All Plans");
 
   // Discount state
@@ -80,6 +89,15 @@ const HomeScreen = ({ navigation }) => {
   const [showManagementModal, setShowManagementModal] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [showMealTimeline, setShowMealTimeline] = useState(false);
+
+  // Tag filtering state
+  const [selectedTagId, setSelectedTagId] = useState(null);
+  const [selectedTag, setSelectedTag] = useState(null);
+  const [filteredMealPlans, setFilteredMealPlans] = useState([]);
+
+  // Animation values for smooth transitions
+  const popularSectionOpacity = useRef(new Animated.Value(1)).current;
+  const popularSectionHeight = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
@@ -219,11 +237,96 @@ const HomeScreen = ({ navigation }) => {
     }));
   }, [mealPlans]);
 
+  // Initialize filteredMealPlans with all meal plans when displayPlans changes
+  useEffect(() => {
+    if (!selectedTagId) {
+      setFilteredMealPlans(displayPlans);
+    }
+  }, [displayPlans, selectedTagId]);
+
+  // Tag filtering logic - only when a tag is selected
+  useEffect(() => {
+    const filterMealPlans = async () => {
+      if (!selectedTagId) {
+        return; // Already handled in the above useEffect
+      }
+
+      try {
+        // Fetch meal plans for the selected tag
+        const response = await tagService.getMealPlansByTag(selectedTagId);
+        if (response.success && response.data) {
+          setFilteredMealPlans(response.data);
+        } else {
+          setFilteredMealPlans([]);
+        }
+      } catch (error) {
+        console.error("Error filtering meal plans by tag:", error);
+        setFilteredMealPlans([]);
+      }
+    };
+
+    if (selectedTagId) {
+      filterMealPlans();
+    }
+  }, [selectedTagId]);
+
+  // Handle tag selection with animation
+  const handleTagSelect = (tagId, tag) => {
+    // If switching from no tag to a tag (hide popular section)
+    if (!selectedTagId && tagId) {
+      Animated.parallel([
+        Animated.timing(popularSectionOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(popularSectionHeight, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: false,
+        }),
+      ]).start(() => {
+        setSelectedTagId(tagId);
+        setSelectedTag(tag);
+      });
+    }
+    // If switching from a tag to no tag (show popular section)
+    else if (selectedTagId && !tagId) {
+      setSelectedTagId(tagId);
+      setSelectedTag(tag);
+
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(popularSectionOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(popularSectionHeight, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: false,
+          }),
+        ]).start();
+      }, 50);
+    }
+    // If switching between tags (instant change)
+    else {
+      setSelectedTagId(tagId);
+      setSelectedTag(tag);
+    }
+  };
+
   // Load banners, subscription, and orders from backend
   useEffect(() => {
-    loadBanners(true); // Force refresh on initial load
-    loadActiveSubscriptions();
-    loadActiveOrders();
+    // Load data concurrently for faster home screen loading
+    Promise.all([
+      loadBanners(true), // Force refresh on initial load
+      loadActiveSubscriptions(),
+      loadActiveOrders(),
+    ]).catch((error) => {
+      console.error("Error loading home screen data:", error);
+    });
   }, []);
 
   // Fetch discount data for meal plans
@@ -898,11 +1001,11 @@ const HomeScreen = ({ navigation }) => {
 
   // Auto-slide effect for popular meal plans - DISABLED
   // useEffect(() => {
-  //   if (!displayPlans || displayPlans.length <= 1) return;
+  //   if (!filteredMealPlans || filteredMealPlans.length <= 1) return;
 
   //   const popularInterval = setInterval(() => {
   //     setCurrentPopularIndex((prevIndex) => {
-  //       const nextIndex = (prevIndex + 1) % displayPlans.length;
+  //       const nextIndex = (prevIndex + 1) % filteredMealPlans.length;
   //       const cardWidth = width * 0.75; // Same as popularPlanCard width
   //       const cardMargin = 20; // Same as marginRight in popularPlanCard
   //       const scrollPosition = nextIndex * (cardWidth + cardMargin);
@@ -916,7 +1019,7 @@ const HomeScreen = ({ navigation }) => {
   //   }, 4000); // 4 seconds per slide (faster than banners)
 
   //   return () => clearInterval(popularInterval);
-  // }, [displayPlans?.length]);
+  // }, [filteredMealPlans?.length]);
 
   // Helper function to calculate delivery day
   const getDeliveryDay = (order) => {
@@ -2316,12 +2419,36 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles(colors).notificationContainer}>
           <NotificationIcon navigation={navigation} />
           {__DEV__ && (
-            <TouchableOpacity
-              style={styles(colors).testButton}
-              onPress={() => NotificationTestService.sendOrderNotification()}
-            >
-              <Text style={styles(colors).testButtonText}>Test</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={styles(colors).testButton}
+                onPress={() => NotificationTestService.sendOrderNotification()}
+              >
+                <Text style={styles(colors).testButtonText}>Local</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles(colors).testButton,
+                  { backgroundColor: colors.warning },
+                ]}
+                onPress={() =>
+                  NotificationTestService.forceRegisterPushTokens()
+                }
+              >
+                <Text style={styles(colors).testButtonText}>Reg</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles(colors).testButton,
+                  { backgroundColor: colors.success },
+                ]}
+                onPress={() =>
+                  NotificationTestService.sendTestPushNotification()
+                }
+              >
+                <Text style={styles(colors).testButtonText}>Push</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
       </View>
@@ -2371,11 +2498,19 @@ const HomeScreen = ({ navigation }) => {
                 {/* Promo Banners */}
                 {renderPromoBanners()}
 
+                {/* Tag Filter Bar */}
+                <TagFilterBar
+                  onTagSelect={handleTagSelect}
+                  selectedTagId={selectedTagId}
+                />
+
                 {/* Popular Food Section */}
                 <View style={styles(colors).section}>
                   <View style={styles(colors).sectionHeader}>
                     <Text style={styles(colors).sectionTitle}>
-                      Popular plans
+                      {selectedTag
+                        ? `${selectedTag.name} Plans`
+                        : "Popular plans"}
                     </Text>
                     <TouchableOpacity
                       onPress={() => navigation.navigate("Search")}
@@ -2417,7 +2552,7 @@ const HomeScreen = ({ navigation }) => {
                   {/* Popular Food Slider */}
                   {!loading && !error && (
                     <View style={styles(colors).popularFoodContainer}>
-                      {displayPlans.length > 0 ? (
+                      {filteredMealPlans.length > 0 ? (
                         <ScrollView
                           ref={popularScrollRef}
                           horizontal
@@ -2428,7 +2563,8 @@ const HomeScreen = ({ navigation }) => {
                           scrollEventThrottle={16}
                           decelerationRate="fast"
                           snapToInterval={width * 0.75 + 20} // Card width + margin for snapping
-                          snapToAlignment="start"
+                          snapToAlignment="center"
+                          disableIntervalMomentum={true}
                           onMomentumScrollEnd={(event) => {
                             const cardWidth = width * 0.75;
                             const cardMargin = 20;
@@ -2439,7 +2575,7 @@ const HomeScreen = ({ navigation }) => {
                             setCurrentPopularIndex(slideIndex);
                           }}
                         >
-                          {displayPlans.map((plan, index) =>
+                          {filteredMealPlans.map((plan, index) =>
                             renderPopularFoodCard(plan, index)
                           )}
                         </ScrollView>
@@ -2469,7 +2605,7 @@ const HomeScreen = ({ navigation }) => {
 
                   {!loading && !error && (
                     <View style={styles(colors).mealplansGrid}>
-                      {displayPlans
+                      {filteredMealPlans
                         .slice(0, 4)
                         .map((plan, index) => renderMealplanCard(plan, index))}
                     </View>
@@ -2529,8 +2665,23 @@ const HomeScreen = ({ navigation }) => {
                 {/* Promo Banners */}
                 {renderPromoBanners()}
 
-                {/* Popular Food Section */}
-                <View style={styles(colors).section}>
+                {/* Tag Filter Bar */}
+                <TagFilterBar
+                  onTagSelect={handleTagSelect}
+                  selectedTagId={selectedTagId}
+                />
+
+                {/* Popular Food Section - Animated visibility */}
+                <Animated.View
+                  style={[
+                    styles(colors).section,
+                    {
+                      opacity: popularSectionOpacity,
+                      transform: [{ scaleY: popularSectionHeight }],
+                      overflow: "hidden",
+                    },
+                  ]}
+                >
                   <View style={styles(colors).sectionHeader}>
                     <Text style={styles(colors).sectionTitle}>
                       Popular plans
@@ -2576,7 +2727,7 @@ const HomeScreen = ({ navigation }) => {
                   {/* Popular Food Slider */}
                   {!loading && !error && (
                     <View style={styles(colors).popularFoodContainer}>
-                      {displayPlans.length > 0 ? (
+                      {filteredMealPlans.length > 0 ? (
                         <ScrollView
                           ref={popularScrollRef}
                           horizontal
@@ -2586,8 +2737,11 @@ const HomeScreen = ({ navigation }) => {
                           }
                           scrollEventThrottle={16}
                           decelerationRate="fast"
+                          snapToInterval={width * 0.75 + 20} // Card width + margin for snapping
+                          snapToAlignment="center"
+                          disableIntervalMomentum={true}
                         >
-                          {displayPlans.map((plan, index) =>
+                          {filteredMealPlans.map((plan, index) =>
                             renderPopularFoodCard(plan, index)
                           )}
                         </ScrollView>
@@ -2609,7 +2763,7 @@ const HomeScreen = ({ navigation }) => {
                       )}
                     </View>
                   )}
-                </View>
+                </Animated.View>
 
                 {/* Our Mealplans Section */}
                 <View style={styles(colors).section}>
@@ -2617,7 +2771,7 @@ const HomeScreen = ({ navigation }) => {
 
                   {!loading && !error && (
                     <View style={styles(colors).mealplansGrid}>
-                      {displayPlans
+                      {filteredMealPlans
                         .slice(0, 4)
                         .map((plan, index) => renderMealplanCard(plan, index))}
                     </View>
@@ -2937,8 +3091,8 @@ const styles = (colors) =>
       // marginTop: 5,
     },
     popularFoodScrollContent: {
-      paddingLeft: 10,
-      paddingRight: 10,
+      paddingLeft: (width * 0.125) / 2, // Half of the remaining space for center alignment
+      paddingRight: (width * 0.125) / 2 + 20, // Half space + margin for last card
     },
     popularFoodCard: {
       width: width * 0.8,
@@ -3643,8 +3797,8 @@ const styles = (colors) =>
       position: "relative",
       borderRadius: THEME.borderRadius.large,
       overflow: "hidden",
-      minHeight: 140,
-      maxHeight: 140,
+      minHeight: 110,
+      maxHeight: 120,
     },
     promoBannerImage: {
       width: "100%",

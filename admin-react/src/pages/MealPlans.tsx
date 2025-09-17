@@ -3,12 +3,14 @@ import { useState, useEffect } from 'react'
 import { mealPlansApi, type MealPlan as ApiMealPlan, type MealPlanFilters } from '../services/mealApi'
 import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
 import CreateMealPlanModal from '../components/CreateMealPlanModal'
+import CreateTagModal from '../components/CreateTagModal'
 import EditMealPlanModal from '../components/EditMealPlanModal'
 import DuplicateMealPlanModal from '../components/DuplicateMealPlanModal'
 import MealPlanScheduler from '../components/MealPlanScheduler'
 import MealPlanCard from '../components/MealPlanCard'
 import ConfirmationModal from '../components/ConfirmationModal'
 import type { MealPlan as UiMealPlan } from '../types'
+import { tagsApi, type CreateTagData } from '../services/tagApi'
 
 const MealPlans: React.FC = () => {
   const { hasPermission } = usePermissionCheck();
@@ -38,6 +40,7 @@ const MealPlans: React.FC = () => {
 
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [createTagModalOpen, setCreateTagModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
   const [schedulerModalOpen, setSchedulerModalOpen] = useState(false)
@@ -155,14 +158,27 @@ const MealPlans: React.FC = () => {
     }
   }
 
+  const handleCreateTag = async (tagData: CreateTagData) => {
+    try {
+      await tagsApi.createTag(tagData)
+      setCreateTagModalOpen(false)
+      // Show success notification
+      alert('Tag created successfully!')
+    } catch (err) {
+      alert(`Failed to create tag: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      throw err // Re-throw to keep modal open
+    }
+  }
+
   const handleEditMealPlan = async (planData: Partial<ApiMealPlan>) => {
     if (!selectedMealPlan) return
 
     try {
-      await mealPlansApi.updateMealPlan(selectedMealPlan._id, planData)
+      const updatedMealPlan = await mealPlansApi.updateMealPlan(selectedMealPlan._id, planData)
       await fetchMealPlans()
+      // Update the selectedMealPlan with fresh data so the modal shows current values
+      setSelectedMealPlan(updatedMealPlan.data)
       setEditModalOpen(false)
-      setSelectedMealPlan(null)
     } catch (err) {
       alert(`Failed to update meal plan: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
@@ -367,6 +383,17 @@ const MealPlans: React.FC = () => {
               Table
             </button>
           </div>
+
+          {/* Create Tags Button */}
+          <PermissionGate module="mealPlans" action="create">
+            <button
+              onClick={() => setCreateTagModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-green-600 dark:bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
+            >
+              <i className="fi fi-sr-tags mr-2"></i>
+              Create Tags
+            </button>
+          </PermissionGate>
 
           {/* Create Button */}
           <PermissionGate module="mealPlans" action="create">
@@ -805,6 +832,14 @@ const MealPlans: React.FC = () => {
           />
         </>
       )}
+
+      {/* Create Tag Modal */}
+      <CreateTagModal
+        isOpen={createTagModalOpen}
+        onClose={() => setCreateTagModalOpen(false)}
+        onSubmit={handleCreateTag}
+        loading={isLoading}
+      />
 
       {/* Confirmation Modal */}
       <ConfirmationModal

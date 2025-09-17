@@ -25,6 +25,8 @@ import FilterModal from "../../components/meal-plans/FilterModal";
 import apiService from "../../services/api";
 import discountService from "../../services/discountService";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import TagFilterBar from "../../components/home/TagFilterBar";
+import tagService from "../../services/tagService";
 
 const SearchScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
@@ -46,6 +48,10 @@ const SearchScreen = ({ navigation }) => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
   const [targetAudiences, setTargetAudiences] = useState([]);
+  
+  // Tag filtering state
+  const [selectedTagId, setSelectedTagId] = useState(null);
+  const [selectedTag, setSelectedTag] = useState(null);
 
   const hasActiveFilters = Object.keys(activeFilters).some((key) => {
     const value = activeFilters[key];
@@ -239,6 +245,37 @@ const SearchScreen = ({ navigation }) => {
       setSearchResults(filteredResults);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  // Handle tag selection
+  const handleTagSelect = async (tagId, tag) => {
+    setSelectedTagId(tagId);
+    setSelectedTag(tag);
+    
+    if (tagId) {
+      // If a tag is selected, fetch meal plans for that tag
+      setIsSearching(true);
+      try {
+        const response = await tagService.getMealPlansByTag(tagId);
+        if (response.success && response.data) {
+          setSearchResults(response.data);
+        } else {
+          setSearchResults([]);
+        }
+      } catch (error) {
+        console.error('Error fetching meal plans by tag:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    } else {
+      // If no tag selected, clear search results or show all plans
+      if (searchQuery.trim()) {
+        await handleSearch(searchQuery, activeFilters);
+      } else {
+        setSearchResults([]);
+      }
     }
   };
 
@@ -457,6 +494,12 @@ const SearchScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Tag Filter Bar */}
+      <TagFilterBar
+        onTagSelect={handleTagSelect}
+        selectedTagId={selectedTagId}
+      />
 
       {/* Active Filters Display */}
       {hasActiveFilters && (

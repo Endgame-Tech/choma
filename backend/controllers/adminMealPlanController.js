@@ -622,7 +622,7 @@ exports.duplicateMealPlan = async (req, res) => {
       ...originalPlan.toObject(),
       _id: new mongoose.Types.ObjectId(),
       planName: duplicateName,
-      isActive: false, // Start as inactive
+      isActive: true, // Start as active (duplicates should be usable)
       isPublished: false, // Start as unpublished unless explicitly set
       createdAt: new Date(),
       updatedAt: new Date()

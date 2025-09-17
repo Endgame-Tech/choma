@@ -31,6 +31,13 @@ const MealPlanSchema = new mongoose.Schema({
     default: ["breakfast", "lunch", "dinner"],
   },
 
+  // Tag reference for filtering and categorization
+  tagId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tag',
+    default: null,
+  },
+
   // New pricing system - calculated from assigned meals
   totalPrice: {
     type: Number,

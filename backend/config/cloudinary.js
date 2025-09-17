@@ -97,6 +97,17 @@ const uploadToFolder = (folder) => {
           },
           { fetch_format: "auto", flags: "progressive" },
         ];
+      case "tags":
+        return [
+          {
+            width: 400,
+            height: 400,
+            crop: "fill",
+            gravity: "center",
+            quality: "auto:good",
+          },
+          { fetch_format: "auto", flags: "progressive" },
+        ];
       default:
         return [
           { width: 1200, height: 800, crop: "limit", quality: "auto:good" },

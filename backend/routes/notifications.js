@@ -40,4 +40,7 @@ router.delete('/:id', auth, NotificationController.deleteNotification);
 // DELETE /api/notifications/read/all - Delete all read notifications
 router.delete('/read/all', auth, NotificationController.deleteAllRead);
 
+// POST /api/notifications/test-push - Send test push notification (development only)
+router.post('/test-push', auth, NotificationController.sendTestPushNotification);
+
 module.exports = router;

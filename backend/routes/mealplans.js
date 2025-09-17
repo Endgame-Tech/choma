@@ -8,8 +8,8 @@ const { cacheMiddleware } = require('../middleware/cacheMiddleware');
 // GET /api/mealplans - Get all meal plans (cached for 10 minutes)
 router.get('/', cacheMiddleware.mealPlans, mealplanController.getAllMealPlans);
 
-// GET /api/mealplans/popular - Get popular meal plans (cached for 5 minutes)
-router.get('/popular', cacheMiddleware.medium, mealplanController.getPopularMealPlans);
+// GET /api/mealplans/popular - Get popular meal plans (no cache for immediate updates)
+router.get('/popular', mealplanController.getPopularMealPlans);
 
 // GET /api/mealplans/filtered - Get filtered meal plans (cached for 10 minutes)
 router.get('/filtered', cacheMiddleware.mealPlans, mealplanController.getFilteredMealPlans);

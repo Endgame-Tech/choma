@@ -1,5 +1,6 @@
 const Notification = require('../models/Notification');
 const Customer = require('../models/Customer');
+const pushNotificationService = require('../services/pushNotificationService');
 
 class NotificationController {
   
@@ -426,6 +427,109 @@ class NotificationController {
       res.status(500).json({
         success: false,
         message: 'Failed to cleanup expired notifications',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  // Test push notification (development only)
+  static async sendTestPushNotification(req, res) {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({
+          success: false,
+          message: 'Test push notifications are only available in development'
+        });
+      }
+
+      const userId = req.user.id;
+      
+      // Get user's push tokens
+      const customer = await Customer.findById(userId).select('pushTokens');
+      
+      console.log(`🔍 Debug - User ${userId} push tokens:`, {
+        customerExists: !!customer,
+        pushTokensExists: !!customer?.pushTokens,
+        pushTokensLength: customer?.pushTokens?.length || 0,
+        pushTokens: customer?.pushTokens
+      });
+      
+      if (!customer || !customer.pushTokens || customer.pushTokens.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No push tokens found for user. Please ensure push notifications are properly initialized.',
+          debug: {
+            userId,
+            customerFound: !!customer,
+            pushTokensCount: customer?.pushTokens?.length || 0
+          }
+        });
+      }
+
+      const results = [];
+      
+      // Send test notification to all user's devices
+      for (const tokenData of customer.pushTokens) {
+        try {
+          const result = await pushNotificationService.sendPushNotification({
+            to: tokenData.token,
+            title: "🧪 Test Push Notification",
+            body: "This is a test push notification from development mode!",
+            data: {
+              type: "test",
+              timestamp: new Date().toISOString(),
+              environment: "development"
+            },
+            tokenType: tokenData.tokenType || 'expo'
+          });
+
+          results.push({
+            device: tokenData.deviceId,
+            success: true,
+            result: result
+          });
+
+          console.log(`✅ Test push sent to ${tokenData.deviceId}:`, result);
+        } catch (error) {
+          console.error(`❌ Test push failed for ${tokenData.deviceId}:`, error);
+          results.push({
+            device: tokenData.deviceId,
+            success: false,
+            error: error.message
+          });
+        }
+      }
+
+      // Also create a notification in database
+      const notification = new Notification({
+        userId,
+        title: "🧪 Test Push Notification",
+        body: "This is a test push notification from development mode!",
+        type: "test",
+        data: {
+          environment: "development",
+          timestamp: new Date().toISOString()
+        },
+        isRead: false,
+        createdAt: new Date()
+      });
+
+      await notification.save();
+
+      res.json({
+        success: true,
+        message: 'Test push notifications sent',
+        data: {
+          deviceCount: customer.pushTokens.length,
+          results: results,
+          notificationId: notification._id
+        }
+      });
+    } catch (error) {
+      console.error('Send test push error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send test push notification',
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }

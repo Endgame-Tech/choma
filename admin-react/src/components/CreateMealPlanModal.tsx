@@ -1,8 +1,9 @@
 import React from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { type MealPlan } from '../services/mealApi'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import ImageUpload from './ImageUpload'
+import { tagsApi, type Tag } from '../services/tagApi'
 
 interface CreateMealPlanModalProps {
   isOpen: boolean
@@ -30,10 +31,32 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
     targetAudience: 'Family',
     mealTypes: ['breakfast', 'lunch', 'dinner'], // Default to all three meals
     planFeatures: '',
-    adminNotes: ''
+    adminNotes: '',
+    tagId: '' // Add tag selection
   })
 
   const [submitting, setSubmitting] = useState(false)
+  const [tags, setTags] = useState<Tag[]>([])
+  const [loadingTags, setLoadingTags] = useState(false)
+
+  // Fetch tags when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchTags()
+    }
+  }, [isOpen])
+
+  const fetchTags = async () => {
+    try {
+      setLoadingTags(true)
+      const response = await tagsApi.getAllTags()
+      setTags(response.data)
+    } catch (error) {
+      console.error('Error fetching tags:', error)
+    } finally {
+      setLoadingTags(false)
+    }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -75,7 +98,8 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
         targetAudience: formData.targetAudience,
         mealTypes: formData.mealTypes,
         planFeatures: formData.planFeatures.split(',').map(feature => feature.trim()).filter(feature => feature),
-        adminNotes: formData.adminNotes
+        adminNotes: formData.adminNotes,
+        tagId: formData.tagId || null
       }
 
 
@@ -281,6 +305,36 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
               />
               <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
                 These features will help customers find the right plan for their needs
+              </p>
+            </div>
+
+            {/* Tag Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                Tag (Optional)
+              </label>
+              {loadingTags ? (
+                <div className="flex items-center justify-center py-4">
+                  <i className="fi fi-sr-loading animate-spin mr-2"></i>
+                  Loading tags...
+                </div>
+              ) : (
+                <select
+                  name="tagId"
+                  value={formData.tagId}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">No Tag (Default)</option>
+                  {tags.map((tag) => (
+                    <option key={tag._id} value={tag._id}>
+                      {tag.name} ({tag.mealPlanCount || 0} plans)
+                    </option>
+                  ))}
+                </select>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Select a tag to categorize this meal plan for easier filtering on the home screen
               </p>
             </div>
 

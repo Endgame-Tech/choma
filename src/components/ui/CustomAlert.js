@@ -26,24 +26,49 @@ const CustomAlert = ({
 }) => {
   const { colors } = useTheme();
 
-  const getIconForType = () => {
-    if (icon) return icon;
+  const getIconAndColors = () => {
+    if (icon)
+      return {
+        icon,
+        backgroundColor: colors.primary + "20",
+        iconColor: colors.primary,
+      };
 
     switch (type) {
       case "success":
-        return { name: "checkmark-circle", color: colors.success };
+        return {
+          icon: "checkmark-circle",
+          backgroundColor: "#10B981" + "20",
+          iconColor: "#10B981",
+        };
       case "error":
-        return { name: "close-circle", color: colors.error };
+        return {
+          icon: "close-circle",
+          backgroundColor: "#EF4444" + "20",
+          iconColor: "#EF4444",
+        };
       case "warning":
-        return { name: "warning", color: colors.warning };
+        return {
+          icon: "warning",
+          backgroundColor: "#F59E0B" + "20",
+          iconColor: "#F59E0B",
+        };
       case "confirm":
-        return { name: "help-circle", color: colors.primary };
+        return {
+          icon: "help-circle",
+          backgroundColor: "#3B82F6" + "20",
+          iconColor: "#3B82F6",
+        };
       default:
-        return { name: "information-circle", color: colors.info };
+        return {
+          icon: "information-circle",
+          backgroundColor: "#3B82F6" + "20",
+          iconColor: "#3B82F6",
+        };
     }
   };
 
-  const iconConfig = getIconForType();
+  const { icon: iconName, backgroundColor, iconColor } = getIconAndColors();
 
   const defaultButtons =
     buttons.length > 0
@@ -51,7 +76,7 @@ const CustomAlert = ({
       : [
           {
             text: "OK",
-            style: "default",
+            style: "primary",
             onPress: onDismiss || (() => {}),
           },
         ];
@@ -65,14 +90,18 @@ const CustomAlert = ({
     >
       <View style={styles(colors).overlay}>
         <View style={styles(colors).container}>
+          {/* Close button */}
+          <TouchableOpacity
+            style={styles(colors).closeButton}
+            onPress={onDismiss}
+          >
+            <Ionicons name="close" size={24} color={colors.textSecondary} />
+          </TouchableOpacity>
+
           <View style={styles(colors).content}>
             {/* Icon */}
-            <View style={styles(colors).iconContainer}>
-              <Ionicons
-                name={iconConfig.name}
-                size={48}
-                color={iconConfig.color}
-              />
+            <View style={[styles(colors).iconContainer, { backgroundColor }]}>
+              <Ionicons name={iconName} size={32} color={iconColor} />
             </View>
 
             {/* Title */}
@@ -89,56 +118,51 @@ const CustomAlert = ({
                   styles(colors).verticalButtonContainer,
               ]}
             >
-              {defaultButtons.map((button, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles(colors).button,
-                    button.style === "cancel" && styles(colors).cancelButton,
-                    button.style === "destructive" &&
-                      styles(colors).destructiveButton,
-                    defaultButtons.length === 1 && styles(colors).singleButton,
-                    defaultButtons.length > 2 && styles(colors).verticalButton,
-                  ]}
-                  onPress={() => {
-                    if (button.onPress) button.onPress();
-                    if (onDismiss) onDismiss();
-                  }}
-                >
-                  {button.style === "default" ||
-                  button.style === "destructive" ? (
-                    <LinearGradient
-                      colors={
-                        button.style === "destructive"
-                          ? [colors.error, "#C82333"]
-                          : [colors.primary, colors.primaryDark]
-                      }
-                      style={styles(colors).buttonGradient}
+              {defaultButtons.map((button, index) => {
+                const isDestructive = button.style === "destructive";
+                const isPrimary =
+                  button.style === "primary" || button.style === "default";
+                const isCancel = button.style === "cancel";
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles(colors).button,
+                      isPrimary && styles(colors).primaryButton,
+                      isDestructive && styles(colors).destructiveButton,
+                      isCancel && styles(colors).cancelButton,
+                      defaultButtons.length === 1 &&
+                        styles(colors).singleButton,
+                      defaultButtons.length > 2 &&
+                        styles(colors).verticalButton,
+                    ]}
+                    onPress={() => {
+                      if (button.onPress) button.onPress();
+                      if (onDismiss) onDismiss();
+                    }}
+                  >
+                    {isDestructive && (
+                      <Ionicons
+                        name="trash"
+                        size={18}
+                        color="#FFFFFF"
+                        style={styles(colors).buttonIcon}
+                      />
+                    )}
+                    <Text
+                      style={[
+                        styles(colors).buttonText,
+                        isPrimary && styles(colors).primaryButtonText,
+                        isDestructive && styles(colors).destructiveButtonText,
+                        isCancel && styles(colors).cancelButtonText,
+                      ]}
                     >
-                      <Text
-                        style={[
-                          styles(colors).buttonText,
-                          button.style === "destructive" &&
-                            styles(colors).destructiveButtonText,
-                        ]}
-                      >
-                        {button.text}
-                      </Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={styles(colors).plainButton}>
-                      <Text
-                        style={[
-                          styles(colors).buttonText,
-                          styles(colors).cancelButtonText,
-                        ]}
-                      >
-                        {button.text}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
+                      {button.text}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         </View>
@@ -151,93 +175,115 @@ const styles = (colors) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: colors.overlay,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
       justifyContent: "center",
       alignItems: "center",
       paddingHorizontal: 20,
     },
     container: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.large,
+      backgroundColor: colors.cardBackground || "#FFFFFF",
+      borderRadius: 20,
       maxWidth: screenWidth - 40,
       width: "100%",
+      position: "relative",
       ...THEME.shadows.heavy,
     },
+    closeButton: {
+      position: "absolute",
+      top: 16,
+      right: 16,
+      zIndex: 10,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.inputBackground || "#F3F4F6",
+    },
     content: {
-      padding: 24,
+      padding: 32,
       alignItems: "center",
     },
     iconContainer: {
-      marginBottom: 16,
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 20,
     },
     title: {
-      fontSize: 20,
-      fontWeight: "600",
-      color: colors.text,
+      fontSize: 22,
+      fontWeight: "700",
+      color: colors.text || "#1F2937",
       textAlign: "center",
-      marginBottom: 8,
+      marginBottom: 12,
+      fontFamily: "DMSans-Bold",
     },
     message: {
       fontSize: 16,
-      color: colors.textSecondary,
+      color: colors.textSecondary || "#6B7280",
       textAlign: "center",
       lineHeight: 24,
-      marginBottom: 24,
+      marginBottom: 32,
+      fontFamily: "DMSans-Regular",
     },
     buttonContainer: {
       flexDirection: "row",
-      justifyContent: "space-between",
+      justifyContent: "center",
       width: "100%",
       gap: 12,
     },
     verticalButtonContainer: {
       flexDirection: "column",
-      gap: 8,
+      gap: 12,
     },
     button: {
-      flex: 1,
-      borderRadius: THEME.borderRadius.medium,
+      borderRadius: 12,
       overflow: "hidden",
+      minHeight: 48,
+      justifyContent: "center",
+      alignItems: "center",
+      flexDirection: "row",
     },
     singleButton: {
-      minWidth: 120,
+      minWidth: 200,
+      flex: 0,
     },
     verticalButton: {
       flex: 0,
       width: "100%",
     },
-    buttonGradient: {
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      alignItems: "center",
-      justifyContent: "center",
+    primaryButton: {
+      backgroundColor: "#000000",
+      flex: 1,
     },
-    plainButton: {
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      alignItems: "center",
-      justifyContent: "center",
+    destructiveButton: {
+      backgroundColor: "#EF4444",
+      flex: 1,
+    },
+    cancelButton: {
       backgroundColor: "transparent",
       borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: THEME.borderRadius.medium,
+      borderColor: colors.border || "#E5E7EB",
+      flex: 1,
+    },
+    buttonIcon: {
+      marginRight: 8,
     },
     buttonText: {
       fontSize: 16,
       fontWeight: "600",
-      color: colors.black,
+      fontFamily: "DMSans-Medium",
     },
-    cancelButtonText: {
-      color: colors.textSecondary,
+    primaryButtonText: {
+      color: "#FFFFFF",
     },
     destructiveButtonText: {
-      color: colors.white,
+      color: "#FFFFFF",
     },
-    cancelButton: {
-      backgroundColor: "transparent",
-    },
-    destructiveButton: {
-      backgroundColor: colors.error,
+    cancelButtonText: {
+      color: colors.textSecondary || "#6B7280",
     },
   });
 
