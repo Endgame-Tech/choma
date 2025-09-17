@@ -11,8 +11,8 @@ import appleLogo from '../assets/images/appleLogo.svg'
 import phonemockup from '../assets/images/phonemockup.png'
 import backgroundSvg from '../assets/images/background.svg'
 import takeAwayGif from '../assets/images/takeAway.gif'
-import femaleChefGif from '../assets/images/femaleChef.gif'
-import bestPrice from '../assets/images/bestPrice.gif'
+// import femaleChefGif from '../assets/images/femaleChef.gif' // File not found
+// import bestPrice from '../assets/images/bestPrice.gif' // File not found
 import FeatureCard from '../components/FeatureCard'
 import { Barbell } from 'phosphor-react'
 
@@ -26,7 +26,7 @@ const Home: React.FC = () => {
     {
       title: "Chef-Crafted Excellence",
       description: "Every dish is a masterpiece prepared by certified Nigerian chefs using premium, locally-sourced ingredients. Taste the difference quality makes.",
-      image: femaleChefGif,
+      image: takeAwayGif, // Using available GIF
       imageAlt: "Professional Chef Cooking",
       badges: [
         { text: "4.9/5 Rating", type: "rating" as const },
@@ -35,7 +35,7 @@ const Home: React.FC = () => {
     {
       title: "Unbeatable Value",
       description: "Savor restaurant-quality meals without breaking the bank. Transparent pricing, zero hidden fees, maximum satisfaction guaranteed.",
-      image: bestPrice,
+      image: mealPlanImage1, // Using available image instead of missing GIF
       imageAlt: "Best Price Value",
       badges: [
         { text: "From ₦3,500", type: "price" as const }
@@ -53,7 +53,7 @@ const Home: React.FC = () => {
     {
       title: "Lightning-Fast Delivery",
       description: "Craving satisfaction can't wait! Our dedicated riders ensure your hot, fresh meals arrive in record time across Lagos, Abuja, and Port Harcourt.",
-      image: femaleChefGif,
+      image: takeAwayGif, // Using available GIF
       imageAlt: "Fast Delivery Service",
       badges: [
         { text: "30 Min Avg", type: "rating" as const },
@@ -62,7 +62,7 @@ const Home: React.FC = () => {
     {
       title: "Smart Meal Planning",
       description: "Let our AI-powered meal planner create personalized nutrition plans that fit your lifestyle, dietary needs, and taste preferences perfectly.",
-      image: bestPrice,
+      image: mealPlanImage1, // Using available image instead of missing GIF
       imageAlt: "Meal Planning Technology",
       badges: [
         { text: "AI-Powered", type: "price" as const }

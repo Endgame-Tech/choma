@@ -58,9 +58,9 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
           : ['breakfast', 'lunch', 'dinner'], // Only default if no meal types or empty array
         planFeatures: Array.isArray(mealPlanRec.planFeatures) ? (mealPlanRec.planFeatures as string[]).join(', ') : (typeof mealPlanRec.planFeatures === 'string' ? mealPlanRec.planFeatures as string : ''),
         adminNotes: typeof mealPlanRec.adminNotes === 'string' ? mealPlanRec.adminNotes as string : '',
-        tagId: mealPlanRec.tagId 
+        tagId: mealPlanRec.tagId
           ? (typeof mealPlanRec.tagId === 'object' && mealPlanRec.tagId !== null && '_id' in mealPlanRec.tagId)
-            ? String((mealPlanRec.tagId as any)._id)
+            ? String((mealPlanRec.tagId as { _id: string })._id)
             : String(mealPlanRec.tagId)
           : ''
       })
@@ -136,7 +136,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
         mealTypes: formData.mealTypes,
         planFeatures: formData.planFeatures.split(',').map(feature => feature.trim()).filter(feature => feature),
         adminNotes: formData.adminNotes,
-        tagId: formData.tagId || null
+        tagId: formData.tagId || undefined
       }
 
       await onSubmit(planData)

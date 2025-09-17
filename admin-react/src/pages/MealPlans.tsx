@@ -84,7 +84,7 @@ const MealPlans: React.FC = () => {
       const response = await mealPlansApi.getAllMealPlans(filters) as { data: { mealPlans: ApiMealPlan[]; pagination: typeof pagination } }
       // Normalize API MealPlan -> UI MealPlan shape to satisfy shared UI types
       const apiPlans = response.data.mealPlans || []
-      
+
       const uiPlans: UiMealPlan[] = apiPlans.map((p) => {
         // Safe extraction helpers
         const statsRecord = p.stats as unknown as Record<string, unknown> | undefined
@@ -177,7 +177,13 @@ const MealPlans: React.FC = () => {
       const updatedMealPlan = await mealPlansApi.updateMealPlan(selectedMealPlan._id, planData)
       await fetchMealPlans()
       // Update the selectedMealPlan with fresh data so the modal shows current values
-      setSelectedMealPlan(updatedMealPlan.data)
+      // Convert the API response to the UI type format
+      const uiMealPlan: UiMealPlan = {
+        ...selectedMealPlan,
+        ...updatedMealPlan.data,
+        assignments: (updatedMealPlan.data.assignments ?? []).map(a => a as unknown as Record<string, unknown>)
+      }
+      setSelectedMealPlan(uiMealPlan)
       setEditModalOpen(false)
     } catch (err) {
       alert(`Failed to update meal plan: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -191,7 +197,7 @@ const MealPlans: React.FC = () => {
     setConfirmationModal({
       isOpen: true,
       title: 'Delete Meal Plan',
-      message: `Are you sure you want to permanently delete "${planName}"? This action cannot be undone.`,      type: 'danger',
+      message: `Are you sure you want to permanently delete "${planName}"? This action cannot be undone.`, type: 'danger',
       confirmText: 'Delete Meal Plan',
       onConfirm: async () => {
         setConfirmationModal(prev => ({ ...prev, loading: true }))
@@ -212,7 +218,7 @@ const MealPlans: React.FC = () => {
           setConfirmationModal({
             isOpen: true,
             title: 'Cannot Delete Meal Plan',
-            message: `❌ ${errorMessage}\n\nThis will permanently delete all ${assignmentCount} meal assignment(s) for this meal plan. Do you want to proceed?`,            type: 'warning',
+            message: `❌ ${errorMessage}\n\nThis will permanently delete all ${assignmentCount} meal assignment(s) for this meal plan. Do you want to proceed?`, type: 'warning',
             confirmText: 'Force Delete',
             onConfirm: async () => {
               setConfirmationModal(prev => ({ ...prev, loading: true }))

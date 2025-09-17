@@ -75,19 +75,25 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   // Open meal modal with swipe functionality
   const openMealModal = (dayMeals, initialMealIndex = 0) => {
     const formattedMeals = dayMeals.map((meal) => ({
-      name: meal.label,
+      name: meal.name || meal.label,
       description: meal.description,
       image: meal.image,
       type: meal.label,
       nutrition: meal.nutrition,
       ingredients: meal.ingredients,
-      calories: meal.calories,
-      protein: meal.protein,
-      carbs: meal.carbs,
-      fat: meal.fat,
-      fiber: meal.fiber,
+      // Extract nutrition values from nutrition object if available
+      calories: meal.nutrition?.calories || meal.calories || 0,
+      protein: meal.nutrition?.protein || meal.protein || 0,
+      carbs: meal.nutrition?.carbs || meal.carbs || 0,
+      fat: meal.nutrition?.fat || meal.fat || 0,
+      fiber: meal.nutrition?.fiber || meal.fiber || 0,
+      sugar: meal.nutrition?.sugar || meal.sugar || 0,
     }));
 
+    console.log(
+      "🔍 DEBUG: Formatted meals for modal:",
+      JSON.stringify(formattedMeals, null, 2)
+    );
     setCurrentDayMeals(formattedMeals);
     setSelectedMealIndex(initialMealIndex);
     setModalVisible(true);
@@ -274,6 +280,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             weekData[fullDay.substring(0, 3).toLowerCase()] ||
             {};
 
+          // Debug: Log the dayData structure to understand nutrition data
+          console.log(`🔍 DEBUG: Day data for ${fullDay}:`, {
+            day: fullDay,
+            breakfast: dayData.breakfast,
+            lunch: dayData.lunch,
+            dinner: dayData.dinner,
+          });
+
           weeklyMealPlan[weekNumber].push({
             day: fullDay,
             breakfast: dayData.breakfast?.title || "Breakfast not specified",
@@ -286,6 +300,17 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             breakfastDescription: dayData.breakfast?.description || "",
             lunchDescription: dayData.lunch?.description || "",
             dinnerDescription: dayData.dinner?.description || "",
+            // Add nutrition data for each meal
+            breakfastNutrition:
+              dayData.breakfast?.nutrition ||
+              dayData.breakfast?.nutritionInfo ||
+              null,
+            lunchNutrition:
+              dayData.lunch?.nutrition || dayData.lunch?.nutritionInfo || null,
+            dinnerNutrition:
+              dayData.dinner?.nutrition ||
+              dayData.dinner?.nutritionInfo ||
+              null,
           });
         });
       }
@@ -873,7 +898,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     [colors]
   );
 
-  const weeklyMealPlan = getWeeklyMealPlan;
+  const weeklyMealPlan = getWeeklyMealPlan();
 
   if (loading) {
     return <MealPlanDetailSkeleton />;

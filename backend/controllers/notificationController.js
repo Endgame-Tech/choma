@@ -504,7 +504,7 @@ class NotificationController {
       const notification = new Notification({
         userId,
         title: "🧪 Test Push Notification",
-        body: "This is a test push notification from development mode!",
+        message: "This is a test push notification from development mode!",
         type: "test",
         data: {
           environment: "development",

@@ -2,18 +2,23 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 
-// Conditionally import Firebase messaging
+// Conditionally import Firebase components
 let messaging = null;
+let firebaseApp = null;
 try {
+  // Import Firebase app first
+  firebaseApp = require("@react-native-firebase/app").default;
   messaging = require("@react-native-firebase/messaging").default;
 } catch (error) {
-  console.warn("Firebase messaging not available:", error.message);
+  console.warn("Firebase not available:", error.message);
 }
 
 class FirebaseService {
   constructor() {
     this.messaging = messaging;
-    this.isAvailable = !!messaging;
+    this.firebaseApp = firebaseApp;
+    this.isAvailable = !!messaging && !!firebaseApp;
+    this.isInitialized = false;
   }
 
   async initializeFirebase() {
@@ -25,16 +30,46 @@ class FirebaseService {
       }
 
       if (!this.isAvailable) {
-        console.warn("⚠️ Firebase messaging not available, skipping FCM initialization");
+        console.warn("⚠️ Firebase not available, skipping FCM initialization");
         return null;
       }
 
-      console.log("🔥 Initializing Firebase messaging in development mode");
+      // Initialize Firebase app if not already initialized
+      if (!this.isInitialized) {
+        console.log("🔥 Initializing Firebase app...");
+        
+        // Check if Firebase app is already initialized
+        const apps = this.firebaseApp.apps;
+        if (apps.length === 0) {
+          console.log("📱 No Firebase apps found, initializing default app...");
+          
+          // Firebase config for Android (from google-services.json)
+          const firebaseConfig = {
+            apiKey: "AIzaSyDMo8iLHZX3OxztiP8OCowGNaUPl4l-mlY",
+            projectId: "getchoma-bca76",
+            storageBucket: "getchoma-bca76.firebasestorage.app",
+            messagingSenderId: "947042824831",
+            appId: "1:947042824831:android:6a5f3dfb24c26114cd054a",
+            databaseURL: `https://getchoma-bca76-default-rtdb.firebaseio.com/`,
+          };
+          
+          // Initialize the default Firebase app with config
+          await this.firebaseApp.initializeApp(firebaseConfig);
+          console.log("✅ Firebase default app initialized with config");
+        } else {
+          console.log("✅ Firebase app already initialized:", apps[0].name);
+        }
+        
+        this.isInitialized = true;
+      }
+
+      console.log("🔥 Initializing Firebase messaging");
       console.log("📱 Environment:", {
         isDev: __DEV__,
         appOwnership: Constants.appOwnership,
         executionEnvironment: Constants.executionEnvironment,
-        firebaseAvailable: this.isAvailable
+        firebaseAvailable: this.isAvailable,
+        appsCount: this.firebaseApp.apps.length
       });
 
       // Request permission for iOS

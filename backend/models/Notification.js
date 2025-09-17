@@ -61,7 +61,10 @@ const notificationSchema = new mongoose.Schema({
       // Promotional notifications
       'new_meal_plans',
       'special_offer',
-      'seasonal_menu'
+      'seasonal_menu',
+      
+      // System notifications
+      'test'
     ]
   },
   isRead: {

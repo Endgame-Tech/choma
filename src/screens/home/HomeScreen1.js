@@ -13,6 +13,9 @@ import {
   ActivityIndicator,
   Animated,
   Modal,
+  LayoutAnimation,
+  UIManager,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,6 +51,11 @@ import TagFilterBar from "../../components/home/TagFilterBar";
 import tagService from "../../services/tagService";
 
 const { width } = Dimensions.get("window");
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const HomeScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
@@ -95,9 +103,6 @@ const HomeScreen = ({ navigation }) => {
   const [selectedTag, setSelectedTag] = useState(null);
   const [filteredMealPlans, setFilteredMealPlans] = useState([]);
 
-  // Animation values for smooth transitions
-  const popularSectionOpacity = useRef(new Animated.Value(1)).current;
-  const popularSectionHeight = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
@@ -270,51 +275,35 @@ const HomeScreen = ({ navigation }) => {
     }
   }, [selectedTagId]);
 
-  // Handle tag selection with animation
+  // Handle tag selection with smooth animation
   const handleTagSelect = (tagId, tag) => {
-    // If switching from no tag to a tag (hide popular section)
-    if (!selectedTagId && tagId) {
-      Animated.parallel([
-        Animated.timing(popularSectionOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(popularSectionHeight, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: false,
-        }),
-      ]).start(() => {
-        setSelectedTagId(tagId);
-        setSelectedTag(tag);
-      });
-    }
-    // If switching from a tag to no tag (show popular section)
-    else if (selectedTagId && !tagId) {
-      setSelectedTagId(tagId);
-      setSelectedTag(tag);
+    // Configure the layout animation
+    LayoutAnimation.configureNext({
+      duration: 300,
+      create: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+      update: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.scaleXY,
+      },
+      delete: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+    });
+    
+    setSelectedTagId(tagId);
+    setSelectedTag(tag);
+  };
 
-      setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(popularSectionOpacity, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(popularSectionHeight, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: false,
-          }),
-        ]).start();
-      }, 50);
-    }
-    // If switching between tags (instant change)
-    else {
-      setSelectedTagId(tagId);
-      setSelectedTag(tag);
-    }
+  // Handle filter application
+  const handleApplyFilters = (filters) => {
+    console.log('🔍 Applying filters:', filters);
+    // You can implement additional filter logic here
+    // For now, the filters will be handled by the FilterModal
+    // and could be used to further filter the meal plans
   };
 
   // Load banners, subscription, and orders from backend
@@ -2502,6 +2491,7 @@ const HomeScreen = ({ navigation }) => {
                 <TagFilterBar
                   onTagSelect={handleTagSelect}
                   selectedTagId={selectedTagId}
+                  onApplyFilters={handleApplyFilters}
                 />
 
                 {/* Popular Food Section */}
@@ -2669,19 +2659,12 @@ const HomeScreen = ({ navigation }) => {
                 <TagFilterBar
                   onTagSelect={handleTagSelect}
                   selectedTagId={selectedTagId}
+                  onApplyFilters={handleApplyFilters}
                 />
 
-                {/* Popular Food Section - Animated visibility */}
-                <Animated.View
-                  style={[
-                    styles(colors).section,
-                    {
-                      opacity: popularSectionOpacity,
-                      transform: [{ scaleY: popularSectionHeight }],
-                      overflow: "hidden",
-                    },
-                  ]}
-                >
+                {/* Popular Food Section - Conditional visibility */}
+                {!selectedTagId && (
+                  <View style={styles(colors).section}>
                   <View style={styles(colors).sectionHeader}>
                     <Text style={styles(colors).sectionTitle}>
                       Popular plans
@@ -2763,7 +2746,8 @@ const HomeScreen = ({ navigation }) => {
                       )}
                     </View>
                   )}
-                </Animated.View>
+                  </View>
+                )}
 
                 {/* Our Mealplans Section */}
                 <View style={styles(colors).section}>

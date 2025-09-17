@@ -60,7 +60,7 @@ CustomerSchema.pre('save', async function(next) {
 });
 
 // Instance methods for push token management
-CustomerSchema.methods.addPushToken = function(token, deviceId, platform) {
+CustomerSchema.methods.addPushToken = function(token, deviceId, platform, tokenType = 'expo') {
   // Remove existing token for this device
   this.pushTokens = this.pushTokens.filter(pt => pt.deviceId !== deviceId);
   
@@ -69,6 +69,7 @@ CustomerSchema.methods.addPushToken = function(token, deviceId, platform) {
     token,
     deviceId,
     platform,
+    tokenType,
     isActive: true,
     lastUsed: new Date()
   });

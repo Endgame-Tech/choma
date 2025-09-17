@@ -99,6 +99,7 @@ export interface MealPlan {
   totalPrice: number
   isPublished: boolean
   isActive: boolean
+  tagId?: string
   nutritionInfo: {
     totalCalories: number
     avgCaloriesPerDay: number
@@ -147,6 +148,12 @@ export interface MealPlanFilters {
   search?: string
   isPublished?: boolean
   durationWeeks?: number
+}
+
+export interface MealPlanResponse {
+  success: boolean
+  data: MealPlan
+  message?: string
 }
 
 // Meals API
@@ -260,9 +267,9 @@ export const mealPlansApi = {
   },
 
   // Update meal plan
-  async updateMealPlan(id: string, planData: Partial<MealPlan>) {
+  async updateMealPlan(id: string, planData: Partial<MealPlan>): Promise<MealPlanResponse> {
     const response = await api.put(`/meal-plans/${id}`, planData)
-    return response.data
+    return response.data as MealPlanResponse
   },
 
   // Delete meal plan

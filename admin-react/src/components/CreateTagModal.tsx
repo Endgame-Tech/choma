@@ -120,6 +120,8 @@ const CreateTagModal: React.FC<CreateTagModalProps> = ({
           </div>
           <button
             onClick={handleClose}
+            title="Close modal"
+            aria-label="Close modal"
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <i className="fi fi-sr-cross text-xl"></i>
@@ -139,9 +141,8 @@ const CreateTagModal: React.FC<CreateTagModalProps> = ({
               value={formData.name}
               onChange={handleInputChange}
               placeholder="Enter tag name (e.g., Popular, Healthy, Quick)"
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white ${errors.name ? 'border-red-500' : 'border-gray-300'
+                }`}
               maxLength={50}
             />
             {errors.name && (
@@ -159,8 +160,8 @@ const CreateTagModal: React.FC<CreateTagModalProps> = ({
             </label>
             <ImageUpload
               onImageUpload={handleImageUpload}
-              currentImage={formData.image}
-              placeholder="Upload tag image"
+              currentImageUrl={formData.image}
+              label="Upload tag image"
               className="w-full"
               cropAspectRatio={1}
               uploadEndpoint="/upload/tag-image"
@@ -184,9 +185,8 @@ const CreateTagModal: React.FC<CreateTagModalProps> = ({
               onChange={handleInputChange}
               placeholder="Brief description of this tag"
               rows={3}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white resize-none ${
-                errors.description ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white resize-none ${errors.description ? 'border-red-500' : 'border-gray-300'
+                }`}
               maxLength={200}
             />
             {errors.description && (

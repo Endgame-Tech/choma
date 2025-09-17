@@ -133,54 +133,50 @@ export const NotificationProvider = ({ children, showToastNotification }) => {
       // For development, fall back to Expo notifications
       let pushToken = null;
 
-      // Skip Firebase entirely in development mode - go straight to Expo
-      if (__DEV__) {
-        console.log("🔄 Development mode: Skipping Firebase, using Expo notifications only");
-      } else {
-        try {
-          // Try to get Firebase FCM token first (for production only)
-          pushToken = await firebaseService.initializeFirebase();
+      // Try Firebase first for all environments
+      try {
+        // Try to get Firebase FCM token first
+        pushToken = await firebaseService.initializeFirebase();
 
-          if (pushToken) {
-            console.log("✅ Using Firebase FCM for push notifications");
-            setExpoPushToken(pushToken);
+        if (pushToken) {
+          console.log("✅ Using Firebase FCM for push notifications");
+          setExpoPushToken(pushToken);
 
-            // Set up Firebase message handlers
-            firebaseService.onMessage((remoteMessage) => {
-              console.log("📱 Firebase message received:", remoteMessage);
-              
-              // Show in-app toast for Firebase messages
-              if (showToastNotification && remoteMessage.notification) {
-                showToastNotification({
-                  title: remoteMessage.notification.title,
-                  body: remoteMessage.notification.body,
-                  type: remoteMessage.data?.type || "info",
-                  onPress: () => {
-                    handleNotificationPress({
-                      data: remoteMessage.data,
-                      title: remoteMessage.notification.title,
-                      body: remoteMessage.notification.body
-                    });
-                  }
-                });
-              }
-              
-              // Increment unread count
-              setUnreadCount((prev) => prev + 1);
-              
-              // Refresh notifications
-              loadNotifications();
-            });
+          // Set up Firebase message handlers
+          firebaseService.onMessage((remoteMessage) => {
+            console.log("📱 Firebase message received:", remoteMessage);
+            
+            // Show in-app toast for Firebase messages
+            if (showToastNotification && remoteMessage.notification) {
+              showToastNotification({
+                title: remoteMessage.notification.title,
+                body: remoteMessage.notification.body,
+                type: remoteMessage.data?.type || "info",
+                onPress: () => {
+                  handleNotificationPress({
+                    data: remoteMessage.data,
+                    title: remoteMessage.notification.title,
+                    body: remoteMessage.notification.body
+                  });
+                }
+              });
+            }
+            
+            // Increment unread count
+            setUnreadCount((prev) => prev + 1);
+            
+            // Refresh notifications
+            loadNotifications();
+          });
 
-            // Register token with backend
-            await registerPushToken(pushToken, "fcm");
-          }
-        } catch (firebaseError) {
-          console.warn(
-            "Firebase not available, falling back to Expo:",
-            firebaseError.message
-          );
+          // Register token with backend
+          await registerPushToken(pushToken, "fcm");
         }
+      } catch (firebaseError) {
+        console.warn(
+          "Firebase not available, falling back to Expo:",
+          firebaseError.message
+        );
       }
 
       // If no Firebase token, try Expo notifications

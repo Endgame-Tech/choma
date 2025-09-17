@@ -99,7 +99,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
         mealTypes: formData.mealTypes,
         planFeatures: formData.planFeatures.split(',').map(feature => feature.trim()).filter(feature => feature),
         adminNotes: formData.adminNotes,
-        tagId: formData.tagId || null
+        tagId: formData.tagId || undefined
       }
 
 
@@ -114,7 +114,8 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
         targetAudience: 'Family',
         mealTypes: ['breakfast', 'lunch', 'dinner'],
         planFeatures: '',
-        adminNotes: ''
+        adminNotes: '',
+        tagId: ''
       })
     } catch (error) {
       console.error('Failed to create meal plan:', error)

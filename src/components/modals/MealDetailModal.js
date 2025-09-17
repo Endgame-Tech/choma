@@ -90,7 +90,7 @@ const MealDetailModal = ({
   };
 
   const getNutritionValue = (field) => {
-    // Get nutrition value from the correct schema structure
+    // Get nutrition value by calculating total from all meals in this time slot
     const meal = currentMeal;
 
     // Debug: Log the meal structure to understand data flow
@@ -101,16 +101,47 @@ const MealDetailModal = ({
       field: field,
     });
 
+    // Initialize total
+    let total = 0;
+    let hasValidData = false;
+
+    // Check if this meal has multiple meals assigned (like breakfast with multiple items)
+    if (meal.meals && Array.isArray(meal.meals)) {
+      // Calculate total from all assigned meals
+      meal.meals.forEach((assignedMeal) => {
+        const value = getMealNutritionValue(assignedMeal, field);
+        if (value !== null && value !== undefined) {
+          total += Number(value) || 0;
+          hasValidData = true;
+        }
+      });
+    } else {
+      // Single meal - get its nutrition value directly
+      const value = getMealNutritionValue(meal, field);
+      if (value !== null && value !== undefined) {
+        total = Number(value) || 0;
+        hasValidData = true;
+      }
+    }
+
+    console.log(
+      `✅ Calculated total ${field}:`,
+      total,
+      "hasValidData:",
+      hasValidData
+    );
+    return hasValidData ? total : null;
+  };
+
+  const getMealNutritionValue = (meal, field) => {
+    // Helper function to extract nutrition value from individual meal
+
     // Primary source: meal.nutrition (from DailyMeal model)
     if (
       meal.nutrition &&
       meal.nutrition[field] !== undefined &&
       meal.nutrition[field] !== null
     ) {
-      console.log(
-        `✅ Found ${field} in meal.nutrition:`,
-        meal.nutrition[field]
-      );
       return meal.nutrition[field];
     }
 
@@ -120,15 +151,15 @@ const MealDetailModal = ({
       meal.nutritionInfo[field] !== undefined &&
       meal.nutritionInfo[field] !== null
     ) {
-      console.log(
-        `✅ Found ${field} in meal.nutritionInfo:`,
-        meal.nutritionInfo[field]
-      );
       return meal.nutritionInfo[field];
     }
 
-    console.log(`❌ No nutrition data found for ${field}`);
-    // If no data available, return null to show "No data"
+    // Tertiary source: direct field on meal object
+    if (meal[field] !== undefined && meal[field] !== null) {
+      return meal[field];
+    }
+
+    // No data available
     return null;
   };
 
@@ -201,7 +232,7 @@ const MealDetailModal = ({
 
                 {/* Quick Stats Section */}
                 <View style={styles(colors).statsSection}>
-                  <Text style={styles(colors).statsTitle}>Quick Stats</Text>
+                  <Text style={styles(colors).statsTitle}>Meal Stats</Text>
                   <View style={styles(colors).statsGrid}>
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>

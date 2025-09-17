@@ -63,7 +63,7 @@ router.get('/delivery/track/:orderId', auth, userSubscriptionController.getDeliv
 // POST /api/auth/push-token (protected route) - Register push notification token
 router.post('/push-token', auth, async (req, res) => {
   try {
-    const { token, deviceId, platform } = req.body;
+    const { token, deviceId, platform, tokenType } = req.body;
     
     if (!token || !deviceId || !platform) {
       return res.status(400).json({
@@ -82,7 +82,7 @@ router.post('/push-token', auth, async (req, res) => {
       });
     }
     
-    await customer.addPushToken(token, deviceId, platform);
+    await customer.addPushToken(token, deviceId, platform, tokenType);
     
     res.json({
       success: true,
