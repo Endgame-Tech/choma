@@ -46,7 +46,7 @@ const Header = () => {
 };
 
 const styles = (colors) =>
-  createStylesWithDMSans({
+  StyleSheet.create({
     headerContainer: {
       flexDirection: "row",
       alignItems: "center",

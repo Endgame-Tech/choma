@@ -74,7 +74,7 @@ const OfflineStatusBanner = () => {
   );
 };
 
-const styles = createStylesWithDMSans({
+const styles = StyleSheet.create({
   banner: {
     position: "absolute",
     top: 0,

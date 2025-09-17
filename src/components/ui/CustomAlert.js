@@ -148,7 +148,7 @@ const CustomAlert = ({
 };
 
 const styles = (colors) =>
-  createStylesWithDMSans({
+  StyleSheet.create({
     overlay: {
       flex: 1,
       backgroundColor: colors.overlay,

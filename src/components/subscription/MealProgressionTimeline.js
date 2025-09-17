@@ -1417,7 +1417,7 @@ const MealProgressionTimeline = ({
   );
 };
 
-const styles = createStylesWithDMSans({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
   },

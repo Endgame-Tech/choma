@@ -4,7 +4,7 @@ import { Typography, DEFAULT_FONT_FAMILY } from "../constants/fonts";
 import { createStylesWithDMSans } from "../utils/fontUtils";
 
 // Global text styles using DM Sans
-export const globalTextStyles = createStylesWithDMSans({
+export const globalTextStyles = StyleSheet.create({
   // Default text style - apply this to Text components
   defaultText: {
     fontFamily: DEFAULT_FONT_FAMILY,
@@ -36,7 +36,7 @@ export const globalTextStyles = createStylesWithDMSans({
 });
 
 // Global container styles
-export const globalContainerStyles = createStylesWithDMSans({
+export const globalContainerStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff", // Will be overridden by theme colors
@@ -55,7 +55,7 @@ export const globalContainerStyles = createStylesWithDMSans({
 });
 
 // Global input styles with DM Sans
-export const globalInputStyles = createStylesWithDMSans({
+export const globalInputStyles = StyleSheet.create({
   textInput: {
     fontFamily: DEFAULT_FONT_FAMILY,
     fontSize: 16,
@@ -78,7 +78,7 @@ export const globalInputStyles = createStylesWithDMSans({
 });
 
 // Global button styles with DM Sans
-export const globalButtonStyles = createStylesWithDMSans({
+export const globalButtonStyles = StyleSheet.create({
   button: {
     paddingVertical: 12,
     paddingHorizontal: 24,

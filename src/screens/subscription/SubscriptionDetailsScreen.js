@@ -575,7 +575,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  createStylesWithDMSans({
+  StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,

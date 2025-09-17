@@ -14,8 +14,6 @@ import { useTheme } from "../../styles/theme";
 import apiService from "../../services/api";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-
-
 const { width } = Dimensions.get("window");
 
 const RecurringDeliveryCard = ({

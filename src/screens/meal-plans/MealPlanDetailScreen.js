@@ -1,5 +1,11 @@
 // src/screens/meal-plans/MealPlanDetailScreen.js
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -55,15 +61,15 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
   // Image loading handlers
   const handleImageLoad = (imageKey) => {
-    setImageLoadingStates(prev => ({ ...prev, [imageKey]: 'loaded' }));
+    setImageLoadingStates((prev) => ({ ...prev, [imageKey]: "loaded" }));
   };
 
   const handleImageError = (imageKey) => {
-    setImageLoadingStates(prev => ({ ...prev, [imageKey]: 'error' }));
+    setImageLoadingStates((prev) => ({ ...prev, [imageKey]: "error" }));
   };
 
   const handleImageLoadStart = (imageKey) => {
-    setImageLoadingStates(prev => ({ ...prev, [imageKey]: 'loading' }));
+    setImageLoadingStates((prev) => ({ ...prev, [imageKey]: "loading" }));
   };
 
   // Open meal modal with swipe functionality
@@ -137,7 +143,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
         // Try multiple ID formats: planId (MP001), _id (ObjectId), or id
         const mealPlanId = bundle.planId || bundle._id || bundle.id;
-        
+
         if (!mealPlanId) {
           throw new Error("No meal plan ID found");
         }
@@ -414,364 +420,390 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   );
 
   // Enhanced meal card for horizontal slider - memoized
-  const renderMealSliderCard = useCallback((meal) => {
-    const defaultImage = require("../../assets/images/meal-plans/fitfuel.jpg");
-    const imageSource = meal.image
-      ? typeof meal.image === "string"
-        ? { uri: meal.image }
-        : meal.image
-      : defaultImage;
+  const renderMealSliderCard = useCallback(
+    (meal) => {
+      const defaultImage = require("../../assets/images/meal-plans/fitfuel.jpg");
+      const imageSource = meal.image
+        ? typeof meal.image === "string"
+          ? { uri: meal.image }
+          : meal.image
+        : defaultImage;
 
-    return (
-      <TouchableOpacity
-        style={styles(colors).mealSliderCard}
-        onPress={() => {
-          // Find the meal index for the modal
-          const dayMeals = [
-            {
-              icon: "🌅",
-              label: "Breakfast",
-              description: meal.description,
-              image: meal.image,
-            },
-            {
-              icon: "☀️",
-              label: "Lunch",
-              description: meal.description,
-              image: meal.image,
-            },
-            {
-              icon: "🌙",
-              label: "Dinner",
-              description: meal.description,
-              image: meal.image,
-            },
-          ];
-          const mealIndex = dayMeals.findIndex((m) => m.label === meal.label);
-          openMealModal(dayMeals, mealIndex);
-        }}
-        activeOpacity={0.8}
-      >
-        <View style={styles(colors).mealSliderImageContainer}>
-          <Image
-            source={imageSource}
-            style={styles(colors).mealSliderImage}
-            defaultSource={defaultImage}
-          />
-          {/* Discount pill on meal image - show if discount applies to this meal plan */}
-          {discountInfo && discountInfo.discountPercent > 0 && (
-            <View style={styles(colors).mealDiscountPill}>
-              <Ionicons name="gift-outline" size={14} color="#333" />
-              <Text style={styles(colors).mealDiscountPillText}>
-                {discountInfo.discountPercent}% Off
+      return (
+        <TouchableOpacity
+          style={styles(colors).mealSliderCard}
+          onPress={() => {
+            // Find the meal index for the modal
+            const dayMeals = [
+              {
+                icon: "🌅",
+                label: "Breakfast",
+                description: meal.description,
+                image: meal.image,
+              },
+              {
+                icon: "☀️",
+                label: "Lunch",
+                description: meal.description,
+                image: meal.image,
+              },
+              {
+                icon: "🌙",
+                label: "Dinner",
+                description: meal.description,
+                image: meal.image,
+              },
+            ];
+            const mealIndex = dayMeals.findIndex((m) => m.label === meal.label);
+            openMealModal(dayMeals, mealIndex);
+          }}
+          activeOpacity={0.8}
+        >
+          <View style={styles(colors).mealSliderImageContainer}>
+            <Image
+              source={imageSource}
+              style={styles(colors).mealSliderImage}
+              defaultSource={defaultImage}
+            />
+            {/* Discount pill on meal image - show if discount applies to this meal plan */}
+            {discountInfo && discountInfo.discountPercent > 0 && (
+              <View style={styles(colors).mealDiscountPill}>
+                <Ionicons name="gift-outline" size={14} color="#333" />
+                <Text style={styles(colors).mealDiscountPillText}>
+                  {discountInfo.discountPercent}% Off
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Content Overlay with Gradient */}
+          <LinearGradient
+            colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.85)"]}
+            style={styles(colors).mealSliderContent}
+          >
+            <View style={styles(colors).mealSliderInfo}>
+              <Text style={styles(colors).mealSliderIcon}>{meal.icon}</Text>
+              <Text style={styles(colors).mealSliderLabel}>{meal.label}</Text>
+              <Text
+                style={styles(colors).mealSliderDescription}
+                numberOfLines={2}
+              >
+                {meal.description}
               </Text>
             </View>
-          )}
-        </View>
-
-        {/* Content Overlay with Gradient */}
-        <LinearGradient
-          colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.85)"]}
-          style={styles(colors).mealSliderContent}
-        >
-          <View style={styles(colors).mealSliderInfo}>
-            <Text style={styles(colors).mealSliderIcon}>{meal.icon}</Text>
-            <Text style={styles(colors).mealSliderLabel}>{meal.label}</Text>
-            <Text
-              style={styles(colors).mealSliderDescription}
-              numberOfLines={2}
-            >
-              {meal.description}
-            </Text>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
-    );
-  }, [colors, discountInfo, openMealModal]);
+          </LinearGradient>
+        </TouchableOpacity>
+      );
+    },
+    [colors, discountInfo, openMealModal]
+  );
 
   // Toggle day expansion with smooth animation - memoized
-  const toggleDayExpansion = useCallback((day) => {
-    const isExpanding = expandedDay !== day;
+  const toggleDayExpansion = useCallback(
+    (day) => {
+      const isExpanding = expandedDay !== day;
 
-    if (!animationValues[day]) {
-      animationValues[day] = new Animated.Value(0);
-    }
+      if (!animationValues[day]) {
+        animationValues[day] = new Animated.Value(0);
+      }
 
-    setExpandedDay(isExpanding ? day : null);
+      setExpandedDay(isExpanding ? day : null);
 
-    // Enhanced spring animation for smoother expand/collapse
-    Animated.spring(animationValues[day], {
-      toValue: isExpanding ? 1 : 0,
-      useNativeDriver: false,
-      tension: 120,      // Increased tension for snappier feel
-      friction: 9,       // Slightly increased friction for better control
-      overshootClamping: false, // Allow slight bounce
-      restDisplacementThreshold: 0.01,
-      restSpeedThreshold: 0.01,
-    }).start();
-  }, [expandedDay, animationValues]);
+      // Enhanced spring animation for smoother expand/collapse
+      Animated.spring(animationValues[day], {
+        toValue: isExpanding ? 1 : 0,
+        useNativeDriver: false,
+        tension: 120, // Increased tension for snappier feel
+        friction: 9, // Slightly increased friction for better control
+        overshootClamping: false, // Allow slight bounce
+        restDisplacementThreshold: 0.01,
+        restSpeedThreshold: 0.01,
+      }).start();
+    },
+    [expandedDay, animationValues]
+  );
 
-  const renderDayCard = useCallback((dayData) => {
-    if (
-      dayData.breakfast === "Breakfast not specified" &&
-      dayData.lunch === "Lunch not specified" &&
-      dayData.dinner === "Dinner not specified"
-    ) {
-      return null;
-    }
-    const animationValue =
-      animationValues[dayData.day] || new Animated.Value(0);
+  const renderDayCard = useCallback(
+    (dayData) => {
+      if (
+        dayData.breakfast === "Breakfast not specified" &&
+        dayData.lunch === "Lunch not specified" &&
+        dayData.dinner === "Dinner not specified"
+      ) {
+        return null;
+      }
+      const animationValue =
+        animationValues[dayData.day] || new Animated.Value(0);
 
-    // Get available meal types from actual day data (filter out "not specified")
-    const getAllAvailableMealTypes = () => {
-      const mealTypeMap = {
-        breakfast: {
-          icon: "🌅",
-          label: "Breakfast",
-          name: dayData.breakfast,
-          description: dayData.breakfastDescription,
-          image: dayData.breakfastImage,
-          nutrition: dayData.breakfastNutrition,
-        },
-        lunch: {
-          icon: "☀️", 
-          label: "Lunch",
-          name: dayData.lunch,
-          description: dayData.lunchDescription,
-          image: dayData.lunchImage,
-          nutrition: dayData.lunchNutrition,
-        },
-        dinner: {
-          icon: "🌙",
-          label: "Dinner", 
-          name: dayData.dinner,
-          description: dayData.dinnerDescription,
-          image: dayData.dinnerImage,
-          nutrition: dayData.dinnerNutrition,
-        },
-        snack: {
-          icon: "🥜",
-          label: "Snack",
-          name: dayData.snack,
-          description: dayData.snackDescription,
-          image: dayData.snackImage,
-          nutrition: dayData.snackNutrition,
-        },
+      // Get available meal types from actual day data (filter out "not specified")
+      const getAllAvailableMealTypes = () => {
+        const mealTypeMap = {
+          breakfast: {
+            icon: "🌅",
+            label: "Breakfast",
+            name: dayData.breakfast,
+            description: dayData.breakfastDescription,
+            image: dayData.breakfastImage,
+            nutrition: dayData.breakfastNutrition,
+          },
+          lunch: {
+            icon: "☀️",
+            label: "Lunch",
+            name: dayData.lunch,
+            description: dayData.lunchDescription,
+            image: dayData.lunchImage,
+            nutrition: dayData.lunchNutrition,
+          },
+          dinner: {
+            icon: "🌙",
+            label: "Dinner",
+            name: dayData.dinner,
+            description: dayData.dinnerDescription,
+            image: dayData.dinnerImage,
+            nutrition: dayData.dinnerNutrition,
+          },
+          snack: {
+            icon: "🥜",
+            label: "Snack",
+            name: dayData.snack,
+            description: dayData.snackDescription,
+            image: dayData.snackImage,
+            nutrition: dayData.snackNutrition,
+          },
+        };
+
+        // Filter out meal types that are not specified or missing
+        return Object.entries(mealTypeMap)
+          .filter(([mealType, mealData]) => {
+            return (
+              mealData.name &&
+              mealData.name !== `${mealData.label} not specified` &&
+              mealData.name.trim() !== ""
+            );
+          })
+          .map(([mealType, mealData]) => mealData);
       };
 
-      // Filter out meal types that are not specified or missing
-      return Object.entries(mealTypeMap)
-        .filter(([mealType, mealData]) => {
-          return mealData.name && 
-                 mealData.name !== `${mealData.label} not specified` &&
-                 mealData.name.trim() !== '';
-        })
-        .map(([mealType, mealData]) => mealData);
-    };
+      // Prepare meal data for horizontal slider (only available meals)
+      const meals = getAllAvailableMealTypes();
 
-    // Prepare meal data for horizontal slider (only available meals)
-    const meals = getAllAvailableMealTypes();
-
-    return (
-      <View
-        key={dayData.day}
-        style={[
-          styles(colors).dayCard,
-          expandedDay === dayData.day && styles(colors).dayCardExpanded,
-        ]}
-      >
-        <TouchableOpacity
-          style={styles(colors).dayHeader}
-          onPress={() => toggleDayExpansion(dayData.day)}
-          activeOpacity={0.7}
-          accessibilityLabel={`${dayData.day} meals`}
-          accessibilityHint={`Tap to ${expandedDay === dayData.day ? 'collapse' : 'expand'} meal details for ${dayData.day}`}
-          accessibilityRole="button"
-          accessible={true}
-        >
-          <Text style={styles(colors).dayName}>{dayData.day}</Text>
-          <Animated.View
-            style={{
-              transform: [
-                {
-                  rotate: animationValue.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["0deg", "180deg"],
-                  }),
-                },
-              ],
-            }}
-          >
-            <Ionicons
-              name="chevron-down"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </Animated.View>
-        </TouchableOpacity>
-
-        {/* Animated expandable content - restructured for better touch handling */}
-        <Animated.View
+      return (
+        <View
+          key={dayData.day}
           style={[
-            styles(colors).dayExpandableContent,
-            {
-              opacity: animationValue.interpolate({
-                inputRange: [0, 0.5, 1],
-                outputRange: [0, 0, 1],
-              }),
-              maxHeight: animationValue.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, 300], // Dynamic height instead of scaleY
-              }),
-            },
+            styles(colors).dayCard,
+            expandedDay === dayData.day && styles(colors).dayCardExpanded,
           ]}
-          pointerEvents={expandedDay === dayData.day ? "auto" : "none"}
         >
-          {expandedDay === dayData.day && (
-            <View style={styles(colors).dayContent}>
-              {/* Horizontal Meal Slider */}
-              <View style={styles(colors).mealSliderWrapper}>
-                <FlatList
-                  horizontal={meals.length > 1}
-                  data={meals}
-                  keyExtractor={(item) => item.label}
-                  renderItem={({ item, index }) => (
-                    <View style={[
-                      styles(colors).mealCardWrapper,
-                      meals.length === 1 && styles(colors).mealCardWrapperSingle
-                    ]}>
-                      <TouchableOpacity
-                        style={[
-                          styles(colors).mealSliderCard,
-                          meals.length === 1 && styles(colors).mealSliderCardSingle
-                        ]}
-                        onPress={() => openMealModal(meals, index)}
-                        activeOpacity={0.8}
-                        accessibilityLabel={`${item.label}: ${item.name}`}
-                        accessibilityHint={`Tap to view details about ${item.label}`}
-                        accessibilityRole="button"
-                        accessible={true}
-                      >
-                        <View style={styles(colors).mealSliderImageContainer}>
-                          <Image
-                            source={
-                              item.image
-                                ? { uri: item.image }
-                                : require("../../assets/images/meal-plans/fitfuel.jpg")
-                            }
-                            style={styles(colors).mealSliderImage}
-                            defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
-                          />
-                          {discountInfo && discountInfo.discountPercent > 0 && (
-                            <View style={styles(colors).mealDiscountPill}>
-                              <Ionicons
-                                name="gift-outline"
-                                size={14}
-                                color="#333"
-                              />
-                              <Text style={styles(colors).mealDiscountPillText}>
-                                {discountInfo.discountPercent}% Off
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                        <LinearGradient
-                          colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.85)"]}
-                          style={styles(colors).mealSliderContent}
-                        >
-                          <View style={styles(colors).mealSliderInfo}>
-                            <Text style={styles(colors).mealSliderIcon}>
-                              {item.icon}
-                            </Text>
-                            <Text style={styles(colors).mealSliderLabel}>
-                              {item.label}
-                            </Text>
-                            <Text
-                              style={styles(colors).mealSliderDescription}
-                              numberOfLines={2}
-                            >
-                              {item.description}
-                            </Text>
-                          </View>
-                        </LinearGradient>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles(colors).mealSliderContainer}
-                  scrollEventThrottle={16}
-                  decelerationRate="fast"
-                  bounces={true}
-                  pagingEnabled={false}
-                  removeClippedSubviews={true}
-                  initialNumToRender={2}
-                  maxToRenderPerBatch={2}
-                  windowSize={10}
-                  getItemLayout={(data, index) => ({
-                    length: 130,
-                    offset: 130 * index,
-                    index,
-                  })}
-                  nestedScrollEnabled={true}
-                />
-              </View>
-              {/* Note section remains below slider */}
-              {dayData.remark && dayData.remark !== "No remarks" && (
-                <View style={styles(colors).remarkContainer}>
-                  <Text style={styles(colors).remarkLabel}>💡 Note:</Text>
-                  <Text style={styles(colors).remarkText}>
-                    {dayData.remark}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-        </Animated.View>
-
-        {/* Collapsed preview (dynamic meal types based on available data) - Clickable to expand */}
-        {expandedDay !== dayData.day && (
-          <TouchableOpacity 
-            style={styles(colors).mealPreviewContainer}
+          <TouchableOpacity
+            style={styles(colors).dayHeader}
             onPress={() => toggleDayExpansion(dayData.day)}
-            activeOpacity={0.9}
-            accessibilityLabel={`${dayData.day} meal preview`}
-            accessibilityHint={`Tap to expand and view detailed meal information for ${dayData.day}`}
+            activeOpacity={0.7}
+            accessibilityLabel={`${dayData.day} meals`}
+            accessibilityHint={`Tap to ${expandedDay === dayData.day ? "collapse" : "expand"} meal details for ${dayData.day}`}
             accessibilityRole="button"
             accessible={true}
           >
-            {meals.map((meal, index) => (
-              <View 
-                key={`${dayData.day}-${meal.label}-${index}`} 
-                style={[
-                  styles(colors).mealPreview,
-                  meals.length === 1 && styles(colors).mealPreviewSingle
-                ]}
-              >
-                <Text style={styles(colors).mealIcon}>{meal.icon}</Text>
-                <Text 
-                  style={[
-                    styles(colors).mealPreviewText,
-                    meals.length === 1 && styles(colors).mealPreviewTextSingle
-                  ]} 
-                  numberOfLines={1}
-                >
-                  {meal.name}
-                </Text>
-                {meal.image && (
-                  <View style={styles(colors).mealPreviewImageContainer}>
-                    <Image
-                      source={{ uri: meal.image }}
-                      style={styles(colors).mealPreviewImage}
-                    />
+            <Text style={styles(colors).dayName}>{dayData.day}</Text>
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    rotate: animationValue.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0deg", "180deg"],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <Ionicons
+                name="chevron-down"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+
+          {/* Animated expandable content - restructured for better touch handling */}
+          <Animated.View
+            style={[
+              styles(colors).dayExpandableContent,
+              {
+                opacity: animationValue.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [0, 0, 1],
+                }),
+                maxHeight: animationValue.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 300], // Dynamic height instead of scaleY
+                }),
+              },
+            ]}
+            pointerEvents={expandedDay === dayData.day ? "auto" : "none"}
+          >
+            {expandedDay === dayData.day && (
+              <View style={styles(colors).dayContent}>
+                {/* Horizontal Meal Slider */}
+                <View style={styles(colors).mealSliderWrapper}>
+                  <FlatList
+                    horizontal={meals.length > 1}
+                    data={meals}
+                    keyExtractor={(item) => item.label}
+                    renderItem={({ item, index }) => (
+                      <View
+                        style={[
+                          styles(colors).mealCardWrapper,
+                          meals.length === 1 &&
+                            styles(colors).mealCardWrapperSingle,
+                        ]}
+                      >
+                        <TouchableOpacity
+                          style={[
+                            styles(colors).mealSliderCard,
+                            meals.length === 1 &&
+                              styles(colors).mealSliderCardSingle,
+                          ]}
+                          onPress={() => openMealModal(meals, index)}
+                          activeOpacity={0.8}
+                          accessibilityLabel={`${item.label}: ${item.name}`}
+                          accessibilityHint={`Tap to view details about ${item.label}`}
+                          accessibilityRole="button"
+                          accessible={true}
+                        >
+                          <View style={styles(colors).mealSliderImageContainer}>
+                            <Image
+                              source={
+                                item.image
+                                  ? { uri: item.image }
+                                  : require("../../assets/images/meal-plans/fitfuel.jpg")
+                              }
+                              style={styles(colors).mealSliderImage}
+                              defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+                            />
+                            {discountInfo &&
+                              discountInfo.discountPercent > 0 && (
+                                <View style={styles(colors).mealDiscountPill}>
+                                  <Ionicons
+                                    name="gift-outline"
+                                    size={14}
+                                    color="#333"
+                                  />
+                                  <Text
+                                    style={styles(colors).mealDiscountPillText}
+                                  >
+                                    {discountInfo.discountPercent}% Off
+                                  </Text>
+                                </View>
+                              )}
+                          </View>
+                          <LinearGradient
+                            colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.85)"]}
+                            style={styles(colors).mealSliderContent}
+                          >
+                            <View style={styles(colors).mealSliderInfo}>
+                              <Text style={styles(colors).mealSliderIcon}>
+                                {item.icon}
+                              </Text>
+                              <Text style={styles(colors).mealSliderLabel}>
+                                {item.label}
+                              </Text>
+                              <Text
+                                style={styles(colors).mealSliderDescription}
+                                numberOfLines={2}
+                              >
+                                {item.description}
+                              </Text>
+                            </View>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles(colors).mealSliderContainer}
+                    scrollEventThrottle={16}
+                    decelerationRate="fast"
+                    bounces={true}
+                    pagingEnabled={false}
+                    removeClippedSubviews={true}
+                    initialNumToRender={2}
+                    maxToRenderPerBatch={2}
+                    windowSize={10}
+                    getItemLayout={(data, index) => ({
+                      length: 130,
+                      offset: 130 * index,
+                      index,
+                    })}
+                    nestedScrollEnabled={true}
+                  />
+                </View>
+                {/* Note section remains below slider */}
+                {dayData.remark && dayData.remark !== "No remarks" && (
+                  <View style={styles(colors).remarkContainer}>
+                    <Text style={styles(colors).remarkLabel}>💡 Note:</Text>
+                    <Text style={styles(colors).remarkText}>
+                      {dayData.remark}
+                    </Text>
                   </View>
                 )}
               </View>
-            ))}
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  }, [animationValues, expandedDay, toggleDayExpansion, openMealModal, colors, discountInfo]);
+            )}
+          </Animated.View>
+
+          {/* Collapsed preview (dynamic meal types based on available data) - Clickable to expand */}
+          {expandedDay !== dayData.day && (
+            <TouchableOpacity
+              style={styles(colors).mealPreviewContainer}
+              onPress={() => toggleDayExpansion(dayData.day)}
+              activeOpacity={0.9}
+              accessibilityLabel={`${dayData.day} meal preview`}
+              accessibilityHint={`Tap to expand and view detailed meal information for ${dayData.day}`}
+              accessibilityRole="button"
+              accessible={true}
+            >
+              {meals.map((meal, index) => (
+                <View
+                  key={`${dayData.day}-${meal.label}-${index}`}
+                  style={[
+                    styles(colors).mealPreview,
+                    meals.length === 1 && styles(colors).mealPreviewSingle,
+                  ]}
+                >
+                  <Text style={styles(colors).mealIcon}>{meal.icon}</Text>
+                  <Text
+                    style={[
+                      styles(colors).mealPreviewText,
+                      meals.length === 1 &&
+                        styles(colors).mealPreviewTextSingle,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {meal.name}
+                  </Text>
+                  {meal.image && (
+                    <View style={styles(colors).mealPreviewImageContainer}>
+                      <Image
+                        source={{ uri: meal.image }}
+                        style={styles(colors).mealPreviewImage}
+                      />
+                    </View>
+                  )}
+                </View>
+              ))}
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    },
+    [
+      animationValues,
+      expandedDay,
+      toggleDayExpansion,
+      openMealModal,
+      colors,
+      discountInfo,
+    ]
+  );
 
   const renderWeekTabs = useCallback(() => {
     const availableWeeks = Object.keys(weeklyMealPlan)
@@ -824,19 +856,22 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     );
   }, [weeklyMealPlan, selectedWeek, setSelectedWeek, setExpandedDay, colors]);
 
-  const renderFeature = useCallback((feature) => (
-    <View key={feature.title} style={styles(colors).featureItem}>
-      <View style={styles(colors).featureIcon}>
-        <Ionicons name={feature.icon} size={24} color={colors.primary} />
+  const renderFeature = useCallback(
+    (feature) => (
+      <View key={feature.title} style={styles(colors).featureItem}>
+        <View style={styles(colors).featureIcon}>
+          <Ionicons name={feature.icon} size={24} color={colors.primary} />
+        </View>
+        <View style={styles(colors).featureText}>
+          <Text style={styles(colors).featureTitle}>{feature.title}</Text>
+          <Text style={styles(colors).featureDescription}>
+            {feature.description}
+          </Text>
+        </View>
       </View>
-      <View style={styles(colors).featureText}>
-        <Text style={styles(colors).featureTitle}>{feature.title}</Text>
-        <Text style={styles(colors).featureDescription}>
-          {feature.description}
-        </Text>
-      </View>
-    </View>
-  ), [colors]);
+    ),
+    [colors]
+  );
 
   const weeklyMealPlan = getWeeklyMealPlan;
 
@@ -854,8 +889,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           showRightIcon={false}
         />
         <View style={styles(colors).errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color={colors.error} />
-          <Text style={styles(colors).errorTitle}>Oops! Something went wrong</Text>
+          <Ionicons
+            name="alert-circle-outline"
+            size={64}
+            color={colors.error}
+          />
+          <Text style={styles(colors).errorTitle}>
+            Oops! Something went wrong
+          </Text>
           <Text style={styles(colors).errorMessage}>{error}</Text>
           <TouchableOpacity
             style={styles(colors).retryButton}
@@ -872,7 +913,8 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   setLoading(true);
                   setError(null);
                   const mealPlanId = bundle.planId || bundle._id || bundle.id;
-                  const result = await apiService.getMealPlanDetails(mealPlanId);
+                  const result =
+                    await apiService.getMealPlanDetails(mealPlanId);
                   if (result.success && result.mealPlan) {
                     setMealPlanDetails(result.mealPlan);
                   } else {
@@ -916,12 +958,12 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         {/* Hero Section */}
         <View style={styles(colors).heroContainer}>
           {/* Loading overlay for hero image */}
-          {imageLoadingStates['hero'] === 'loading' && (
+          {imageLoadingStates["hero"] === "loading" && (
             <View style={styles(colors).imageLoadingOverlay}>
               <ActivityIndicator size="large" color={colors.primary} />
             </View>
           )}
-          
+
           <Image
             source={
               mealPlanDetails?.planImageUrl
@@ -930,9 +972,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             }
             style={styles(colors).heroImage}
             defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
-            onLoadStart={() => handleImageLoadStart('hero')}
-            onLoad={() => handleImageLoad('hero')}
-            onError={() => handleImageError('hero')}
+            onLoadStart={() => handleImageLoadStart("hero")}
+            onLoad={() => handleImageLoad("hero")}
+            onError={() => handleImageError("hero")}
           />
 
           {/* Quantity Controls */}
@@ -948,7 +990,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             >
               <Ionicons name="remove" size={20} color={"#FFFFFF"} />
             </TouchableOpacity>
-            <Text 
+            <Text
               style={styles(colors).quantityText}
               accessibilityLabel={`Quantity: ${quantity}`}
               accessibilityRole="text"
@@ -968,7 +1010,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles(colors).bookmarkButton}
             accessibilityLabel="Add to favorites"
             accessibilityHint="Tap to save this meal plan to your favorites"
@@ -1336,7 +1378,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 bundle?.id,
             });
           }}
-          accessibilityLabel={`Add ${quantity} meal plan${quantity > 1 ? 's' : ''} to subscription`}
+          accessibilityLabel={`Add ${quantity} meal plan${quantity > 1 ? "s" : ""} to subscription`}
           accessibilityHint="Tap to proceed to checkout with this meal plan"
           accessibilityRole="button"
           accessible={true}

@@ -85,7 +85,7 @@ const StatusMessage = ({ type, message, visible = true }) => {
   );
 };
 
-const styles = createStylesWithDMSans({
+const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",

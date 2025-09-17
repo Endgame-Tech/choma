@@ -162,7 +162,7 @@ const ToastNotification = ({
 };
 
 const styles = (colors) =>
-  createStylesWithDMSans({
+  StyleSheet.create({
     container: {
       position: "absolute",
       top: 60,

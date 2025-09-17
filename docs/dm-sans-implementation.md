@@ -57,7 +57,7 @@ import CustomText from '../components/ui/CustomText';
 ```javascript
 import { DMSansFonts, Typography } from "../constants/fonts";
 
-const styles = createStylesWithDMSans({
+const styles = StyleSheet.create({
   title: {
     fontWeight: "bold",
     fontSize: 24,

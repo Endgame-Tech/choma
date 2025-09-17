@@ -16,7 +16,6 @@ import MealCardSkeleton from "../meal-plans/MealCardSkeleton";
 import discountService from "../../services/discountService";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-
 const MealPlansSection = ({
   mealPlans = [],
   loading = false,

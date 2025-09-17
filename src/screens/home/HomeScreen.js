@@ -20,7 +20,6 @@ import { useMealPlans } from "../../hooks/useMealPlans";
 import apiService from "../../services/api";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-
 // Component imports
 import {
   HomeHeader,

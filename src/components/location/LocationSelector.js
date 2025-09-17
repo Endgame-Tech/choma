@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import locationService from "../../services/locationService";
-import { createStylesWithDMSans } from "../../utils/fontUtils"; 
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const LocationSelector = ({ onLocationSelect, initialLocation, style }) => {
   const [currentLocation, setCurrentLocation] = useState(initialLocation);

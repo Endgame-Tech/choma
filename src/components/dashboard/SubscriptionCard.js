@@ -15,7 +15,6 @@ import apiService from "../../services/api";
 import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-
 const { width } = Dimensions.get("window");
 
 const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {

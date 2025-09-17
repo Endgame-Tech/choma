@@ -358,7 +358,7 @@ export const ComponentErrorBoundary = ({ children, componentName }) => (
   </ErrorBoundary>
 );
 
-const styles = createStylesWithDMSans({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,

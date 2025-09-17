@@ -226,7 +226,7 @@ const CustomDatePicker = ({
 };
 
 const styles = (colors) =>
-  createStylesWithDMSans({
+  StyleSheet.create({
     overlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",

@@ -314,7 +314,7 @@ const AddressAutocomplete = ({
 };
 
 const styles = (colors) =>
-  createStylesWithDMSans({
+  StyleSheet.create({
     container: {
       flex: 1,
       zIndex: 1000,

@@ -14,8 +14,6 @@ import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
-import CustomText from "../../components/ui/CustomText";
-import { DMSansFonts } from "../../constants/fonts";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -94,27 +92,41 @@ const MealDetailModal = ({
   const getNutritionValue = (field) => {
     // Get nutrition value from the correct schema structure
     const meal = currentMeal;
-    
+
     // Debug: Log the meal structure to understand data flow
-    console.log('🔍 Meal nutrition debug:', {
+    console.log("🔍 Meal nutrition debug:", {
       mealName: meal.name || meal.label,
       nutrition: meal.nutrition,
       nutritionInfo: meal.nutritionInfo,
-      field: field
+      field: field,
     });
-    
+
     // Primary source: meal.nutrition (from DailyMeal model)
-    if (meal.nutrition && meal.nutrition[field] !== undefined && meal.nutrition[field] !== null) {
-      console.log(`✅ Found ${field} in meal.nutrition:`, meal.nutrition[field]);
+    if (
+      meal.nutrition &&
+      meal.nutrition[field] !== undefined &&
+      meal.nutrition[field] !== null
+    ) {
+      console.log(
+        `✅ Found ${field} in meal.nutrition:`,
+        meal.nutrition[field]
+      );
       return meal.nutrition[field];
     }
-    
+
     // Secondary source: meal.nutritionInfo (from schema)
-    if (meal.nutritionInfo && meal.nutritionInfo[field] !== undefined && meal.nutritionInfo[field] !== null) {
-      console.log(`✅ Found ${field} in meal.nutritionInfo:`, meal.nutritionInfo[field]);
+    if (
+      meal.nutritionInfo &&
+      meal.nutritionInfo[field] !== undefined &&
+      meal.nutritionInfo[field] !== null
+    ) {
+      console.log(
+        `✅ Found ${field} in meal.nutritionInfo:`,
+        meal.nutritionInfo[field]
+      );
       return meal.nutritionInfo[field];
     }
-    
+
     console.log(`❌ No nutrition data found for ${field}`);
     // If no data available, return null to show "No data"
     return null;
@@ -240,47 +252,52 @@ const MealDetailModal = ({
               </ScrollView>
 
               {/* Navigation Buttons - Outside ScrollView */}
-            <View style={styles(colors).navigationContainerParent}>
-              <View style={styles(colors).navigationContainer}>
-                {/* Left Chevron - Previous Meal */}
-                <TouchableOpacity 
-                  style={[
-                    styles(colors).navButton,
-                    currentIndex === 0 && styles(colors).navButtonDisabled
-                  ]} 
-                  onPress={() => handleSwipe("right")}
-                  disabled={currentIndex === 0}
-                >
-                  <Ionicons 
-                    name="chevron-back" 
-                    size={28} 
-                    color={currentIndex === 0 ? "#666" : "#000"} 
-                  />
-                </TouchableOpacity>
+              <View style={styles(colors).navigationContainerParent}>
+                <View style={styles(colors).navigationContainer}>
+                  {/* Left Chevron - Previous Meal */}
+                  <TouchableOpacity
+                    style={[
+                      styles(colors).navButton,
+                      currentIndex === 0 && styles(colors).navButtonDisabled,
+                    ]}
+                    onPress={() => handleSwipe("right")}
+                    disabled={currentIndex === 0}
+                  >
+                    <Ionicons
+                      name="chevron-back"
+                      size={28}
+                      color={currentIndex === 0 ? "#666" : "#000"}
+                    />
+                  </TouchableOpacity>
 
-                {/* Close Button - Center */}
-                <TouchableOpacity style={styles(colors).closeButton} onPress={onClose}>
-                  <Ionicons name="close" size={34} color="#000" />
-                </TouchableOpacity>
+                  {/* Close Button - Center */}
+                  <TouchableOpacity
+                    style={styles(colors).closeButton}
+                    onPress={onClose}
+                  >
+                    <Ionicons name="close" size={34} color="#000" />
+                  </TouchableOpacity>
 
-                {/* Right Chevron - Next Meal */}
-                <TouchableOpacity 
-                  style={[
-                    styles(colors).navButton,
-                    currentIndex === meals.length - 1 && styles(colors).navButtonDisabled
-                  ]} 
-                  onPress={() => handleSwipe("left")}
-                  disabled={currentIndex === meals.length - 1}
-                >
-                  <Ionicons 
-                    name="chevron-forward" 
-                    size={28} 
-                    color={currentIndex === meals.length - 1 ? "#666" : "#000"} 
-                  />
-                </TouchableOpacity>
+                  {/* Right Chevron - Next Meal */}
+                  <TouchableOpacity
+                    style={[
+                      styles(colors).navButton,
+                      currentIndex === meals.length - 1 &&
+                        styles(colors).navButtonDisabled,
+                    ]}
+                    onPress={() => handleSwipe("left")}
+                    disabled={currentIndex === meals.length - 1}
+                  >
+                    <Ionicons
+                      name="chevron-forward"
+                      size={28}
+                      color={
+                        currentIndex === meals.length - 1 ? "#666" : "#000"
+                      }
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-
             </View>
           </Animated.View>
         </PanGestureHandler>

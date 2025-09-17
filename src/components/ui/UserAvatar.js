@@ -135,7 +135,7 @@ const UserAvatar = ({
   );
 };
 
-const styles = createStylesWithDMSans({
+const styles = StyleSheet.create({
   container: {
     overflow: "hidden",
     position: "relative",

@@ -27,7 +27,6 @@ import { THEME } from "../../utils/colors";
 import StandardHeader from "../../components/layout/Header";
 import { useAlert } from "../../contexts/AlertContext";
 import discountService from "../../services/discountService";
-import { formatCurrency } from "../../utils/formatting";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 function PaymentScreen({ route, navigation }) {
@@ -644,10 +643,10 @@ function PaymentScreen({ route, navigation }) {
       {/* NO MORE PAYSTACK COMPONENT - v5 uses popup.checkout() */}
     </SafeAreaView>
   );
-};
+}
 
 const styles = (colors) =>
-  createStylesWithDMSans({
+  StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,

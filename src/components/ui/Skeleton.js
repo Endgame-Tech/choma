@@ -40,7 +40,7 @@ const Skeleton = ({ width, height, style }) => {
 };
 
 const styles = (colors) =>
-  createStylesWithDMSans({
+  StyleSheet.create({
     container: {
       backgroundColor: colors.cardBackground,
       overflow: "hidden",

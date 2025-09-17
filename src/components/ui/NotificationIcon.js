@@ -43,7 +43,7 @@ const NotificationIcon = ({ size = 24, color }) => {
 };
 
 const styles = (colors) =>
-  createStylesWithDMSans({
+  StyleSheet.create({
     container: {
       position: "relative",
       padding: 5,

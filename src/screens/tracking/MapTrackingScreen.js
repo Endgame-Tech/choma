@@ -27,7 +27,6 @@ import DriverInfoCard from "../../components/tracking/DriverInfoCard";
 import OrderSummaryCard from "../../components/tracking/OrderSummaryCard";
 import ETACard from "../../components/tracking/ETACard";
 import TrackingStatusBar from "../../components/tracking/TrackingStatusBar";
-import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width, height } = Dimensions.get("window");
 const ASPECT_RATIO = width / height;
@@ -593,7 +592,7 @@ const MapTrackingScreen = ({ route, navigation }) => {
   );
 };
 
-const styles = createStylesWithDMSans({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
   },

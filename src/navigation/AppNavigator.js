@@ -348,7 +348,7 @@ const TabNavigator = () => {
     </Tab.Navigator>
   );
 };
-const styles = createStylesWithDMSans({
+const styles = StyleSheet.create({
   tabBarBackgroundContainer: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 50,

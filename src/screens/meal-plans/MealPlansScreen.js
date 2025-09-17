@@ -22,9 +22,6 @@ import { THEME } from "../../utils/colors";
 import FilterModal from "../../components/meal-plans/FilterModal";
 import { api } from "../../services/api";
 import discountService from "../../services/discountService";
-import MealPlanCard from "../../components/meal-plans/MealPlanCard";
-import MealPlanDetailModal from "../../components/modals/MealPlanDetailModal";
-import MealPlanDetailSkeleton from "../../components/meal-plans/MealPlanDetailSkeleton";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
