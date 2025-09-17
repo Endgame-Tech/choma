@@ -23,7 +23,6 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
   const [nextDelivery, setNextDelivery] = useState(null);
   const [loading, setLoading] = useState(true);
   const { colors } = useTheme();
-  const styles = createStylesWithDMSans(colors);
 
   useEffect(() => {
     if (subscription?._id) {
@@ -415,20 +414,61 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     // Calculate progress based on subscription data
     const completedMeals = subscription.metrics?.completedMeals || 0;
 
-    // Get duration and meals per week values
-    const durationWeeks =
-      subscription.mealPlanId?.durationWeeks ||
-      subscription.duration?.replace(" weeks", "") ||
-      4; // Default to 4 weeks
-    const mealsPerWeek =
-      subscription.mealPlanId?.mealsPerWeek || subscription.mealsPerWeek || 21; // Default to 21 meals per week (3 meals × 7 days)
-
-    // Calculate total meals based on subscription plan
+    // Calculate total meals based on actual meal plan assignments
     let totalMeals = subscription.metrics?.totalMeals || 0;
 
-    // If no metrics available, calculate from subscription data
+    // If no metrics available, calculate from meal plan data
     if (totalMeals === 0) {
-      totalMeals = parseInt(durationWeeks) * parseInt(mealsPerWeek);
+      const mealPlan = subscription.mealPlanId;
+
+      if (mealPlan?.weeklyMeals) {
+        // Count actual meal assignments from weeklyMeals structure
+        let mealCount = 0;
+        const weeklyMeals = mealPlan.weeklyMeals;
+
+        Object.keys(weeklyMeals).forEach((weekKey) => {
+          const weekMeals = weeklyMeals[weekKey];
+          Object.keys(weekMeals).forEach((dayKey) => {
+            const dayMeals = weekMeals[dayKey];
+            Object.keys(dayMeals).forEach((mealType) => {
+              if (
+                dayMeals[mealType] &&
+                typeof dayMeals[mealType] === "object"
+              ) {
+                mealCount++;
+              }
+            });
+          });
+        });
+
+        totalMeals = mealCount;
+        console.log(
+          "📊 Calculated total meals from weeklyMeals structure:",
+          totalMeals
+        );
+      } else if (mealPlan?.assignments && Array.isArray(mealPlan.assignments)) {
+        // Count actual meal assignments from assignments array
+        totalMeals = mealPlan.assignments.length;
+        console.log(
+          "📊 Calculated total meals from assignments array:",
+          totalMeals
+        );
+      } else {
+        // Fallback: use plan configuration if available
+        const durationWeeks =
+          mealPlan?.durationWeeks ||
+          subscription.duration?.replace(" weeks", "") ||
+          2; // Default to 2 weeks
+        const mealsPerWeek =
+          mealPlan?.mealsPerWeek || subscription.mealsPerWeek || 7; // Default to 7 meals per week (1 meal per day)
+
+        totalMeals = parseInt(durationWeeks) * parseInt(mealsPerWeek);
+        console.log("📊 Calculated total meals from plan config:", {
+          durationWeeks,
+          mealsPerWeek,
+          totalMeals,
+        });
+      }
     }
 
     // Calculate current progress based on subscription day
@@ -477,10 +517,8 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     } else {
       // Normal progression after first delivery
       currentDay = Math.max(1, daysDiff + 1);
-      estimatedCompleted = Math.min(
-        Math.floor((currentDay - 1) * 3),
-        totalMeals
-      );
+      // Estimate 1 meal per day instead of 3
+      estimatedCompleted = Math.min(Math.floor(currentDay - 1), totalMeals);
     }
 
     const actualCompleted = Math.max(completedMeals, estimatedCompleted);
@@ -488,16 +526,17 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     const percentage =
       totalMeals > 0 ? Math.min(100, (actualCompleted / totalMeals) * 100) : 0;
 
-    // console.log("📊 SubscriptionCard progress calculation:", {
-    //   subscriptionId: subscription._id,
-    //   durationWeeks,
-    //   mealsPerWeek,
-    //   totalMeals,
-    //   currentDay,
-    //   estimatedCompleted,
-    //   actualCompleted,
-    //   percentage,
-    // });
+    console.log("📊 SubscriptionCard progress calculation:", {
+      subscriptionId: subscription._id,
+      totalMeals,
+      currentDay,
+      estimatedCompleted,
+      actualCompleted,
+      percentage,
+      hasWeeklyMeals: !!subscription.mealPlanId?.weeklyMeals,
+      hasAssignments: !!subscription.mealPlanId?.assignments,
+      assignmentsLength: subscription.mealPlanId?.assignments?.length || 0,
+    });
 
     return {
       completed: actualCompleted,
@@ -589,6 +628,179 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       return timeString;
     }
   };
+
+  const styles = createStylesWithDMSans(
+    {
+      container: {
+        marginHorizontal: 6,
+        marginVertical: 8,
+        borderRadius: 16,
+        overflow: "hidden",
+        elevation: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+      },
+      loadingCard: {
+        backgroundColor: "#F8F9FA",
+        padding: 15,
+        margin: 16,
+        borderRadius: 16,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      loadingText: {
+        color: COLORS.textSecondary,
+        fontSize: 14,
+        marginTop: 12,
+      },
+      gradient: {
+        padding: 20,
+      },
+      header: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 16,
+      },
+      headerLeft: {
+        flex: 1,
+      },
+      title: {
+        color: "#FFFFFF",
+        fontSize: 20,
+        fontWeight: "700",
+        marginBottom: 4,
+      },
+      subtitle: {
+        color: "rgba(255,255,255,0.8)",
+        fontSize: 14,
+        fontWeight: "500",
+      },
+      menuButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: "rgba(255,255,255,0.2)",
+      },
+      mealSection: {
+        marginBottom: 16,
+      },
+      mealHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+      },
+      mealImage: {
+        width: 80,
+        height: 60,
+        borderRadius: 8,
+        marginRight: 12,
+      },
+      mealInfo: {
+        flex: 1,
+      },
+      mealTitle: {
+        color: "#FFFFFF",
+        fontSize: 16,
+        fontWeight: "600",
+        marginBottom: 2,
+      },
+      mealDescription: {
+        color: "rgba(255,255,255,0.8)",
+        fontSize: 13,
+        marginBottom: 4,
+      },
+      mealMetrics: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+      },
+      mealCalories: {
+        color: "#FFD700",
+        fontSize: 12,
+        fontWeight: "600",
+        backgroundColor: "rgba(255,215,0,0.2)",
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+      },
+      mealCount: {
+        color: "rgba(255,255,255,0.7)",
+        fontSize: 12,
+      },
+      noMealSection: {
+        alignItems: "center",
+        paddingVertical: 20,
+      },
+      noMealText: {
+        color: "rgba(255,255,255,0.7)",
+        fontSize: 14,
+        marginTop: 8,
+      },
+      statusSection: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: "rgba(255,255,255,0.2)",
+      },
+      statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 8,
+      },
+      statusText: {
+        color: "#FFFFFF",
+        fontSize: 14,
+        fontWeight: "500",
+        flex: 1,
+      },
+      estimatedTime: {
+        color: "rgba(255,255,255,0.8)",
+        fontSize: 12,
+      },
+      deliverySection: {
+        marginBottom: 16,
+      },
+      deliveryHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 4,
+      },
+      deliveryLabel: {
+        color: "rgba(255,255,255,0.8)",
+        fontSize: 12,
+        marginLeft: 6,
+      },
+      deliveryTime: {
+        color: "#FFFFFF",
+        fontSize: 14,
+        fontWeight: "500",
+      },
+      progressSection: {
+        marginTop: 4,
+      },
+      progressText: {
+        color: "rgba(255,255,255,0.8)",
+        fontSize: 12,
+        marginBottom: 6,
+      },
+      progressBar: {
+        height: 3,
+        backgroundColor: "rgba(255,255,255,0.3)",
+        borderRadius: 1.5,
+        overflow: "hidden",
+      },
+      progressFill: {
+        height: "100%",
+        backgroundColor: "#FFFFFF",
+        borderRadius: 1.5,
+      },
+    },
+    colors
+  );
 
   if (loading) {
     return (
@@ -765,175 +977,5 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
     </TouchableOpacity>
   );
 };
-
-const styles = createStylesWithDMSans({
-  container: {
-    marginHorizontal: 6,
-    marginVertical: 8,
-    borderRadius: 16,
-    overflow: "hidden",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  loadingCard: {
-    backgroundColor: "#F8F9FA",
-    padding: 15,
-    margin: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    marginTop: 12,
-  },
-  gradient: {
-    padding: 20,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  subtitle: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  menuButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
-  },
-  mealSection: {
-    marginBottom: 16,
-  },
-  mealHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  mealImage: {
-    width: 80,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  mealInfo: {
-    flex: 1,
-  },
-  mealTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  mealDescription: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  mealMetrics: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  mealCalories: {
-    color: "#FFD700",
-    fontSize: 12,
-    fontWeight: "600",
-    backgroundColor: "rgba(255,215,0,0.2)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  mealCount: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 12,
-  },
-  noMealSection: {
-    alignItems: "center",
-    paddingVertical: 20,
-  },
-  noMealText: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 14,
-    marginTop: 8,
-  },
-  statusSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.2)",
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  statusText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "500",
-    flex: 1,
-  },
-  estimatedTime: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 12,
-  },
-  deliverySection: {
-    marginBottom: 16,
-  },
-  deliveryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  deliveryLabel: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 12,
-    marginLeft: 6,
-  },
-  deliveryTime: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  progressSection: {
-    marginTop: 4,
-  },
-  progressText: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  progressBar: {
-    height: 3,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    borderRadius: 1.5,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 1.5,
-  },
-});
 
 export default SubscriptionCard;

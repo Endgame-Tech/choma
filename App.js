@@ -214,7 +214,7 @@ export default function App() {
   // Use the key from APP_CONFIG or fallback to hardcoded
   const paystackPublicKey =
     APP_CONFIG.PAYSTACK_PUBLIC_KEY ||
-    "pk_test_c90af10dcc748a6c4e3cf481230abadd819037c1";
+    "pk_test_25b2bfca460a812de68482316a633735382854e9";
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

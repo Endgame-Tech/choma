@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
+import { useAlert } from "../../contexts/AlertContext";
 import apiService from "../../services/api";
 import ratingPromptManager from "../../services/ratingPromptManager";
 import { THEME } from "../../utils/colors";
@@ -22,6 +23,7 @@ const { width } = Dimensions.get("window");
 
 const SubscriptionTrackingScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
+  const { showAlert, showConfirm, showError, showSuccess } = useAlert();
   const { subscription: initialSubscription } = route.params || {};
 
   const [subscription, setSubscription] = useState(initialSubscription);
@@ -82,19 +84,216 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
     }
   };
 
-  const renderTodaysMeals = () => {
-    if (!subscription?.mealPlanId?.weeklyMeals) return null;
+  const handlePausePlan = () => {
+    // Check if subscription is already paused
+    const hasCompletedDeliveries =
+      subscription.metrics?.completedMeals > 0 ||
+      subscription.deliveredMeals > 0 ||
+      subscription.totalDeliveries > 0;
 
-    // Calculate current day
-    const today = new Date();
-    const startDate = new Date(subscription.startDate);
-    const daysDiff = Math.floor(
-      (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    const isSubscriptionActive =
+      subscription.recurringDelivery?.activationDeliveryCompleted === true ||
+      subscription.recurringDelivery?.isActivated === true ||
+      subscription.status === "active" ||
+      hasCompletedDeliveries;
+
+    if (!isSubscriptionActive) {
+      showAlert({
+        title: "Subscription Already Paused",
+        message:
+          "Your subscription is currently paused. It will resume after the first delivery is completed.",
+        type: "info",
+        buttons: [{ text: "OK", style: "primary" }],
+      });
+      return;
+    }
+
+    showConfirm(
+      "Pause Subscription",
+      "Are you sure you want to pause your meal plan? You can resume it anytime from your subscription settings.",
+      async () => {
+        try {
+          setLoading(true);
+          const result = await apiService.pauseSubscription(subscription._id);
+
+          if (result.success) {
+            showSuccess(
+              "Subscription Paused",
+              "Your meal plan has been paused successfully."
+            );
+            // Refresh subscription data
+            loadFullSubscriptionData();
+          } else {
+            showError(
+              "Error",
+              result.message ||
+                "Failed to pause subscription. Please try again."
+            );
+          }
+        } catch (error) {
+          console.error("Error pausing subscription:", error);
+          showError("Error", "Failed to pause subscription. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      }
     );
-    const subscriptionDay = Math.max(1, daysDiff + 1);
-    const weekNumber = Math.ceil(subscriptionDay / 7);
-    const currentWeekNumber = Math.max(1, Math.min(weekNumber, 4));
-    const dayInWeek = ((subscriptionDay - 1) % 7) + 1;
+  };
+
+  const handleCustomize = () => {
+    try {
+      navigation.navigate("SubscriptionDetails", {
+        subscription: subscription,
+        showEditMode: true,
+      });
+    } catch (error) {
+      // If SubscriptionDetails doesn't exist, try MealPlanCustomization
+      try {
+        navigation.navigate("MealPlanCustomization", {
+          mealPlan: subscription.mealPlanId,
+          subscription: subscription,
+        });
+      } catch (navError) {
+        showAlert({
+          title: "Customize Meal Plan",
+          message:
+            "Meal plan customization is coming soon! You'll be able to modify your preferences, dietary restrictions, and meal selections.",
+          type: "info",
+          buttons: [
+            { text: "Contact Support", onPress: handleSupport },
+            { text: "OK", style: "primary" },
+          ],
+        });
+      }
+    }
+  };
+
+  const handleSupport = () => {
+    showAlert({
+      title: "Contact Support",
+      message: "How would you like to get help with your subscription?",
+      type: "info",
+      buttons: [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Live Chat",
+          onPress: () => {
+            // Try to navigate to support chat or show info
+            try {
+              navigation.navigate("SupportChat", {
+                subscription: subscription,
+                issue: "subscription_tracking",
+              });
+            } catch (error) {
+              showAlert({
+                title: "Live Chat",
+                message:
+                  "Live chat support is temporarily unavailable. Please contact us via email or phone for immediate assistance.",
+                type: "info",
+                buttons: [{ text: "OK", style: "primary" }],
+              });
+            }
+          },
+        },
+        {
+          text: "Email Support",
+          onPress: () => {
+            showAlert({
+              title: "Email Support",
+              message:
+                "Send us an email at support@choma.app with your subscription details. We'll get back to you within 24 hours.",
+              type: "info",
+              buttons: [{ text: "OK", style: "primary" }],
+            });
+          },
+        },
+      ],
+    });
+  };
+
+  const renderTodaysMeals = () => {
+    if (!subscription) return null;
+
+    // Calculate current meal using the same logic as SubscriptionCard
+    const today = new Date();
+    const startDate = new Date(
+      subscription.startDate || subscription.createdAt || today
+    );
+
+    // Ensure we have a valid start date
+    if (isNaN(startDate.getTime())) {
+      console.warn("Invalid start date for subscription, using today");
+      startDate.setTime(today.getTime());
+    }
+
+    // Normalize dates to midnight to avoid time-of-day issues
+    const todayNormalized = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const startDateNormalized = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
+
+    // Check if subscription is valid and should show meals
+    const inactiveStatuses = ["cancelled", "expired", "suspended", "deleted"];
+    const shouldShowMeals = !inactiveStatuses.includes(
+      subscription.status?.toLowerCase()
+    );
+
+    // Check if first delivery has been completed to determine if subscription is "active"
+    const hasCompletedDeliveries =
+      subscription.metrics?.completedMeals > 0 ||
+      subscription.deliveredMeals > 0 ||
+      subscription.totalDeliveries > 0;
+
+    const isSubscriptionActive =
+      subscription.recurringDelivery?.activationDeliveryCompleted === true ||
+      subscription.recurringDelivery?.isActivated === true ||
+      subscription.status === "active" ||
+      hasCompletedDeliveries;
+
+    if (!shouldShowMeals) {
+      return (
+        <View style={styles(colors).noMealsContainer}>
+          <Ionicons
+            name="restaurant-outline"
+            size={48}
+            color={colors.textMuted}
+          />
+          <Text style={styles(colors).noMealsText}>
+            Subscription is {subscription.status?.toLowerCase() || "inactive"}
+          </Text>
+        </View>
+      );
+    }
+
+    // Calculate days since subscription start
+    const daysDiff = Math.max(
+      0,
+      Math.floor(
+        (todayNormalized - startDateNormalized) / (1000 * 60 * 60 * 24)
+      )
+    );
+
+    // Pause the day counter if first delivery hasn't been completed
+    let currentDay, currentWeek, dayInWeek;
+
+    if (!isSubscriptionActive) {
+      // Subscription is paused - show Day 1, Week 1 until first delivery
+      currentDay = 1;
+      currentWeek = 1;
+      dayInWeek = 1;
+    } else {
+      // Normal progression after first delivery
+      currentDay = Math.max(1, daysDiff + 1);
+      currentWeek = Math.max(1, Math.ceil(currentDay / 7));
+      dayInWeek = Math.max(1, ((currentDay - 1) % 7) + 1);
+    }
+
     const dayNames = [
       "Monday",
       "Tuesday",
@@ -106,23 +305,53 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
     ];
     const dayName = dayNames[dayInWeek - 1];
 
-    const weeklyMeals = subscription.mealPlanId?.weeklyMeals || {};
-    const currentWeek = weeklyMeals[`week${currentWeekNumber}`] || {};
-    const todaysMealsData = currentWeek[dayName] || {};
+    // Try to get meal data from mealPlanId if available
+    const mealPlan = subscription.mealPlanId;
+    const weeklyMeals = mealPlan?.weeklyMeals || {};
+    const currentWeekMeals = weeklyMeals[`week${currentWeek}`] || {};
+    const todaysMealsData = currentWeekMeals[dayName] || {};
 
-    // Helper to get meal data
+    // Helper function to get specific meal assignment from weeklyMeals structure
+    const getMealAssignment = (mealType) => {
+      // Look in the organized weekly schedule for the assignment
+      const assignment = todaysMealsData[mealType.toLowerCase()];
+
+      // If no weekly meals structure, try to get from assignments array
+      if (!assignment && mealPlan?.assignments) {
+        const assignmentsList = mealPlan.assignments;
+        // Find assignment that matches current day and meal type
+        const foundAssignment = assignmentsList.find(
+          (a) =>
+            a.week === currentWeek &&
+            a.day === dayName &&
+            a.mealType?.toLowerCase() === mealType.toLowerCase()
+        );
+
+        if (foundAssignment) {
+          return foundAssignment;
+        }
+      }
+
+      return assignment;
+    };
+
+    // Helper function to get meal data with improved fallback logic
     const getMealData = (mealType) => {
-      const lowercaseMealType = mealType.toLowerCase();
-      const mealData = todaysMealsData[lowercaseMealType];
+      const assignment = getMealAssignment(mealType);
 
-      if (mealData && mealData.title) {
+      if (assignment && (assignment.title || assignment.name)) {
         return {
-          name: mealData.title,
-          description: mealData.description,
-          image: mealData.imageUrl
-            ? { uri: mealData.imageUrl }
-            : subscription.mealPlanId?.planImageUrl
-              ? { uri: subscription.mealPlanId?.planImageUrl }
+          name: assignment.title || assignment.name,
+          description: assignment.description || "",
+          image: assignment.imageUrl
+            ? { uri: assignment.imageUrl }
+            : mealPlan?.planImageUrl || mealPlan?.image || mealPlan?.coverImage
+              ? {
+                  uri:
+                    mealPlan.planImageUrl ||
+                    mealPlan.image ||
+                    mealPlan.coverImage,
+                }
               : require("../../assets/images/meal-plans/fitfuel.jpg"),
           time:
             mealType === "breakfast"
@@ -130,6 +359,7 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
               : mealType === "lunch"
                 ? "1:00 PM"
                 : "7:00 PM",
+          calories: assignment.calories || null,
         };
       }
       return null;
@@ -154,8 +384,15 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
             color={colors.textMuted}
           />
           <Text style={styles(colors).noMealsText}>
-            No meals scheduled for today
+            {!isSubscriptionActive
+              ? "Waiting for first delivery to begin meal schedule"
+              : "No meals scheduled for today"}
           </Text>
+          {!isSubscriptionActive && (
+            <Text style={styles(colors).statusText}>
+              Subscription Status: Paused
+            </Text>
+          )}
         </View>
       );
     }
@@ -163,7 +400,8 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
     return (
       <View style={styles(colors).mealsSection}>
         <Text style={styles(colors).sectionTitle}>
-          My Today's Meals - Day {subscriptionDay}
+          My Today's Meals - Day {currentDay}, Week {currentWeek}
+          {!isSubscriptionActive && " (Paused)"}
         </Text>
 
         {availableMeals.length === 1 ? (
@@ -188,6 +426,11 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
                   <Text style={styles(colors).mealTime}>
                     {availableMeals[0].data.time}
                   </Text>
+                  {availableMeals[0].data.calories && (
+                    <Text style={styles(colors).mealCalories}>
+                      {availableMeals[0].data.calories} cal
+                    </Text>
+                  )}
                 </LinearGradient>
               </View>
             </TouchableOpacity>
@@ -213,6 +456,11 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
                     <Text style={styles(colors).mealTime}>
                       {meal.data.time}
                     </Text>
+                    {meal.data.calories && (
+                      <Text style={styles(colors).mealCalories}>
+                        {meal.data.calories} cal
+                      </Text>
+                    )}
                   </LinearGradient>
                 </View>
               </TouchableOpacity>
@@ -224,18 +472,107 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
   };
 
   const renderProgress = () => {
-    const startDate = new Date(subscription.startDate);
-    const endDate = new Date(subscription.endDate);
+    // Calculate progress based on actual meal assignments (like SubscriptionCard)
+    const completedMeals = subscription.metrics?.completedMeals || 0;
+
+    // Calculate total meals based on actual meal plan assignments
+    let totalMeals = subscription.metrics?.totalMeals || 0;
+
+    // If no metrics available, calculate from meal plan data
+    if (totalMeals === 0) {
+      const mealPlan = subscription.mealPlanId;
+
+      if (mealPlan?.weeklyMeals) {
+        // Count actual meal assignments from weeklyMeals structure
+        let mealCount = 0;
+        const weeklyMeals = mealPlan.weeklyMeals;
+
+        Object.keys(weeklyMeals).forEach((weekKey) => {
+          const weekMeals = weeklyMeals[weekKey];
+          Object.keys(weekMeals).forEach((dayKey) => {
+            const dayMeals = weekMeals[dayKey];
+            Object.keys(dayMeals).forEach((mealType) => {
+              if (
+                dayMeals[mealType] &&
+                typeof dayMeals[mealType] === "object"
+              ) {
+                mealCount++;
+              }
+            });
+          });
+        });
+
+        totalMeals = mealCount;
+      } else if (mealPlan?.assignments && Array.isArray(mealPlan.assignments)) {
+        // Count actual meal assignments from assignments array
+        totalMeals = mealPlan.assignments.length;
+      } else {
+        // Fallback: use plan configuration if available
+        const durationWeeks =
+          mealPlan?.durationWeeks ||
+          subscription.duration?.replace(" weeks", "") ||
+          2; // Default to 2 weeks
+        const mealsPerWeek =
+          mealPlan?.mealsPerWeek || subscription.mealsPerWeek || 7; // Default to 7 meals per week (1 meal per day)
+
+        totalMeals = parseInt(durationWeeks) * parseInt(mealsPerWeek);
+      }
+    }
+
+    // Calculate actual subscription progress based on dates
+    const startDate = new Date(
+      subscription.startDate || subscription.createdAt
+    );
+    const endDate = subscription.endDate
+      ? new Date(subscription.endDate)
+      : null;
     const currentDate = new Date();
-    const daysRemaining = Math.max(
-      0,
-      Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24))
-    );
-    const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-    const progressPercentage = Math.max(
-      0,
-      Math.min(100, ((totalDays - daysRemaining) / totalDays) * 100)
-    );
+
+    // Check if subscription is active (first delivery completed)
+    const hasCompletedDeliveries =
+      subscription.metrics?.completedMeals > 0 ||
+      subscription.deliveredMeals > 0 ||
+      subscription.totalDeliveries > 0;
+
+    const isSubscriptionActive =
+      subscription.recurringDelivery?.activationDeliveryCompleted === true ||
+      subscription.recurringDelivery?.isActivated === true ||
+      subscription.status === "active" ||
+      hasCompletedDeliveries;
+
+    // Calculate progress
+    let progressPercentage = 0;
+    let daysRemaining = 0;
+    let totalDays = 0;
+
+    if (endDate && !isNaN(endDate.getTime())) {
+      // Use actual end date if available
+      daysRemaining = Math.max(
+        0,
+        Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24))
+      );
+      totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+      progressPercentage = Math.max(
+        0,
+        Math.min(100, ((totalDays - daysRemaining) / totalDays) * 100)
+      );
+    } else {
+      // Calculate based on meals if no end date
+      progressPercentage =
+        totalMeals > 0 ? Math.min(100, (completedMeals / totalMeals) * 100) : 0;
+
+      // Estimate remaining days based on meal plan duration
+      const mealPlan = subscription.mealPlanId;
+      const durationWeeks =
+        mealPlan?.durationWeeks ||
+        subscription.duration?.replace(" weeks", "") ||
+        2;
+      totalDays = parseInt(durationWeeks) * 7;
+      const daysPassed = Math.floor(
+        (currentDate - startDate) / (1000 * 60 * 60 * 24)
+      );
+      daysRemaining = Math.max(0, totalDays - daysPassed);
+    }
 
     return (
       <View style={styles(colors).progressSection}>
@@ -245,10 +582,13 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
           <View style={styles(colors).progressHeader}>
             <Text style={styles(colors).progressTitle}>
               {subscription.mealPlanId?.planName ||
-                subscription.mealPlanId?.name}
+                subscription.mealPlanId?.name ||
+                "Meal Plan"}
             </Text>
             <Text style={styles(colors).progressDays}>
-              {daysRemaining} days remaining
+              {!isSubscriptionActive
+                ? "Waiting for first delivery"
+                : `${daysRemaining} days remaining`}
             </Text>
           </View>
 
@@ -266,14 +606,23 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
               {Math.round(progressPercentage)}%
             </Text>
           </View>
+
+          {!isSubscriptionActive && (
+            <View style={styles(colors).pausedIndicator}>
+              <Ionicons name="pause-circle" size={16} color={colors.warning} />
+              <Text style={styles(colors).pausedText}>
+                Subscription paused - {totalMeals} meals planned
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles(colors).statsGrid}>
           <View style={styles(colors).statCard}>
-            <Text style={styles(colors).statNumber}>
-              {subscription.metrics?.totalMealsDelivered || 0}
+            <Text style={styles(colors).statNumber}>{completedMeals}</Text>
+            <Text style={styles(colors).statLabel}>
+              {isSubscriptionActive ? "Meals Delivered" : "Meals Planned"}
             </Text>
-            <Text style={styles(colors).statLabel}>Meals Delivered</Text>
           </View>
 
           <View style={styles(colors).statCard}>
@@ -292,7 +641,9 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
             <Text style={styles(colors).statNumber}>
               {subscription.metrics?.consecutiveDays || 0}
             </Text>
-            <Text style={styles(colors).statLabel}>Streak Days</Text>
+            <Text style={styles(colors).statLabel}>
+              {isSubscriptionActive ? "Streak Days" : "Duration"}
+            </Text>
           </View>
         </View>
       </View>
@@ -337,16 +688,40 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
         <View style={styles(colors).actionsSection}>
           <Text style={styles(colors).sectionTitle}>Quick Actions</Text>
           <View style={styles(colors).actionButtons}>
-            <TouchableOpacity style={styles(colors).actionButton}>
+            <TouchableOpacity
+              style={styles(colors).actionButton}
+              onPress={handlePausePlan}
+              disabled={loading}
+            >
               <Ionicons
                 name="pause-circle-outline"
                 size={24}
                 color={colors.warning}
               />
-              <Text style={styles(colors).actionButtonText}>Pause Plan</Text>
+              <Text style={styles(colors).actionButtonText}>
+                {(() => {
+                  const hasCompletedDeliveries =
+                    subscription.metrics?.completedMeals > 0 ||
+                    subscription.deliveredMeals > 0 ||
+                    subscription.totalDeliveries > 0;
+
+                  const isActive =
+                    subscription.recurringDelivery
+                      ?.activationDeliveryCompleted === true ||
+                    subscription.recurringDelivery?.isActivated === true ||
+                    subscription.status === "active" ||
+                    hasCompletedDeliveries;
+
+                  return isActive ? "Pause Plan" : "Resume Plan";
+                })()}
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles(colors).actionButton}>
+            <TouchableOpacity
+              style={styles(colors).actionButton}
+              onPress={handleCustomize}
+              disabled={loading}
+            >
               <Ionicons
                 name="settings-outline"
                 size={24}
@@ -355,7 +730,10 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
               <Text style={styles(colors).actionButtonText}>Customize</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles(colors).actionButton}>
+            <TouchableOpacity
+              style={styles(colors).actionButton}
+              onPress={handleSupport}
+            >
               <Ionicons
                 name="headset-outline"
                 size={24}
@@ -483,6 +861,17 @@ const styles = (colors) =>
       color: colors.white,
       opacity: 0.8,
     },
+    mealCalories: {
+      fontSize: 11,
+      color: colors.white,
+      opacity: 0.9,
+      backgroundColor: "rgba(255,215,0,0.3)",
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+      alignSelf: "flex-start",
+      marginTop: 2,
+    },
     // Progress Section
     progressSection: {
       padding: 20,
@@ -507,6 +896,26 @@ const styles = (colors) =>
       fontSize: 14,
       color: colors.textSecondary,
       marginTop: 4,
+    },
+    pausedIndicator: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 12,
+      padding: 8,
+      backgroundColor: colors.warning + "20",
+      borderRadius: 8,
+    },
+    pausedText: {
+      fontSize: 12,
+      color: colors.warning,
+      marginLeft: 6,
+      fontWeight: "500",
+    },
+    statusText: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 4,
+      fontStyle: "italic",
     },
     progressBarContainer: {
       flexDirection: "row",

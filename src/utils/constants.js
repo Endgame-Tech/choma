@@ -10,19 +10,19 @@ export const APP_CONFIG = {
   // For future backend integration
   API_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "http://10.150.107.28:5001/api" // Adjust to your local IP
+      ? "http://192.168.100.9:5001/api" // Adjust to your local IP
       : "http://localhost:5001/api"
     : "https://choma.onrender.com/api",
 
   WS_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "ws://10.150.107.28:5001" // Your local development IP
+      ? "ws://192.168.100.9:5001" // Your local development IP
       : "ws://localhost:5001" // Your local development IP  
     : "wss://choma.onrender.com", // Production WebSocket URL
   
   // Payment Configuration
   PAYSTACK_PUBLIC_KEY: __DEV__
-    ? "pk_test_c90af10dcc748a6c4e3cf481230abadd819037c1" // Test key
+    ? "pk_test_25b2bfca460a812de68482316a633735382854e9" // Test key
     : "pk_live_your_live_public_key_here", // Live key for production
 
   // Google Maps Configuration

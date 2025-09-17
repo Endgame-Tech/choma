@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import { formatCalories, formatNutritionValue } from "../../utils/numberUtils";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -86,7 +87,7 @@ const MealDetailModal = ({
   const formatNutrition = (value) => {
     if (value === null || value === undefined) return "No data";
     if (value === 0) return "0";
-    return typeof value === "number" ? value.toString() : value;
+    return formatNutritionValue(value);
   };
 
   const getNutritionValue = (field) => {
@@ -236,7 +237,7 @@ const MealDetailModal = ({
                   <View style={styles(colors).statsGrid}>
                     <View style={styles(colors).statCard}>
                       <Text style={styles(colors).statValue}>
-                        {formatNutrition(getNutritionValue("calories"))}
+                        {formatCalories(getNutritionValue("calories"))}
                       </Text>
                       <Text style={styles(colors).statLabel}>Calories</Text>
                     </View>
@@ -471,11 +472,14 @@ const styles = (colors) =>
     },
     navigationContainerParent: {
       width: "100%",
+      left: 0,
+      right: 0,
+      paddingHorizontal: 0,
       height: 70,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      position: "absolute",
+      // position: "absolute",
       bottom: 70,
       width: "100%",
     },

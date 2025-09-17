@@ -29,6 +29,11 @@ import apiService from "../../services/api";
 import discountService from "../../services/discountService";
 import { useTheme } from "../../styles/theme";
 import { useAuth } from "../../hooks/useAuth";
+import {
+  formatNumber,
+  formatCalories,
+  formatNutritionValue,
+} from "../../utils/numberUtils";
 import { THEME } from "../../utils/colors";
 import MealPlanDetailSkeleton from "../../components/meal-plans/MealPlanDetailSkeleton";
 import StandardHeader from "../../components/layout/Header";
@@ -109,12 +114,15 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           }`
         : "4 weeks";
       const price = mealPlanDetails?.basePrice || bundle?.price || 25000;
-      const calories =
-        mealPlanDetails?.nutritionInfo?.avgCaloriesPerDay || "N/A";
+      const calories = mealPlanDetails?.nutritionInfo?.avgCaloriesPerDay
+        ? formatCalories(mealPlanDetails.nutritionInfo.avgCaloriesPerDay)
+        : "N/A";
       const protein = mealPlanDetails?.nutritionInfo?.totalProtein
-        ? Math.round(
-            mealPlanDetails.nutritionInfo.totalProtein /
-              (mealPlanDetails.durationWeeks * 7)
+        ? formatNutritionValue(
+            Math.round(
+              mealPlanDetails.nutritionInfo.totalProtein /
+                (mealPlanDetails.durationWeeks * 7)
+            )
           ) + "g"
         : "N/A";
 
@@ -1188,7 +1196,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   <Text style={styles(colors).nutritionOverviewEmoji}>🔥</Text>
                 </View>
                 <Text style={styles(colors).nutritionOverviewValue}>
-                  {mealPlanDetails.nutritionInfo.totalCalories || "N/A"}
+                  {formatCalories(
+                    mealPlanDetails.nutritionInfo.totalCalories
+                  ) || "N/A"}
                 </Text>
                 <Text style={styles(colors).nutritionOverviewLabel}>
                   Total Calories
@@ -1214,7 +1224,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   <Text style={styles(colors).nutritionOverviewEmoji}>👌</Text>
                 </View>
                 <Text style={styles(colors).nutritionOverviewValue}>
-                  {mealPlanDetails.nutritionInfo.avgCaloriesPerDay || "N/A"}
+                  {formatCalories(
+                    mealPlanDetails.nutritionInfo.avgCaloriesPerDay
+                  ) || "N/A"}
                 </Text>
                 <Text style={styles(colors).nutritionOverviewLabel}>
                   Avg. Cal/Day
@@ -1237,9 +1249,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
                     {mealPlanDetails.nutritionInfo.totalProtein
-                      ? Math.round(
-                          mealPlanDetails.nutritionInfo.totalProtein /
-                            (mealPlanDetails.durationWeeks * 7)
+                      ? formatNutritionValue(
+                          Math.round(
+                            mealPlanDetails.nutritionInfo.totalProtein /
+                              (mealPlanDetails.durationWeeks * 7)
+                          )
                         ) + "g"
                       : "N/A"}
                   </Text>
@@ -1259,9 +1273,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
                     {mealPlanDetails.nutritionInfo.totalCarbs
-                      ? Math.round(
-                          mealPlanDetails.nutritionInfo.totalCarbs /
-                            (mealPlanDetails.durationWeeks * 7)
+                      ? formatNutritionValue(
+                          Math.round(
+                            mealPlanDetails.nutritionInfo.totalCarbs /
+                              (mealPlanDetails.durationWeeks * 7)
+                          )
                         ) + "g"
                       : "N/A"}
                   </Text>
@@ -1281,9 +1297,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
                     {mealPlanDetails.nutritionInfo.totalFat
-                      ? Math.round(
-                          mealPlanDetails.nutritionInfo.totalFat /
-                            (mealPlanDetails.durationWeeks * 7)
+                      ? formatNutritionValue(
+                          Math.round(
+                            mealPlanDetails.nutritionInfo.totalFat /
+                              (mealPlanDetails.durationWeeks * 7)
+                          )
                         ) + "g"
                       : "N/A"}
                   </Text>
@@ -1303,9 +1321,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
                     {mealPlanDetails.nutritionInfo.totalFiber
-                      ? Math.round(
-                          mealPlanDetails.nutritionInfo.totalFiber /
-                            (mealPlanDetails.durationWeeks * 7)
+                      ? formatNutritionValue(
+                          Math.round(
+                            mealPlanDetails.nutritionInfo.totalFiber /
+                              (mealPlanDetails.durationWeeks * 7)
+                          )
                         ) + "g"
                       : "N/A"}
                   </Text>
@@ -1322,7 +1342,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <View style={styles(colors).nutritionSummaryRow}>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
-                    {mealPlanDetails.nutritionInfo.totalProtein || "N/A"}g
+                    {formatNutritionValue(
+                      mealPlanDetails.nutritionInfo.totalProtein
+                    ) || "N/A"}
+                    g
                   </Text>
                   <Text style={styles(colors).nutritionSummaryLabel}>
                     Protein
@@ -1330,7 +1353,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 </View>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
-                    {mealPlanDetails.nutritionInfo.totalCarbs || "N/A"}g
+                    {formatNutritionValue(
+                      mealPlanDetails.nutritionInfo.totalCarbs
+                    ) || "N/A"}
+                    g
                   </Text>
                   <Text style={styles(colors).nutritionSummaryLabel}>
                     Carbs
@@ -1338,13 +1364,19 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 </View>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
-                    {mealPlanDetails.nutritionInfo.totalFat || "N/A"}g
+                    {formatNutritionValue(
+                      mealPlanDetails.nutritionInfo.totalFat
+                    ) || "N/A"}
+                    g
                   </Text>
                   <Text style={styles(colors).nutritionSummaryLabel}>Fat</Text>
                 </View>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
-                    {mealPlanDetails.nutritionInfo.totalFiber || "N/A"}g
+                    {formatNutritionValue(
+                      mealPlanDetails.nutritionInfo.totalFiber
+                    ) || "N/A"}
+                    g
                   </Text>
                   <Text style={styles(colors).nutritionSummaryLabel}>
                     Fiber

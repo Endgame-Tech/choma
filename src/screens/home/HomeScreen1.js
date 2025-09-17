@@ -18,7 +18,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import CustomIcon from "../../components/ui/CustomIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNotification } from "../../context/NotificationContext";
 import { useBookmarks } from "../../context/BookmarkContext";
@@ -1279,8 +1279,8 @@ const HomeScreen = ({ navigation }) => {
               style={styles(colors).timelineButton}
             >
               <Text style={styles(colors).timelineButtonText}>Timeline</Text>
-              <Ionicons
-                name="calendar-outline"
+              <CustomIcon
+                name="calendar"
                 size={16}
                 color={COLORS.primary}
               />
@@ -1407,7 +1407,7 @@ const HomeScreen = ({ navigation }) => {
                 </View>
               </View>
 
-              <Ionicons
+              <CustomIcon
                 name="chevron-forward"
                 size={20}
                 color={colors.textMuted}
@@ -1711,7 +1711,7 @@ const HomeScreen = ({ navigation }) => {
               My Today's Meals - Day {subscriptionDay}
             </Text>
             <View style={styles(colors).noMealsContainer}>
-              <Ionicons
+              <CustomIcon
                 name="restaurant-outline"
                 size={48}
                 color={colors.textMuted}
@@ -1916,7 +1916,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => setShowSubscriptionMenu(!showSubscriptionMenu)}
                 activeOpacity={0.7}
               >
-                <Ionicons
+                <CustomIcon
                   name="ellipsis-horizontal"
                   size={20}
                   color={colors.white}
@@ -1944,7 +1944,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={handlePauseSubscription}
                 activeOpacity={0.7}
               >
-                <Ionicons name="pause" size={16} color={colors.white} />
+                <CustomIcon name="pause" size={16} color={colors.white} />
                 <Text style={styles(colors).actionButtonText}>Pause</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -1952,7 +1952,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={handleModifySubscription}
                 activeOpacity={0.7}
               >
-                <Ionicons name="settings" size={16} color={colors.white} />
+                <CustomIcon name="settings" size={16} color={colors.white} />
                 <Text style={styles(colors).actionButtonText}>Modify</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -1960,7 +1960,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={handleScheduleSubscription}
                 activeOpacity={0.7}
               >
-                <Ionicons name="calendar" size={16} color={colors.white} />
+                <CustomIcon name="calendar" size={16} color={colors.white} />
                 <Text style={styles(colors).actionButtonText}>Schedule</Text>
               </TouchableOpacity>
             </View>
@@ -1982,7 +1982,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={option.onPress}
                 activeOpacity={0.7}
               >
-                <Ionicons
+                <CustomIcon
                   name={option.icon}
                   size={20}
                   color={option.danger ? colors.error : colors.text}
@@ -2148,7 +2148,7 @@ const HomeScreen = ({ navigation }) => {
               planDiscount && planDiscount.discountPercent > 0;
             return hasDiscount ? (
               <View style={styles(colors).homeDiscountPill}>
-                <Ionicons name="gift-outline" size={14} color="#333" />
+                <CustomIcon name="gift-outline" size={14} color="#333" />
                 <Text style={styles(colors).homeDiscountPillText}>
                   Up to {planDiscount.discountPercent}% Off
                 </Text>
@@ -2169,10 +2169,9 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => toggleBookmark(plan.id || plan._id)}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name={
-                isBookmarked(plan.id || plan._id) ? "heart" : "heart-outline"
-              }
+            <CustomIcon
+              name="heart"
+              filled={isBookmarked(plan.id || plan._id)}
               size={20}
               color={
                 isBookmarked(plan.id || plan._id) ? colors.error : "#FF9A3F"
@@ -2223,10 +2222,9 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => toggleBookmark(plan.id || plan._id)}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name={
-                isBookmarked(plan.id || plan._id) ? "heart" : "heart-outline"
-              }
+            <CustomIcon
+              name="heart"
+              filled={isBookmarked(plan.id || plan._id)}
               size={20}
               color={
                 isBookmarked(plan.id || plan._id) ? colors.error : "#FF9A3F"
@@ -2248,7 +2246,7 @@ const HomeScreen = ({ navigation }) => {
               planDiscount && planDiscount.discountPercent > 0;
             return hasDiscount ? (
               <View style={styles(colors).homeDiscountPill}>
-                <Ionicons name="gift-outline" size={14} color="#333" />
+                <CustomIcon name="gift-outline" size={14} color="#333" />
                 <Text style={styles(colors).homeDiscountPillText}>
                   Up to {planDiscount.discountPercent}% Off
                 </Text>
@@ -2348,7 +2346,7 @@ const HomeScreen = ({ navigation }) => {
                   <Text style={styles(colors).promoBannerCTAText}>
                     {banner.ctaText}
                   </Text>
-                  <Ionicons
+                  <CustomIcon
                     name="chevron-forward"
                     size={16}
                     color="#000"
@@ -2393,12 +2391,12 @@ const HomeScreen = ({ navigation }) => {
           onPress={() => setShowAddressModal(true)}
           activeOpacity={0.7}
         >
-          <Ionicons name="location" size={16} color={colors.primary} />
+          <CustomIcon name="location-filled" size={16} color={colors.primary} />
           <Text style={styles(colors).locationText} numberOfLines={1}>
             {user?.address || "Set delivery address"}
           </Text>
-          <Ionicons
-            name="chevron-down"
+          <CustomIcon
+            name="chevron-forward"
             size={14}
             color={colors.textMuted}
             style={styles(colors).chevronIcon}
@@ -2472,8 +2470,8 @@ const HomeScreen = ({ navigation }) => {
                     onPress={() => setShowBrowseMode(false)}
                     activeOpacity={0.8}
                   >
-                    <Ionicons
-                      name="arrow-back"
+                    <CustomIcon
+                      name="chevron-forward"
                       size={20}
                       color={colors.primary}
                     />
@@ -2519,7 +2517,7 @@ const HomeScreen = ({ navigation }) => {
                   {/* Error State */}
                   {error && !loading && (
                     <View style={styles(colors).errorContainer}>
-                      <Ionicons
+                      <CustomIcon
                         name="alert-circle"
                         size={48}
                         color={colors.error}
@@ -2571,8 +2569,8 @@ const HomeScreen = ({ navigation }) => {
                         </ScrollView>
                       ) : (
                         <View style={styles(colors).emptyContainer}>
-                          <Ionicons
-                            name="restaurant"
+                          <CustomIcon
+                            name="food"
                             size={48}
                             color={colors.textMuted}
                           />
@@ -2631,15 +2629,15 @@ const HomeScreen = ({ navigation }) => {
                     onPress={() => setShowBrowseMode(true)}
                     activeOpacity={0.8}
                   >
-                    <Ionicons
-                      name="restaurant"
+                    <CustomIcon
+                      name="food"
                       size={20}
                       color={colors.white}
                     />
                     <Text style={styles(colors).browseMealPlansText}>
                       Browse Meal Plans
                     </Text>
-                    <Ionicons
+                    <CustomIcon
                       name="chevron-forward"
                       size={16}
                       color={colors.white}
@@ -2687,7 +2685,7 @@ const HomeScreen = ({ navigation }) => {
                   {/* Error State */}
                   {error && !loading && (
                     <View style={styles(colors).errorContainer}>
-                      <Ionicons
+                      <CustomIcon
                         name="alert-circle"
                         size={48}
                         color={colors.error}
@@ -2730,8 +2728,8 @@ const HomeScreen = ({ navigation }) => {
                         </ScrollView>
                       ) : (
                         <View style={styles(colors).emptyContainer}>
-                          <Ionicons
-                            name="restaurant"
+                          <CustomIcon
+                            name="food"
                             size={48}
                             color={colors.textMuted}
                           />
@@ -2803,7 +2801,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => setShowAddressModal(false)}
                 style={styles(colors).modalCloseButton}
               >
-                <Ionicons name="close" size={24} color={colors.text} />
+                <CustomIcon name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -2848,7 +2846,7 @@ const HomeScreen = ({ navigation }) => {
               }}
               style={styles(colors).modalCloseButton}
             >
-              <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              <CustomIcon name="close" size={24} color={COLORS.textPrimary} />
             </TouchableOpacity>
             <Text style={styles(colors).modalHeaderTitle}>Meal Timeline</Text>
             <View style={{ width: 32 }} />
@@ -4019,7 +4017,7 @@ const WrappedHomeScreen = (props) => (
           padding: 20,
         }}
       >
-        <Ionicons name="alert-circle" size={60} color="#ef4444" />
+        <CustomIcon name="alert-circle" size={60} color="#ef4444" />
         <Text
           style={{
             fontSize: 20,

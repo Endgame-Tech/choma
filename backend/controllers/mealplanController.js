@@ -185,7 +185,7 @@ exports.getMealPlanById = async (req, res) => {
     })
       .populate({
         path: "mealIds",
-        match: { isActive: true },
+        match: { isAvailable: true },
       })
       .sort({ weekNumber: 1, dayOfWeek: 1, mealTime: 1 });
 

@@ -27,7 +27,7 @@ import { createStylesWithDMSans } from "../../utils/fontUtils";
 const SettingsScreen = ({ navigation }) => {
   const { logout } = useAuth();
   const { isDark, colors, toggleTheme } = useTheme();
-  const { showError, showInfo, showConfirm } = useAlert();
+  const { showError, showInfo, showConfirm, showAlert } = useAlert();
   const { preferences, updateNotificationPreferences } = useNotification();
 
   const [settings, setSettings] = useState({
@@ -333,11 +333,12 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const handlePrivacy = () => {
-    showConfirm(
-      "Privacy Policy",
-      "This will take you out of the app to view our complete Privacy Policy on our website.\n\nYour privacy is important to us. We collect only necessary data to provide you with the best experience.\n\nWould you like to:",
-      () => {},
-      [
+    showAlert({
+      title: "Privacy Policy",
+      message:
+        "This will take you out of the app to view our complete Privacy Policy on our website.\n\nYour privacy is important to us. We collect only necessary data to provide you with the best experience.\n\nWould you like to:",
+      type: "info",
+      buttons: [
         { text: "Cancel", style: "cancel" },
         {
           text: "View Privacy Policy",
@@ -363,23 +364,24 @@ const SettingsScreen = ({ navigation }) => {
                 "• Data Collection: " +
                   (settings.dataCollection ? "Enabled" : "Disabled") +
                   "\n• Notifications: " +
-                  (settings.notifications ? "Enabled" : "Disabled") +
-                  "\n• Auto-download: " +
-                  (settings.autoDownload ? "Enabled" : "Disabled")
+                  (settings.allowNotifications ? "Enabled" : "Disabled") +
+                  "\n• Marketing: " +
+                  (settings.allowMarketing ? "Enabled" : "Disabled")
               );
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleTerms = () => {
-    showConfirm(
-      "Terms of Service",
-      "This will take you out of the app to view our complete Terms of Service on our website.\n\nBy using Choma, you agree to our terms and conditions.",
-      () => {},
-      [
+    showAlert({
+      title: "Terms of Service",
+      message:
+        "This will take you out of the app to view our complete Terms of Service on our website.\n\nBy using Choma, you agree to our terms and conditions.",
+      type: "info",
+      buttons: [
         { text: "Cancel", style: "cancel" },
         {
           text: "View Terms",
@@ -399,8 +401,8 @@ const SettingsScreen = ({ navigation }) => {
             );
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleHelpCenter = () => {

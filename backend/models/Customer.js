@@ -41,6 +41,7 @@ const CustomerSchema = new mongoose.Schema({
     token: String,
     deviceId: String,
     platform: { type: String, enum: ['ios', 'android', 'web'] },
+    tokenType: { type: String, enum: ['expo', 'fcm'], default: 'expo' },
     isActive: { type: Boolean, default: true },
     lastUsed: { type: Date, default: Date.now }
   }],

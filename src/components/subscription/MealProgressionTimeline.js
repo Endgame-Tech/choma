@@ -30,7 +30,7 @@ const MealProgressionTimeline = ({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [realTimeUpdateInterval, setRealTimeUpdateInterval] = useState(null);
-  const [viewMode, setViewMode] = useState("vertical"); // 'vertical' or 'horizontal'
+  const [viewMode, setViewMode] = useState("vertical"); // Only 'vertical' mode available
   const [currentMealIndex, setCurrentMealIndex] = useState({}); // Track current meal index for each day
   const timelineRef = useRef(null);
 
@@ -341,8 +341,16 @@ const MealProgressionTimeline = ({
         0
       );
 
+      // Recalculate dayType based on current date
+      const today = new Date();
+      const dayDate = new Date(day.date);
+      const isToday = dayDate.toDateString() === today.toDateString();
+      const isPast = dayDate < today && !isToday;
+      const calculatedDayType = isPast ? "past" : isToday ? "current" : "future";
+
       return {
         ...day,
+        dayType: calculatedDayType, // Use recalculated dayType
         organizedMeals,
         availableMealTimes,
         totalMealItems,
@@ -379,8 +387,9 @@ const MealProgressionTimeline = ({
       );
       const basicData = [];
 
-      // Generate 14 days of timeline (2 weeks)
-      for (let i = -3; i < 11; i++) {
+      // Generate timeline from start date to show full subscription period
+      const planDuration = subscription.duration || 30; // Default to 30 days if not specified
+      for (let i = 0; i < planDuration; i++) {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);
 
@@ -388,13 +397,12 @@ const MealProgressionTimeline = ({
         const isPast = date < today && !isToday;
         const dayType = isPast ? "past" : isToday ? "current" : "future";
 
-        // Calculate week and day numbers
-        const weekNumber = Math.ceil((i + 4) / 7);
-        const dayOfWeek = ((i + 3) % 7) + 1;
+        // Calculate week and day numbers properly
+        const weekNumber = Math.ceil((i + 1) / 7);
+        const dayOfWeek = (i % 7) + 1;
 
-        // Generate meal for each day
-        const mealTypes = ["breakfast", "lunch", "dinner"];
-        const mealTime = mealTypes[i % 3];
+        // Generate meal for each day (assuming one meal per day)
+        const mealTime = "lunch"; // Default to lunch, can be customized based on plan
 
         basicData.push({
           date: date.toISOString(),
@@ -424,7 +432,7 @@ const MealProgressionTimeline = ({
               dayType === "past"
                 ? "delivered"
                 : dayType === "current"
-                  ? "ready"
+                  ? "preparing"
                   : "scheduled",
           },
           meals: [
@@ -459,6 +467,7 @@ const MealProgressionTimeline = ({
     const today = new Date();
     const mockData = [];
 
+    // Generate 7 days: 2 past, 1 current (today), 4 future
     for (let i = -2; i < 5; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
@@ -499,7 +508,7 @@ const MealProgressionTimeline = ({
             dayType === "past"
               ? "delivered"
               : dayType === "current"
-                ? "ready"
+                ? "preparing"
                 : "scheduled",
         },
         meals: [
@@ -530,27 +539,35 @@ const MealProgressionTimeline = ({
   const handleViewFullTimeline = () => {
     if (onViewFullTimeline) {
       onViewFullTimeline();
-    } else {
-      // Toggle between horizontal and vertical view modes
-      setViewMode(viewMode === "vertical" ? "horizontal" : "vertical");
     }
+    // Horizontal view mode removed - only vertical mode available
   };
 
   const scrollToToday = () => {
     if (timelineRef.current && safeTimeline.length > 0) {
-      const todayIndex = safeTimeline.findIndex(
-        (item) => item.dayType === "current"
-      );
+      const today = new Date();
+      const todayIndex = safeTimeline.findIndex((item) => {
+        const itemDate = new Date(item.date);
+        return itemDate.toDateString() === today.toDateString();
+      });
+      
       if (todayIndex >= 0) {
-        if (viewMode === "horizontal") {
-          timelineRef.current.scrollToIndex({
-            index: todayIndex,
-            animated: true,
-            viewPosition: 0.5,
-          });
-        } else {
+        const cardHeight = 180; // More accurate card height estimate
+        const headerHeight = 120; // Account for header and progress bar
+        timelineRef.current.scrollTo({
+          y: Math.max(0, (todayIndex * cardHeight) - headerHeight),
+          animated: true,
+        });
+      } else {
+        // If no exact match for today, scroll to first current item
+        const currentIndex = safeTimeline.findIndex(
+          (item) => item.dayType === "current"
+        );
+        if (currentIndex >= 0) {
+          const cardHeight = 180;
+          const headerHeight = 120;
           timelineRef.current.scrollTo({
-            y: todayIndex * 132, // Approximate card height
+            y: Math.max(0, (currentIndex * cardHeight) - headerHeight),
             animated: true,
           });
         }
@@ -719,24 +736,38 @@ const MealProgressionTimeline = ({
 
   const getProgressInfo = () => {
     if (safeTimeline.length === 0)
-      return { completed: 0, total: 0, remaining: 0 };
+      return { completed: 0, total: 0, remaining: 0, current: 0 };
 
-    const pastMeals = safeTimeline.filter(
-      (item) => item.dayType === "past"
-    ).length;
-    const currentMeals = safeTimeline.filter(
-      (item) => item.dayType === "current"
-    ).length;
-    const futureMeals = safeTimeline.filter(
-      (item) => item.dayType === "future"
-    ).length;
-    const totalMeals = safeTimeline.length;
+    const today = new Date();
+    let completed = 0;
+    let current = 0;
+    let remaining = 0;
+
+    safeTimeline.forEach((item) => {
+      const itemDate = new Date(item.date);
+      const isToday = itemDate.toDateString() === today.toDateString();
+      const isPast = itemDate < today && !isToday;
+      
+      // Get actual delivery status if available
+      const mealAssignment = item.mealAssignment || item.meals?.[0];
+      const deliveryStatus = mealAssignment?.deliveryStatus || 
+                            mealAssignment?.status || 
+                            item.status;
+      
+      if (isPast || deliveryStatus === "delivered") {
+        completed++;
+      } else if (isToday) {
+        current++;
+      } else {
+        remaining++;
+      }
+    });
 
     return {
-      completed: pastMeals,
-      current: currentMeals,
-      remaining: futureMeals,
-      total: totalMeals,
+      completed,
+      current,
+      remaining,
+      total: safeTimeline.length,
     };
   };
 
@@ -830,7 +861,7 @@ const MealProgressionTimeline = ({
     }));
   };
 
-  const renderTimelineCard = (item, index, isHorizontal = false) => {
+  const renderTimelineCard = (item, index) => {
     // Early return if no valid meals are assigned to this day
     if (!hasValidMeals(item)) {
       return null;
@@ -847,141 +878,6 @@ const MealProgressionTimeline = ({
     const orderStatus = getOrderStatus(item);
     const allMeals = getAllMealsForDay(item);
 
-    if (isHorizontal) {
-      return (
-        <TouchableOpacity
-          key={`${item.date}-${item.dayIndex || index}`}
-          style={[
-            styles.horizontalCard,
-            { backgroundColor: isDark ? "#1A1A1A" : colors.cardBackground },
-          ]}
-          onPress={() => onMealPress && onMealPress(currentMeal)}
-          activeOpacity={0.8}
-        >
-          {/* Order Status Badge */}
-          <View style={styles.orderStatusContainer}>
-            <Text
-              style={[
-                styles.orderStatusLabel,
-                { color: isDark ? "#FFF" : colors.text },
-              ]}
-            >
-              Order Status
-            </Text>
-            <View style={styles.orderCheckBadge}>
-              <Text style={styles.orderCheckText}>{orderStatus}</Text>
-            </View>
-          </View>
-
-          {/* Date and Time Section */}
-          <View style={styles.dateTimeSection}>
-            <View style={styles.sunIcon}>
-              <Ionicons
-                name={getMealTypeIcon(mealTime)}
-                size={32}
-                color={isDark ? "#FFF" : "#FFB347"}
-              />
-            </View>
-            <View style={styles.dateTextContainer}>
-              <Text
-                style={[
-                  styles.todayText,
-                  { color: isDark ? "#FFF" : colors.text },
-                ]}
-              >
-                {dateInfo.primary}
-              </Text>
-              <Text
-                style={[
-                  styles.dayText,
-                  {
-                    color: isDark
-                      ? "rgba(255, 255, 255, 0.7)"
-                      : colors.textSecondary,
-                  },
-                ]}
-              >
-                {dateInfo.secondary}
-              </Text>
-            </View>
-          </View>
-
-          {/* Main Meal Image */}
-          <View style={styles.horizontalImageContainer}>
-            <Image
-              source={{
-                uri:
-                  currentMeal.imageUrl ||
-                  item.imageUrl ||
-                  item.meals?.[0]?.imageUrl ||
-                  "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
-              }}
-              style={styles.horizontalMealImage}
-              defaultSource={require("../../assets/images/daily-meals.jpg")}
-            />
-          </View>
-
-          {/* Meal Info Section */}
-          <View style={styles.mealInfoSection}>
-            <Text
-              style={[
-                styles.mealTypeText,
-                {
-                  color: isDark
-                    ? "rgba(255, 255, 255, 0.7)"
-                    : colors.textSecondary,
-                },
-              ]}
-            >
-              {allMeals.length > 1
-                ? `${allMeals.length} Meals`
-                : mealTime || "breakfast"}
-            </Text>
-            <Text
-              style={[
-                styles.mealNameText,
-                { color: isDark ? "#FFF" : colors.text },
-              ]}
-            >
-              {allMeals.length > 1
-                ? allMeals
-                    .map((meal) => meal.customTitle || meal.title || meal.name)
-                    .join(", ")
-                : currentMeal.customTitle ||
-                  currentMeal.title ||
-                  currentMeal.name ||
-                  item.dayTitle ||
-                  "Today's Meal"}
-            </Text>
-            {allMeals.length > 1 && (
-              <ScrollView
-                horizontal
-                style={styles.horizontalMealList}
-                showsHorizontalScrollIndicator={false}
-              >
-                {allMeals.map((meal, mealIndex) => (
-                  <TouchableOpacity
-                    key={`meal-${mealIndex}`}
-                    style={styles.mealChip}
-                    onPress={() => onMealPress && onMealPress(meal)}
-                  >
-                    <Text
-                      style={[
-                        styles.mealChipText,
-                        { color: isDark ? "#FFF" : colors.text },
-                      ]}
-                    >
-                      {meal.mealTime || "lunch"}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
     // Vertical card layout
     return (
       <TouchableOpacity
@@ -994,7 +890,7 @@ const MealProgressionTimeline = ({
         activeOpacity={0.8}
       >
         {/* Order Status Badge */}
-        <View style={styles.orderStatusContainer}>
+        {/* <View style={styles.orderStatusContainer}>
           <Text
             style={[
               styles.orderStatusLabel,
@@ -1006,7 +902,7 @@ const MealProgressionTimeline = ({
           <View style={styles.orderCheckBadge}>
             <Text style={styles.orderCheckText}>{orderStatus}</Text>
           </View>
-        </View>
+        </View> */}
 
         <View style={styles.verticalCardContainer}>
           {/* Left Stack (Date, Icon, Arrows, Step Indicator) */}
@@ -1163,53 +1059,6 @@ const MealProgressionTimeline = ({
     );
   };
 
-  const renderHorizontalTimeline = () => {
-    return (
-      <FlatList
-        ref={timelineRef}
-        data={safeTimeline}
-        renderItem={({ item, index }) => renderTimelineCard(item, index, true)}
-        keyExtractor={(item, index) => `${item.date}-${item.dayIndex || index}`}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalScrollContainer}
-        ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListFooterComponent={() => (
-          <TouchableOpacity
-            style={[
-              styles.viewMoreHorizontalSection,
-              { backgroundColor: colors.cardBackground },
-            ]}
-            onPress={handleViewFullTimeline}
-          >
-            <LinearGradient
-              colors={[colors.inputBackground, colors.border]}
-              style={styles.viewMoreHorizontalGradient}
-            >
-              <Ionicons name="calendar" size={20} color={COLORS.primary} />
-              <Text
-                style={[styles.viewMoreHorizontalTitle, { color: colors.text }]}
-              >
-                View Full
-              </Text>
-              <Text
-                style={[
-                  styles.viewMoreHorizontalSubtitle,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                Timeline
-              </Text>
-              <Ionicons name="arrow-forward" size={14} color={COLORS.primary} />
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-      />
-    );
-  };
 
   const renderVerticalTimeline = () => {
     return (
@@ -1222,33 +1071,9 @@ const MealProgressionTimeline = ({
         }
       >
         {safeTimeline.map((item, index) =>
-          renderTimelineCard(item, index, false)
+          renderTimelineCard(item, index)
         )}
 
-        {/* View more section */}
-        <TouchableOpacity
-          style={[
-            styles.viewMoreSection,
-            { backgroundColor: colors.cardBackground },
-          ]}
-          onPress={handleViewFullTimeline}
-        >
-          <LinearGradient
-            colors={[colors.inputBackground, colors.border]}
-            style={styles.viewMoreGradient}
-          >
-            <Ionicons name="calendar" size={24} color={COLORS.primary} />
-            <Text style={[styles.viewMoreTitle, { color: colors.text }]}>
-              View Full Timeline
-            </Text>
-            <Text
-              style={[styles.viewMoreSubtitle, { color: colors.textSecondary }]}
-            >
-              See all upcoming meals and plan ahead
-            </Text>
-            <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
-          </LinearGradient>
-        </TouchableOpacity>
       </ScrollView>
     );
   };
@@ -1385,34 +1210,12 @@ const MealProgressionTimeline = ({
             <Ionicons name="today" size={16} color={COLORS.primary} />
             <Text style={styles.filterText}>Today</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              { backgroundColor: colors.inputBackground, marginLeft: 8 },
-            ]}
-            onPress={() =>
-              setViewMode(viewMode === "vertical" ? "horizontal" : "vertical")
-            }
-          >
-            <Ionicons
-              name={
-                viewMode === "vertical" ? "swap-horizontal" : "swap-vertical"
-              }
-              size={16}
-              color={COLORS.primary}
-            />
-            <Text style={styles.filterText}>
-              {viewMode === "vertical" ? "Horizontal" : "Vertical"}
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
 
       {renderProgressBar()}
 
-      {viewMode === "horizontal"
-        ? renderHorizontalTimeline()
-        : renderVerticalTimeline()}
+      {renderVerticalTimeline()}
     </View>
   );
 };
@@ -1502,10 +1305,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 16,
   },
-  horizontalScrollContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
@@ -1571,20 +1370,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
-  // Horizontal Timeline Styles
-  horizontalCard: {
-    width: width * 0.85,
-    borderRadius: 20,
-    overflow: "hidden",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    paddingTop: 16,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
-  },
 
   // Order Status Section
   orderStatusContainer: {
@@ -1635,21 +1420,11 @@ const styles = StyleSheet.create({
     // textAlign: "center",
   },
 
-  // Meal Image Containers
-  horizontalImageContainer: {
-    marginBottom: 20,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
+  // Meal Image Container
   verticalImageContainer: {
     marginBottom: 16,
     borderRadius: 16,
     overflow: "hidden",
-  },
-  horizontalMealImage: {
-    width: "100%",
-    height: 180,
-    resizeMode: "cover",
   },
   verticalMealImage: {
     width: "100%",
@@ -1668,7 +1443,7 @@ const styles = StyleSheet.create({
   },
   mealNameText: {
     fontSize: 20,
-    fontWeight: "600",
+    fontWeight: "semibold",
   },
 
   // Navigation Arrows
@@ -1715,37 +1490,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 12,
   },
-  viewMoreHorizontalSection: {
-    width: width * 0.3,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginLeft: 12,
-  },
-  viewMoreHorizontalGradient: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    minHeight: 120,
-  },
-  viewMoreHorizontalTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    marginTop: 8,
-    textAlign: "center",
-  },
-  viewMoreHorizontalSubtitle: {
-    fontSize: 10,
-    marginTop: 2,
-    textAlign: "center",
-  },
 
   // New styles for enhanced functionality
   arrowButton: {
     padding: 4,
     borderRadius: 12,
-  },
-  horizontalMealList: {
-    marginTop: 8,
   },
   mealChip: {
     backgroundColor: "rgba(139, 92, 246, 0.2)",
