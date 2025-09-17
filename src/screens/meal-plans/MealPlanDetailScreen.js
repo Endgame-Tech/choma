@@ -24,6 +24,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { CustomIcon } from "../../components/ui/CustomIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import apiService from "../../services/api";
 import discountService from "../../services/discountService";
@@ -501,7 +502,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             {/* Discount pill on meal image - show if discount applies to this meal plan */}
             {discountInfo && discountInfo.discountPercent > 0 && (
               <View style={styles(colors).mealDiscountPill}>
-                <Ionicons name="gift-outline" size={14} color="#333" />
+                <Ionicons name="gift" size={14} color="#333" />
                 <Text style={styles(colors).mealDiscountPillText}>
                   {discountInfo.discountPercent}% Off
                 </Text>
@@ -718,7 +719,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                               discountInfo.discountPercent > 0 && (
                                 <View style={styles(colors).mealDiscountPill}>
                                   <Ionicons
-                                    name="gift-outline"
+                                    name="gift"
                                     size={14}
                                     color="#333"
                                   />
@@ -1131,11 +1132,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   ₦{discountInfo.originalPrice.toLocaleString()}
                 </Text>
                 <View style={styles(colors).discountPill}>
-                  <Ionicons
-                    name="gift-outline"
-                    size={18}
-                    color={colors.primary}
-                  />
+                  <Ionicons name="gift" size={18} color={colors.primary} />
                   <Text style={styles(colors).discountPillText}>
                     Up to {discountInfo.discountPercent}% Off
                   </Text>
@@ -1419,7 +1416,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           accessibilityRole="button"
           accessible={true}
         >
-          <Ionicons name="options" size={20} color={colors.border2} />
+          <Ionicons name="filter" size={20} color={colors.border2} />
           <Text style={styles(colors).customizeText}></Text>
         </TouchableOpacity>
 

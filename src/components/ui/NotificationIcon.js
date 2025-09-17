@@ -1,6 +1,6 @@
 import React from "react";
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import CustomIcon from "./CustomIcon";
 import { useNavigation } from "@react-navigation/native";
 import { useNotification } from "../../context/NotificationContext";
 import { useTheme } from "../../styles/theme";
@@ -30,7 +30,7 @@ const NotificationIcon = ({ size = 24, color }) => {
       onPress={() => navigation.navigate("Notifications")}
       activeOpacity={0.7}
     >
-      <Ionicons name="notifications-outline" size={size} color={iconColor} />
+      <CustomIcon name="notifications" size={size} color={iconColor} />
       {unreadCount > 0 && (
         <View style={styles(colors).badge}>
           <Text style={styles(colors).badgeText}>

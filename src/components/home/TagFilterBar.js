@@ -9,7 +9,7 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import CustomIcon from '../ui/CustomIcon';
 import tagService from '../../services/tagService';
 import { useTheme } from '../../styles/theme';
 import FilterModal from '../meal-plans/FilterModal';
@@ -195,10 +195,10 @@ const TagFilterBar = memo(({ onTagSelect, selectedTagId = null, onApplyFilters }
             styles(colors).filterIconContainer,
             hasActiveFilters() && styles(colors).filterIconContainerActive,
           ]}>
-            <Ionicons
-              name="options"
+            <CustomIcon
+              name="filter"
               size={18}
-              color={hasActiveFilters() ? colors.surface : colors.text}
+              color={hasActiveFilters() ? colors.surface : colors.primary}
             />
             {hasActiveFilters() && (
               <View style={styles(colors).filterBadge}>

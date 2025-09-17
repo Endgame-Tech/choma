@@ -126,7 +126,7 @@ const NotificationScreen = ({ navigation }) => {
         return "star-outline";
 
       default:
-        return "notifications-outline";
+        return "notifications";
     }
   };
 

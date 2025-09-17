@@ -53,7 +53,10 @@ import tagService from "../../services/tagService";
 const { width } = Dimensions.get("window");
 
 // Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -102,7 +105,6 @@ const HomeScreen = ({ navigation }) => {
   const [selectedTagId, setSelectedTagId] = useState(null);
   const [selectedTag, setSelectedTag] = useState(null);
   const [filteredMealPlans, setFilteredMealPlans] = useState([]);
-
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
@@ -293,14 +295,14 @@ const HomeScreen = ({ navigation }) => {
         property: LayoutAnimation.Properties.opacity,
       },
     });
-    
+
     setSelectedTagId(tagId);
     setSelectedTag(tag);
   };
 
   // Handle filter application
   const handleApplyFilters = (filters) => {
-    console.log('🔍 Applying filters:', filters);
+    console.log("🔍 Applying filters:", filters);
     // You can implement additional filter logic here
     // For now, the filters will be handled by the FilterModal
     // and could be used to further filter the meal plans
@@ -1280,7 +1282,7 @@ const HomeScreen = ({ navigation }) => {
             >
               <Text style={styles(colors).timelineButtonText}>Timeline</Text>
               <CustomIcon
-                name="calendar"
+                name="calendar-filled"
                 size={16}
                 color={COLORS.primary}
               />
@@ -2148,7 +2150,7 @@ const HomeScreen = ({ navigation }) => {
               planDiscount && planDiscount.discountPercent > 0;
             return hasDiscount ? (
               <View style={styles(colors).homeDiscountPill}>
-                <CustomIcon name="gift-outline" size={14} color="#333" />
+                <CustomIcon name="gift" size={14} color="#333" />
                 <Text style={styles(colors).homeDiscountPillText}>
                   Up to {planDiscount.discountPercent}% Off
                 </Text>
@@ -2246,7 +2248,7 @@ const HomeScreen = ({ navigation }) => {
               planDiscount && planDiscount.discountPercent > 0;
             return hasDiscount ? (
               <View style={styles(colors).homeDiscountPill}>
-                <CustomIcon name="gift-outline" size={14} color="#333" />
+                <CustomIcon name="gift" size={14} color="#333" />
                 <Text style={styles(colors).homeDiscountPillText}>
                   Up to {planDiscount.discountPercent}% Off
                 </Text>
@@ -2396,7 +2398,7 @@ const HomeScreen = ({ navigation }) => {
             {user?.address || "Set delivery address"}
           </Text>
           <CustomIcon
-            name="chevron-forward"
+            name="chevron-down"
             size={14}
             color={colors.textMuted}
             style={styles(colors).chevronIcon}
@@ -2471,7 +2473,7 @@ const HomeScreen = ({ navigation }) => {
                     activeOpacity={0.8}
                   >
                     <CustomIcon
-                      name="chevron-forward"
+                      name="chevron-back"
                       size={20}
                       color={colors.primary}
                     />
@@ -2629,11 +2631,7 @@ const HomeScreen = ({ navigation }) => {
                     onPress={() => setShowBrowseMode(true)}
                     activeOpacity={0.8}
                   >
-                    <CustomIcon
-                      name="food"
-                      size={20}
-                      color={colors.white}
-                    />
+                    <CustomIcon name="food" size={20} color={colors.white} />
                     <Text style={styles(colors).browseMealPlansText}>
                       Browse Meal Plans
                     </Text>
@@ -2663,87 +2661,90 @@ const HomeScreen = ({ navigation }) => {
                 {/* Popular Food Section - Conditional visibility */}
                 {!selectedTagId && (
                   <View style={styles(colors).section}>
-                  <View style={styles(colors).sectionHeader}>
-                    <Text style={styles(colors).sectionTitle}>
-                      Popular plans
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => navigation.navigate("Search")}
-                    ></TouchableOpacity>
-                  </View>
-
-                  {/* Loading State */}
-                  {loading && !refreshing && (
-                    <View style={styles(colors).loadingContainer}>
-                      <ActivityIndicator size="large" color={colors.primary} />
-                      <Text style={styles(colors).loadingText}>
-                        Loading meal plans...
+                    <View style={styles(colors).sectionHeader}>
+                      <Text style={styles(colors).sectionTitle}>
+                        Popular plans
                       </Text>
-                    </View>
-                  )}
-
-                  {/* Error State */}
-                  {error && !loading && (
-                    <View style={styles(colors).errorContainer}>
-                      <CustomIcon
-                        name="alert-circle"
-                        size={48}
-                        color={colors.error}
-                      />
-                      <Text style={styles(colors).errorTitle}>
-                        Oops! Something went wrong
-                      </Text>
-                      <Text style={styles(colors).errorText}>{error}</Text>
                       <TouchableOpacity
-                        style={styles(colors).retryButton}
-                        onPress={refreshMealPlans}
-                      >
-                        <Text style={styles(colors).retryButtonText}>
-                          Try Again
-                        </Text>
-                      </TouchableOpacity>
+                        onPress={() => navigation.navigate("Search")}
+                      ></TouchableOpacity>
                     </View>
-                  )}
 
-                  {/* Popular Food Slider */}
-                  {!loading && !error && (
-                    <View style={styles(colors).popularFoodContainer}>
-                      {filteredMealPlans.length > 0 ? (
-                        <ScrollView
-                          ref={popularScrollRef}
-                          horizontal
-                          showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={
-                            styles(colors).popularFoodScrollContent
-                          }
-                          scrollEventThrottle={16}
-                          decelerationRate="fast"
-                          snapToInterval={width * 0.75 + 20} // Card width + margin for snapping
-                          snapToAlignment="center"
-                          disableIntervalMomentum={true}
+                    {/* Loading State */}
+                    {loading && !refreshing && (
+                      <View style={styles(colors).loadingContainer}>
+                        <ActivityIndicator
+                          size="large"
+                          color={colors.primary}
+                        />
+                        <Text style={styles(colors).loadingText}>
+                          Loading meal plans...
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Error State */}
+                    {error && !loading && (
+                      <View style={styles(colors).errorContainer}>
+                        <CustomIcon
+                          name="alert-circle"
+                          size={48}
+                          color={colors.error}
+                        />
+                        <Text style={styles(colors).errorTitle}>
+                          Oops! Something went wrong
+                        </Text>
+                        <Text style={styles(colors).errorText}>{error}</Text>
+                        <TouchableOpacity
+                          style={styles(colors).retryButton}
+                          onPress={refreshMealPlans}
                         >
-                          {filteredMealPlans.map((plan, index) =>
-                            renderPopularFoodCard(plan, index)
-                          )}
-                        </ScrollView>
-                      ) : (
-                        <View style={styles(colors).emptyContainer}>
-                          <CustomIcon
-                            name="food"
-                            size={48}
-                            color={colors.textMuted}
-                          />
-                          <Text style={styles(colors).emptyTitle}>
-                            No meal plans found
+                          <Text style={styles(colors).retryButtonText}>
+                            Try Again
                           </Text>
-                          <Text style={styles(colors).emptyText}>
-                            Try selecting a different category or refresh to
-                            load plans.
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {/* Popular Food Slider */}
+                    {!loading && !error && (
+                      <View style={styles(colors).popularFoodContainer}>
+                        {filteredMealPlans.length > 0 ? (
+                          <ScrollView
+                            ref={popularScrollRef}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={
+                              styles(colors).popularFoodScrollContent
+                            }
+                            scrollEventThrottle={16}
+                            decelerationRate="fast"
+                            snapToInterval={width * 0.75 + 20} // Card width + margin for snapping
+                            snapToAlignment="center"
+                            disableIntervalMomentum={true}
+                          >
+                            {filteredMealPlans.map((plan, index) =>
+                              renderPopularFoodCard(plan, index)
+                            )}
+                          </ScrollView>
+                        ) : (
+                          <View style={styles(colors).emptyContainer}>
+                            <CustomIcon
+                              name="food"
+                              size={48}
+                              color={colors.textMuted}
+                            />
+                            <Text style={styles(colors).emptyTitle}>
+                              No meal plans found
+                            </Text>
+                            <Text style={styles(colors).emptyText}>
+                              Try selecting a different category or refresh to
+                              load plans.
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
                   </View>
                 )}
 

@@ -27,6 +27,7 @@ import discountService from "../../services/discountService";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 import TagFilterBar from "../../components/home/TagFilterBar";
 import tagService from "../../services/tagService";
+import CustomIcon from "../../components/ui/CustomIcon";
 
 const SearchScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
@@ -48,7 +49,7 @@ const SearchScreen = ({ navigation }) => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
   const [targetAudiences, setTargetAudiences] = useState([]);
-  
+
   // Tag filtering state
   const [selectedTagId, setSelectedTagId] = useState(null);
   const [selectedTag, setSelectedTag] = useState(null);
@@ -252,7 +253,7 @@ const SearchScreen = ({ navigation }) => {
   const handleTagSelect = async (tagId, tag) => {
     setSelectedTagId(tagId);
     setSelectedTag(tag);
-    
+
     if (tagId) {
       // If a tag is selected, fetch meal plans for that tag
       setIsSearching(true);
@@ -264,7 +265,7 @@ const SearchScreen = ({ navigation }) => {
           setSearchResults([]);
         }
       } catch (error) {
-        console.error('Error fetching meal plans by tag:', error);
+        console.error("Error fetching meal plans by tag:", error);
         setSearchResults([]);
       } finally {
         setIsSearching(false);
@@ -446,8 +447,8 @@ const SearchScreen = ({ navigation }) => {
       {/* Search Input */}
       <View style={styles(colors).searchContainer}>
         <View style={styles(colors).searchInputContainer}>
-          <Ionicons
-            name="search"
+          <CustomIcon
+            name="search-filled"
             size={20}
             color={colors.textMuted}
             style={styles(colors).searchIcon}
@@ -465,7 +466,7 @@ const SearchScreen = ({ navigation }) => {
               onPress={clearSearch}
               style={styles(colors).clearButton}
             >
-              <Ionicons
+              <CustomIcon
                 name="close-circle"
                 size={20}
                 color={colors.textMuted}
@@ -479,8 +480,8 @@ const SearchScreen = ({ navigation }) => {
             ]}
             onPress={() => setShowFilterModal(true)}
           >
-            <Ionicons
-              name="options"
+            <CustomIcon
+              name="filter"
               size={20}
               color={hasActiveFilters ? colors.primary : colors.textMuted}
             />
@@ -520,7 +521,7 @@ const SearchScreen = ({ navigation }) => {
                         handleApplyFilters(newFilters);
                       }}
                     >
-                      <Ionicons name="close" size={16} color={colors.primary} />
+                      <CustomIcon name="close" size={16} color={colors.primary} />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -539,7 +540,7 @@ const SearchScreen = ({ navigation }) => {
                         handleApplyFilters(newFilters);
                       }}
                     >
-                      <Ionicons name="close" size={16} color={colors.primary} />
+                      <CustomIcon name="close" size={16} color={colors.primary} />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -607,11 +608,11 @@ const SearchScreen = ({ navigation }) => {
                           }}
                           activeOpacity={0.7}
                         >
-                          <Ionicons
+                          <CustomIcon
                             name={
                               isBookmarked(plan.id || plan._id)
-                                ? "heart"
-                                : "heart-outline"
+                                ? "heart-filled"
+                                : "heart"
                             }
                             size={20}
                             color={
@@ -637,11 +638,7 @@ const SearchScreen = ({ navigation }) => {
                             planDiscount && planDiscount.discountPercent > 0;
                           return hasDiscount ? (
                             <View style={styles(colors).searchDiscountPill}>
-                              <Ionicons
-                                name="gift-outline"
-                                size={14}
-                                color="#333"
-                              />
+                              <CustomIcon name="gift" size={14} color="#333" />
                               <Text
                                 style={styles(colors).searchDiscountPillText}
                               >
@@ -684,7 +681,7 @@ const SearchScreen = ({ navigation }) => {
             </View>
           ) : (
             <View style={styles(colors).emptyResults}>
-              <Ionicons name="search" size={64} color={colors.textMuted} />
+              <CustomIcon name="search-filled" size={64} color={colors.textMuted} />
               <Text style={styles(colors).emptyTitle}>
                 {hasActiveFilters
                   ? "No plans match your filters"
@@ -718,35 +715,6 @@ const SearchScreen = ({ navigation }) => {
               </View>
             ) : (
               <>
-                {/* Search History */}
-                {/* {searchHistory.length > 0 && (
-                  <View style={styles(colors).historySection}>
-                    <Text style={styles(colors).suggestionsTitle}>
-                      Recent Searches
-                    </Text>
-                    {searchHistory.map((historyItem, index) => (
-                      <TouchableOpacity
-                        key={`history-${index}`}
-                        style={styles(colors).suggestionItem}
-                        onPress={() => handleSearch(historyItem)}
-                      >
-                        <Ionicons
-                          name="time-outline"
-                          size={16}
-                          color={colors.textSecondary}
-                        />
-                        <Text style={styles(colors).suggestionText}>
-                          {historyItem}
-                        </Text>
-                        <Ionicons
-                          name="arrow-up-outline"
-                          size={16}
-                          color={colors.textSecondary}
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )} */}
 
                 {/* Popular Searches */}
                 {popularSearches.length > 0 && (
@@ -760,16 +728,16 @@ const SearchScreen = ({ navigation }) => {
                         style={styles(colors).suggestionItem}
                         onPress={() => handleSearch(searchTerm)}
                       >
-                        <Ionicons
-                          name="search-outline"
+                        <CustomIcon
+                          name="search"
                           size={16}
                           color={colors.textSecondary}
                         />
                         <Text style={styles(colors).suggestionText}>
                           {searchTerm}
                         </Text>
-                        <Ionicons
-                          name="arrow-up-outline"
+                        <CustomIcon
+                          name="chevron-up"
                           size={16}
                           color={colors.textSecondary}
                         />
@@ -818,11 +786,11 @@ const SearchScreen = ({ navigation }) => {
                               }}
                               activeOpacity={0.7}
                             >
-                              <Ionicons
+                              <CustomIcon
                                 name={
                                   isBookmarked(plan._id || plan.id)
-                                    ? "heart"
-                                    : "heart-outline"
+                                    ? "heart-filled"
+                                    : "heart"
                                 }
                                 size={20}
                                 color={
@@ -851,8 +819,8 @@ const SearchScreen = ({ navigation }) => {
                                 planDiscount.discountPercent > 0;
                               return hasDiscount ? (
                                 <View style={styles(colors).searchDiscountPill}>
-                                  <Ionicons
-                                    name="gift-outline"
+                                  <CustomIcon
+                                    name="gift"
                                     size={14}
                                     color="#333"
                                   />

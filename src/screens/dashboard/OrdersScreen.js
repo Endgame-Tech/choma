@@ -770,7 +770,7 @@ const OrdersScreen = ({ navigation }) => {
         </View>
 
         {/* <TouchableOpacity style={styles(colors).notificationButton}>
-          <Ionicons name="notifications-outline" size={24} color={colors.text} />
+          <Ionicons name="notifications" size={24} color={colors.text} />
           <View style={styles(colors).notificationBadge}>
             <Text style={styles(colors).notificationBadgeText}>2</Text>
           </View>

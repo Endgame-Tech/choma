@@ -85,7 +85,7 @@ const NotificationDetailScreen = ({ navigation, route }) => {
         return "restaurant";
 
       default:
-        return "notifications-outline";
+        return "notifications";
     }
   };
 

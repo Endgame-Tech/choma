@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import CustomIcon from "../ui/CustomIcon";
 import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
 import api from "../../services/api";
@@ -90,7 +90,7 @@ const DeliveryZoneModal = ({
       >
         <View style={styles(colors).zoneInfo}>
           <View style={styles(colors).zoneHeader}>
-            <Ionicons
+            <CustomIcon
               name="location"
               size={20}
               color={isSelected ? colors.primary : colors.textSecondary}
@@ -111,7 +111,7 @@ const DeliveryZoneModal = ({
         </View>
 
         {isSelected && (
-          <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+          <CustomIcon name="checkmark-circle" size={24} color={colors.success} />
         )}
       </TouchableOpacity>
     );
@@ -119,7 +119,7 @@ const DeliveryZoneModal = ({
 
   const renderEmptyState = () => (
     <View style={styles(colors).emptyState}>
-      <Ionicons
+      <CustomIcon
         name="location-outline"
         size={48}
         color={colors.textSecondary}
@@ -159,14 +159,14 @@ const DeliveryZoneModal = ({
               }}
               style={styles(colors).closeButton}
             >
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
+              <CustomIcon name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {/* User Address Display */}
           {userAddress ? (
             <View style={styles(colors).addressContainer}>
-              <Ionicons name="home" size={16} color={colors.textSecondary} />
+              <CustomIcon name="home" size={16} color={colors.textSecondary} />
               <Text style={styles(colors).addressText}>
                 Your address: {userAddress}
               </Text>
@@ -176,7 +176,7 @@ const DeliveryZoneModal = ({
           {/* Search Input */}
           <View style={styles(colors).searchContainer}>
             <View style={styles(colors).searchInputContainer}>
-              <Ionicons name="search" size={20} color={colors.textSecondary} />
+              <CustomIcon name="search" size={20} color={colors.textSecondary} />
               <TextInput
                 style={styles(colors).searchInput}
                 placeholder="Search by area, state, or country..."
@@ -188,7 +188,7 @@ const DeliveryZoneModal = ({
               />
               {searchQuery.length > 0 && (
                 <TouchableOpacity onPress={() => setSearchQuery("")}>
-                  <Ionicons
+                  <CustomIcon
                     name="close-circle"
                     size={20}
                     color={colors.textSecondary}
@@ -219,7 +219,7 @@ const DeliveryZoneModal = ({
               </ScrollView>
             ) : zones.length > 0 ? (
               <View style={styles(colors).noResultsContainer}>
-                <Ionicons
+                <CustomIcon
                   name="search"
                   size={48}
                   color={colors.textSecondary}

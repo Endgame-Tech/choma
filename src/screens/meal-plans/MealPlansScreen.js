@@ -156,7 +156,7 @@ const MealPlansScreen = ({ navigation }) => {
           {/* Discount Pill - Priority over tag badge */}
           {hasDiscount ? (
             <View style={[styles(colors).discountPill]}>
-              <Ionicons name="gift-outline" size={16} color="#333" />
+              <Ionicons name="gift" size={16} color="#333" />
               <Text style={styles(colors).discountPillText}>
                 Up to {planDiscount.discountPercent}% Off
               </Text>

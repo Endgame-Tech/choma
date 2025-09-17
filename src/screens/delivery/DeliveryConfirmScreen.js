@@ -304,7 +304,7 @@ export const DeliveryConfirmScreen = ({ route, navigation }) => {
             style={styles(colors).promoGradient}
           >
             <View style={styles(colors).promoContent}>
-              <Ionicons name="gift-outline" size={24} color={colors.warning} />
+              <Ionicons name="gift" size={24} color={colors.warning} />
               <Text style={styles(colors).promoText}>
                 Refer a friend and get ₦500 off your next order!
               </Text>
