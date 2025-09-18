@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import CustomIcon from "../../components/ui/CustomIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../hooks/useAuth";
@@ -1691,8 +1692,8 @@ Your meal plan has been updated with fresh options.`;
               >
                 {/* Decorative Pattern */}
                 <View style={styles(colors).subscriptionPattern}>
-                  <Ionicons
-                    name="restaurant"
+                  <CustomIcon
+                    name="food"
                     size={80}
                     color="rgba(255,255,255,0.1)"
                   />
@@ -1728,7 +1729,7 @@ Your meal plan has been updated with fresh options.`;
           ))
         ) : (
           <View style={styles(colors).emptySubscriptionCard}>
-            <Ionicons
+            <CustomIcon
               name="calendar-outline"
               size={40}
               color={colors.textMuted}
@@ -1783,11 +1784,11 @@ Your meal plan has been updated with fresh options.`;
                     !achievement.earned && styles(colors).achievementIconLocked,
                   ]}
                 >
-                  <Ionicons
+                  <CustomIcon
                     name={
                       typeof achievement.icon === "string"
                         ? achievement.icon
-                        : "trophy-outline"
+                        : "medal"
                     }
                     size={24}
                     color={
@@ -1796,7 +1797,7 @@ Your meal plan has been updated with fresh options.`;
                   />
                   {achievement.earned && !achievement.claimed && (
                     <View style={styles(colors).achievementClaimBadge}>
-                      <Ionicons name="gift" size={12} color={colors.white} />
+                      <CustomIcon name="gift" size={12} color={colors.white} />
                     </View>
                   )}
                   {achievement.earned && achievement.claimed && (
@@ -1883,28 +1884,28 @@ Your meal plan has been updated with fresh options.`;
             style={styles(colors).quickActionCard}
             onPress={handleReorder}
           >
-            <Ionicons name="refresh" size={24} color={colors.primary} />
+            <CustomIcon name="reorder" size={24} color={colors.primary} />
             <Text style={styles(colors).quickActionText}>Reorder</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles(colors).quickActionCard}
             onPress={handleInviteFriends}
           >
-            <Ionicons name="people" size={24} color={colors.primary} />
+            <CustomIcon name="family" size={24} color={colors.primary} />
             <Text style={styles(colors).quickActionText}>Invite Friends</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles(colors).quickActionCard}
             onPress={handleSupport}
           >
-            <Ionicons name="help-circle" size={24} color={colors.primary} />
+            <CustomIcon name="help-circle" size={24} color={colors.primary} />
             <Text style={styles(colors).quickActionText}>Support</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles(colors).quickActionCard}
             onPress={handleRateApp}
           >
-            <Ionicons name="star" size={24} color={colors.primary} />
+            <CustomIcon name="star" size={24} color={colors.primary} />
             <Text style={styles(colors).quickActionText}>Rate App</Text>
           </TouchableOpacity>
         </View>
@@ -1998,11 +1999,11 @@ Your meal plan has been updated with fresh options.`;
                     { backgroundColor: `${activity.color}20` },
                   ]}
                 >
-                  <Ionicons
+                  <CustomIcon
                     name={
                       typeof activity.icon === "string"
                         ? activity.icon
-                        : "time-outline"
+                        : "activity"
                     }
                     size={20}
                     color={activity.color}
@@ -2016,7 +2017,7 @@ Your meal plan has been updated with fresh options.`;
                     {activity.date}
                   </Text>
                 </View>
-                <Ionicons
+                <CustomIcon
                   name="chevron-forward"
                   size={16}
                   color={colors.textMuted}
@@ -2026,7 +2027,11 @@ Your meal plan has been updated with fresh options.`;
           </View>
         ) : (
           <View style={styles(colors).emptyActivityContainer}>
-            <Ionicons name="time-outline" size={40} color={colors.textMuted} />
+            <CustomIcon
+              name="time-outline"
+              size={40}
+              color={colors.textMuted}
+            />
             <Text style={styles(colors).emptyActivityTitle}>
               No Recent Activity
             </Text>
@@ -2077,7 +2082,7 @@ Your meal plan has been updated with fresh options.`;
         <View style={styles(colors).infoCard}>
           <View style={styles(colors).infoRow}>
             <View style={styles(colors).infoIconContainer}>
-              <Ionicons name="mail" size={20} color={colors.primary} />
+              <CustomIcon name="email" size={20} color={colors.primary} />
             </View>
             <View style={styles(colors).infoContent}>
               <Text style={styles(colors).infoLabel}>Email</Text>
@@ -2099,7 +2104,7 @@ Your meal plan has been updated with fresh options.`;
 
           <View style={styles(colors).infoRow}>
             <View style={styles(colors).infoIconContainer}>
-              <Ionicons name="location" size={20} color={colors.primary} />
+              <CustomIcon name="location" size={20} color={colors.primary} />
             </View>
             <View style={styles(colors).infoContent}>
               <Text style={styles(colors).infoLabel}>Address</Text>
@@ -2139,9 +2144,13 @@ Your meal plan has been updated with fresh options.`;
           style={styles(colors).actionButton}
           onPress={handleEditProfile}
         >
-          <Ionicons name="pencil" size={20} color={colors.primary} />
+          <CustomIcon name="edit" size={20} color={colors.primary} />
           <Text style={styles(colors).actionButtonText}>Edit Profile</Text>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          <CustomIcon
+            name="edit"
+            size={20}
+            color={colors.textMuted}
+          />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -2153,18 +2162,26 @@ Your meal plan has been updated with fresh options.`;
             })
           }
         >
-          <Ionicons name="share" size={20} color={colors.primary} />
+          <CustomIcon name="share" size={20} color={colors.primary} />
           <Text style={styles(colors).actionButtonText}>Share App</Text>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          <CustomIcon
+            name="chevron-forward"
+            size={20}
+            color={colors.textMuted}
+          />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles(colors).actionButton}
           onPress={() => navigation.navigate("HelpCenter")}
         >
-          <Ionicons name="help-circle" size={20} color={colors.primary} />
+          <CustomIcon name="help-circle" size={20} color={colors.primary} />
           <Text style={styles(colors).actionButtonText}>Help & Support</Text>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          <CustomIcon
+            name="chevron-forward"
+            size={20}
+            color={colors.textMuted}
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -2292,8 +2309,8 @@ Your meal plan has been updated with fresh options.`;
                       })
                     }
                   >
-                    <Ionicons
-                      name="share-outline"
+                    <CustomIcon
+                      name="share"
                       size={20}
                       color={colors.text}
                     />
@@ -2302,8 +2319,8 @@ Your meal plan has been updated with fresh options.`;
                     style={styles(colors).headerButton}
                     onPress={() => navigation.navigate("Settings")}
                   >
-                    <Ionicons
-                      name="settings-outline"
+                    <CustomIcon
+                      name="settings"
                       size={20}
                       color={colors.text}
                     />

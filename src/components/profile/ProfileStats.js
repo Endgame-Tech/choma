@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import CustomIcon from "../ui/CustomIcon";
 import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
@@ -18,7 +19,7 @@ const ProfileStats = ({ userStats, statsLoading, onWalletPress }) => {
   const statCards = [
     {
       id: "meals",
-      icon: "bag-outline",
+      icon: "cart",
       value: statsLoading ? null : userStats.ordersThisMonth || 0,
       label: "This Month",
       color: colors.primary,
@@ -32,19 +33,19 @@ const ProfileStats = ({ userStats, statsLoading, onWalletPress }) => {
     },
     {
       id: "completed",
-      icon: "trophy",
+      icon: "medal",
       value: statsLoading ? null : userStats.totalOrdersCompleted || 0,
       label: "Completed",
       color: colors.success || colors.primary,
     },
     {
       id: "wallet",
-      icon: "wallet-outline",
+      icon: "wallet",
       value: statsLoading
         ? null
         : userStats.totalSaved === 0 || isNaN(userStats.totalSaved)
-          ? 0
-          : `₦${(userStats.totalSaved / 1000).toFixed(0)}k`,
+        ? 0
+        : `₦${(userStats.totalSaved / 1000).toFixed(0)}k`,
       label: "Saved",
       color: colors.primary,
       isClickable: true,
@@ -68,7 +69,7 @@ const ProfileStats = ({ userStats, statsLoading, onWalletPress }) => {
                 { backgroundColor: `${stat.color}20` },
               ]}
             >
-              <Ionicons name={stat.icon} size={24} color={stat.color} />
+              <CustomIcon name={stat.icon} size={24} color={stat.color} />
             </View>
             {statsLoading ? (
               <ActivityIndicator

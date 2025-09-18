@@ -1,15 +1,15 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import CustomIcon from "../ui/CustomIcon";
 
 const ProfileTabs = ({ selectedTab, onTabChange }) => {
   const { colors } = useTheme();
   const tabs = [
-    { id: "overview", label: "Overview", icon: "apps" },
-    { id: "activity", label: "Activity", icon: "ellipse" },
-    { id: "profile", label: "Profile", icon: "person" },
+    { id: "overview", label: "Overview", icon: "overview-filled" },
+    { id: "activity", label: "Activity", icon: "activity-filled" },
+    { id: "profile", label: "Profile", icon: "profile-filled" },
   ];
 
   return (
@@ -24,7 +24,7 @@ const ProfileTabs = ({ selectedTab, onTabChange }) => {
             ]}
             onPress={() => onTabChange(tab.id)}
           >
-            <Ionicons
+            <CustomIcon
               name={tab.icon}
               size={18}
               color={selectedTab === tab.id ? colors.primary : colors.textMuted}

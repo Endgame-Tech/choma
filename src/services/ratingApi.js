@@ -1,15 +1,14 @@
-import { apiRequest } from './api';
+import apiService from "./api";
 
 class RatingApiService {
-  
   // User rating operations
-  
+
   /**
    * Create a new rating
    */
   async createRating(ratingData) {
-    return await apiRequest('/api/ratings', {
-      method: 'POST',
+    return await apiService.request("/ratings", {
+      method: "POST",
       body: JSON.stringify(ratingData),
     });
   }
@@ -18,8 +17,8 @@ class RatingApiService {
    * Update an existing rating
    */
   async updateRating(ratingId, updateData) {
-    return await apiRequest(`/api/ratings/${ratingId}`, {
-      method: 'PUT',
+    return await apiService.request(`/ratings/${ratingId}`, {
+      method: "PUT",
       body: JSON.stringify(updateData),
     });
   }
@@ -28,8 +27,8 @@ class RatingApiService {
    * Delete a rating
    */
   async deleteRating(ratingId) {
-    return await apiRequest(`/api/ratings/${ratingId}`, {
-      method: 'DELETE',
+    return await apiService.request(`/ratings/${ratingId}`, {
+      method: "DELETE",
     });
   }
 
@@ -44,7 +43,7 @@ class RatingApiService {
       }
     });
 
-    return await apiRequest(`/api/ratings/my-ratings?${params.toString()}`);
+    return await apiService.request(`/ratings/my-ratings?${params.toString()}`);
   }
 
   /**
@@ -58,22 +57,26 @@ class RatingApiService {
       }
     });
 
-    return await apiRequest(`/api/ratings/entity/${entityType}/${entityId}?${params.toString()}`);
+    return await apiService.request(
+      `/ratings/entity/${entityType}/${entityId}?${params.toString()}`
+    );
   }
 
   /**
    * Get rating statistics for a specific entity
    */
   async getEntityStats(entityType, entityId) {
-    return await apiRequest(`/api/ratings/entity/${entityType}/${entityId}/stats`);
+    return await apiService.request(
+      `/ratings/entity/${entityType}/${entityId}/stats`
+    );
   }
 
   /**
    * Vote on rating helpfulness
    */
   async voteHelpful(ratingId, isHelpful) {
-    return await apiRequest(`/api/ratings/${ratingId}/helpful`, {
-      method: 'POST',
+    return await apiService.request(`/ratings/${ratingId}/helpful`, {
+      method: "POST",
       body: JSON.stringify({ isHelpful }),
     });
   }
@@ -82,8 +85,8 @@ class RatingApiService {
    * Respond to a rating (for chefs/drivers)
    */
   async respondToRating(ratingId, responseText) {
-    return await apiRequest(`/api/ratings/${ratingId}/respond`, {
-      method: 'POST',
+    return await apiService.request(`/ratings/${ratingId}/respond`, {
+      method: "POST",
       body: JSON.stringify({ responseText }),
     });
   }
@@ -92,8 +95,8 @@ class RatingApiService {
    * Flag a rating for moderation
    */
   async flagRating(ratingId, flag, reason) {
-    return await apiRequest(`/api/ratings/${ratingId}/flag`, {
-      method: 'POST',
+    return await apiService.request(`/ratings/${ratingId}/flag`, {
+      method: "POST",
       body: JSON.stringify({ flag, reason }),
     });
   }
@@ -109,21 +112,27 @@ class RatingApiService {
       }
     });
 
-    return await apiRequest(`/api/ratings/top-rated/${entityType}?${params.toString()}`);
+    return await apiService.request(
+      `/ratings/top-rated/${entityType}?${params.toString()}`
+    );
   }
 
   /**
    * Get trending entities
    */
-  async getTrending(entityType, trendType = 'improving') {
-    return await apiRequest(`/api/ratings/trending/${entityType}?trendType=${trendType}`);
+  async getTrending(entityType, trendType = "improving") {
+    return await apiService.request(
+      `/ratings/trending/${entityType}?trendType=${trendType}`
+    );
   }
 
   /**
    * Get entities needing improvement
    */
   async getNeedingImprovement(entityType, threshold = 3.0) {
-    return await apiRequest(`/api/ratings/needs-improvement/${entityType}?threshold=${threshold}`);
+    return await apiService.request(
+      `/ratings/needs-improvement/${entityType}?threshold=${threshold}`
+    );
   }
 
   // Utility methods
@@ -134,36 +143,120 @@ class RatingApiService {
   getAspectConfig(ratingType) {
     const configs = {
       meal_plan: [
-        { key: 'taste', label: 'Taste', description: 'How did the food taste?' },
-        { key: 'presentation', label: 'Presentation', description: 'How was the visual presentation?' },
-        { key: 'portionSize', label: 'Portion Size', description: 'Was the portion size appropriate?' },
-        { key: 'valueForMoney', label: 'Value for Money', description: 'Was it worth the price?' },
-        { key: 'healthiness', label: 'Healthiness', description: 'How healthy was the meal?' }
+        {
+          key: "taste",
+          label: "Taste",
+          description: "How did the food taste?",
+        },
+        {
+          key: "presentation",
+          label: "Presentation",
+          description: "How was the visual presentation?",
+        },
+        {
+          key: "portionSize",
+          label: "Portion Size",
+          description: "Was the portion size appropriate?",
+        },
+        {
+          key: "valueForMoney",
+          label: "Value for Money",
+          description: "Was it worth the price?",
+        },
+        {
+          key: "healthiness",
+          label: "Healthiness",
+          description: "How healthy was the meal?",
+        },
       ],
       chef_performance: [
-        { key: 'cookingQuality', label: 'Cooking Quality', description: 'How well was the food prepared?' },
-        { key: 'consistency', label: 'Consistency', description: 'How consistent is the chef?' },
-        { key: 'communication', label: 'Communication', description: 'How was the communication?' },
-        { key: 'punctuality', label: 'Punctuality', description: 'Was the chef on time?' },
-        { key: 'professionalism', label: 'Professionalism', description: 'How professional was the chef?' }
+        {
+          key: "cookingQuality",
+          label: "Cooking Quality",
+          description: "How well was the food prepared?",
+        },
+        {
+          key: "consistency",
+          label: "Consistency",
+          description: "How consistent is the chef?",
+        },
+        {
+          key: "communication",
+          label: "Communication",
+          description: "How was the communication?",
+        },
+        {
+          key: "punctuality",
+          label: "Punctuality",
+          description: "Was the chef on time?",
+        },
+        {
+          key: "professionalism",
+          label: "Professionalism",
+          description: "How professional was the chef?",
+        },
       ],
       driver_service: [
-        { key: 'timeliness', label: 'Timeliness', description: 'Was the delivery on time?' },
-        { key: 'courteous', label: 'Courtesy', description: 'How courteous was the driver?' },
-        { key: 'packaging', label: 'Packaging', description: 'How was the food packaged?' },
-        { key: 'tracking', label: 'Tracking', description: 'How accurate was the tracking?' }
+        {
+          key: "timeliness",
+          label: "Timeliness",
+          description: "Was the delivery on time?",
+        },
+        {
+          key: "courteous",
+          label: "Courtesy",
+          description: "How courteous was the driver?",
+        },
+        {
+          key: "packaging",
+          label: "Packaging",
+          description: "How was the food packaged?",
+        },
+        {
+          key: "tracking",
+          label: "Tracking",
+          description: "How accurate was the tracking?",
+        },
       ],
       delivery_experience: [
-        { key: 'temperature', label: 'Temperature', description: 'Was the food at the right temperature?' },
-        { key: 'condition', label: 'Condition', description: 'What condition was the food in?' },
-        { key: 'accuracy', label: 'Accuracy', description: 'Was the order accurate?' }
+        {
+          key: "temperature",
+          label: "Temperature",
+          description: "Was the food at the right temperature?",
+        },
+        {
+          key: "condition",
+          label: "Condition",
+          description: "What condition was the food in?",
+        },
+        {
+          key: "accuracy",
+          label: "Accuracy",
+          description: "Was the order accurate?",
+        },
       ],
       app_experience: [
-        { key: 'easeOfUse', label: 'Ease of Use', description: 'How easy was the app to use?' },
-        { key: 'performance', label: 'Performance', description: 'How well did the app perform?' },
-        { key: 'design', label: 'Design', description: 'How was the app design?' },
-        { key: 'features', label: 'Features', description: 'How useful were the features?' }
-      ]
+        {
+          key: "easeOfUse",
+          label: "Ease of Use",
+          description: "How easy was the app to use?",
+        },
+        {
+          key: "performance",
+          label: "Performance",
+          description: "How well did the app perform?",
+        },
+        {
+          key: "design",
+          label: "Design",
+          description: "How was the app design?",
+        },
+        {
+          key: "features",
+          label: "Features",
+          description: "How useful were the features?",
+        },
+      ],
     };
 
     return configs[ratingType] || [];
@@ -175,11 +268,15 @@ class RatingApiService {
   validateRatingData(data) {
     const errors = [];
 
-    if (!data.ratingType) errors.push('Rating type is required');
-    if (!data.ratedEntity) errors.push('Rated entity is required');
-    if (!data.ratedEntityType) errors.push('Rated entity type is required');
-    if (!data.overallRating || data.overallRating < 1 || data.overallRating > 5) {
-      errors.push('Overall rating must be between 1 and 5');
+    if (!data.ratingType) errors.push("Rating type is required");
+    if (!data.ratedEntity) errors.push("Rated entity is required");
+    if (!data.ratedEntityType) errors.push("Rated entity type is required");
+    if (
+      !data.overallRating ||
+      data.overallRating < 1 ||
+      data.overallRating > 5
+    ) {
+      errors.push("Overall rating must be between 1 and 5");
     }
 
     if (data.aspectRatings) {
@@ -191,12 +288,12 @@ class RatingApiService {
     }
 
     if (data.comment && data.comment.length > 1000) {
-      errors.push('Comment must be 1000 characters or less');
+      errors.push("Comment must be 1000 characters or less");
     }
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -206,15 +303,19 @@ class RatingApiService {
   formatRatingDisplay(rating) {
     return {
       ...rating,
-      formattedDate: new Date(rating.createdAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      formattedDate: new Date(rating.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       }),
-      aspectCount: rating.aspectRatings ? Object.keys(rating.aspectRatings).length : 0,
+      aspectCount: rating.aspectRatings
+        ? Object.keys(rating.aspectRatings).length
+        : 0,
       hasComment: !!(rating.comment && rating.comment.trim().length > 0),
-      helpfulnessRatio: rating.helpfulVotes ? 
-        rating.helpfulVotes.positive / (rating.helpfulVotes.positive + rating.helpfulVotes.negative) : 0
+      helpfulnessRatio: rating.helpfulVotes
+        ? rating.helpfulVotes.positive /
+          (rating.helpfulVotes.positive + rating.helpfulVotes.negative)
+        : 0,
     };
   }
 
@@ -222,23 +323,24 @@ class RatingApiService {
    * Calculate rating confidence level
    */
   calculateConfidence(totalRatings, recentRatings) {
-    if (totalRatings >= 50 && recentRatings >= 10) return 'high';
-    if (totalRatings >= 20 && recentRatings >= 5) return 'medium';
-    if (totalRatings >= 5) return 'low';
-    return 'very_low';
+    if (totalRatings >= 50 && recentRatings >= 10) return "high";
+    if (totalRatings >= 20 && recentRatings >= 5) return "medium";
+    if (totalRatings >= 5) return "low";
+    return "very_low";
   }
 
   /**
    * Generate rating summary text
    */
   generateSummaryText(summary) {
-    if (!summary || !summary.overallStats) return 'No ratings yet';
+    if (!summary || !summary.overallStats) return "No ratings yet";
 
     const { totalRatings, averageRating } = summary.overallStats;
-    
-    if (totalRatings === 0) return 'No ratings yet';
-    if (totalRatings === 1) return `${averageRating.toFixed(1)} star (1 rating)`;
-    
+
+    if (totalRatings === 0) return "No ratings yet";
+    if (totalRatings === 1)
+      return `${averageRating.toFixed(1)} star (1 rating)`;
+
     return `${averageRating.toFixed(1)} stars (${totalRatings} ratings)`;
   }
 
@@ -248,42 +350,44 @@ class RatingApiService {
   getRatingPrompts(ratingType, entityType) {
     const prompts = {
       meal_plan: {
-        title: 'Rate this Meal Plan',
-        description: 'How was your experience with this meal plan?',
-        placeholder: 'Tell others about your experience...'
+        title: "Rate this Meal Plan",
+        description: "How was your experience with this meal plan?",
+        placeholder: "Tell others about your experience...",
       },
       chef_performance: {
-        title: 'Rate the Chef',
-        description: 'How was your experience with this chef?',
-        placeholder: 'Share your thoughts about the chef\'s performance...'
+        title: "Rate the Chef",
+        description: "How was your experience with this chef?",
+        placeholder: "Share your thoughts about the chef's performance...",
       },
       driver_service: {
-        title: 'Rate the Driver',
-        description: 'How was your delivery experience?',
-        placeholder: 'How was your delivery experience with this driver?'
+        title: "Rate the Driver",
+        description: "How was your delivery experience?",
+        placeholder: "How was your delivery experience with this driver?",
       },
       delivery_experience: {
-        title: 'Rate this Delivery',
-        description: 'How was your overall delivery experience?',
-        placeholder: 'Tell us about your delivery experience...'
+        title: "Rate this Delivery",
+        description: "How was your overall delivery experience?",
+        placeholder: "Tell us about your delivery experience...",
       },
       order_satisfaction: {
-        title: 'Rate this Order',
-        description: 'How satisfied were you with this order?',
-        placeholder: 'Share your overall experience with this order...'
+        title: "Rate this Order",
+        description: "How satisfied were you with this order?",
+        placeholder: "Share your overall experience with this order...",
       },
       app_experience: {
-        title: 'Rate the App',
-        description: 'How was your experience using our app?',
-        placeholder: 'Let us know how we can improve the app...'
-      }
+        title: "Rate the App",
+        description: "How was your experience using our app?",
+        placeholder: "Let us know how we can improve the app...",
+      },
     };
 
-    return prompts[ratingType] || {
-      title: `Rate this ${entityType}`,
-      description: `Share your experience with this ${entityType}`,
-      placeholder: 'Tell us about your experience...'
-    };
+    return (
+      prompts[ratingType] || {
+        title: `Rate this ${entityType}`,
+        description: `Share your experience with this ${entityType}`,
+        placeholder: "Tell us about your experience...",
+      }
+    );
   }
 
   /**
@@ -292,26 +396,26 @@ class RatingApiService {
   async canUserRate(entityType, entityId, contextData = {}) {
     try {
       // For meal plans, check if user has an active subscription or completed order
-      if (entityType === 'meal_plan') {
+      if (entityType === "meal_plan") {
         // This would need to be implemented based on your business logic
         return true; // Placeholder
       }
 
       // For chefs, check if user has received meals from this chef
-      if (entityType === 'chef') {
+      if (entityType === "chef") {
         // This would need to be implemented based on your business logic
         return true; // Placeholder
       }
 
       // For drivers, check if user has received deliveries from this driver
-      if (entityType === 'driver') {
+      if (entityType === "driver") {
         // This would need to be implemented based on your business logic
         return true; // Placeholder
       }
 
       return true;
     } catch (error) {
-      console.error('Error checking rating eligibility:', error);
+      console.error("Error checking rating eligibility:", error);
       return false;
     }
   }
@@ -321,11 +425,54 @@ class RatingApiService {
    */
   getSuggestedTags(ratingType) {
     const tags = {
-      meal_plan: ['delicious', 'healthy', 'filling', 'fresh', 'creative', 'authentic', 'spicy', 'mild', 'vegetarian', 'gluten-free'],
-      chef_performance: ['professional', 'responsive', 'creative', 'consistent', 'punctual', 'friendly', 'skilled', 'accommodating'],
-      driver_service: ['fast', 'careful', 'friendly', 'professional', 'accurate', 'reliable', 'polite'],
-      delivery_experience: ['hot', 'fresh', 'on-time', 'well-packaged', 'careful-handling', 'quick'],
-      app_experience: ['easy-to-use', 'fast', 'intuitive', 'helpful', 'buggy', 'slow', 'confusing']
+      meal_plan: [
+        "delicious",
+        "healthy",
+        "filling",
+        "fresh",
+        "creative",
+        "authentic",
+        "spicy",
+        "mild",
+        "vegetarian",
+        "gluten-free",
+      ],
+      chef_performance: [
+        "professional",
+        "responsive",
+        "creative",
+        "consistent",
+        "punctual",
+        "friendly",
+        "skilled",
+        "accommodating",
+      ],
+      driver_service: [
+        "fast",
+        "careful",
+        "friendly",
+        "professional",
+        "accurate",
+        "reliable",
+        "polite",
+      ],
+      delivery_experience: [
+        "hot",
+        "fresh",
+        "on-time",
+        "well-packaged",
+        "careful-handling",
+        "quick",
+      ],
+      app_experience: [
+        "easy-to-use",
+        "fast",
+        "intuitive",
+        "helpful",
+        "buggy",
+        "slow",
+        "confusing",
+      ],
     };
 
     return tags[ratingType] || [];

@@ -238,7 +238,7 @@ const styles = (colors) =>
     },
     mealplanTitle: {
       fontSize: 18,
-      fontWeight: 750,
+      fontWeight: 600,
       color: colors.text,
       marginBottom: 6,
     },

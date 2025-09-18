@@ -117,10 +117,28 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
       // Refresh ratings after submission
       await fetchRatings();
-      Alert.alert("Success", "Your rating has been submitted successfully!");
+
+      // Subtle success feedback without intrusive popup
+      console.log("✅ Rating submitted successfully");
+      // Could add a toast notification or update UI to show success
     } catch (error) {
       console.error("Error submitting rating:", error);
-      Alert.alert("Error", "Failed to submit rating. Please try again.");
+
+      // Better error handling with specific messages
+      let errorMessage = "Failed to submit rating. Please try again.";
+
+      if (error.message && error.message.includes("already rated")) {
+        errorMessage =
+          "You have already rated this meal plan. Your rating has been updated.";
+      } else if (error.message && error.message.includes("not found")) {
+        errorMessage = "This meal plan is no longer available for rating.";
+      } else if (error.message && error.message.includes("unauthorized")) {
+        errorMessage = "Please log in to rate this meal plan.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      Alert.alert("Rating Error", errorMessage, [{ text: "OK" }]);
     }
   };
   const [expandedDay, setExpandedDay] = useState(null);
@@ -238,8 +256,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         setLoading(true);
         setError(null);
 
-        // Try multiple ID formats: planId (MP001), _id (ObjectId), or id
-        const mealPlanId = bundle.planId || bundle._id || bundle.id;
+        // Priority: Use the meal plan's own ID first, then fall back to planId reference
+        // This ensures duplicated meal plans show their own details, not the original's
+        const mealPlanId = bundle._id || bundle.id || bundle.planId;
 
         if (!mealPlanId) {
           throw new Error("No meal plan ID found");
@@ -511,13 +530,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       return {
         title: feature,
         description: "Feature included",
-        icon: "checkmark-circle-outline",
+        icon: "list",
       };
     }
     return {
       title: feature.title || `Feature ${index + 1}`,
       description: feature.description || "Feature included",
-      icon: feature.icon || "checkmark-circle-outline",
+      icon: feature.icon || "list",
     };
   });
 
@@ -985,7 +1004,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     (feature) => (
       <View key={feature.title} style={styles(colors).featureItem}>
         <View style={styles(colors).featureIcon}>
-          <CustomIcon name={feature.icon} size={24} color={colors.primary} />
+          <CustomIcon name="list" size={24} color={colors.primary} />
         </View>
         <View style={styles(colors).featureText}>
           <Text style={styles(colors).featureTitle}>{feature.title}</Text>
@@ -1512,7 +1531,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           </View>
 
           {/* Rating Statistics */}
-          {ratingStats && ratingStats.overallStats.totalRatings > 0 ? (
+          {ratingStats && (ratingStats.overallStats?.totalRatings || 0) > 0 ? (
             <View style={styles(colors).ratingStatsContainer}>
               <View style={styles(colors).ratingOverview}>
                 <View style={styles(colors).averageRatingContainer}>
@@ -1540,8 +1559,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     ))}
                   </View>
                   <Text style={styles(colors).totalRatingsText}>
-                    {ratingStats.overallStats.totalRatings} rating
-                    {ratingStats.overallStats.totalRatings !== 1 ? "s" : ""}
+                    {ratingStats?.overallStats?.totalRatings || 0} rating
+                    {(ratingStats?.overallStats?.totalRatings || 0) !== 1
+                      ? "s"
+                      : ""}
                   </Text>
                 </View>
 
@@ -1549,12 +1570,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).ratingDistribution}>
                   {[5, 4, 3, 2, 1].map((rating) => {
                     const count =
-                      ratingStats.overallStats.ratingCounts[
+                      ratingStats?.overallStats?.ratingCounts?.[
                         rating.toString()
                       ] || 0;
                     const percentage =
-                      ratingStats.overallStats.totalRatings > 0
-                        ? (count / ratingStats.overallStats.totalRatings) * 100
+                      (ratingStats?.overallStats?.totalRatings || 0) > 0
+                        ? (count /
+                            (ratingStats?.overallStats?.totalRatings || 1)) *
+                          100
                         : 0;
 
                     return (
@@ -1606,9 +1629,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               {existingRatings.slice(0, 3).map((rating) => (
                 <RatingDisplay
                   key={rating._id}
-                  rating={rating}
+                  ratings={[rating]}
+                  showSummary={false}
                   showAspects={false}
-                  compact={true}
                   style={styles(colors).reviewItem}
                 />
               ))}
@@ -1616,7 +1639,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <TouchableOpacity style={styles(colors).viewAllReviewsButton}>
                   <Text style={styles(colors).viewAllReviewsText}>
                     View all{" "}
-                    {ratingStats?.overallStats.totalRatings ||
+                    {ratingStats?.overallStats?.totalRatings ||
                       existingRatings.length}{" "}
                     reviews
                   </Text>

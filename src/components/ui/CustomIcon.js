@@ -4,6 +4,7 @@ import { View } from "react-native";
 // Import all your SVG icons
 import ActivityIcon from "../../../assets/images/icons/ui/activity.svg";
 import ActivityFilledIcon from "../../../assets/images/icons/ui/activity-filled.svg";
+import AddIcon from "../../../assets/images/icons/ui/add.svg";
 import BiometricIcon from "../../../assets/images/icons/ui/biometric.svg";
 import CalendarIcon from "../../../assets/images/icons/ui/calendar.svg";
 import CalendarFilledIcon from "../../../assets/images/icons/ui/calendar-filled.svg";
@@ -35,6 +36,7 @@ import FeedbackHandFilledIcon from "../../../assets/images/icons/ui/rate-filled.
 import FilterIcon from "../../../assets/images/icons/ui/filter.svg";
 import FilterFilledIcon from "../../../assets/images/icons/ui/filter-filled.svg";
 import FitnessFilledIcon from "../../../assets/images/icons/ui/fittness-filled.svg";
+import FlameIcon from "../../../assets/images/icons/ui/flame.svg";
 import FoodIcon from "../../../assets/images/icons/ui/food.svg";
 import FoodFilledIcon from "../../../assets/images/icons/ui/food-filled.svg";
 import GiftIcon from "../../../assets/images/icons/ui/gift.svg";
@@ -56,14 +58,19 @@ import MoreIcon from "../../../assets/images/icons/ui/more.svg";
 import MoreFilledIcon from "../../../assets/images/icons/ui/more-filled.svg";
 import MuscleIcon from "../../../assets/images/icons/ui/muscle.svg";
 import MuscleFilledIcon from "../../../assets/images/icons/ui/muscle-filled.svg";
+import OverviewIcon from "../../../assets/images/icons/ui/overview.svg";
+import OverviewFilledIcon from "../../../assets/images/icons/ui/overview-filled.svg";
+import PauseIcon from "../../../assets/images/icons/ui/pause.svg";
 import ProfileIcon from "../../../assets/images/icons/ui/profile.svg";
 import ProfileFilledIcon from "../../../assets/images/icons/ui/profile-filled.svg";
 import ReorderIcon from "../../../assets/images/icons/ui/reorder.svg";
+import RemoveIcon from "../../../assets/images/icons/ui/remove.svg";
 import SearchIcon from "../../../assets/images/icons/ui/search.svg";
 import SearchFilledIcon from "../../../assets/images/icons/ui/search-filled.svg";
 import SendIcon from "../../../assets/images/icons/ui/send.svg";
 import SendFilledIcon from "../../../assets/images/icons/ui/send-filled.svg";
 import SettingsIcon from "../../../assets/images/icons/ui/settings.svg";
+import SettingsFilledIcon from "../../../assets/images/icons/ui/settings-filled.svg";
 import ShareIcon from "../../../assets/images/icons/ui/share.svg";
 import ShareFilledIcon from "../../../assets/images/icons/ui/share-filled.svg";
 import ShieldIcon from "../../../assets/images/icons/ui/shield.svg";
@@ -110,6 +117,7 @@ const iconMap = {
   "filter-filled": FilterFilledIcon,
   fitness: FitnessFilledIcon,
   "fitness-filled": FitnessFilledIcon,
+  flame: FlameIcon,
   food: FoodIcon,
   "food-filled": FoodFilledIcon,
   "hand-wave": HandWaveIcon,
@@ -131,6 +139,8 @@ const iconMap = {
   "muscle-filled": MuscleFilledIcon,
   notifications: notificationIcon,
   "notifications-filled": notificationFilledIcon,
+  overview: OverviewIcon,
+  "overview-filled": OverviewFilledIcon,
   profile: ProfileIcon,
   "profile-filled": ProfileFilledIcon,
   reorder: ReorderIcon,
@@ -139,6 +149,7 @@ const iconMap = {
   send: SendIcon,
   "send-filled": SendFilledIcon,
   settings: SettingsIcon,
+  settings: SettingsFilledIcon,
   share: ShareIcon,
   "share-filled": ShareFilledIcon,
   shield: ShieldIcon,
@@ -149,11 +160,13 @@ const iconMap = {
   "wallet-filled": WalletFilledIcon,
 
   // Common icon name mappings for compatibility
-  pause: ClockIcon,
+  pause: PauseIcon,
   time: ClockIcon,
   "time-outline": ClockIcon,
   "restaurant-outline": FoodIcon,
+  add: AddIcon,
   close: CloseIcon,
+  remove: RemoveIcon,
   "information-circle": DetailsIcon,
   nutrition: FoodIcon,
   "close-circle": CloseIcon,

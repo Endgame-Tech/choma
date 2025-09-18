@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -159,8 +160,26 @@ const MealPlansSection = ({
       }
 
       console.log("✅ Rating submitted successfully");
+      // Simple success feedback without intrusive popup
+      // Could add a toast notification here instead
     } catch (error) {
       console.error("❌ Error submitting rating:", error);
+
+      // Better error handling with specific messages
+      let errorMessage = "Failed to submit rating. Please try again.";
+
+      if (error.message && error.message.includes("already rated")) {
+        errorMessage =
+          "You have already rated this meal plan. You can update your existing rating instead.";
+      } else if (error.message && error.message.includes("not found")) {
+        errorMessage = "This meal plan is no longer available for rating.";
+      } else if (error.message && error.message.includes("unauthorized")) {
+        errorMessage = "Please log in to rate this meal plan.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      Alert.alert("Rating Error", errorMessage, [{ text: "OK" }]);
     }
   };
 

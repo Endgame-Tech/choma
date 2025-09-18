@@ -55,7 +55,11 @@ const RatingDisplay = ({
   };
 
   const renderRatingDistribution = () => {
-    if (!summary?.overallStats.ratingCounts) return null;
+    if (
+      !summary?.overallStats?.ratingCounts ||
+      !summary?.overallStats?.totalRatings
+    )
+      return null;
 
     const { ratingCounts, totalRatings } = summary.overallStats;
 
@@ -323,17 +327,17 @@ const RatingDisplay = ({
             <Text style={styles.overallTitle}>Overall Rating</Text>
             <View style={styles.overallRating}>
               <StarRating
-                value={summary.overallStats.averageRating}
+                value={summary?.overallStats?.averageRating || 0}
                 readOnly
                 size={24}
                 showValue
               />
             </View>
             <Text style={styles.totalRatings}>
-              Based on {summary.overallStats.totalRatings} rating
-              {summary.overallStats.totalRatings !== 1 ? "s" : ""}
+              Based on {summary?.overallStats?.totalRatings || 0} rating
+              {(summary?.overallStats?.totalRatings || 0) !== 1 ? "s" : ""}
             </Text>
-            {summary.overallStats.recent30Days.totalRatings > 0 && (
+            {(summary?.overallStats?.recent30Days?.totalRatings || 0) > 0 && (
               <Text style={styles.recentRatings}>
                 {summary.overallStats.recent30Days.totalRatings} in the last 30
                 days

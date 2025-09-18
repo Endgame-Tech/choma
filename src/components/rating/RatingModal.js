@@ -640,10 +640,10 @@ const styles = (colors) =>
     cancelButtonText: {
       fontSize: 14,
       fontWeight: "500",
-      color: colors.textSecondary || "#374151",
+      color: colors.textSecondary ,
     },
     submitButton: {
-      backgroundColor: colors.black,
+      backgroundColor: colors.background,
       marginLeft: 8,
     },
     submitButtonText: {
