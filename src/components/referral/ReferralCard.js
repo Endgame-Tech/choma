@@ -102,7 +102,7 @@ const ReferralCard = ({ style }) => {
           <TouchableOpacity
             style={styles.codeButton}
             onPress={copyReferralCode}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
           >
             <Text style={styles.codeText}>{referralCode || "Loading..."}</Text>
             <Ionicons name="copy" size={16} color="#4CAF50" />
@@ -112,7 +112,7 @@ const ReferralCard = ({ style }) => {
         <TouchableOpacity
           style={styles.shareButton}
           onPress={handleShare}
-          activeOpacity={0.7}
+          activeOpacity={0.9}
         >
           <Ionicons name="share" size={20} color="#4CAF50" />
           <Text style={styles.shareButtonText}>Share Now</Text>

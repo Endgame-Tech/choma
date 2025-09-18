@@ -224,7 +224,7 @@ const NotificationScreen = ({ navigation }) => {
         !notification.isRead && styles(colors).unreadItem,
       ]}
       onPress={() => handleNotificationPress(notification)}
-      activeOpacity={0.8}
+      activeOpacity={0.9}
     >
       <View style={styles(colors).notificationContent}>
         <View

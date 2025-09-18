@@ -266,6 +266,29 @@ class RatingPromptManager {
   }
 
   /**
+   * Trigger prompt for meal plan completion/milestone
+   */
+  async triggerMealPlanMilestone(mealPlanData) {
+    return await this.triggerPrompt({
+      triggerType: 'meal_plan_milestone',
+      userId: mealPlanData.userId,
+      relatedMealPlanId: mealPlanData.mealPlanId,
+      relatedSubscriptionId: mealPlanData.subscriptionId,
+      triggerContext: {
+        planCompletionPercentage: mealPlanData.completionPercentage,
+        mealsCompleted: mealPlanData.mealsCompleted,
+        totalMeals: mealPlanData.totalMeals,
+        weeksCompleted: mealPlanData.weeksCompleted,
+        totalWeeks: mealPlanData.totalWeeks,
+        isFirstWeekComplete: mealPlanData.weeksCompleted >= 1,
+        isHalfwayComplete: mealPlanData.completionPercentage >= 50,
+        isFullyComplete: mealPlanData.completionPercentage >= 100,
+        existingRating: mealPlanData.existingRating
+      }
+    });
+  }
+
+  /**
    * Trigger prompt for app session end
    */
   async triggerAppSessionEnd(sessionData) {

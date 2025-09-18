@@ -54,7 +54,7 @@ const HomeHeader = ({
             <TouchableOpacity
               style={styles(colors).locationContainer}
               onPress={onLocationPress}
-              activeOpacity={0.7}
+              activeOpacity={0.9}
             >
               <Ionicons name="location" size={14} color={colors.primary} />
               <Text style={styles(colors).location}>

@@ -132,7 +132,7 @@ const OnboardingScreen = ({ navigation, onComplete }) => {
           <TouchableOpacity
             style={styles(colors).skipButton}
             onPress={handleSkip}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
           >
             <Text style={styles(colors).skipButtonText}>Skip</Text>
           </TouchableOpacity>
@@ -140,7 +140,7 @@ const OnboardingScreen = ({ navigation, onComplete }) => {
           <TouchableOpacity
             style={styles(colors).nextButton}
             onPress={handleNext}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
           >
             <Text style={styles(colors).nextButtonText}>
               {currentIndex === onboardingData.length - 1

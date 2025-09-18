@@ -154,8 +154,8 @@ const RatingDisplay = ({
                     getTrendIcon(weeklyTrend) === "↗"
                       ? "#10B981"
                       : getTrendIcon(weeklyTrend) === "↘"
-                        ? "#EF4444"
-                        : "#6B7280",
+                      ? "#EF4444"
+                      : "#6B7280",
                 },
               ]}
             >
@@ -172,8 +172,8 @@ const RatingDisplay = ({
                     getTrendIcon(monthlyTrend) === "↗"
                       ? "#10B981"
                       : getTrendIcon(monthlyTrend) === "↘"
-                        ? "#EF4444"
-                        : "#6B7280",
+                      ? "#EF4444"
+                      : "#6B7280",
                 },
               ]}
             >
@@ -210,7 +210,7 @@ const RatingDisplay = ({
         key={rating._id}
         style={styles.ratingCard}
         onPress={() => onRatingPress?.(rating)}
-        activeOpacity={0.7}
+        activeOpacity={0.9}
       >
         {/* Header */}
         <View style={styles.ratingHeader}>
@@ -383,300 +383,301 @@ const RatingDisplay = ({
   );
 };
 
-const styles = createStylesWithDMSans({
-  container: {
-    flex: 1,
-  },
-  loadingText: {
-    textAlign: "center",
-    marginTop: 16,
-    fontSize: 16,
-    color: "#6B7280",
-  },
-  summaryCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+const styles = (colors) =>
+  createStylesWithDMSans({
+    container: {
+      flex: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  overallStats: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  overallTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  overallRating: {
-    marginBottom: 8,
-  },
-  totalRatings: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  recentRatings: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#374151",
-  },
-  expandButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  expandButtonText: {
-    fontSize: 14,
-    color: "#2563EB",
-  },
-  distributionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  distributionStar: {
-    width: 32,
-    fontSize: 14,
-    color: "#374151",
-  },
-  distributionBarContainer: {
-    flex: 1,
-    marginHorizontal: 8,
-  },
-  distributionBarBackground: {
-    height: 8,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 4,
-  },
-  distributionBarFill: {
-    height: 8,
-    backgroundColor: "#FBBF24",
-    borderRadius: 4,
-  },
-  distributionCount: {
-    width: 32,
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "right",
-  },
-  aspectsList: {
-    gap: 8,
-  },
-  aspectItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  aspectLabel: {
-    fontSize: 14,
-    color: "#374151",
-    textTransform: "capitalize",
-  },
-  aspectRating: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  aspectCount: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  trendsGrid: {
-    gap: 8,
-  },
-  trendItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  trendItemFull: {
-    marginTop: 4,
-  },
-  trendLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  trendValue: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  ratingsSection: {
-    gap: 16,
-  },
-  ratingsSectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  ratingCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  ratingHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  ratingInfo: {
-    flex: 1,
-    gap: 8,
-  },
-  ratingMeta: {
-    gap: 4,
-  },
-  raterName: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#111827",
-  },
-  ratingDetails: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  ratingDate: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  verifiedBadge: {
-    backgroundColor: "#D1FAE5",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  verifiedText: {
-    fontSize: 10,
-    color: "#065F46",
-    fontWeight: "500",
-  },
-  helpfulVotes: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  commentContainer: {
-    marginBottom: 12,
-  },
-  commentText: {
-    fontSize: 14,
-    color: "#374151",
-    lineHeight: 20,
-  },
-  tagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginBottom: 12,
-  },
-  tag: {
-    backgroundColor: "#DBEAFE",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  tagText: {
-    fontSize: 12,
-    color: "#1D4ED8",
-    fontWeight: "500",
-  },
-  aspectsContainer: {
-    marginBottom: 12,
-  },
-  expandAspectsButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  expandAspectsText: {
-    fontSize: 14,
-    color: "#2563EB",
-  },
-  expandedAspects: {
-    marginTop: 12,
-    paddingLeft: 16,
-    borderLeftWidth: 2,
-    borderLeftColor: "#E5E7EB",
-    gap: 8,
-  },
-  expandedAspectItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  expandedAspectLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-    textTransform: "capitalize",
-  },
-  responseContainer: {
-    backgroundColor: "#F9FAFB",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 12,
-  },
-  responseHeader: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  responseText: {
-    fontSize: 14,
-    color: "#374151",
-  },
-  loadMoreButton: {
-    backgroundColor: "#EFF6FF",
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    marginTop: 16,
-  },
-  loadMoreText: {
-    fontSize: 14,
-    color: "#2563EB",
-    fontWeight: "500",
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 40,
-  },
-  emptyStateTitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    marginBottom: 8,
-  },
-  emptyStateSubtitle: {
-    fontSize: 14,
-    color: "#9CA3AF",
-  },
-});
+    loadingText: {
+      textAlign: "center",
+      marginTop: 16,
+      fontSize: 16,
+      color: "#6B7280",
+    },
+    summaryCard: {
+      backgroundColor: "#FFFFFF",
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 20,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    overallStats: {
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    overallTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: "#111827",
+      marginBottom: 12,
+    },
+    overallRating: {
+      marginBottom: 8,
+    },
+    totalRatings: {
+      fontSize: 14,
+      color: "#6B7280",
+      marginBottom: 4,
+    },
+    recentRatings: {
+      fontSize: 14,
+      color: "#6B7280",
+    },
+    section: {
+      marginBottom: 20,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: "#374151",
+    },
+    expandButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    expandButtonText: {
+      fontSize: 14,
+      color: "#2563EB",
+    },
+    distributionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    distributionStar: {
+      width: 32,
+      fontSize: 14,
+      color: "#374151",
+    },
+    distributionBarContainer: {
+      flex: 1,
+      marginHorizontal: 8,
+    },
+    distributionBarBackground: {
+      height: 8,
+      backgroundColor: "#E5E7EB",
+      borderRadius: 4,
+    },
+    distributionBarFill: {
+      height: 8,
+      backgroundColor: "#FBBF24",
+      borderRadius: 4,
+    },
+    distributionCount: {
+      width: 32,
+      fontSize: 14,
+      color: "#6B7280",
+      textAlign: "right",
+    },
+    aspectsList: {
+      gap: 8,
+    },
+    aspectItem: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    aspectLabel: {
+      fontSize: 14,
+      color: "#374151",
+      textTransform: "capitalize",
+    },
+    aspectRating: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    aspectCount: {
+      fontSize: 12,
+      color: "#6B7280",
+    },
+    trendsGrid: {
+      gap: 8,
+    },
+    trendItem: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    trendItemFull: {
+      marginTop: 4,
+    },
+    trendLabel: {
+      fontSize: 14,
+      color: "#6B7280",
+    },
+    trendValue: {
+      fontSize: 14,
+      fontWeight: "500",
+    },
+    ratingsSection: {
+      gap: 16,
+    },
+    ratingsSectionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: "#111827",
+    },
+    ratingCard: {
+      backgroundColor: "#FFFFFF",
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+    },
+    ratingHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 8,
+    },
+    ratingInfo: {
+      flex: 1,
+      gap: 8,
+    },
+    ratingMeta: {
+      gap: 4,
+    },
+    raterName: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: "#111827",
+    },
+    ratingDetails: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    ratingDate: {
+      fontSize: 12,
+      color: "#6B7280",
+    },
+    verifiedBadge: {
+      backgroundColor: "#D1FAE5",
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    verifiedText: {
+      fontSize: 10,
+      color: "#065F46",
+      fontWeight: "500",
+    },
+    helpfulVotes: {
+      fontSize: 12,
+      color: "#6B7280",
+    },
+    commentContainer: {
+      marginBottom: 12,
+    },
+    commentText: {
+      fontSize: 14,
+      color: "#374151",
+      lineHeight: 20,
+    },
+    tagsContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 12,
+    },
+    tag: {
+      backgroundColor: "#DBEAFE",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    tagText: {
+      fontSize: 12,
+      color: "#1D4ED8",
+      fontWeight: "500",
+    },
+    aspectsContainer: {
+      marginBottom: 12,
+    },
+    expandAspectsButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    expandAspectsText: {
+      fontSize: 14,
+      color: "#2563EB",
+    },
+    expandedAspects: {
+      marginTop: 12,
+      paddingLeft: 16,
+      borderLeftWidth: 2,
+      borderLeftColor: "#E5E7EB",
+      gap: 8,
+    },
+    expandedAspectItem: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    expandedAspectLabel: {
+      fontSize: 14,
+      color: "#6B7280",
+      textTransform: "capitalize",
+    },
+    responseContainer: {
+      backgroundColor: "#F9FAFB",
+      padding: 12,
+      borderRadius: 8,
+      marginTop: 12,
+    },
+    responseHeader: {
+      fontSize: 12,
+      color: "#6B7280",
+      marginBottom: 4,
+    },
+    responseText: {
+      fontSize: 14,
+      color: "#374151",
+    },
+    loadMoreButton: {
+      backgroundColor: "#EFF6FF",
+      borderWidth: 1,
+      borderColor: "#BFDBFE",
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      marginTop: 16,
+    },
+    loadMoreText: {
+      fontSize: 14,
+      color: "#2563EB",
+      fontWeight: "500",
+    },
+    emptyState: {
+      alignItems: "center",
+      paddingVertical: 40,
+    },
+    emptyStateTitle: {
+      fontSize: 16,
+      color: "#6B7280",
+      marginBottom: 8,
+    },
+    emptyStateSubtitle: {
+      fontSize: 14,
+      color: "#9CA3AF",
+    },
+  });
 
 export default RatingDisplay;

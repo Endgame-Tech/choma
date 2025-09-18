@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import ApiService from "../../services/api";
+import ratingPromptManager from "../../services/ratingPromptManager";
 import { useTheme } from "../../styles/theme";
 import { useAlert } from "../../contexts/AlertContext";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
@@ -192,12 +193,77 @@ export const TrackingScreen = ({ route, navigation }) => {
           "Thank you!",
           "Your rating has been submitted successfully"
         );
+        
+        // Trigger meal plan rating prompts after delivery completion
+        await triggerMealPlanRatingPrompts();
       } else {
         showError("Error", "Failed to submit rating");
       }
     } catch (error) {
       console.error("Error submitting rating:", error);
       showError("Error", "Failed to submit rating");
+    }
+  };
+
+  const triggerMealPlanRatingPrompts = async () => {
+    try {
+      // Check if this delivery is associated with a meal plan subscription
+      const orderData = tracking?.order;
+      if (!orderData || !orderData.subscriptionId) {
+        console.log('📦 No meal plan subscription associated with this delivery');
+        return;
+      }
+
+      console.log('🍽️ Checking for meal plan rating opportunities after delivery completion');
+      
+      // Get subscription details to determine meal plan progress
+      const subscriptionResult = await ApiService.getSubscriptionDetails(orderData.subscriptionId);
+      
+      if (subscriptionResult.success && subscriptionResult.subscription) {
+        const subscription = subscriptionResult.subscription;
+        const mealPlan = subscription.mealPlanId;
+        
+        if (!mealPlan) {
+          console.log('⚠️ No meal plan found for subscription');
+          return;
+        }
+
+        // Calculate meal plan completion metrics
+        const completedMeals = subscription.metrics?.completedMeals || 0;
+        const totalMeals = subscription.metrics?.totalMeals || 
+                          (mealPlan.durationWeeks * mealPlan.mealsPerWeek) || 0;
+        const completionPercentage = totalMeals > 0 ? (completedMeals / totalMeals) * 100 : 0;
+        const weeksCompleted = Math.floor(completedMeals / (mealPlan.mealsPerWeek || 7));
+
+        // Check if this delivery represents a significant milestone
+        const shouldTriggerRating = (
+          weeksCompleted === 1 || // First week complete
+          completionPercentage >= 50 || // Halfway complete  
+          completionPercentage >= 100 || // Fully complete
+          completedMeals % 7 === 0 // Every week completion
+        );
+
+        if (shouldTriggerRating) {
+          console.log(`🎯 Triggering meal plan rating for milestone: ${completionPercentage.toFixed(1)}% complete`);
+          
+          await ratingPromptManager.triggerMealPlanMilestone({
+            userId: orderData.userId || subscription.userId,
+            mealPlanId: mealPlan._id || mealPlan.planId,
+            subscriptionId: subscription._id,
+            completionPercentage,
+            mealsCompleted: completedMeals,
+            totalMeals,
+            weeksCompleted,
+            totalWeeks: mealPlan.durationWeeks || 4,
+            existingRating: null // Could fetch existing rating if needed
+          });
+        } else {
+          console.log(`📊 Meal plan progress: ${completionPercentage.toFixed(1)}% - no rating trigger needed`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error triggering meal plan rating prompts:', error);
+      // Don't show error to user - this is a background process
     }
   };
 

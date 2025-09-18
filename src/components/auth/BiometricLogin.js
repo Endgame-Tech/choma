@@ -137,7 +137,7 @@ const BiometricLogin = ({ onSuccess, onError, style }) => {
         ]}
         onPress={handleBiometricLogin}
         disabled={authenticating}
-        activeOpacity={0.7}
+        activeOpacity={0.9}
       >
         {authenticating ? (
           <ActivityIndicator color={colors.primary} size="small" />

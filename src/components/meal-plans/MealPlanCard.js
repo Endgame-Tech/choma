@@ -8,9 +8,11 @@ const MealPlanCard = ({
   plan,
   onPress,
   onBookmarkPress,
+  onRatePress,
   isBookmarked,
   discountData = {},
   getPlanDescription,
+  showRatingButton = false,
 }) => {
   const { colors } = useTheme();
 
@@ -27,7 +29,7 @@ const MealPlanCard = ({
     <TouchableOpacity
       style={styles(colors).mealplanCard}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.9}
     >
       {/* Image Container */}
       <View style={styles(colors).mealplanImageContainer}>
@@ -41,7 +43,7 @@ const MealPlanCard = ({
         <TouchableOpacity
           style={styles(colors).mealplanHeartButton}
           onPress={onBookmarkPress}
-          activeOpacity={0.7}
+          activeOpacity={0.9}
         >
           <CustomIcon
             name="heart"
@@ -79,15 +81,12 @@ const MealPlanCard = ({
             "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
         </Text>
 
-        {/* Divider Stroke */}
-        <View style={styles(colors).mealplanDivider} />
-
         {/* Rating, Duration, and Meal Type Row */}
         <View style={styles(colors).mealplanMetaRow}>
           {/* Rating */}
           {(plan.rating || plan.averageRating) && (
             <View style={styles(colors).mealplanMetaItem}>
-              <CustomIcon name="star" size={12} color="#FFD700" />
+              <CustomIcon name="star-filled" size={12} color={colors.primary} />
               <Text style={styles(colors).mealplanMetaText}>
                 {plan.rating || plan.averageRating || "4.5"}
               </Text>
@@ -97,14 +96,14 @@ const MealPlanCard = ({
           {/* Duration */}
           {(plan.duration || plan.durationDays || plan.durationWeeks) && (
             <View style={styles(colors).mealplanMetaItem}>
-              <CustomIcon name="time" size={12} color={colors.textMuted} />
+              <CustomIcon name="time" size={12} color={colors.text} />
               <Text style={styles(colors).mealplanMetaText}>
                 {plan.duration ||
                   (plan.durationWeeks
                     ? `${plan.durationWeeks} week(s)`
                     : plan.durationDays
-                      ? `${plan.durationDays} days`
-                      : "1 week")}
+                    ? `${plan.durationDays} days`
+                    : "1 week")}
               </Text>
             </View>
           )}
@@ -112,11 +111,7 @@ const MealPlanCard = ({
           {/* Meal Type */}
           {(plan.mealType || plan.category || plan.tags?.[0]?.name) && (
             <View style={styles(colors).mealplanMetaItem}>
-              <CustomIcon
-                name="restaurant"
-                size={12}
-                color={colors.textMuted}
-              />
+              <CustomIcon name="food" size={12} color={colors.text} />
               <Text style={styles(colors).mealplanMetaText}>
                 {plan.mealType ||
                   plan.category ||
@@ -127,9 +122,43 @@ const MealPlanCard = ({
           )}
         </View>
 
-        <Text style={styles(colors).mealplanPrice}>
-          ₦{plan.price?.toLocaleString()}
-        </Text>
+        <View style={styles(colors).mealplanBottomRow}>
+          <View style={styles(colors).mealplanPriceContainer}>
+            <Text style={styles(colors).mealplanPrice}>
+              ₦{plan.price?.toLocaleString()}
+            </Text>
+
+            {/* Show average rating if available */}
+            {(plan.rating || plan.averageRating || plan.avgRating) && (
+              <View style={styles(colors).ratingDisplay}>
+                <CustomIcon
+                  name="star-filled"
+                  size={12}
+                  color={colors.rating || colors.primary}
+                />
+                <Text style={styles(colors).ratingText}>
+                  {(
+                    plan.rating ||
+                    plan.averageRating ||
+                    plan.avgRating
+                  ).toFixed(1)}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Rating Button */}
+          {showRatingButton && onRatePress && (
+            <TouchableOpacity
+              style={styles(colors).rateButton}
+              onPress={() => onRatePress(plan)}
+              activeOpacity={0.9}
+            >
+              <CustomIcon name="star" size={14} color={colors.primary} />
+              <Text style={styles(colors).rateButtonText}>Rate</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -200,7 +229,7 @@ const styles = (colors) =>
     },
     homeDiscountPillText: {
       fontSize: 15,
-      fontWeight: "450",
+      fontWeight: "550",
       color: "#333",
       marginLeft: 3,
     },
@@ -209,7 +238,7 @@ const styles = (colors) =>
     },
     mealplanTitle: {
       fontSize: 18,
-      fontWeight: 450,
+      fontWeight: 750,
       color: colors.text,
       marginBottom: 6,
     },
@@ -219,17 +248,43 @@ const styles = (colors) =>
       marginBottom: 8,
       lineHeight: 20,
     },
+    mealplanBottomRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+    },
+    mealplanPriceContainer: {
+      flex: 1,
+    },
     mealplanPrice: {
       fontSize: 20,
       fontWeight: "bold",
       color: colors.text,
     },
-    // Divider styles
-    mealplanDivider: {
-      height: 1,
-      backgroundColor: colors.border,
-      marginVertical: 12,
-      opacity: 0.5,
+    ratingDisplay: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
+      marginTop: 2,
+    },
+    ratingText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    rateButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary + "15",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      gap: 4,
+    },
+    rateButtonText: {
+      fontSize: 12,
+      fontWeight: "500",
+      color: colors.primary,
     },
     // Meta information styles for meal plan cards
     mealplanMetaRow: {
@@ -245,7 +300,7 @@ const styles = (colors) =>
     },
     mealplanMetaText: {
       fontSize: 12,
-      color: colors.textMuted,
+      color: colors.text,
       fontWeight: "500",
     },
   });

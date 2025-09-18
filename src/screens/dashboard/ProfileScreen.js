@@ -54,8 +54,10 @@ const ProfileScreen = ({ navigation, route }) => {
     updateProfile,
     updateUserProfile,
     deleteAccount,
+    setUser,
   } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editableUser, setEditableUser] = useState({});
   const [refreshing, setRefreshing] = useState(false);
@@ -240,14 +242,19 @@ const ProfileScreen = ({ navigation, route }) => {
 
       // Check for cached data first for immediate display
       const cachePromises = [
-        cacheService.get('profileStats', userId),
-        cacheService.get('profileSubscriptions', userId),
-        cacheService.get('profileActivity', userId),
-        cacheService.get('profileAchievements', userId)
+        cacheService.get("profileStats", userId),
+        cacheService.get("profileSubscriptions", userId),
+        cacheService.get("profileActivity", userId),
+        cacheService.get("profileAchievements", userId),
       ];
 
       const cachedResults = await Promise.all(cachePromises);
-      const [cachedStats, cachedSubscriptions, cachedActivity, cachedAchievements] = cachedResults;
+      const [
+        cachedStats,
+        cachedSubscriptions,
+        cachedActivity,
+        cachedAchievements,
+      ] = cachedResults;
 
       // Display cached data immediately for optimistic loading
       if (cachedStats && cachedStats.data) {
@@ -273,13 +280,12 @@ const ProfileScreen = ({ navigation, route }) => {
         fetchUserSubscriptions(true),
         fetchUserActivity(true),
         fetchUserAchievements(true),
-        fetchNotificationPreferences()
+        fetchNotificationPreferences(),
       ];
 
       // Wait for all fresh data to load
       await Promise.allSettled(freshDataPromises);
       console.log("✅ All profile data loaded successfully");
-
     } catch (error) {
       console.error("❌ Error loading profile data:", error);
     }
@@ -318,14 +324,14 @@ const ProfileScreen = ({ navigation, route }) => {
             : Math.max(0, Math.min(100, statsData.nutritionScore)),
         };
         setUserStats(validStats);
-        
+
         // Cache the fresh stats data
         const userId = user?._id || user?.id;
         if (userId) {
-          await cacheService.set('profileStats', validStats, userId);
+          await cacheService.set("profileStats", validStats, userId);
           console.log("📋 User stats cached for faster future access");
         }
-        
+
         console.log("✅ User stats loaded and validated:", validStats);
       } else {
         // Handle rate limiting specifically
@@ -412,8 +418,8 @@ const ProfileScreen = ({ navigation, route }) => {
         const orders = Array.isArray(ordersResult.data)
           ? ordersResult.data
           : Array.isArray(ordersResult.data.data)
-            ? ordersResult.data.data
-            : [];
+          ? ordersResult.data.data
+          : [];
         const subscriptionOrders = orders.filter(
           (order) =>
             order.subscription &&
@@ -463,14 +469,18 @@ const ProfileScreen = ({ navigation, route }) => {
         });
 
         setUserSubscriptions(activeSubscriptions);
-        
+
         // Cache the subscription data
         const userId = user?._id || user?.id;
         if (userId) {
-          await cacheService.set('profileSubscriptions', activeSubscriptions, userId);
+          await cacheService.set(
+            "profileSubscriptions",
+            activeSubscriptions,
+            userId
+          );
           console.log("📋 Subscriptions cached for faster future access");
         }
-        
+
         console.log(
           `✅ Found ${activeSubscriptions.length} active subscriptions from orders`
         );
@@ -517,8 +527,8 @@ const ProfileScreen = ({ navigation, route }) => {
         const orders = Array.isArray(ordersResult.data)
           ? ordersResult.data
           : Array.isArray(ordersResult.data.data)
-            ? ordersResult.data.data
-            : [];
+          ? ordersResult.data.data
+          : [];
 
         console.log("🔍 ACTIVITY DEBUG - Extracted Orders:", {
           ordersCount: orders.length,
@@ -768,8 +778,8 @@ const ProfileScreen = ({ navigation, route }) => {
       const orders = Array.isArray(rawOrders)
         ? rawOrders
         : Array.isArray(rawOrders?.data)
-          ? rawOrders.data
-          : [];
+        ? rawOrders.data
+        : [];
       const userProfile = profileResult.success ? profileResult.data || {} : {};
 
       // 1. Welcome Achievement - Always earned when user exists
@@ -910,8 +920,9 @@ const ProfileScreen = ({ navigation, route }) => {
       const updatedPreferences = { ...notificationPreferences, [key]: value };
       setNotificationPreferences(updatedPreferences);
 
-      const response =
-        await apiService.updateNotificationPreferences(updatedPreferences);
+      const response = await apiService.updateNotificationPreferences(
+        updatedPreferences
+      );
 
       if (!response.success) {
         // Revert on failure
@@ -1229,8 +1240,12 @@ Your meal plan has been updated with fresh options.`;
         setSaveAttempted(false);
         showSuccess("Success", "Your profile has been updated successfully!");
 
-        // Refresh profile data
-        await updateProfile();
+        // Update local user context without redundant API call
+        if (result.data) {
+          setUser(result.data);
+        } else {
+          setUser({ ...user, ...editableUser });
+        }
       } else {
         showError(
           "Update Failed",
@@ -1497,8 +1512,8 @@ Your meal plan has been updated with fresh options.`;
 
   const processSelectedImage = async (imageUri) => {
     try {
-      // Show loading state
-      setIsLoading(true);
+      // Use separate loading state for image upload
+      setIsImageUploading(true);
 
       // Immediately show the image locally for better UX
       setProfileImage(imageUri);
@@ -1556,8 +1571,8 @@ Your meal plan has been updated with fresh options.`;
       console.log("Profile image updated successfully");
       showSuccess("Success", "Profile picture updated successfully!");
 
-      // Refresh user profile to get updated data
-      await refreshProfileImage();
+      // Update local context directly instead of making redundant API call
+      setUser({ ...user, profileImage: cloudImageUrl });
     } catch (error) {
       console.error("Error uploading profile image:", error);
 
@@ -1577,7 +1592,7 @@ Your meal plan has been updated with fresh options.`;
       setProfileImage(user?.profileImage || null);
       await loadProfileImage();
     } finally {
-      setIsLoading(false);
+      setIsImageUploading(false);
     }
   };
 
@@ -1587,7 +1602,7 @@ Your meal plan has been updated with fresh options.`;
       "Are you sure you want to remove your profile picture?",
       async () => {
         try {
-          setIsLoading(true);
+          setIsImageUploading(true);
           setProfileImage(null);
 
           // Update user profile - include all user data to avoid validation errors
@@ -1624,7 +1639,7 @@ Your meal plan has been updated with fresh options.`;
           // Revert
           setProfileImage(user.profileImage || null);
         } finally {
-          setIsLoading(false);
+          setIsImageUploading(false);
         }
       }
     );
@@ -1760,7 +1775,7 @@ Your meal plan has been updated with fresh options.`;
                   !achievement.earned && styles(colors).achievementCardLocked,
                 ]}
                 onPress={() => handleAchievementPress(achievement)}
-                activeOpacity={0.8}
+                activeOpacity={0.9}
               >
                 <View
                   style={[
@@ -1905,7 +1920,7 @@ Your meal plan has been updated with fresh options.`;
         <TouchableOpacity
           style={styles(colors).nutritionCard}
           onPress={handleNutritionScorePress}
-          activeOpacity={0.8}
+          activeOpacity={0.9}
         >
           {statsLoading ? (
             <ActivityIndicator
@@ -1975,7 +1990,7 @@ Your meal plan has been updated with fresh options.`;
                 key={activity.id}
                 style={styles(colors).activityItem}
                 onPress={() => handleActivityItemPress(activity)}
-                activeOpacity={0.7}
+                activeOpacity={0.9}
               >
                 <View
                   style={[
@@ -2335,14 +2350,22 @@ Your meal plan has been updated with fresh options.`;
               <Text style={styles(colors).editCancelText}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles(colors).editTitle}>Edit Profile</Text>
-            <TouchableOpacity onPress={handleSaveProfile} disabled={isLoading}>
+            <TouchableOpacity
+              onPress={handleSaveProfile}
+              disabled={isLoading || isImageUploading}
+            >
               <Text
                 style={[
                   styles(colors).editSaveText,
-                  isLoading && styles(colors).editSaveTextDisabled,
+                  (isLoading || isImageUploading) &&
+                    styles(colors).editSaveTextDisabled,
                 ]}
               >
-                {isLoading ? "Saving..." : "Save"}
+                {isLoading
+                  ? "Saving Profile..."
+                  : isImageUploading
+                  ? "Uploading Image..."
+                  : "Save"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -2355,7 +2378,7 @@ Your meal plan has been updated with fresh options.`;
                 <TouchableOpacity
                   style={styles(colors).profilePictureContainer}
                   onPress={pickImage}
-                  activeOpacity={0.7}
+                  activeOpacity={0.9}
                 >
                   <UserAvatar
                     user={user}

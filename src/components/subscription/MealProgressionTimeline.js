@@ -346,7 +346,11 @@ const MealProgressionTimeline = ({
       const dayDate = new Date(day.date);
       const isToday = dayDate.toDateString() === today.toDateString();
       const isPast = dayDate < today && !isToday;
-      const calculatedDayType = isPast ? "past" : isToday ? "current" : "future";
+      const calculatedDayType = isPast
+        ? "past"
+        : isToday
+        ? "current"
+        : "future";
 
       return {
         ...day,
@@ -372,8 +376,9 @@ const MealProgressionTimeline = ({
 
     try {
       // Try to get subscription details to generate timeline
-      const subscriptionResult =
-        await apiService.getSubscription(subscriptionId);
+      const subscriptionResult = await apiService.getSubscription(
+        subscriptionId
+      );
       const subscription = subscriptionResult?.data || {};
 
       console.log(
@@ -432,8 +437,8 @@ const MealProgressionTimeline = ({
               dayType === "past"
                 ? "delivered"
                 : dayType === "current"
-                  ? "preparing"
-                  : "scheduled",
+                ? "preparing"
+                : "scheduled",
           },
           meals: [
             {
@@ -486,8 +491,8 @@ const MealProgressionTimeline = ({
             dayType === "past"
               ? "Delivered"
               : dayType === "current"
-                ? "Ready"
-                : "Upcoming"
+              ? "Ready"
+              : "Upcoming"
           } Meal`,
           customDescription: `Delicious ${
             i < 0 ? "delivered" : "prepared"
@@ -508,8 +513,8 @@ const MealProgressionTimeline = ({
             dayType === "past"
               ? "delivered"
               : dayType === "current"
-                ? "preparing"
-                : "scheduled",
+              ? "preparing"
+              : "scheduled",
         },
         meals: [
           {
@@ -550,12 +555,12 @@ const MealProgressionTimeline = ({
         const itemDate = new Date(item.date);
         return itemDate.toDateString() === today.toDateString();
       });
-      
+
       if (todayIndex >= 0) {
         const cardHeight = 180; // More accurate card height estimate
         const headerHeight = 120; // Account for header and progress bar
         timelineRef.current.scrollTo({
-          y: Math.max(0, (todayIndex * cardHeight) - headerHeight),
+          y: Math.max(0, todayIndex * cardHeight - headerHeight),
           animated: true,
         });
       } else {
@@ -567,7 +572,7 @@ const MealProgressionTimeline = ({
           const cardHeight = 180;
           const headerHeight = 120;
           timelineRef.current.scrollTo({
-            y: Math.max(0, (currentIndex * cardHeight) - headerHeight),
+            y: Math.max(0, currentIndex * cardHeight - headerHeight),
             animated: true,
           });
         }
@@ -747,13 +752,12 @@ const MealProgressionTimeline = ({
       const itemDate = new Date(item.date);
       const isToday = itemDate.toDateString() === today.toDateString();
       const isPast = itemDate < today && !isToday;
-      
+
       // Get actual delivery status if available
       const mealAssignment = item.mealAssignment || item.meals?.[0];
-      const deliveryStatus = mealAssignment?.deliveryStatus || 
-                            mealAssignment?.status || 
-                            item.status;
-      
+      const deliveryStatus =
+        mealAssignment?.deliveryStatus || mealAssignment?.status || item.status;
+
       if (isPast || deliveryStatus === "delivered") {
         completed++;
       } else if (isToday) {
@@ -887,7 +891,7 @@ const MealProgressionTimeline = ({
           { backgroundColor: isDark ? "#1A1A1A" : colors.cardBackground },
         ]}
         onPress={() => onMealPress && onMealPress(currentMeal)}
-        activeOpacity={0.8}
+        activeOpacity={0.9}
       >
         {/* Order Status Badge */}
         {/* <View style={styles.orderStatusContainer}>
@@ -1059,7 +1063,6 @@ const MealProgressionTimeline = ({
     );
   };
 
-
   const renderVerticalTimeline = () => {
     return (
       <ScrollView
@@ -1070,10 +1073,7 @@ const MealProgressionTimeline = ({
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {safeTimeline.map((item, index) =>
-          renderTimelineCard(item, index)
-        )}
-
+        {safeTimeline.map((item, index) => renderTimelineCard(item, index))}
       </ScrollView>
     );
   };
@@ -1369,7 +1369,6 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingHorizontal: 16,
   },
-
 
   // Order Status Section
   orderStatusContainer: {

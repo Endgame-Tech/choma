@@ -163,7 +163,7 @@ const DeliveryTracker = ({ orderId, onLocationUpdate, style }) => {
             tracking && styles.trackingButtonActive,
           ]}
           onPress={tracking ? stopTracking : startTracking}
-          activeOpacity={0.7}
+          activeOpacity={0.9}
         >
           <Ionicons
             name={tracking ? "pause" : "play"}

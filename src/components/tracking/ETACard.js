@@ -46,7 +46,7 @@ const ETACard = ({ eta, colors, onPress }) => {
     <TouchableOpacity
       style={[styles.container, { backgroundColor: colors.cardBackground }]}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.9}
     >
       <View style={styles.content}>
         <View style={styles.leftSection}>

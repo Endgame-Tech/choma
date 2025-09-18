@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import CustomIcon from "../ui/CustomIcon";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import { useTheme } from "../../styles/theme";
 
 const StarRating = ({
   value = 0,
@@ -19,6 +20,7 @@ const StarRating = ({
   textStyle,
   onPress, // For React Native, we use onPress instead of onChange
 }) => {
+  const { colors } = useTheme();
   const [hoverValue, setHoverValue] = useState(null);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -67,10 +69,10 @@ const StarRating = ({
 
     const starColor = isFullyFilled || isHalfFilled ? currentColor : "#d1d5db";
     const iconName = isFullyFilled
-      ? "star"
+      ? "star-filled"
       : isHalfFilled
-        ? "star-half"
-        : "star-outline";
+      ? "star-half"
+      : "star";
 
     if (!readOnly && !disabled) {
       return (
@@ -80,29 +82,29 @@ const StarRating = ({
           onPressIn={() => handlePressIn(index, false)}
           onPressOut={handlePressOut}
           disabled={disabled || readOnly}
-          style={[styles.starButton, starStyle]}
-          activeOpacity={0.7}
+          style={[styles(colors).starButton, starStyle]}
+          activeOpacity={0.9}
         >
-          <Ionicons name={iconName} size={size} color={starColor} />
+          <CustomIcon name={iconName} size={size} color={starColor} />
         </TouchableOpacity>
       );
     }
 
     return (
-      <View key={index} style={[styles.starContainer, starStyle]}>
-        <Ionicons name={iconName} size={size} color={starColor} />
+      <View key={index} style={[styles(colors).starContainer, starStyle]}>
+        <CustomIcon name={iconName} size={size} color={starColor} />
       </View>
     );
   };
 
   return (
-    <View style={[styles.container, style]}>
-      <View style={styles.starsContainer}>
+    <View style={[styles(colors).container, style]}>
+      <View style={styles(colors).starsContainer}>
         {Array.from({ length: 5 }, (_, index) => renderStar(index))}
       </View>
 
       {showValue && (
-        <Text style={[styles.valueText, textStyle]}>
+        <Text style={[styles(colors).valueText, textStyle]}>
           {displayValue.toFixed(1)}
         </Text>
       )}
@@ -110,27 +112,28 @@ const StarRating = ({
   );
 };
 
-const styles = createStylesWithDMSans({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  starsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  starButton: {
-    padding: 2,
-  },
-  starContainer: {
-    padding: 2,
-  },
-  valueText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
-  },
-});
+const styles = (colors) =>
+  createStylesWithDMSans({
+    container: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    starsContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    starButton: {
+      padding: 2,
+    },
+    starContainer: {
+      padding: 2,
+    },
+    valueText: {
+      marginLeft: 8,
+      fontSize: 14,
+      fontWeight: "500",
+      color: "#374151",
+    },
+  });
 
 export default StarRating;

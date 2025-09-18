@@ -288,7 +288,7 @@ const NotificationDetailScreen = ({ navigation, route }) => {
           <TouchableOpacity
             style={styles(colors).actionButton}
             onPress={handleActionPress}
-            activeOpacity={0.8}
+            activeOpacity={0.9}
           >
             <LinearGradient
               colors={[

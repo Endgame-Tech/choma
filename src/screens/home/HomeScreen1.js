@@ -100,11 +100,16 @@ const HomeScreen = ({ navigation }) => {
   const [showManagementModal, setShowManagementModal] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [showMealTimeline, setShowMealTimeline] = useState(false);
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
+  const bannerIntervalRef = useRef(null);
 
   // Tag filtering state
   const [selectedTagId, setSelectedTagId] = useState(null);
   const [selectedTag, setSelectedTag] = useState(null);
   const [filteredMealPlans, setFilteredMealPlans] = useState([]);
+
+  // Week selection state for tag filtering
+  const [selectedWeek, setSelectedWeek] = useState(null);
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
@@ -300,6 +305,17 @@ const HomeScreen = ({ navigation }) => {
     setSelectedTag(tag);
   };
 
+  const handleWeekSelect = (weekDuration) => {
+    setSelectedWeek(weekDuration);
+    // Filter meal plans by both tag and week duration
+    if (selectedTagId && weekDuration) {
+      const filtered = filteredMealPlans.filter(
+        (plan) => plan.durationWeeks === weekDuration
+      );
+      setFilteredMealPlans(filtered);
+    }
+  };
+
   // Handle filter application
   const handleApplyFilters = (filters) => {
     console.log("🔍 Applying filters:", filters);
@@ -376,44 +392,77 @@ const HomeScreen = ({ navigation }) => {
       console.log("⚠️ Dashboard data loading skipped - user not authenticated");
       return;
     }
-    
+
     try {
       // Only show loading state on force refresh or when no cached data exists
-      if (forceRefresh || (banners.length === 0 && activeSubscriptions.length === 0 && activeOrders.length === 0)) {
+      if (
+        forceRefresh ||
+        (banners.length === 0 &&
+          activeSubscriptions.length === 0 &&
+          activeOrders.length === 0)
+      ) {
         setBannersLoading(true);
         setSubscriptionLoading(true);
         setOrdersLoading(true);
       }
-      
+
       const result = await apiService.getDashboardData(forceRefresh);
-      
+
       if (result.success && result.data) {
-        const { banners, orders, subscriptions, mealPlans: dashboardMealPlans, tags } = result.data;
-        
+        const {
+          banners,
+          orders,
+          subscriptions,
+          mealPlans: dashboardMealPlans,
+          tags,
+        } = result.data;
+
         // Update banners
         if (banners) {
           setBanners(Array.isArray(banners) ? banners : []);
-          console.log(`📢 Dashboard banners loaded: ${banners.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+          console.log(
+            `📢 Dashboard banners loaded: ${banners.length} ${
+              result.fromCache ? "(cached)" : "(fresh)"
+            }`
+          );
         }
-        
+
         // Update subscriptions
         if (subscriptions) {
-          setActiveSubscriptions(Array.isArray(subscriptions) ? subscriptions : []);
-          console.log(`🔄 Dashboard subscriptions loaded: ${subscriptions.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+          setActiveSubscriptions(
+            Array.isArray(subscriptions) ? subscriptions : []
+          );
+          console.log(
+            `🔄 Dashboard subscriptions loaded: ${subscriptions.length} ${
+              result.fromCache ? "(cached)" : "(fresh)"
+            }`
+          );
         }
-        
+
         // Update orders
         if (orders) {
           setActiveOrders(Array.isArray(orders) ? orders : []);
-          console.log(`📦 Dashboard orders loaded: ${orders.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+          console.log(
+            `📦 Dashboard orders loaded: ${orders.length} ${
+              result.fromCache ? "(cached)" : "(fresh)"
+            }`
+          );
         }
-        
+
         // Update tags (if you have tag state)
         if (tags) {
-          console.log(`🏷️ Dashboard tags loaded: ${tags.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+          console.log(
+            `🏷️ Dashboard tags loaded: ${tags.length} ${
+              result.fromCache ? "(cached)" : "(fresh)"
+            }`
+          );
         }
-        
-        console.log(`✅ Dashboard data loaded successfully ${result.fromCache ? 'from cache' : 'fresh from server'}`);
+
+        console.log(
+          `✅ Dashboard data loaded successfully ${
+            result.fromCache ? "from cache" : "fresh from server"
+          }`
+        );
       } else {
         console.error("❌ Failed to load dashboard data:", result.error);
         // Fallback to individual API calls if batched call fails
@@ -446,24 +495,36 @@ const HomeScreen = ({ navigation }) => {
   const loadPublicDashboardData = async (forceRefresh = false) => {
     try {
       setBannersLoading(true);
-      
+
       const result = await apiService.getPublicDashboardData(forceRefresh);
-      
+
       if (result.success && result.data) {
         const { banners, mealPlans: dashboardMealPlans, tags } = result.data;
-        
+
         // Update banners
         if (banners) {
           setBanners(Array.isArray(banners) ? banners : []);
-          console.log(`📢 Public dashboard banners loaded: ${banners.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+          console.log(
+            `📢 Public dashboard banners loaded: ${banners.length} ${
+              result.fromCache ? "(cached)" : "(fresh)"
+            }`
+          );
         }
-        
+
         // Update tags (if you have tag state)
         if (tags) {
-          console.log(`🏷️ Public dashboard tags loaded: ${tags.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+          console.log(
+            `🏷️ Public dashboard tags loaded: ${tags.length} ${
+              result.fromCache ? "(cached)" : "(fresh)"
+            }`
+          );
         }
-        
-        console.log(`✅ Public dashboard data loaded successfully ${result.fromCache ? 'from cache' : 'fresh from server'}`);
+
+        console.log(
+          `✅ Public dashboard data loaded successfully ${
+            result.fromCache ? "from cache" : "fresh from server"
+          }`
+        );
       } else {
         console.error("❌ Failed to load public dashboard data:", result.error);
         // Fallback to individual API calls
@@ -475,7 +536,10 @@ const HomeScreen = ({ navigation }) => {
       try {
         await loadBanners(forceRefresh);
       } catch (fallbackError) {
-        console.error("❌ Public dashboard fallback also failed:", fallbackError);
+        console.error(
+          "❌ Public dashboard fallback also failed:",
+          fallbackError
+        );
       }
     } finally {
       setBannersLoading(false);
@@ -485,48 +549,58 @@ const HomeScreen = ({ navigation }) => {
   // Load user-specific dashboard data (orders, subscriptions) - requires auth
   const loadUserDashboardData = async (forceRefresh = false) => {
     if (!user) {
-      console.log("⚠️ User dashboard data loading skipped - user not authenticated");
+      console.log(
+        "⚠️ User dashboard data loading skipped - user not authenticated"
+      );
       return;
     }
-    
+
     try {
       setSubscriptionLoading(true);
       setOrdersLoading(true);
-      
+
       const result = await apiService.getUserDashboardData(forceRefresh);
-      
+
       if (result.success && result.data) {
         const { orders, subscriptions } = result.data;
-        
+
         // Update subscriptions
         if (subscriptions) {
-          setActiveSubscriptions(Array.isArray(subscriptions) ? subscriptions : []);
-          console.log(`🔄 User dashboard subscriptions loaded: ${subscriptions.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+          setActiveSubscriptions(
+            Array.isArray(subscriptions) ? subscriptions : []
+          );
+          console.log(
+            `🔄 User dashboard subscriptions loaded: ${subscriptions.length} ${
+              result.fromCache ? "(cached)" : "(fresh)"
+            }`
+          );
         }
-        
+
         // Update orders
         if (orders) {
           setActiveOrders(Array.isArray(orders) ? orders : []);
-          console.log(`📦 User dashboard orders loaded: ${orders.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+          console.log(
+            `📦 User dashboard orders loaded: ${orders.length} ${
+              result.fromCache ? "(cached)" : "(fresh)"
+            }`
+          );
         }
-        
-        console.log(`✅ User dashboard data loaded successfully ${result.fromCache ? 'from cache' : 'fresh from server'}`);
+
+        console.log(
+          `✅ User dashboard data loaded successfully ${
+            result.fromCache ? "from cache" : "fresh from server"
+          }`
+        );
       } else {
         console.error("❌ Failed to load user dashboard data:", result.error);
         // Fallback to individual API calls
-        await Promise.all([
-          loadActiveSubscriptions(),
-          loadActiveOrders(),
-        ]);
+        await Promise.all([loadActiveSubscriptions(), loadActiveOrders()]);
       }
     } catch (error) {
       console.error("❌ User dashboard loading error:", error);
       // Fallback to individual API calls
       try {
-        await Promise.all([
-          loadActiveSubscriptions(),
-          loadActiveOrders(),
-        ]);
+        await Promise.all([loadActiveSubscriptions(), loadActiveOrders()]);
       } catch (fallbackError) {
         console.error("❌ User dashboard fallback also failed:", fallbackError);
       }
@@ -546,8 +620,8 @@ const HomeScreen = ({ navigation }) => {
         const bannersData = Array.isArray(result.data?.data)
           ? result.data.data
           : Array.isArray(result.data)
-            ? result.data
-            : [];
+          ? result.data
+          : [];
         setBanners(bannersData);
         console.log(
           `✅ Loaded ${bannersData.length} banners:`,
@@ -851,8 +925,9 @@ const HomeScreen = ({ navigation }) => {
             const mealPlanId =
               subscription.mealPlanId?._id || subscription.mealPlanId;
             if (mealPlanId) {
-              const mealPlanResult =
-                await apiService.getMealPlanById(mealPlanId);
+              const mealPlanResult = await apiService.getMealPlanById(
+                mealPlanId
+              );
               if (mealPlanResult.success && mealPlanResult.data) {
                 return {
                   ...subscription,
@@ -1123,40 +1198,59 @@ const HomeScreen = ({ navigation }) => {
   // Track impression when banner is displayed
   const [trackedImpressions, setTrackedImpressions] = useState(new Set());
 
+  // Batch banner impression tracking to reduce API calls
   useEffect(() => {
     if (banners && banners.length > 0 && banners[currentBannerIndex]) {
       const banner = banners[currentBannerIndex];
       if (banner._id && !trackedImpressions.has(banner._id)) {
-        // Track impression only once per session per banner
-        apiService
-          .trackBannerImpression(banner._id)
-          .then(() => {
-            setTrackedImpressions((prev) => new Set([...prev, banner._id]));
-          })
-          .catch((err) => {
-            console.log("Failed to track banner impression:", err);
-          });
+        // Debounce impression tracking to avoid excessive API calls
+        const timeoutId = setTimeout(() => {
+          apiService
+            .trackBannerImpression(banner._id)
+            .then(() => {
+              setTrackedImpressions((prev) => new Set([...prev, banner._id]));
+            })
+            .catch((err) => {
+              console.log("Failed to track banner impression:", err);
+            });
+        }, 1500); // Wait 1.5s before tracking (user actually viewing)
+
+        return () => clearTimeout(timeoutId);
       }
     }
   }, [currentBannerIndex, banners, trackedImpressions]);
 
-  // Auto-slide effect for banner
+  // Auto-slide effect for banner with pause on interaction
   useEffect(() => {
     if (!banners || banners.length <= 1) return;
 
-    const bannerInterval = setInterval(() => {
-      setCurrentBannerIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % banners.length;
-        bannerScrollRef.current?.scrollTo({
-          x: nextIndex * width,
-          animated: true,
-        });
-        return nextIndex;
-      });
-    }, 6000);
+    const startBannerRotation = () => {
+      if (bannerIntervalRef.current) {
+        clearInterval(bannerIntervalRef.current);
+      }
 
-    return () => clearInterval(bannerInterval);
-  }, [banners?.length]);
+      bannerIntervalRef.current = setInterval(() => {
+        if (!isUserInteracting) {
+          setCurrentBannerIndex((prevIndex) => {
+            const nextIndex = (prevIndex + 1) % banners.length;
+            bannerScrollRef.current?.scrollTo({
+              x: nextIndex * width,
+              animated: true,
+            });
+            return nextIndex;
+          });
+        }
+      }, 6000);
+    };
+
+    startBannerRotation();
+
+    return () => {
+      if (bannerIntervalRef.current) {
+        clearInterval(bannerIntervalRef.current);
+      }
+    };
+  }, [banners?.length, isUserInteracting]);
 
   // Auto-slide effect for popular meal plans - DISABLED
   // useEffect(() => {
@@ -1366,8 +1460,9 @@ const HomeScreen = ({ navigation }) => {
             } else {
               // We only have an ID, fetch the meal plan first
               console.log(`🔍 Fetching meal plan for reorder: ${mealPlanId}`);
-              const mealPlanResult =
-                await apiService.getMealPlanById(mealPlanId);
+              const mealPlanResult = await apiService.getMealPlanById(
+                mealPlanId
+              );
 
               if (mealPlanResult.success && mealPlanResult.data) {
                 navigation.navigate("MealPlanDetail", {
@@ -1497,7 +1592,7 @@ const HomeScreen = ({ navigation }) => {
                 subscription,
               })
             }
-            activeOpacity={0.8}
+            activeOpacity={0.9}
           >
             <View style={styles(colors).subscriptionCardContent}>
               <View style={styles(colors).subscriptionCardImage}>
@@ -1712,7 +1807,7 @@ const HomeScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={styles(colors).subscriptionMenuButton}
                 onPress={() => setShowSubscriptionMenu(!showSubscriptionMenu)}
-                activeOpacity={0.7}
+                activeOpacity={0.9}
               >
                 <CustomIcon
                   name="ellipsis-horizontal"
@@ -1740,7 +1835,7 @@ const HomeScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={styles(colors).actionButton}
                 onPress={handlePauseSubscription}
-                activeOpacity={0.7}
+                activeOpacity={0.9}
               >
                 <CustomIcon name="pause" size={16} color={colors.white} />
                 <Text style={styles(colors).actionButtonText}>Pause</Text>
@@ -1748,7 +1843,7 @@ const HomeScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={styles(colors).actionButton}
                 onPress={handleModifySubscription}
-                activeOpacity={0.7}
+                activeOpacity={0.9}
               >
                 <CustomIcon name="settings" size={16} color={colors.white} />
                 <Text style={styles(colors).actionButtonText}>Modify</Text>
@@ -1756,7 +1851,7 @@ const HomeScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={styles(colors).actionButton}
                 onPress={handleScheduleSubscription}
-                activeOpacity={0.7}
+                activeOpacity={0.9}
               >
                 <CustomIcon name="calendar" size={16} color={colors.white} />
                 <Text style={styles(colors).actionButtonText}>Schedule</Text>
@@ -1778,7 +1873,7 @@ const HomeScreen = ({ navigation }) => {
                     styles(colors).menuOptionLast,
                 ]}
                 onPress={option.onPress}
-                activeOpacity={0.7}
+                activeOpacity={0.9}
               >
                 <CustomIcon
                   name={option.icon}
@@ -1906,7 +2001,7 @@ const HomeScreen = ({ navigation }) => {
         selectedCategory === category.id && styles(colors).categoryTabActive,
       ]}
       onPress={() => setSelectedCategory(category.id)}
-      activeOpacity={0.7}
+      activeOpacity={0.9}
     >
       <Text
         style={[
@@ -1931,7 +2026,7 @@ const HomeScreen = ({ navigation }) => {
         key={plan.id || plan._id}
         style={styles(colors).popularPlanCard}
         onPress={() => navigation.navigate("MealPlanDetail", { bundle: plan })}
-        activeOpacity={0.8}
+        activeOpacity={0.9}
       >
         <View style={styles(colors).popularCardImageContainer}>
           <Image
@@ -1965,7 +2060,7 @@ const HomeScreen = ({ navigation }) => {
           <TouchableOpacity
             style={styles(colors).popularHeartButton}
             onPress={() => toggleBookmark(plan.id || plan._id)}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
           >
             <CustomIcon
               name="heart"
@@ -2013,8 +2108,8 @@ const HomeScreen = ({ navigation }) => {
                     (plan.durationWeeks
                       ? `${plan.durationWeeks} week(s)`
                       : plan.durationDays
-                        ? `${plan.durationDays} days`
-                        : "1 week")}
+                      ? `${plan.durationDays} days`
+                      : "1 week")}
                 </Text>
               </View>
             )}
@@ -2102,12 +2197,16 @@ const HomeScreen = ({ navigation }) => {
             );
             setCurrentBannerIndex(slideIndex);
           }}
+          onTouchStart={() => setIsUserInteracting(true)}
+          onTouchEnd={() => {
+            setTimeout(() => setIsUserInteracting(false), 3000); // Resume after 3s
+          }}
         >
           {banners.map((banner, index) => (
             <TouchableOpacity
               key={banner._id || index}
               style={styles(colors).bannerSlide}
-              activeOpacity={0.8}
+              activeOpacity={0.9}
               onPress={() => handlePromoBannerPress(banner)}
             >
               <View style={styles(colors).promoBannerContainer}>
@@ -2176,7 +2275,7 @@ const HomeScreen = ({ navigation }) => {
         <TouchableOpacity
           style={styles(colors).locationContainer}
           onPress={() => setShowAddressModal(true)}
-          activeOpacity={0.7}
+          activeOpacity={0.9}
         >
           <CustomIcon name="location-filled" size={16} color={colors.primary} />
           <Text style={styles(colors).locationText} numberOfLines={1}>
@@ -2256,7 +2355,7 @@ const HomeScreen = ({ navigation }) => {
                   <TouchableOpacity
                     style={styles(colors).backToPlanButton}
                     onPress={() => setShowBrowseMode(false)}
-                    activeOpacity={0.8}
+                    activeOpacity={0.9}
                   >
                     <CustomIcon
                       name="chevron-back"
@@ -2278,6 +2377,7 @@ const HomeScreen = ({ navigation }) => {
                   onTagSelect={handleTagSelect}
                   selectedTagId={selectedTagId}
                   onApplyFilters={handleApplyFilters}
+                  onWeekSelect={handleWeekSelect}
                 />
 
                 {/* Popular Food Section */}
@@ -2392,14 +2492,17 @@ const HomeScreen = ({ navigation }) => {
           }
 
           // Calculate subscription progress for use in multiple components
-          if (!subscriptionLoading && (user?.hasActiveSubscription || activeSubscriptions.length > 0)) {
+          if (
+            !subscriptionLoading &&
+            (user?.hasActiveSubscription || activeSubscriptions.length > 0)
+          ) {
             // Show subscription-focused UI when user has active subscriptions
 
             return (
               // Subscription-focused UI
               <>
                 {/* My Today's Meals Section - extracted to separate component */}
-                <SubscriptionHomeView 
+                <SubscriptionHomeView
                   activeSubscriptions={activeSubscriptions}
                   setShowBrowseMode={setShowBrowseMode}
                 />
@@ -2418,7 +2521,7 @@ const HomeScreen = ({ navigation }) => {
                   <TouchableOpacity
                     style={styles(colors).browseMealPlansButton}
                     onPress={() => setShowBrowseMode(true)}
-                    activeOpacity={0.8}
+                    activeOpacity={0.9}
                   >
                     <CustomIcon name="food" size={20} color={colors.white} />
                     <Text style={styles(colors).browseMealPlansText}>
@@ -2445,6 +2548,7 @@ const HomeScreen = ({ navigation }) => {
                   onTagSelect={handleTagSelect}
                   selectedTagId={selectedTagId}
                   onApplyFilters={handleApplyFilters}
+                  onWeekSelect={handleWeekSelect}
                 />
 
                 {/* Popular Food Section - Conditional visibility */}
@@ -2591,7 +2695,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => setShowAddressModal(false)}
                 style={styles(colors).modalCloseButton}
               >
-                <CustomIcon name="close" size={24} color={colors.text} />
+                <CustomIcon name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -2636,7 +2740,7 @@ const HomeScreen = ({ navigation }) => {
               }}
               style={styles(colors).modalCloseButton}
             >
-              <CustomIcon name="close" size={24} color={COLORS.textPrimary} />
+              <CustomIcon name="close" size={20} color={COLORS.textPrimary} />
             </TouchableOpacity>
             <Text style={styles(colors).modalHeaderTitle}>Meal Timeline</Text>
             <View style={{ width: 32 }} />

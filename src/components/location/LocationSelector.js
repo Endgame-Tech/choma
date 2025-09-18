@@ -144,7 +144,7 @@ const LocationSelector = ({ onLocationSelect, initialLocation, style }) => {
       <TouchableOpacity
         style={styles.locationContainer}
         onPress={() => setModalVisible(true)}
-        activeOpacity={0.7}
+        activeOpacity={0.9}
       >
         <View style={styles.locationInfo}>
           <Text style={styles.addressText}>

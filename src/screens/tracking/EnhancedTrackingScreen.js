@@ -20,10 +20,11 @@ import { LinearGradient } from "expo-linear-gradient";
 // Core imports
 import driverTrackingService from "../../services/driverTrackingService";
 import googleRoutesService from "../../services/googleRoutesService";
+import cacheService from "../../services/cacheService";
 import { APP_CONFIG } from "../../utils/constants";
 import { THEME } from "../../utils/colors";
 import { useTheme } from "../../styles/theme";
-import { createStylesWithDMSans } from "../../utils/fontUtils";
+import {createStylesWithDMSans} from "../../utils/fontUtils";
 
 // Constants
 
@@ -150,10 +151,23 @@ const UserMarker = ({ coordinate, styles }) => {
   );
 };
 
-// Enhanced geocoding function with fallbacks and timeout
+// Enhanced geocoding function with fallbacks, timeout, and caching
 const geocodeAddress = async (address) => {
   try {
     console.log("🔍 Geocoding address:", address);
+
+    // Check cache first for geocoded addresses
+    const cacheKey = `geocode_${address.toLowerCase().replace(/\s+/g, "_")}`;
+    const cachedResult = await cacheService.get(
+      "geocoding",
+      "global",
+      cacheKey
+    );
+
+    if (cachedResult && cachedResult.data) {
+      console.log("🚀 Using cached geocoding result:", cachedResult.data);
+      return cachedResult.data;
+    }
 
     // Add timeout wrapper for geocoding
     const geocodeWithTimeout = (address, timeout = 8000) => {
@@ -169,8 +183,14 @@ const geocodeAddress = async (address) => {
     let geocoded = await geocodeWithTimeout(address);
     if (geocoded && geocoded.length > 0) {
       const { latitude, longitude } = geocoded[0];
-      console.log("✅ Geocoding successful:", { latitude, longitude });
-      return { latitude, longitude };
+      const result = { latitude, longitude };
+      console.log("✅ Geocoding successful:", result);
+
+      // Cache the successful geocoding result
+      await cacheService.set("geocoding", result, "global", cacheKey);
+      console.log("📋 Geocoding result cached for future use");
+
+      return result;
     }
 
     // Fallback: Try with just city/state if full address fails
@@ -184,11 +204,14 @@ const geocodeAddress = async (address) => {
             geocoded = await geocodeWithTimeout(fallbackAddress);
             if (geocoded && geocoded.length > 0) {
               const { latitude, longitude } = geocoded[0];
-              console.log("✅ Fallback geocoding successful:", {
-                latitude,
-                longitude,
-              });
-              return { latitude, longitude };
+              const result = { latitude, longitude };
+              console.log("✅ Fallback geocoding successful:", result);
+
+              // Cache the successful fallback geocoding result
+              await cacheService.set("geocoding", result, "global", cacheKey);
+              console.log("📋 Fallback geocoding result cached");
+
+              return result;
             }
           } catch (fallbackError) {
             console.log("⚠️ Fallback geocoding failed:", fallbackError.message);
@@ -284,6 +307,48 @@ const geocodeAddress = async (address) => {
   }
 };
 
+// Cached route calculation to avoid redundant Google Routes API calls
+const calculateRouteWithCache = async (driverLocation, userLocation) => {
+  try {
+    if (!driverLocation || !userLocation) return null;
+
+    // Create cache key based on coordinates (rounded to avoid cache misses from tiny differences)
+    const driverKey = `${driverLocation.latitude.toFixed(
+      4
+    )}_${driverLocation.longitude.toFixed(4)}`;
+    const userKey = `${userLocation.latitude.toFixed(
+      4
+    )}_${userLocation.longitude.toFixed(4)}`;
+    const cacheKey = `route_${driverKey}_to_${userKey}`;
+
+    // Check cache first
+    const cachedRoute = await cacheService.get("routeData", "global", cacheKey);
+
+    if (cachedRoute && cachedRoute.data) {
+      console.log("🚀 Using cached route data");
+      return cachedRoute.data;
+    }
+
+    // If not cached, calculate fresh route
+    console.log("🗺️ Calculating fresh route (not in cache)");
+    const routeData = await googleRoutesService.calculateRoute(
+      driverLocation,
+      userLocation
+    );
+
+    if (routeData) {
+      // Cache the successful route calculation
+      await cacheService.set("routeData", routeData, "global", cacheKey);
+      console.log("📋 Route data cached for future use");
+    }
+
+    return routeData;
+  } catch (error) {
+    console.error("❌ Error in cached route calculation:", error);
+    return null;
+  }
+};
+
 const EnhancedTrackingScreen = ({ route, navigation }) => {
   const { orderId, order } = route.params || {};
   const { isDark, colors } = useTheme();
@@ -337,10 +402,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
     if (!driverLoc || !userLoc) return null;
 
     try {
-      const routeData = await googleRoutesService.calculateRoute(
-        driverLoc,
-        userLoc
-      );
+      const routeData = await calculateRouteWithCache(driverLoc, userLoc);
       if (routeData) {
         const etaMinutes = Math.ceil(routeData.durationMinutes || 15);
         const etaDistance = routeData.distanceText || "2.5 km";
@@ -395,6 +457,8 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
 
   // Ref to track current driver location for setTimeout callbacks
   const driverLocationRef = useRef(null);
+  const lastMapUpdateRef = useRef(0);
+  const MAP_UPDATE_THROTTLE = 5000; // Only update map view every 5 seconds
 
   useEffect(() => {
     initializeTracking();
@@ -608,8 +672,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
         if (routeCoordinates.length === 0 && userLocation) {
           console.log("🗺️ No route data yet, calculating initial route...");
           try {
-            googleRoutesService
-              .calculateRoute(newDriverLocation, userLocation)
+            calculateRouteWithCache(newDriverLocation, userLocation)
               .then((initialRoute) => {
                 if (initialRoute && initialRoute.encodedPolyline) {
                   const coordinates = decodePolyline(
@@ -629,13 +692,20 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
           }
         }
 
-        // Update map view
-        if (mapRef.current && userLocation) {
+        // Update map view (throttled to avoid excessive updates)
+        const now = Date.now();
+        if (
+          mapRef.current &&
+          userLocation &&
+          now - lastMapUpdateRef.current > MAP_UPDATE_THROTTLE
+        ) {
           const coordinates = [userLocation, newDriverLocation];
           mapRef.current.fitToCoordinates(coordinates, {
             edgePadding: { top: 150, right: 50, bottom: 400, left: 50 },
             animated: true,
           });
+          lastMapUpdateRef.current = now;
+          console.log("🗺️ Map view updated (throttled)");
         }
       });
 
@@ -685,7 +755,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
       if (driverLocation && userLocation) {
         console.log("🗺️ Calculating initial route to avoid straight line...");
         try {
-          const initialRoute = await googleRoutesService.calculateRoute(
+          const initialRoute = await calculateRouteWithCache(
             driverLocation,
             userLocation
           );
@@ -914,7 +984,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
       // Calculate initial route with mock location
       setTimeout(async () => {
         try {
-          const initialRoute = await googleRoutesService.calculateRoute(
+          const initialRoute = await calculateRouteWithCache(
             mockDriverLocation,
             userLocation
           );
@@ -978,7 +1048,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
             console.log("Driver location:", driverLocation);
             console.log("Saved delivery location:", savedDeliveryLocation);
             try {
-              const newRoute = await googleRoutesService.calculateRoute(
+              const newRoute = await calculateRouteWithCache(
                 driverLocation,
                 savedDeliveryLocation
               );
@@ -1035,7 +1105,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
         if (driverLocation) {
           console.log("🗺️ Recalculating route to live location...");
           try {
-            const newRoute = await googleRoutesService.calculateRoute(
+            const newRoute = await calculateRouteWithCache(
               driverLocation,
               liveLocation
             );
@@ -1187,7 +1257,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
           <TouchableOpacity
             style={componentStyles.locationToggleButton}
             onPress={toggleLiveLocation}
-            activeOpacity={0.8}
+            activeOpacity={0.9}
           >
             <Ionicons
               name={isUsingLiveLocation ? "home" : "location"}
@@ -1212,7 +1282,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
                 });
               }
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
           >
             <Ionicons name="add" size={20} color={colors.primary} />
           </TouchableOpacity>
@@ -1227,7 +1297,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
                 });
               }
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
           >
             <Ionicons name="remove" size={20} color={colors.primary} />
           </TouchableOpacity>
@@ -1238,7 +1308,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
             onPress={() => {
               setMapType(mapType === "standard" ? "satellite" : "standard");
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
           >
             <Ionicons
               name={mapType === "standard" ? "earth" : "map"}
@@ -1377,7 +1447,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
               isOrderDetailsExpanded && componentStyles.expandButtonExpanded,
             ]}
             onPress={toggleOrderDetails}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
           >
             <Text style={componentStyles.expandButtonText}>
               {isOrderDetailsExpanded ? "Hide Details" : "View Details"}
@@ -1477,7 +1547,7 @@ const EnhancedTrackingScreen = ({ route, navigation }) => {
 };
 
 const styles = (colors) =>
-  StyleSheet.create({
+  createStylesWithDMSans({
     container: {
       flex: 1,
       backgroundColor: colors.background,

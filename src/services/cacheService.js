@@ -21,6 +21,9 @@ class CacheService {
       profileSubscriptions: 5 * 60 * 1000, // 5 minutes for subscriptions
       profileActivity: 15 * 60 * 1000, // 15 minutes for user activity
       profileAchievements: 30 * 60 * 1000, // 30 minutes for achievements
+      geocoding: 60 * 60 * 1000, // 1 hour for geocoded addresses
+      driverLocation: 2 * 60 * 1000, // 2 minutes for driver location data
+      routeData: 10 * 60 * 1000, // 10 minutes for calculated routes
     };
     
     this.maxMemoryCacheSize = 50; // Maximum items in memory cache

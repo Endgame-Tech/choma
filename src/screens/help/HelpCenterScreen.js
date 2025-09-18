@@ -134,7 +134,7 @@ const HelpCenterScreen = ({ navigation }) => {
       key={option.id}
       style={styles(colors).contactCard}
       onPress={option.action}
-      activeOpacity={0.7}
+      activeOpacity={0.9}
     >
       <View style={styles(colors).contactIcon}>
         <Ionicons name={option.icon} size={24} color={colors.primary} />

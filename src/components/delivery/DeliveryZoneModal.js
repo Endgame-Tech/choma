@@ -111,7 +111,11 @@ const DeliveryZoneModal = ({
         </View>
 
         {isSelected && (
-          <CustomIcon name="checkmark-circle" size={24} color={colors.success} />
+          <CustomIcon
+            name="checkmark-circle"
+            size={24}
+            color={colors.success}
+          />
         )}
       </TouchableOpacity>
     );
@@ -159,7 +163,7 @@ const DeliveryZoneModal = ({
               }}
               style={styles(colors).closeButton}
             >
-              <CustomIcon name="close" size={24} color={colors.textSecondary} />
+              <CustomIcon name="close" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -176,7 +180,11 @@ const DeliveryZoneModal = ({
           {/* Search Input */}
           <View style={styles(colors).searchContainer}>
             <View style={styles(colors).searchInputContainer}>
-              <CustomIcon name="search" size={20} color={colors.textSecondary} />
+              <CustomIcon
+                name="search"
+                size={20}
+                color={colors.textSecondary}
+              />
               <TextInput
                 style={styles(colors).searchInput}
                 placeholder="Search by area, state, or country..."

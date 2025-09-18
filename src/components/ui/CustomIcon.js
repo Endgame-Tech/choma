@@ -180,11 +180,6 @@ const CustomIcon = ({
   const IconComponent = iconMap[iconName] || iconMap[name];
 
   if (!IconComponent) {
-    console.warn(
-      `CustomIcon: Icon "${name}" not found. Available icons:`,
-      Object.keys(iconMap)
-    );
-    console.warn(`Requested: ${name}, Mapped to: ${iconName}`);
     return null;
   }
 

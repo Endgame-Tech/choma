@@ -12,7 +12,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import StandardHeader from "../../components/layout/Header";
 import OrderTrackingCard from "../../components/orders/OrderTrackingCard";
+import RatingModal from "../../components/rating/RatingModal";
 import apiService from "../../services/api";
+import ratingPromptManager from "../../services/ratingPromptManager";
+import { ratingApi } from "../../services/ratingApi";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const OrderTrackingScreen = ({ navigation }) => {
@@ -20,6 +23,9 @@ const OrderTrackingScreen = ({ navigation }) => {
   const [activeOrders, setActiveOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [selectedOrderForRating, setSelectedOrderForRating] = useState(null);
+  const [orderRatings, setOrderRatings] = useState({});
 
   const loadOrders = async (isRefresh = false) => {
     try {
@@ -180,8 +186,81 @@ const OrderTrackingScreen = ({ navigation }) => {
   };
 
   const handleRateOrder = (order) => {
-    // Navigate to rating screen or show rating modal
-    console.log("Rate order:", order._id);
+    console.log("📝 Opening rating modal for order:", order._id);
+    setSelectedOrderForRating(order);
+    setRatingModalVisible(true);
+  };
+
+  const handleRatingSubmit = async (ratingData) => {
+    try {
+      console.log("📝 Submitting rating for order:", selectedOrderForRating?._id);
+      
+      const existingRating = orderRatings[selectedOrderForRating?._id];
+      
+      if (existingRating) {
+        await ratingApi.updateRating(existingRating._id, ratingData);
+      } else {
+        await ratingApi.createRating(ratingData);
+      }
+      
+      // Trigger additional rating prompts (driver, meal plan, etc.)
+      await triggerPostOrderRatingPrompts(selectedOrderForRating);
+      
+      // Update local ratings state
+      setOrderRatings(prev => ({
+        ...prev,
+        [selectedOrderForRating._id]: { ...ratingData, _id: existingRating?._id }
+      }));
+      
+      console.log('✅ Order rating submitted successfully');
+      setRatingModalVisible(false);
+      setSelectedOrderForRating(null);
+      
+    } catch (error) {
+      console.error('❌ Error submitting order rating:', error);
+    }
+  };
+
+  const triggerPostOrderRatingPrompts = async (order) => {
+    try {
+      // Trigger meal plan rating if this order is part of a meal plan subscription
+      if (order.subscriptionId) {
+        console.log('🍽️ Triggering meal plan rating prompts after order completion');
+        await ratingPromptManager.triggerMealPlanMilestone({
+          userId: order.userId,
+          mealPlanId: order.mealPlanId,
+          subscriptionId: order.subscriptionId,
+          completionPercentage: 0, // Would need to calculate from subscription
+          mealsCompleted: 0, // Would need to calculate from subscription
+          totalMeals: 0, // Would need to calculate from subscription
+          weeksCompleted: 0, // Would need to calculate from subscription
+          totalWeeks: 4, // Default
+          existingRating: null
+        });
+      }
+
+      // Trigger driver rating if driver info is available
+      if (order.driverId || order.driver) {
+        console.log('🚗 Triggering driver rating prompts');
+        await ratingPromptManager.triggerDriverInteraction({
+          userId: order.userId,
+          driverId: order.driverId || order.driver?._id,
+          orderId: order._id,
+          type: 'delivery',
+          existingRating: null
+        });
+      }
+
+      // General order completion trigger
+      await ratingPromptManager.triggerOrderCompletion({
+        ...order,
+        isFirstOrder: false, // Could be calculated
+        isRecurringOrder: !!order.subscriptionId
+      });
+      
+    } catch (error) {
+      console.error('❌ Error triggering post-order rating prompts:', error);
+    }
   };
 
   const handleTrackDriver = (driver, order) => {
@@ -263,6 +342,27 @@ const OrderTrackingScreen = ({ navigation }) => {
           </View>
         )}
       </ScrollView>
+
+      {/* Rating Modal */}
+      <RatingModal
+        visible={ratingModalVisible}
+        onClose={() => {
+          setRatingModalVisible(false);
+          setSelectedOrderForRating(null);
+        }}
+        onSubmit={handleRatingSubmit}
+        ratingType="order"
+        entityType="order"
+        entityId={selectedOrderForRating?._id}
+        entityName={`Order #${selectedOrderForRating?._id?.slice(-6)}`}
+        existingRating={orderRatings[selectedOrderForRating?._id]}
+        contextData={{
+          orderId: selectedOrderForRating?._id,
+          platform: 'mobile'
+        }}
+        title="Rate Your Order"
+        description="How was your order experience? Your feedback helps us improve our service."
+      />
     </SafeAreaView>
   );
 };

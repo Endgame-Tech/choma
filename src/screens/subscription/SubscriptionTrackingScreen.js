@@ -79,8 +79,51 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
           totalMealsReceived: subscriptionDay,
         });
       }
+
+      // Also check for meal plan milestone triggers
+      await checkMealPlanMilestone();
     } catch (error) {
       console.error("Error checking subscription milestone:", error);
+    }
+  };
+
+  const checkMealPlanMilestone = async () => {
+    try {
+      if (!subscription?.mealPlanId || !subscription?.metrics) return;
+
+      const completedMeals = subscription.metrics.completedMeals || 0;
+      const totalMeals = subscription.metrics.totalMeals || 0;
+      const completionPercentage = totalMeals > 0 ? (completedMeals / totalMeals) * 100 : 0;
+
+      // Get meal plan details
+      const mealPlan = subscription.mealPlanId;
+      const durationWeeks = mealPlan?.durationWeeks || 4;
+      const weeksCompleted = Math.floor(completedMeals / 7); // Assuming 7 meals per week
+
+      // Trigger rating prompts at specific milestones
+      const shouldTrigger = (
+        weeksCompleted === 1 || // First week complete
+        completionPercentage >= 50 || // Halfway complete
+        completionPercentage >= 100 // Fully complete
+      );
+
+      if (shouldTrigger) {
+        console.log(`🍽️ Checking meal plan milestone: ${completionPercentage.toFixed(1)}% complete`);
+
+        await ratingPromptManager.triggerMealPlanMilestone({
+          userId: subscription.userId,
+          mealPlanId: mealPlan._id || mealPlan.planId,
+          subscriptionId: subscription._id,
+          completionPercentage,
+          mealsCompleted: completedMeals,
+          totalMeals,
+          weeksCompleted,
+          totalWeeks: durationWeeks,
+          existingRating: null // Could fetch existing rating if needed
+        });
+      }
+    } catch (error) {
+      console.error("Error checking meal plan milestone:", error);
     }
   };
 

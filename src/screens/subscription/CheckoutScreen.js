@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import CustomIcon from "../../components/ui/CustomIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../styles/theme";
@@ -27,6 +27,7 @@ import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
 import DeliveryZoneModal from "../../components/delivery/DeliveryZoneModal";
 import discountService from "../../services/discountService";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import cacheService from "../../services/cacheService";
 
 const CheckoutScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
@@ -109,10 +110,20 @@ const CheckoutScreen = ({ route, navigation }) => {
     }
   }, [user, mealPlan]);
 
-  // Enhanced geocoding function with fallbacks and timeout (similar to EnhancedTrackingScreen)
+  // Enhanced geocoding function with caching and fallbacks  
   const geocodeAddressWithFallbacks = async (latitude, longitude) => {
     try {
       console.log("🔍 Reverse geocoding coordinates:", latitude, longitude);
+
+      // Create cache key for this coordinate pair (rounded to ~10m precision)
+      const cacheKey = `${latitude.toFixed(4)}_${longitude.toFixed(4)}`;
+      
+      // Check cache first
+      const cachedResult = await cacheService.get('geocoding', 'global', cacheKey);
+      if (cachedResult && cachedResult.data) {
+        console.log("📋 Using cached geocoding result");
+        return cachedResult.data;
+      }
 
       // Add timeout wrapper for geocoding
       const geocodeWithTimeout = (lat, lng, timeout = 8000) => {
@@ -128,6 +139,8 @@ const CheckoutScreen = ({ route, navigation }) => {
       let addressResponse = await geocodeWithTimeout(latitude, longitude);
       if (addressResponse && addressResponse.length > 0) {
         console.log("✅ Reverse geocoding successful");
+        // Cache the successful result
+        await cacheService.set('geocoding', addressResponse, 'global', cacheKey);
         return addressResponse;
       }
 
@@ -151,6 +164,8 @@ const CheckoutScreen = ({ route, navigation }) => {
             console.log(
               "✅ Reverse geocoding successful with coordinate adjustment"
             );
+            // Cache the successful result
+            await cacheService.set('geocoding', addressResponse, 'global', cacheKey);
             return addressResponse;
           }
         } catch (err) {
@@ -172,7 +187,7 @@ const CheckoutScreen = ({ route, navigation }) => {
         ) {
           console.log("✅ Backend geocoding successful");
           // Convert backend response to match expected format
-          return [
+          const geocodedResult = [
             {
               street: backendResponse.data.address.street || "",
               city: backendResponse.data.address.city || "",
@@ -186,6 +201,9 @@ const CheckoutScreen = ({ route, navigation }) => {
               formattedAddress: backendResponse.data.address.formatted || "",
             },
           ];
+          // Cache the successful backend result
+          await cacheService.set('geocoding', geocodedResult, 'global', cacheKey);
+          return geocodedResult;
         }
       } catch (backendError) {
         console.log("⚠️ Backend geocoding also failed:", backendError.message);
@@ -500,10 +518,32 @@ const CheckoutScreen = ({ route, navigation }) => {
       if (mealPlanId && !initialMealPlan) {
         try {
           setLoading(true);
+          
+          // Check cache first for meal plan details
+          const cachedMealPlan = await cacheService.get('mealPlanDetails', 'global', mealPlanId);
+          if (cachedMealPlan && cachedMealPlan.data) {
+            console.log("📋 Using cached meal plan details");
+            setMealPlan(cachedMealPlan.data);
+            setLoading(false);
+            
+            // If data is stale, fetch fresh data in background
+            if (cachedMealPlan.isStale) {
+              console.log("🔄 Refreshing stale meal plan data in background");
+              const result = await api.getMealPlanById(mealPlanId);
+              if (result.success && result.data) {
+                setMealPlan(result.data);
+                await cacheService.set('mealPlanDetails', result.data, 'global', mealPlanId);
+              }
+            }
+            return;
+          }
+
           const result = await api.getMealPlanById(mealPlanId);
 
           if (result.success && result.data) {
             setMealPlan(result.data);
+            // Cache the fetched meal plan
+            await cacheService.set('mealPlanDetails', result.data, 'global', mealPlanId);
           } else {
             setError("Failed to fetch meal plan details. Please try again.");
             console.error("Error fetching meal plan details:", result.error);
@@ -522,16 +562,20 @@ const CheckoutScreen = ({ route, navigation }) => {
 
   // Set default selections when meal plan is loaded
   useEffect(() => {
-    if (mealPlan && !selectedFrequency && !selectedDuration) {
-      // Default to all meals if multiple meal types, or the single meal type
-      const defaultFrequency =
-        mealPlan.mealTypes && mealPlan.mealTypes.length > 1
-          ? "all"
-          : mealPlan.mealTypes?.[0] || "all";
-      setSelectedFrequency(defaultFrequency);
+    if (mealPlan) {
+      // Auto-select frequency if not already selected
+      if (!selectedFrequency) {
+        const defaultFrequency =
+          mealPlan.mealTypes && mealPlan.mealTypes.length > 1
+            ? "all"
+            : mealPlan.mealTypes?.[0] || "all";
+        setSelectedFrequency(defaultFrequency);
+      }
 
-      // Default to full duration
-      setSelectedDuration(parsePlanWeeks(mealPlan) || 1);
+      // Auto-select duration if not already selected
+      if (!selectedDuration) {
+        setSelectedDuration(parsePlanWeeks(mealPlan) || 1);
+      }
     }
   }, [mealPlan, selectedFrequency, selectedDuration]);
 
@@ -830,7 +874,7 @@ const CheckoutScreen = ({ route, navigation }) => {
         />
 
         <View style={styles(colors).errorContainer}>
-          <Ionicons name="alert-circle" size={80} color={colors.error} />
+          <CustomIcon name="alert-circle" size={80} color={colors.error} />
           <Text style={styles(colors).errorTitle}>Error</Text>
           <Text style={styles(colors).errorText}>{error}</Text>
           <TouchableOpacity
@@ -878,7 +922,7 @@ const CheckoutScreen = ({ route, navigation }) => {
         />
 
         <View style={styles(colors).errorContainer}>
-          <Ionicons name="alert-circle" size={80} color={colors.error} />
+          <CustomIcon name="alert-circle" size={80} color={colors.error} />
           <Text style={styles(colors).errorTitle}>Error</Text>
           <Text style={styles(colors).errorText}>{error}</Text>
           <TouchableOpacity
@@ -902,7 +946,7 @@ const CheckoutScreen = ({ route, navigation }) => {
         />
 
         <View style={styles(colors).errorContainer}>
-          <Ionicons name="alert-circle" size={80} color={colors.error} />
+          <CustomIcon name="alert-circle" size={80} color={colors.error} />
           <Text style={styles(colors).errorTitle}>Meal Plan Not Found</Text>
           <Text style={styles(colors).errorText}>
             No meal plan selected. Please go back and select a meal plan.
@@ -931,7 +975,7 @@ const CheckoutScreen = ({ route, navigation }) => {
         />
 
         <View style={styles(colors).errorContainer}>
-          <Ionicons name="warning" size={80} color={colors.warning} />
+          <CustomIcon name="warning" size={80} color={colors.warning} />
           <Text style={styles(colors).errorTitle}>Pricing Not Available</Text>
           <Text style={styles(colors).errorText}>
             This meal plan doesn't have pricing configured yet. Please contact
@@ -1051,7 +1095,7 @@ const CheckoutScreen = ({ route, navigation }) => {
                     ×{duration.multiplier}
                   </Text>
                   {selectedDuration === duration.id && (
-                    <Ionicons
+                    <CustomIcon
                       name="checkmark-circle"
                       size={24}
                       color={colors.success}
@@ -1079,8 +1123,8 @@ const CheckoutScreen = ({ route, navigation }) => {
                 ]}
                 onPress={() => setConsolidatedDeliveries(false)}
               >
-                <Ionicons
-                  name="calendar"
+                <CustomIcon
+                  name="calendar-filled"
                   size={20}
                   color={
                     !consolidatedDeliveries
@@ -1103,54 +1147,13 @@ const CheckoutScreen = ({ route, navigation }) => {
                   </Text>
                 </View>
                 {!consolidatedDeliveries && (
-                  <Ionicons
+                  <CustomIcon
                     name="checkmark-circle"
                     size={20}
                     color={colors.success}
                   />
                 )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles(colors).deliveryOptionCard,
-                  consolidatedDeliveries &&
-                    styles(colors).selectedDeliveryOption,
-                ]}
-                onPress={() => setConsolidatedDeliveries(true)}
-              >
-                <Ionicons
-                  name="bag"
-                  size={20}
-                  color={
-                    consolidatedDeliveries
-                      ? colors.primary
-                      : colors.textSecondary
-                  }
-                />
-                <View style={styles(colors).deliveryOptionContent}>
-                  <Text
-                    style={[
-                      styles(colors).deliveryOptionTitle,
-                      consolidatedDeliveries &&
-                        styles(colors).selectedDeliveryOptionText,
-                    ]}
-                  >
-                    Consolidated Delivery
-                  </Text>
-                  <Text style={styles(colors).deliveryOptionSubtitle}>
-                    2-day meals in one delivery ({Math.ceil(deliveryCount / 2)}{" "}
-                    deliveries)
-                  </Text>
-                </View>
-                {consolidatedDeliveries && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={20}
-                    color={colors.success}
-                  />
-                )}
-              </TouchableOpacity>
+              </TouchableOpacity>              
             </View>
           </View>
 
@@ -1168,8 +1171,8 @@ const CheckoutScreen = ({ route, navigation }) => {
                   ]}
                   onPress={() => handleAddressSourceChange("saved")}
                 >
-                  <Ionicons
-                    name="home"
+                  <CustomIcon
+                    name="home-filled"
                     size={20}
                     color={
                       addressSource === "saved"
@@ -1195,7 +1198,7 @@ const CheckoutScreen = ({ route, navigation }) => {
                     </Text>
                   </View>
                   {addressSource === "saved" && (
-                    <Ionicons
+                    <CustomIcon
                       name="checkmark-circle"
                       size={20}
                       color={colors.success}
@@ -1214,7 +1217,7 @@ const CheckoutScreen = ({ route, navigation }) => {
                 onPress={() => handleAddressSourceChange("current")}
                 disabled={isGettingLocation}
               >
-                <Ionicons
+                <CustomIcon
                   name="location"
                   size={20}
                   color={
@@ -1242,7 +1245,7 @@ const CheckoutScreen = ({ route, navigation }) => {
                 {isGettingLocation ? (
                   <ActivityIndicator size="small" color={colors.primary} />
                 ) : addressSource === "current" ? (
-                  <Ionicons
+                  <CustomIcon
                     name="checkmark-circle"
                     size={20}
                     color={colors.success}
@@ -1259,8 +1262,8 @@ const CheckoutScreen = ({ route, navigation }) => {
                 ]}
                 onPress={() => handleAddressSourceChange("manual")}
               >
-                <Ionicons
-                  name="pencil"
+                <CustomIcon
+                  name="edit"
                   size={20}
                   color={
                     addressSource === "manual"
@@ -1283,7 +1286,7 @@ const CheckoutScreen = ({ route, navigation }) => {
                   </Text>
                 </View>
                 {addressSource === "manual" && (
-                  <Ionicons
+                  <CustomIcon
                     name="checkmark-circle"
                     size={20}
                     color={colors.success}
@@ -1314,7 +1317,7 @@ const CheckoutScreen = ({ route, navigation }) => {
               onPress={() => setShowZoneModal(true)}
             >
               <View style={styles(colors).selectZoneContent}>
-                <Ionicons name="location" size={20} color={colors.primary} />
+                <CustomIcon name="location" size={20} color={colors.primary} />
                 <View style={styles(colors).selectZoneTextContainer}>
                   <Text style={styles(colors).selectZoneTitle}>
                     {selectedZone
@@ -1329,7 +1332,7 @@ const CheckoutScreen = ({ route, navigation }) => {
                       : "Choose the closest zone to your address"}
                   </Text>
                 </View>
-                <Ionicons
+                <CustomIcon
                   name="chevron-forward"
                   size={20}
                   color={colors.textSecondary}
@@ -1495,11 +1498,11 @@ const CheckoutScreen = ({ route, navigation }) => {
             colors={[colors.primary, colors.primaryDark]}
             style={styles(colors).proceedGradient}
           >
-            <Ionicons name="card" size={20} color={colors.black} />
+            <CustomIcon name="card" size={20} color={colors.black} />
             <Text style={styles(colors).proceedButtonText}>
               Proceed to Payment
             </Text>
-            <Ionicons name="arrow-forward" size={20} color={colors.black} />
+            <CustomIcon name="arrow-forward" size={20} color={colors.black} />
           </LinearGradient>
         </TouchableOpacity>
       </View>

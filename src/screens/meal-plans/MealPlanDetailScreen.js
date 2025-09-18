@@ -38,6 +38,9 @@ import { THEME } from "../../utils/colors";
 import MealPlanDetailSkeleton from "../../components/meal-plans/MealPlanDetailSkeleton";
 import StandardHeader from "../../components/layout/Header";
 import MealDetailModal from "../../components/modals/MealDetailModal";
+import RatingModal from "../../components/rating/RatingModal";
+import RatingDisplay from "../../components/rating/RatingDisplay";
+import { ratingApi } from "../../services/ratingApi";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width, height } = Dimensions.get("window");
@@ -47,6 +50,79 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   const { user } = useAuth();
   const { bundle } = route.params;
   const [selectedWeek, setSelectedWeek] = useState(1);
+
+  // Fetch ratings for this meal plan
+  const fetchRatings = useCallback(async () => {
+    if (!mealPlanDetails) return;
+
+    try {
+      setRatingsLoading(true);
+      const mealPlanId =
+        mealPlanDetails._id ||
+        mealPlanDetails.planId ||
+        bundle._id ||
+        bundle.planId;
+
+      // Get rating statistics
+      const statsResponse = await ratingApi.getEntityStats(
+        "meal_plan",
+        mealPlanId
+      );
+      if (statsResponse.success) {
+        setRatingStats(statsResponse.data);
+      }
+
+      // Get existing ratings (first page for display)
+      const ratingsResponse = await ratingApi.getEntityRatings(
+        "meal_plan",
+        mealPlanId,
+        {
+          limit: 5,
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        }
+      );
+      if (ratingsResponse.success) {
+        setExistingRatings(ratingsResponse.data.ratings || []);
+      }
+
+      // Check if current user has already rated this meal plan
+      const userRatingsResponse = await ratingApi.getMyRatings({
+        entityType: "meal_plan",
+        ratingType: "meal_plan",
+      });
+      if (userRatingsResponse.success) {
+        const userMealPlanRating = userRatingsResponse.data.ratings?.find(
+          (rating) => rating.ratedEntity === mealPlanId
+        );
+        setUserRating(userMealPlanRating || null);
+      }
+    } catch (error) {
+      console.error("Error fetching ratings:", error);
+    } finally {
+      setRatingsLoading(false);
+    }
+  }, [mealPlanDetails, bundle]);
+
+  // Handle rating submission
+  const handleRatingSubmit = async (ratingData) => {
+    try {
+      if (userRating) {
+        // Update existing rating
+        await ratingApi.updateRating(userRating._id, ratingData);
+      } else {
+        // Create new rating
+        await ratingApi.createRating(ratingData);
+      }
+
+      // Refresh ratings after submission
+      await fetchRatings();
+      Alert.alert("Success", "Your rating has been submitted successfully!");
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      Alert.alert("Error", "Failed to submit rating. Please try again.");
+    }
+  };
   const [expandedDay, setExpandedDay] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [mealPlanDetails, setMealPlanDetails] = useState(null);
@@ -60,6 +136,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   // Discount state
   const [discountInfo, setDiscountInfo] = useState(null);
   const [discountLoading, setDiscountLoading] = useState(true);
+
+  // Rating state
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [existingRatings, setExistingRatings] = useState([]);
+  const [ratingStats, setRatingStats] = useState(null);
+  const [userRating, setUserRating] = useState(null);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
 
   // Animation states for smooth expand/collapse
   const animationValues = useRef({}).current;
@@ -250,6 +333,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
     fetchDiscountInfo();
   }, [user, mealPlanDetails]);
+
+  // Fetch ratings when meal plan details are loaded
+  useEffect(() => {
+    if (mealPlanDetails) {
+      fetchRatings();
+    }
+  }, [mealPlanDetails, fetchRatings]);
 
   // Edited to trigger Codacy CLI analysis
   // Transform backend weekly meals data to display format
@@ -490,7 +580,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             const mealIndex = dayMeals.findIndex((m) => m.label === meal.label);
             openMealModal(dayMeals, mealIndex);
           }}
-          activeOpacity={0.8}
+          activeOpacity={0.9}
         >
           <View style={styles(colors).mealSliderImageContainer}>
             <Image
@@ -631,9 +721,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           <TouchableOpacity
             style={styles(colors).dayHeader}
             onPress={() => toggleDayExpansion(dayData.day)}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
             accessibilityLabel={`${dayData.day} meals`}
-            accessibilityHint={`Tap to ${expandedDay === dayData.day ? "collapse" : "expand"} meal details for ${dayData.day}`}
+            accessibilityHint={`Tap to ${
+              expandedDay === dayData.day ? "collapse" : "expand"
+            } meal details for ${dayData.day}`}
             accessibilityRole="button"
             accessible={true}
           >
@@ -698,7 +790,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                               styles(colors).mealSliderCardSingle,
                           ]}
                           onPress={() => openMealModal(meals, index)}
-                          activeOpacity={0.8}
+                          activeOpacity={0.9}
                           accessibilityLabel={`${item.label}: ${item.name}`}
                           accessibilityHint={`Tap to view details about ${item.label}`}
                           accessibilityRole="button"
@@ -946,8 +1038,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   setLoading(true);
                   setError(null);
                   const mealPlanId = bundle.planId || bundle._id || bundle.id;
-                  const result =
-                    await apiService.getMealPlanDetails(mealPlanId);
+                  const result = await apiService.getMealPlanDetails(
+                    mealPlanId
+                  );
                   if (result.success && result.mealPlan) {
                     setMealPlanDetails(result.mealPlan);
                   } else {
@@ -1050,7 +1143,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             accessibilityRole="button"
             accessible={true}
           >
-            <CustomIcon name="heart-outline" size={24} color={colors.primary} />
+            <CustomIcon name="heart" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -1067,7 +1160,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
           <View style={styles(colors).planMeta}>
             <View style={styles(colors).metaItem}>
-              <CustomIcon name="star" size={16} color={colors.rating} />
+              <CustomIcon name="star-filled" size={16} color={colors.rating} />
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.avgRating || bundle?.rating || 4.5}
               </Text>
@@ -1085,11 +1178,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               </Text>
             </View>
             <View style={styles(colors).metaItem}>
-              <CustomIcon
-                name="restaurant"
-                size={16}
-                color={colors.textSecondary}
-              />
+              <CustomIcon name="food" size={16} color={colors.textSecondary} />
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.mealTypes
                   ? `${mealPlanDetails.mealTypes.length * 7} meals/week`
@@ -1402,6 +1491,146 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           </View>
         )}
 
+        {/* Ratings Section */}
+        <View style={styles(colors).ratingsSection}>
+          <View style={styles(colors).ratingsSectionHeader}>
+            <Text style={styles(colors).sectionTitle}>Ratings & Reviews</Text>
+            <TouchableOpacity
+              style={styles(colors).rateButton}
+              onPress={() => setRatingModalVisible(true)}
+              accessibilityLabel={
+                userRating ? "Update your rating" : "Rate this meal plan"
+              }
+              accessibilityHint="Tap to rate this meal plan"
+              accessibilityRole="button"
+            >
+              <CustomIcon name="star" size={16} color={colors.background} />
+              <Text style={styles(colors).rateButtonText}>
+                {userRating ? "Update Rating" : "Rate Plan"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Rating Statistics */}
+          {ratingStats && ratingStats.overallStats.totalRatings > 0 ? (
+            <View style={styles(colors).ratingStatsContainer}>
+              <View style={styles(colors).ratingOverview}>
+                <View style={styles(colors).averageRatingContainer}>
+                  <Text style={styles(colors).averageRatingNumber}>
+                    {ratingStats.overallStats.averageRating.toFixed(1)}
+                  </Text>
+                  <View style={styles(colors).starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <CustomIcon
+                        key={star}
+                        name={
+                          star <=
+                          Math.round(ratingStats.overallStats.averageRating)
+                            ? "star-filled"
+                            : "star"
+                        }
+                        size={14}
+                        color={
+                          star <=
+                          Math.round(ratingStats.overallStats.averageRating)
+                            ? colors.rating
+                            : colors.textMuted
+                        }
+                      />
+                    ))}
+                  </View>
+                  <Text style={styles(colors).totalRatingsText}>
+                    {ratingStats.overallStats.totalRatings} rating
+                    {ratingStats.overallStats.totalRatings !== 1 ? "s" : ""}
+                  </Text>
+                </View>
+
+                {/* Rating Distribution */}
+                <View style={styles(colors).ratingDistribution}>
+                  {[5, 4, 3, 2, 1].map((rating) => {
+                    const count =
+                      ratingStats.overallStats.ratingCounts[
+                        rating.toString()
+                      ] || 0;
+                    const percentage =
+                      ratingStats.overallStats.totalRatings > 0
+                        ? (count / ratingStats.overallStats.totalRatings) * 100
+                        : 0;
+
+                    return (
+                      <View
+                        key={rating}
+                        style={styles(colors).ratingDistributionRow}
+                      >
+                        <Text style={styles(colors).ratingDistributionStar}>
+                          {rating}
+                        </Text>
+                        <CustomIcon
+                          name="star-filled"
+                          size={10}
+                          color={colors.rating}
+                        />
+                        <View style={styles(colors).ratingDistributionBar}>
+                          <View
+                            style={[
+                              styles(colors).ratingDistributionFill,
+                              { width: `${percentage}%` },
+                            ]}
+                          />
+                        </View>
+                        <Text style={styles(colors).ratingDistributionCount}>
+                          {count}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            </View>
+          ) : (
+            <View style={styles(colors).noRatingsContainer}>
+              <CustomIcon name="star" size={32} color={colors.textMuted} />
+              <Text style={styles(colors).noRatingsText}>No ratings yet</Text>
+              <Text style={styles(colors).noRatingsSubtext}>
+                Be the first to rate this meal plan!
+              </Text>
+            </View>
+          )}
+
+          {/* Recent Reviews */}
+          {existingRatings.length > 0 && (
+            <View style={styles(colors).recentReviewsContainer}>
+              <Text style={styles(colors).recentReviewsTitle}>
+                Recent Reviews
+              </Text>
+              {existingRatings.slice(0, 3).map((rating) => (
+                <RatingDisplay
+                  key={rating._id}
+                  rating={rating}
+                  showAspects={false}
+                  compact={true}
+                  style={styles(colors).reviewItem}
+                />
+              ))}
+              {existingRatings.length > 3 && (
+                <TouchableOpacity style={styles(colors).viewAllReviewsButton}>
+                  <Text style={styles(colors).viewAllReviewsText}>
+                    View all{" "}
+                    {ratingStats?.overallStats.totalRatings ||
+                      existingRatings.length}{" "}
+                    reviews
+                  </Text>
+                  <CustomIcon
+                    name="chevron-right"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+
         <View style={styles(colors).bottomPadding} />
       </ScrollView>
 
@@ -1431,7 +1660,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 bundle?.id,
             });
           }}
-          accessibilityLabel={`Add ${quantity} meal plan${quantity > 1 ? "s" : ""} to subscription`}
+          accessibilityLabel={`Add ${quantity} meal plan${
+            quantity > 1 ? "s" : ""
+          } to subscription`}
           accessibilityHint="Tap to proceed to checkout with this meal plan"
           accessibilityRole="button"
           accessible={true}
@@ -1450,6 +1681,33 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         onClose={() => setModalVisible(false)}
         meals={currentDayMeals}
         initialIndex={selectedMealIndex}
+      />
+
+      {/* Rating Modal */}
+      <RatingModal
+        visible={ratingModalVisible}
+        onClose={() => setRatingModalVisible(false)}
+        onSubmit={handleRatingSubmit}
+        ratingType="meal_plan"
+        entityType="meal_plan"
+        entityId={
+          mealPlanDetails?._id ||
+          mealPlanDetails?.planId ||
+          bundle?._id ||
+          bundle?.planId
+        }
+        entityName={mealPlanDetails?.planName || bundle?.name || "Meal Plan"}
+        existingRating={userRating}
+        contextData={{
+          mealPlanId:
+            mealPlanDetails?._id ||
+            mealPlanDetails?.planId ||
+            bundle?._id ||
+            bundle?.planId,
+          platform: "mobile",
+        }}
+        title="Rate this Meal Plan"
+        description="Share your experience with this meal plan to help others make better choices"
       />
     </SafeAreaView>
   );
@@ -2084,6 +2342,136 @@ const styles = (colors) =>
       fontSize: 14,
       color: colors.textSecondary,
       lineHeight: 22,
+    },
+    // Rating section styles
+    ratingsSection: {
+      margin: 15,
+      backgroundColor: colors.cardBackground,
+      overflow: "hidden",
+      borderRadius: 20,
+    },
+    ratingsSectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 20,
+    },
+    rateButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.black,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: THEME.borderRadius.xxl,
+      gap: 6,
+    },
+    rateButtonText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.background,
+    },
+    ratingStatsContainer: {
+      padding: 20,
+    },
+    ratingOverview: {
+      flexDirection: "row",
+      gap: 20,
+    },
+    averageRatingContainer: {
+      alignItems: "center",
+      flex: 1,
+    },
+    averageRatingNumber: {
+      fontSize: 36,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 5,
+    },
+    starsContainer: {
+      flexDirection: "row",
+      gap: 2,
+      marginBottom: 5,
+    },
+    totalRatingsText: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    ratingDistribution: {
+      flex: 2,
+      gap: 8,
+    },
+    ratingDistributionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    ratingDistributionStar: {
+      fontSize: 12,
+      color: colors.text,
+      width: 12,
+    },
+    ratingDistributionBar: {
+      flex: 1,
+      height: 8,
+      backgroundColor: colors.border,
+      borderRadius: 4,
+    },
+    ratingDistributionFill: {
+      height: "100%",
+      backgroundColor: colors.rating,
+      borderRadius: 4,
+    },
+    ratingDistributionCount: {
+      fontSize: 12,
+      color: colors.textMuted,
+      width: 20,
+      textAlign: "right",
+    },
+    noRatingsContainer: {
+      alignItems: "center",
+      padding: 40,
+    },
+    noRatingsText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.textMuted,
+      marginTop: 10,
+      marginBottom: 5,
+    },
+    noRatingsSubtext: {
+      fontSize: 14,
+      color: colors.textMuted,
+    },
+    recentReviewsContainer: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 20,
+      paddingHorizontal: 20,
+      paddingBottom: 10,
+    },
+    recentReviewsTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 15,
+    },
+    reviewItem: {
+      marginBottom: 15,
+      paddingBottom: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border + "30",
+    },
+    viewAllReviewsButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 15,
+      gap: 8,
+    },
+    viewAllReviewsText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: colors.primary,
     },
     bottomPadding: {
       height: 20,

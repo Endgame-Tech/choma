@@ -13,10 +13,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
 import { useBookmarks } from "../../context/BookmarkContext";
 import MealCardSkeleton from "../meal-plans/MealCardSkeleton";
+import RatingModal from "../rating/RatingModal";
+import { ratingApi } from "../../services/ratingApi";
 import discountService from "../../services/discountService";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-const MealPlansSection = React.memo(({
+const MealPlansSection = ({
   mealPlans = [],
   loading = false,
   navigation,
@@ -29,6 +31,9 @@ const MealPlansSection = React.memo(({
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const [discountData, setDiscountData] = useState({});
   const [discountLoading, setDiscountLoading] = useState(false);
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [selectedPlanForRating, setSelectedPlanForRating] = useState(null);
+  const [userRatings, setUserRatings] = useState({});
 
   const categories = [
     { id: "All Plans", label: "All Plans" },
@@ -66,7 +71,7 @@ const MealPlansSection = React.memo(({
     );
   }, [displayPlans, selectedCategory]);
 
-  // Load discount data
+  // Load discount data and user ratings
   useEffect(() => {
     const fetchDiscountData = async () => {
       if (!user || !mealPlans || mealPlans.length === 0) {
@@ -94,6 +99,20 @@ const MealPlansSection = React.memo(({
         }
 
         setDiscountData(discounts);
+
+        // Fetch user's existing ratings for meal plans
+        const userRatingsResponse = await ratingApi.getMyRatings({
+          entityType: "meal_plan",
+          ratingType: "meal_plan",
+        });
+
+        if (userRatingsResponse.success) {
+          const ratingsMap = {};
+          userRatingsResponse.data.ratings?.forEach((rating) => {
+            ratingsMap[rating.ratedEntity] = rating;
+          });
+          setUserRatings(ratingsMap);
+        }
       } catch (error) {
         console.error("Error fetching discount data:", error);
       } finally {
@@ -103,6 +122,47 @@ const MealPlansSection = React.memo(({
 
     fetchDiscountData();
   }, [user, mealPlans]);
+
+  // Handle rating meal plans
+  const handleRatePlan = (plan) => {
+    setSelectedPlanForRating(plan);
+    setRatingModalVisible(true);
+  };
+
+  const handleRatingSubmit = async (ratingData) => {
+    try {
+      const existingRating =
+        userRatings[
+          selectedPlanForRating?.planId || selectedPlanForRating?._id
+        ];
+
+      if (existingRating) {
+        await ratingApi.updateRating(existingRating._id, ratingData);
+      } else {
+        await ratingApi.createRating(ratingData);
+      }
+
+      // Refresh user ratings
+      if (user && selectedPlanForRating) {
+        const userRatingsResponse = await ratingApi.getMyRatings({
+          entityType: "meal_plan",
+          ratingType: "meal_plan",
+        });
+
+        if (userRatingsResponse.success) {
+          const ratingsMap = {};
+          userRatingsResponse.data.ratings?.forEach((rating) => {
+            ratingsMap[rating.ratedEntity] = rating;
+          });
+          setUserRatings(ratingsMap);
+        }
+      }
+
+      console.log("✅ Rating submitted successfully");
+    } catch (error) {
+      console.error("❌ Error submitting rating:", error);
+    }
+  };
 
   const getPlanDescription = (plan) => {
     if (!plan) return "";
@@ -163,7 +223,7 @@ const MealPlansSection = React.memo(({
         key={plan._id || plan.planId || index}
         style={styles(colors).mealPlanCard}
         onPress={() => onMealPlanPress && onMealPlanPress(plan)}
-        activeOpacity={0.8}
+        activeOpacity={0.9}
       >
         <View style={styles(colors).cardImageContainer}>
           <Image
@@ -245,15 +305,63 @@ const MealPlansSection = React.memo(({
               </View>
             </View>
 
-            <View style={styles(colors).priceContainer}>
-              {hasDiscount && (
-                <Text style={styles(colors).originalPrice}>
-                  ₦{originalPrice.toLocaleString()}
+            <View style={styles(colors).planBottomRow}>
+              <View style={styles(colors).priceContainer}>
+                {hasDiscount && (
+                  <Text style={styles(colors).originalPrice}>
+                    ₦{originalPrice.toLocaleString()}
+                  </Text>
+                )}
+                <Text style={styles(colors).price}>
+                  ₦{Math.round(discountedPrice).toLocaleString()}
                 </Text>
-              )}
-              <Text style={styles(colors).price}>
-                ₦{Math.round(discountedPrice).toLocaleString()}
-              </Text>
+              </View>
+
+              {/* Rating Display and Button */}
+              <View style={styles(colors).ratingSection}>
+                {/* Show average rating if available */}
+                {(plan.rating || plan.averageRating || plan.avgRating) && (
+                  <View style={styles(colors).ratingDisplay}>
+                    <Ionicons name="star" size={12} color={colors.rating} />
+                    <Text style={styles(colors).ratingText}>
+                      {(
+                        plan.rating ||
+                        plan.averageRating ||
+                        plan.avgRating
+                      ).toFixed(1)}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Rating Button */}
+                {user && (
+                  <TouchableOpacity
+                    style={[
+                      styles(colors).rateButton,
+                      userRatings[plan.planId || plan._id] &&
+                        styles(colors).ratedButton,
+                    ]}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleRatePlan(plan);
+                    }}
+                    activeOpacity={0.9}
+                  >
+                    <Ionicons
+                      name={
+                        userRatings[plan.planId || plan._id]
+                          ? "star"
+                          : "star-outline"
+                      }
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <Text style={styles(colors).rateButtonText}>
+                      {userRatings[plan.planId || plan._id] ? "Update" : "Rate"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </View>
@@ -309,6 +417,36 @@ const MealPlansSection = React.memo(({
           {filteredPlans.slice(0, 4).map(renderMealPlanCard)}
         </View>
       )}
+
+      {/* Rating Modal */}
+      <RatingModal
+        visible={ratingModalVisible}
+        onClose={() => {
+          setRatingModalVisible(false);
+          setSelectedPlanForRating(null);
+        }}
+        onSubmit={handleRatingSubmit}
+        ratingType="meal_plan"
+        entityType="meal_plan"
+        entityId={selectedPlanForRating?.planId || selectedPlanForRating?._id}
+        entityName={
+          selectedPlanForRating?.planName ||
+          selectedPlanForRating?.name ||
+          "Meal Plan"
+        }
+        existingRating={
+          userRatings[
+            selectedPlanForRating?.planId || selectedPlanForRating?._id
+          ]
+        }
+        contextData={{
+          mealPlanId:
+            selectedPlanForRating?.planId || selectedPlanForRating?._id,
+          platform: "mobile",
+        }}
+        title="Rate this Meal Plan"
+        description="Share your experience with this meal plan to help others make better choices"
+      />
     </View>
   );
 };
@@ -464,6 +602,11 @@ const styles = (colors) =>
       color: colors.textSecondary,
       marginLeft: 4,
     },
+    planBottomRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+    },
     priceContainer: {
       alignItems: "flex-end",
     },
@@ -475,6 +618,38 @@ const styles = (colors) =>
     price: {
       fontSize: 14,
       fontWeight: "700",
+      color: colors.primary,
+    },
+    ratingSection: {
+      alignItems: "flex-end",
+      gap: 4,
+    },
+    ratingDisplay: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
+      marginBottom: 2,
+    },
+    ratingText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    rateButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary + "15",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      gap: 4,
+    },
+    ratedButton: {
+      backgroundColor: colors.primary + "25",
+    },
+    rateButtonText: {
+      fontSize: 12,
+      fontWeight: "500",
       color: colors.primary,
     },
     emptyContainer: {
@@ -497,7 +672,8 @@ const styles = (colors) =>
       lineHeight: 20,
     },
   });
-}, (prevProps, nextProps) => {
+
+export default React.memo(MealPlansSection, (prevProps, nextProps) => {
   // Custom comparison function for React.memo
   return (
     prevProps.mealPlans?.length === nextProps.mealPlans?.length &&
@@ -507,5 +683,3 @@ const styles = (colors) =>
     prevProps.mealPlans === nextProps.mealPlans // Reference equality check
   );
 });
-
-export default MealPlansSection;

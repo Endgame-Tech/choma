@@ -177,7 +177,7 @@ const OrdersScreen = ({ navigation }) => {
     }
 
     // Only set up real-time updates if we have active orders and user is on active tab
-    const hasActiveOrders = orders.some((order) => {
+    const hasActiveOrders = orders && Array.isArray(orders) && orders.some((order) => {
       const status = (
         order.delegationStatus ||
         order.status ||
@@ -187,7 +187,7 @@ const OrdersScreen = ({ navigation }) => {
       return status && !["cancelled", "delivered"].includes(status);
     });
 
-    if (hasActiveOrders && orders.length > 0 && selectedTab === "active") {
+    if (hasActiveOrders && orders && orders.length > 0 && selectedTab === "active") {
       console.log("🔄 Starting optimized order status updates...");
       const interval = setInterval(async () => {
         // Use cached data first, only fetch if stale
