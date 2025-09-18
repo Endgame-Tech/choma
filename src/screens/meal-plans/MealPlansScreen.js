@@ -22,6 +22,7 @@ import { THEME } from "../../utils/colors";
 import FilterModal from "../../components/meal-plans/FilterModal";
 import { api } from "../../services/api";
 import discountService from "../../services/discountService";
+import cacheService from "../../services/cacheService";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const { width } = Dimensions.get("window");
@@ -68,27 +69,38 @@ const MealPlansScreen = ({ navigation }) => {
 
         const discounts = {};
 
-        // Fetch discount for each meal plan
-        for (const plan of allMealPlans) {
+        // Fetch discounts for all meal plans in parallel for faster loading
+        const discountPromises = allMealPlans.map(async (plan) => {
           try {
             const discount = await discountService.calculateDiscount(
               user,
               plan
             );
-            discounts[plan.id || plan._id] = discount;
+            return { planId: plan.id || plan._id, discount };
           } catch (error) {
             console.error(
               `Error calculating discount for plan ${plan.id}:`,
               error
             );
             // Set default no discount for this plan
-            discounts[plan.id || plan._id] = {
-              discountPercent: 0,
-              discountAmount: 0,
-              reason: "No discount available",
+            return {
+              planId: plan.id || plan._id,
+              discount: {
+                discountPercent: 0,
+                discountAmount: 0,
+                reason: "No discount available",
+              }
             };
           }
-        }
+        });
+
+        // Wait for all discount calculations to complete in parallel
+        const discountResults = await Promise.all(discountPromises);
+        
+        // Convert results array to discounts object
+        discountResults.forEach(({ planId, discount }) => {
+          discounts[planId] = discount;
+        });
 
         console.log("💰 All discount data fetched:", discounts);
         setDiscountData(discounts);

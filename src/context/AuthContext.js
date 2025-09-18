@@ -49,16 +49,17 @@ export const AuthProvider = ({ children }) => {
         // Debug auth status
         apiService.debugAuthStatus();
 
-        // Try to get user profile to verify token validity
-        const profileResponse = await apiService.getProfile();
+        // Use optimistic loading for faster auth experience
+        const profileResponse = await apiService.getProfileOptimistic();
 
-        if (profileResponse.success) {
+        if (profileResponse.success && profileResponse.data && profileResponse.data.customer) {
           setUser(profileResponse.data.customer);
           setIsAuthenticated(true);
           setIsOffline(profileResponse.offline || false);
 
+          const cacheStatus = profileResponse.fromCache ? "(cached)" : "(fresh)";
           console.log(
-            "✅ User authenticated:",
+            `✅ User authenticated ${cacheStatus}:`,
             profileResponse.data.customer.email
           );
 

@@ -24,6 +24,7 @@ import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiService from "../../services/api";
+import cacheService from "../../services/cacheService";
 import { Linking, Share } from "react-native";
 import UserAvatar from "../../components/ui/UserAvatar";
 import ProfileHeader from "../../components/profile/ProfileHeader";
@@ -148,13 +149,10 @@ const ProfileScreen = ({ navigation, route }) => {
       if (now - lastDataLoad > dataLoadCooldown) {
         setLastDataLoad(now);
 
-        // Load data in batches to prevent rate limiting
-        setTimeout(() => fetchUserStats(), 100);
-        setTimeout(() => fetchUserSubscriptions(), 300);
-        setTimeout(() => fetchUserActivity(), 500);
-        setTimeout(() => fetchUserAchievements(), 700);
-        setTimeout(() => fetchNotificationPreferences(), 900);
+        // Load all profile data in parallel for faster performance
+        loadAllProfileData();
       } else {
+        console.log("⏱️ Profile data loading rate limited, using cached data");
       }
     }
     loadProfileImage();
@@ -232,10 +230,67 @@ const ProfileScreen = ({ navigation, route }) => {
     } catch (error) {}
   };
 
-  const fetchUserStats = async () => {
+  // Load all profile data in parallel with caching and optimistic loading
+  const loadAllProfileData = async () => {
     try {
-      setStatsLoading(true);
-      console.log("� Fetching user stats...");
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+
+      console.log("🚀 Loading all profile data in parallel with caching...");
+
+      // Check for cached data first for immediate display
+      const cachePromises = [
+        cacheService.get('profileStats', userId),
+        cacheService.get('profileSubscriptions', userId),
+        cacheService.get('profileActivity', userId),
+        cacheService.get('profileAchievements', userId)
+      ];
+
+      const cachedResults = await Promise.all(cachePromises);
+      const [cachedStats, cachedSubscriptions, cachedActivity, cachedAchievements] = cachedResults;
+
+      // Display cached data immediately for optimistic loading
+      if (cachedStats && cachedStats.data) {
+        console.log("🚀 Displaying cached stats");
+        setUserStats(cachedStats.data);
+      }
+      if (cachedSubscriptions && cachedSubscriptions.data) {
+        console.log("🚀 Displaying cached subscriptions");
+        setUserSubscriptions(cachedSubscriptions.data);
+      }
+      if (cachedActivity && cachedActivity.data) {
+        console.log("🚀 Displaying cached activity");
+        setUserActivity(cachedActivity.data);
+      }
+      if (cachedAchievements && cachedAchievements.data) {
+        console.log("🚀 Displaying cached achievements");
+        setUserAchievements(cachedAchievements.data);
+      }
+
+      // Fetch fresh data in parallel
+      const freshDataPromises = [
+        fetchUserStats(true), // true = skip loading states since we have cached data
+        fetchUserSubscriptions(true),
+        fetchUserActivity(true),
+        fetchUserAchievements(true),
+        fetchNotificationPreferences()
+      ];
+
+      // Wait for all fresh data to load
+      await Promise.allSettled(freshDataPromises);
+      console.log("✅ All profile data loaded successfully");
+
+    } catch (error) {
+      console.error("❌ Error loading profile data:", error);
+    }
+  };
+
+  const fetchUserStats = async (skipLoadingState = false) => {
+    try {
+      if (!skipLoadingState) {
+        setStatsLoading(true);
+      }
+      console.log("📊 Fetching user stats...");
       const response = await apiService.getUserStats();
 
       console.log("📊 Stats API response:", response);
@@ -263,6 +318,14 @@ const ProfileScreen = ({ navigation, route }) => {
             : Math.max(0, Math.min(100, statsData.nutritionScore)),
         };
         setUserStats(validStats);
+        
+        // Cache the fresh stats data
+        const userId = user?._id || user?.id;
+        if (userId) {
+          await cacheService.set('profileStats', validStats, userId);
+          console.log("📋 User stats cached for faster future access");
+        }
+        
         console.log("✅ User stats loaded and validated:", validStats);
       } else {
         // Handle rate limiting specifically
@@ -333,9 +396,11 @@ const ProfileScreen = ({ navigation, route }) => {
     }
   };
 
-  const fetchUserSubscriptions = async () => {
+  const fetchUserSubscriptions = async (skipLoadingState = false) => {
     try {
-      setSubscriptionsLoading(true);
+      if (!skipLoadingState) {
+        setSubscriptionsLoading(true);
+      }
       console.log("🔄 Fetching user subscriptions from orders...");
 
       // Get subscriptions from delivered orders like HomeScreen does
@@ -398,6 +463,14 @@ const ProfileScreen = ({ navigation, route }) => {
         });
 
         setUserSubscriptions(activeSubscriptions);
+        
+        // Cache the subscription data
+        const userId = user?._id || user?.id;
+        if (userId) {
+          await cacheService.set('profileSubscriptions', activeSubscriptions, userId);
+          console.log("📋 Subscriptions cached for faster future access");
+        }
+        
         console.log(
           `✅ Found ${activeSubscriptions.length} active subscriptions from orders`
         );
@@ -420,9 +493,11 @@ const ProfileScreen = ({ navigation, route }) => {
     return date.toLocaleDateString("en-US", options);
   };
 
-  const fetchUserActivity = async () => {
+  const fetchUserActivity = async (skipLoadingState = false) => {
     try {
-      setActivityLoading(true);
+      if (!skipLoadingState) {
+        setActivityLoading(true);
+      }
       console.log("🔄 Generating user activity from orders...");
 
       // Get recent activity from orders and user actions

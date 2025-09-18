@@ -2,6 +2,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { APP_CONFIG } from "../utils/constants";
 import rateLimitService from "./rateLimitService";
+import cacheService from "./cacheService";
 
 // Base configuration
 const API_BASE_URL = APP_CONFIG.API_BASE_URL;
@@ -13,6 +14,11 @@ class ApiService {
     this.isOnline = true;
     this.retryAttempts = 3;
     this.timeout = 30000; // 30 seconds
+
+    // Token caching for faster auth
+    this.cachedToken = null;
+    this.tokenLastChecked = 0;
+    this.tokenCacheTimeout = 5 * 60 * 1000; // Cache token for 5 minutes
 
     // Rate limiting state
     this.requestQueue = new Map(); // Track pending requests
@@ -47,12 +53,27 @@ class ApiService {
     this.token = token;
   }
 
-  // Get stored token
+  // Get stored token with memory caching for faster auth
   async getStoredToken() {
     try {
+      const now = Date.now();
+      
+      // Return cached token if it's still valid
+      if (this.cachedToken && (now - this.tokenLastChecked) < this.tokenCacheTimeout) {
+        this.token = this.cachedToken;
+        return this.cachedToken;
+      }
+      
+      // Fetch from AsyncStorage if cache is expired or empty
       const token = await AsyncStorage.getItem("authToken");
       if (token) {
         this.token = token;
+        this.cachedToken = token;
+        this.tokenLastChecked = now;
+      } else {
+        // Clear cache if no token found
+        this.cachedToken = null;
+        this.tokenLastChecked = 0;
       }
       return token;
     } catch (error) {
@@ -66,6 +87,9 @@ class ApiService {
     try {
       await AsyncStorage.setItem("authToken", token);
       this.token = token;
+      // Update cache immediately
+      this.cachedToken = token;
+      this.tokenLastChecked = Date.now();
     } catch (error) {
       console.error("Error storing token:", error);
     }
@@ -76,6 +100,9 @@ class ApiService {
     try {
       await AsyncStorage.removeItem("authToken");
       this.token = null;
+      // Clear cache immediately
+      this.cachedToken = null;
+      this.tokenLastChecked = 0;
     } catch (error) {
       console.error("Error removing token:", error);
     }
@@ -150,13 +177,94 @@ class ApiService {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
 
-    // Ensure we have the latest token
-    if (!this.token) {
-      await this.getStoredToken();
-    }
+    // Always ensure we have the latest token before any request
+    await this.getStoredToken();
 
     // Use request deduplication to prevent simultaneous identical requests
     return await this.deduplicateRequest(url, options);
+  }
+
+  // Cached API request with stale-while-revalidate strategy
+  async cachedRequest(endpoint, cacheType, options = {}) {
+    // Ensure we have the latest token before any request
+    await this.getStoredToken();
+    
+    const userId = this.getUserId();
+    const forceRefresh = options.forceRefresh || false;
+    
+    // Always fetch fresh data if force refresh is requested
+    if (forceRefresh) {
+      console.log(`🔄 Force refresh requested for ${cacheType}`);
+      const freshData = await this.request(endpoint, options);
+      if (freshData.success) {
+        await cacheService.set(cacheType, freshData, userId);
+      }
+      return freshData;
+    }
+
+    // Try to get cached data first
+    const cachedResult = await cacheService.get(cacheType, userId);
+    
+    if (cachedResult) {
+      // Return cached data immediately
+      const result = { ...cachedResult.data, fromCache: true, source: cachedResult.source };
+      
+      // If data is stale, fetch fresh data in background
+      if (cachedResult.isStale) {
+        console.log(`🔄 Background refresh for stale ${cacheType}`);
+        // Ensure token is available for background refresh
+        this.getStoredToken().then(() => {
+          return this.request(endpoint, options);
+        }).then(freshData => {
+          if (freshData.success) {
+            cacheService.set(cacheType, freshData, userId);
+          }
+        }).catch(error => {
+          console.log(`❌ Background refresh failed for ${cacheType}:`, error.message);
+        });
+      }
+      
+      return result;
+    }
+
+    // No cache available, fetch fresh data
+    console.log(`🌐 Fetching fresh ${cacheType}`);
+    const freshData = await this.request(endpoint, options);
+    if (freshData.success) {
+      await cacheService.set(cacheType, freshData, userId);
+    }
+    return freshData;
+  }
+
+  // Cache management methods
+  async clearCache(type) {
+    const userId = this.getUserId();
+    await cacheService.clear(type, userId);
+  }
+
+  async clearAllCache() {
+    await cacheService.clearAll();
+  }
+
+  async getCacheStats() {
+    return await cacheService.getStats();
+  }
+
+  // Optimistic auth loading methods
+  async getCachedUser() {
+    const userId = this.getUserId();
+    const cachedResult = await cacheService.get('authUser', userId);
+    return cachedResult?.data || null;
+  }
+
+  async setCachedUser(userData) {
+    const userId = this.getUserId();
+    await cacheService.set('authUser', userData, userId);
+  }
+
+  async clearCachedUser() {
+    const userId = this.getUserId();
+    await cacheService.clear('authUser', userId);
   }
 
   // Check if error is network-related
@@ -406,6 +514,15 @@ class ApiService {
 
     if (result.success && result.data.token) {
       await this.storeToken(result.data.token);
+      
+      // Cache user data immediately for faster subsequent auth
+      if (result.data.customer) {
+        await this.setCachedUser({
+          success: true,
+          data: { customer: result.data.customer }
+        });
+        console.log("📋 User data cached after signup for faster auth");
+      }
     }
 
     return result;
@@ -419,6 +536,15 @@ class ApiService {
 
     if (result.success && result.data.token) {
       await this.storeToken(result.data.token);
+      
+      // Cache user data immediately for faster subsequent auth
+      if (result.data.customer) {
+        await this.setCachedUser({
+          success: true,
+          data: { customer: result.data.customer }
+        });
+        console.log("📋 User data cached after login for faster auth");
+      }
     }
 
     return result;
@@ -431,6 +557,7 @@ class ApiService {
     // Always clear local data regardless of backend response
     await this.removeToken();
     await AsyncStorage.removeItem("userData");
+    await this.clearCachedUser();
 
     return { success: true };
   }
@@ -438,6 +565,54 @@ class ApiService {
   async getProfile() {
     await this.getStoredToken();
     return await this.request("/auth/profile");
+  }
+
+  // Optimistic profile loading - returns cached data immediately, updates in background
+  async getProfileOptimistic() {
+    await this.getStoredToken();
+    
+    // Get cached user data immediately
+    const cachedUser = await this.getCachedUser();
+    
+    // If we have cached data, return it immediately and fetch fresh data in background
+    if (cachedUser && cachedUser.data && cachedUser.data.customer) {
+      console.log("🚀 Optimistic loading: returning cached user data");
+      
+      // Fetch fresh data in background (non-blocking)
+      this.request("/auth/profile")
+        .then(result => {
+          if (result.success && result.data && result.data.customer) {
+            // Cache the full result structure for consistency
+            const cacheData = {
+              success: true,
+              data: { customer: result.data.customer }
+            };
+            this.setCachedUser(cacheData);
+            console.log("🔄 Background: updated cached user data");
+          }
+        })
+        .catch(error => {
+          console.log("❌ Background profile update failed:", error.message);
+        });
+      
+      return { ...cachedUser, fromCache: true };
+    }
+    
+    // No cached data - fetch fresh data and cache it
+    console.log("🌐 No cached data: fetching fresh profile");
+    const result = await this.request("/auth/profile");
+    
+    if (result.success && result.data && result.data.customer) {
+      // Cache the data in the expected format
+      const cacheData = {
+        success: true,
+        data: { customer: result.data.customer }
+      };
+      await this.setCachedUser(cacheData);
+      return cacheData;
+    }
+    
+    return result;
   }
 
   async getUserStats() {
@@ -568,7 +743,8 @@ class ApiService {
     const endpoint = forceRefresh
       ? `/mealplans?_t=${Date.now()}`
       : "/mealplans";
-    const result = await this.request(endpoint, {
+    const result = await this.cachedRequest(endpoint, 'mealPlans', {
+      forceRefresh,
       headers: forceRefresh ? { "Cache-Control": "no-cache" } : {},
     });
 
@@ -755,7 +931,7 @@ class ApiService {
 
   async getUserOrders() {
     await this.getStoredToken();
-    const result = await this.request("/orders");
+    const result = await this.cachedRequest("/orders", 'userOrders');
 
     return result;
   }
@@ -804,7 +980,7 @@ class ApiService {
 
   async getUserSubscriptions() {
     await this.getStoredToken();
-    return this.request("/subscriptions");
+    return await this.cachedRequest("/subscriptions", 'userSubscriptions');
   }
 
   async getSubscriptionById(id) {
@@ -889,6 +1065,42 @@ class ApiService {
     await this.getStoredToken();
     return this.request(`/notifications/${notificationId}`, {
       method: "DELETE",
+    });
+  }
+
+  // Dashboard batched API call - combines multiple endpoints for better performance
+  async getDashboardData(forceRefresh = false) {
+    const endpoint = forceRefresh
+      ? `/dashboard?_t=${Date.now()}`
+      : "/dashboard";
+    
+    return await this.cachedRequest(endpoint, 'dashboard', {
+      forceRefresh,
+      headers: forceRefresh ? { "Cache-Control": "no-cache" } : {},
+    });
+  }
+
+  // Public dashboard data (no authentication required)
+  async getPublicDashboardData(forceRefresh = false) {
+    const endpoint = forceRefresh
+      ? `/dashboard/public?_t=${Date.now()}`
+      : "/dashboard/public";
+    
+    return await this.cachedRequest(endpoint, 'publicDashboard', {
+      forceRefresh,
+      headers: forceRefresh ? { "Cache-Control": "no-cache" } : {},
+    });
+  }
+
+  // User-specific dashboard data (requires authentication)
+  async getUserDashboardData(forceRefresh = false) {
+    const endpoint = forceRefresh
+      ? `/dashboard/user?_t=${Date.now()}`
+      : "/dashboard/user";
+    
+    return await this.cachedRequest(endpoint, 'userDashboard', {
+      forceRefresh,
+      headers: forceRefresh ? { "Cache-Control": "no-cache" } : {},
     });
   }
 

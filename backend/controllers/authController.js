@@ -155,8 +155,18 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Find customer with password
-    const customer = await Customer.findOne({ email }).select("+password");
+    // Find customer with password and check subscriptions in parallel for faster auth
+    const [customer, activeSubscriptionsCheck] = await Promise.all([
+      Customer.findOne({ email }).select("+password").lean(),
+      // Pre-fetch subscription status to avoid second query
+      Customer.findOne({ email }).then(user => 
+        user ? Subscription.find({ 
+          userId: user._id,
+          status: { $in: ['active', 'paused'] }
+        }).limit(1).lean() : []
+      )
+    ]);
+
     if (!customer) {
       return res.status(401).json({
         success: false,
@@ -171,7 +181,9 @@ exports.login = async (req, res) => {
         success: false,
         message: "Invalid email or password.",
       });
-    } // Check if account is active
+    }
+
+    // Check if account is active
     if (customer.status === "Deleted") {
       return res.status(403).json({
         success: false,
@@ -185,6 +197,8 @@ exports.login = async (req, res) => {
         message: "Account is inactive. Please contact support.",
       });
     }
+
+    const hasActiveSubscription = activeSubscriptionsCheck.length > 0;
 
     // Generate JWT token
     const token = jwt.sign(
@@ -215,6 +229,7 @@ exports.login = async (req, res) => {
         dietaryPreferences: customer.dietaryPreferences,
         allergies: customer.allergies,
         address: customer.address,
+        hasActiveSubscription: hasActiveSubscription, // Add subscription status for immediate UI decision
       },
     });
   } catch (err) {
@@ -230,7 +245,15 @@ exports.login = async (req, res) => {
 // Get current user profile
 exports.getProfile = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.user.id);
+    // Run customer and subscription queries in parallel for faster response
+    const [customer, activeSubscriptions] = await Promise.all([
+      Customer.findById(req.user.id).lean(), // Use lean() for faster queries
+      Subscription.find({ 
+        userId: req.user.id,
+        status: { $in: ['active', 'paused'] }
+      }).limit(1).lean() // Use lean() for faster queries
+    ]);
+
     if (!customer) {
       return res.status(404).json({
         success: false,
@@ -245,6 +268,8 @@ exports.getProfile = async (req, res) => {
         message: "Account has been deleted.",
       });
     }
+
+    const hasActiveSubscription = activeSubscriptions.length > 0;
 
     res.json({
       success: true,
@@ -265,6 +290,7 @@ exports.getProfile = async (req, res) => {
         totalOrders: customer.totalOrders,
         totalSpent: customer.totalSpent,
         registrationDate: customer.registrationDate,
+        hasActiveSubscription: hasActiveSubscription, // Add subscription status for immediate UI decision
       },
     });
   } catch (err) {

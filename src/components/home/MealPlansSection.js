@@ -16,7 +16,7 @@ import MealCardSkeleton from "../meal-plans/MealCardSkeleton";
 import discountService from "../../services/discountService";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 
-const MealPlansSection = ({
+const MealPlansSection = React.memo(({
   mealPlans = [],
   loading = false,
   navigation,
@@ -497,5 +497,15 @@ const styles = (colors) =>
       lineHeight: 20,
     },
   });
+}, (prevProps, nextProps) => {
+  // Custom comparison function for React.memo
+  return (
+    prevProps.mealPlans?.length === nextProps.mealPlans?.length &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.selectedCategory === nextProps.selectedCategory &&
+    prevProps.user?.id === nextProps.user?.id &&
+    prevProps.mealPlans === nextProps.mealPlans // Reference equality check
+  );
+});
 
 export default MealPlansSection;

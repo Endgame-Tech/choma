@@ -28,6 +28,7 @@ import { createStylesWithDMSans } from "../../utils/fontUtils";
 import TagFilterBar from "../../components/home/TagFilterBar";
 import tagService from "../../services/tagService";
 import CustomIcon from "../../components/ui/CustomIcon";
+import MealPlanCard from "../../components/meal-plans/MealPlanCard";
 
 const SearchScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
@@ -109,7 +110,7 @@ const SearchScreen = ({ navigation }) => {
 
         // Fetch discount for popular plans (shown when no search)
         if (mealPlans && mealPlans.length > 0) {
-          for (const plan of mealPlans.slice(0, 6)) {
+          for (const plan of mealPlans.slice(0, 3)) {
             try {
               const discount = await discountService.calculateDiscount(
                 user,
@@ -153,7 +154,7 @@ const SearchScreen = ({ navigation }) => {
       if (mealPlansResponse?.success && Array.isArray(mealPlansResponse.data)) {
         const mealPlanNames = mealPlansResponse.data
           .filter((plan) => plan?.planName || plan?.name) // Only plans with names
-          .slice(0, 5) // Take first 5
+          .slice(0, 3) // Take first 5
           .map((plan) => plan.planName || plan.name);
 
         if (mealPlanNames.length > 0) {
@@ -188,7 +189,7 @@ const SearchScreen = ({ navigation }) => {
       const storedHistory = await AsyncStorage.getItem("searchHistory");
       if (storedHistory) {
         const parsedHistory = JSON.parse(storedHistory);
-        setSearchHistory(parsedHistory.slice(0, 5)); // Keep only last 5 searches
+        setSearchHistory(parsedHistory.slice(0, 3)); // Keep only last 5 searches
       }
 
       // Load popular searches from backend (or fallback to meal plan names)
@@ -289,7 +290,7 @@ const SearchScreen = ({ navigation }) => {
       const updatedHistory = [
         trimmedQuery,
         ...searchHistory.filter((item) => item !== trimmedQuery),
-      ].slice(0, 5);
+      ].slice(0, 3);
       setSearchHistory(updatedHistory);
 
       // Save to AsyncStorage
@@ -521,7 +522,11 @@ const SearchScreen = ({ navigation }) => {
                         handleApplyFilters(newFilters);
                       }}
                     >
-                      <CustomIcon name="close" size={16} color={colors.primary} />
+                      <CustomIcon
+                        name="close"
+                        size={16}
+                        color={colors.primary}
+                      />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -540,7 +545,11 @@ const SearchScreen = ({ navigation }) => {
                         handleApplyFilters(newFilters);
                       }}
                     >
-                      <CustomIcon name="close" size={16} color={colors.primary} />
+                      <CustomIcon
+                        name="close"
+                        size={16}
+                        color={colors.primary}
+                      />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -576,112 +585,28 @@ const SearchScreen = ({ navigation }) => {
                 {searchQuery.trim() && ` for "${searchQuery.trim()}"`}
               </Text>
               <View style={styles(colors).resultsGrid}>
-                {searchResults.map((plan) => {
-                  const imageSource =
-                    plan.planImage || plan.image
-                      ? { uri: plan.planImage || plan.image }
-                      : require("../../assets/images/meal-plans/fitfuel.jpg");
-
-                  return (
-                    <TouchableOpacity
-                      key={plan.id || plan._id}
-                      style={styles(colors).mealplanCard}
-                      onPress={() =>
-                        navigation.navigate("MealPlanDetail", { bundle: plan })
-                      }
-                      activeOpacity={0.8}
-                    >
-                      {/* Large Image Container */}
-                      <View style={styles(colors).mealplanImageContainer}>
-                        <Image
-                          source={imageSource}
-                          style={styles(colors).mealplanImage}
-                          defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
-                        />
-
-                        {/* Heart Button positioned on top-right of image */}
-                        <TouchableOpacity
-                          style={styles(colors).mealplanHeartButton}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            toggleBookmark(plan.id || plan._id);
-                          }}
-                          activeOpacity={0.7}
-                        >
-                          <CustomIcon
-                            name={
-                              isBookmarked(plan.id || plan._id)
-                                ? "heart-filled"
-                                : "heart"
-                            }
-                            size={20}
-                            color={
-                              isBookmarked(plan.id || plan._id)
-                                ? colors.error
-                                : colors.white
-                            }
-                          />
-                        </TouchableOpacity>
-
-                        {/* "NEW" Badge for new plans */}
-                        {plan.isNew && (
-                          <View style={styles(colors).newBadge}>
-                            <Text style={styles(colors).newBadgeText}>NEW</Text>
-                          </View>
-                        )}
-
-                        {/* Discount Pill - Bottom Right */}
-                        {(() => {
-                          const planDiscount =
-                            discountData[plan.id || plan._id];
-                          const hasDiscount =
-                            planDiscount && planDiscount.discountPercent > 0;
-                          return hasDiscount ? (
-                            <View style={styles(colors).searchDiscountPill}>
-                              <CustomIcon name="gift" size={14} color="#333" />
-                              <Text
-                                style={styles(colors).searchDiscountPillText}
-                              >
-                                Up to {planDiscount.discountPercent}% Off
-                              </Text>
-                            </View>
-                          ) : null;
-                        })()}
-                      </View>
-
-                      {/* Text Content Below Image */}
-                      <View style={styles(colors).mealplanTextContent}>
-                        <Text
-                          style={styles(colors).mealplanTitle}
-                          numberOfLines={1}
-                        >
-                          {plan.planName || plan.name}
-                        </Text>
-                        <Text
-                          style={styles(colors).mealplanDescription}
-                          numberOfLines={2}
-                        >
-                          {getPlanDescription(plan) ||
-                            "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
-                        </Text>
-                        <Text style={styles(colors).mealplanPrice}>
-                          ₦
-                          {(
-                            plan.totalPrice ||
-                            plan.basePrice ||
-                            plan.price ||
-                            0
-                          ).toLocaleString()}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
+                {searchResults.map((plan) => (
+                  <MealPlanCard
+                    key={plan.id || plan._id}
+                    plan={plan}
+                    onPress={() =>
+                      navigation.navigate("MealPlanDetail", { bundle: plan })
+                    }
+                    onBookmarkPress={() => toggleBookmark(plan.id || plan._id)}
+                    isBookmarked={isBookmarked(plan.id || plan._id)}
+                    discountData={discountData}
+                    getPlanDescription={getPlanDescription}
+                  />
+                ))}
               </View>
             </View>
           ) : (
             <View style={styles(colors).emptyResults}>
-              <CustomIcon name="search-filled" size={64} color={colors.textMuted} />
+              <CustomIcon
+                name="search-filled"
+                size={64}
+                color={colors.textMuted}
+              />
               <Text style={styles(colors).emptyTitle}>
                 {hasActiveFilters
                   ? "No plans match your filters"
@@ -715,14 +640,13 @@ const SearchScreen = ({ navigation }) => {
               </View>
             ) : (
               <>
-
                 {/* Popular Searches */}
                 {popularSearches.length > 0 && (
                   <View style={styles(colors).historySection}>
                     <Text style={styles(colors).suggestionsTitle}>
                       Popular Searches
                     </Text>
-                    {popularSearches.slice(0, 5).map((searchTerm, index) => (
+                    {popularSearches.slice(0, 3).map((searchTerm, index) => (
                       <TouchableOpacity
                         key={`popular-search-${index}`}
                         style={styles(colors).suggestionItem}
@@ -752,118 +676,23 @@ const SearchScreen = ({ navigation }) => {
                     Popular Meal Plans
                   </Text>
                   <View style={styles(colors).resultsGrid}>
-                    {mealPlans.slice(0, 6).map((plan, index) => {
-                      const imageSource =
-                        plan.image || plan.planImage
-                          ? { uri: plan.image || plan.planImage }
-                          : require("../../assets/images/meal-plans/fitfuel.jpg");
-
-                      return (
-                        <TouchableOpacity
-                          key={plan._id || plan.id || `popular-${index}`}
-                          style={styles(colors).mealplanCard}
-                          onPress={() =>
-                            navigation.navigate("MealPlanDetail", {
-                              bundle: plan,
-                            })
-                          }
-                          activeOpacity={0.8}
-                        >
-                          {/* Large Image Container */}
-                          <View style={styles(colors).mealplanImageContainer}>
-                            <Image
-                              source={imageSource}
-                              style={styles(colors).mealplanImage}
-                              defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
-                            />
-
-                            {/* Heart Button positioned on top-right of image */}
-                            <TouchableOpacity
-                              style={styles(colors).mealplanHeartButton}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                toggleBookmark(plan._id || plan.id);
-                              }}
-                              activeOpacity={0.7}
-                            >
-                              <CustomIcon
-                                name={
-                                  isBookmarked(plan._id || plan.id)
-                                    ? "heart-filled"
-                                    : "heart"
-                                }
-                                size={20}
-                                color={
-                                  isBookmarked(plan._id || plan.id)
-                                    ? colors.error
-                                    : colors.primary
-                                }
-                              />
-                            </TouchableOpacity>
-
-                            {/* "NEW" Badge for new plans */}
-                            {plan.isNew && (
-                              <View style={styles(colors).newBadge}>
-                                <Text style={styles(colors).newBadgeText}>
-                                  NEW
-                                </Text>
-                              </View>
-                            )}
-
-                            {/* Discount Pill - Bottom Right */}
-                            {(() => {
-                              const planDiscount =
-                                discountData[plan._id || plan.id];
-                              const hasDiscount =
-                                planDiscount &&
-                                planDiscount.discountPercent > 0;
-                              return hasDiscount ? (
-                                <View style={styles(colors).searchDiscountPill}>
-                                  <CustomIcon
-                                    name="gift"
-                                    size={14}
-                                    color="#333"
-                                  />
-                                  <Text
-                                    style={
-                                      styles(colors).searchDiscountPillText
-                                    }
-                                  >
-                                    Up to {planDiscount.discountPercent}% Off
-                                  </Text>
-                                </View>
-                              ) : null;
-                            })()}
-                          </View>
-
-                          {/* Text Content Below Image */}
-                          <View style={styles(colors).mealplanTextContent}>
-                            <Text
-                              style={styles(colors).mealplanTitle}
-                              numberOfLines={1}
-                            >
-                              {plan.planName || plan.name}
-                            </Text>
-                            <Text
-                              style={styles(colors).mealplanDescription}
-                              numberOfLines={2}
-                            >
-                              {getPlanDescription(plan) ||
-                                "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
-                            </Text>
-                            <Text style={styles(colors).mealplanPrice}>
-                              ₦
-                              {(
-                                plan.totalPrice ||
-                                plan.basePrice ||
-                                plan.price ||
-                                0
-                              ).toLocaleString()}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
+                    {mealPlans.slice(0, 3).map((plan, index) => (
+                      <MealPlanCard
+                        key={plan._id || plan.id || `popular-${index}`}
+                        plan={plan}
+                        onPress={() =>
+                          navigation.navigate("MealPlanDetail", {
+                            bundle: plan,
+                          })
+                        }
+                        onBookmarkPress={() =>
+                          toggleBookmark(plan._id || plan.id)
+                        }
+                        isBookmarked={isBookmarked(plan._id || plan.id)}
+                        discountData={discountData}
+                        getPlanDescription={getPlanDescription}
+                      />
+                    ))}
                   </View>
                 </View>
               </>
@@ -952,72 +781,6 @@ const styles = (colors) =>
       flexDirection: "column",
       paddingVertical: 20,
       gap: 20,
-    },
-    // Mealplan Card Styles (matching HomeScreen)
-    mealplanCard: {
-      width: "100%",
-      borderRadius: 20,
-      overflow: "hidden",
-      marginBottom: 0,
-    },
-    mealplanImageContainer: {
-      position: "relative",
-      height: 150,
-      width: "100%",
-      borderRadius: 20,
-      overflow: "hidden",
-    },
-    mealplanImage: {
-      width: "100%",
-      height: "100%",
-      resizeMode: "cover",
-      borderRadius: 20,
-    },
-    mealplanHeartButton: {
-      position: "absolute",
-      top: 12,
-      right: 12,
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: colors.black,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    newBadge: {
-      position: "absolute",
-      top: 16,
-      left: 16,
-      backgroundColor: colors.error,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 20,
-    },
-    newBadgeText: {
-      color: colors.white,
-      fontSize: 12,
-      fontWeight: "bold",
-    },
-    mealplanTextContent: {
-      padding: 16,
-      paddingTop: 12,
-    },
-    mealplanTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 6,
-    },
-    mealplanDescription: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginBottom: 8,
-      lineHeight: 20,
-    },
-    mealplanPrice: {
-      fontSize: 20,
-      fontWeight: "700",
-      color: colors.text,
     },
     scrollContent: {
       paddingBottom: 120, // Extra padding for floating tab bar
@@ -1137,26 +900,6 @@ const styles = (colors) =>
       color: colors.text,
       marginBottom: 15,
       paddingTop: 10,
-    },
-    // Search Discount Pill Styles (matching Home Screen)
-    searchDiscountPill: {
-      position: "absolute",
-      bottom: 8,
-      right: 8,
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#F3E9DF", // Cream background matching the image
-      paddingHorizontal: 8,
-      paddingVertical: 7,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: "#1b1b1b",
-    },
-    searchDiscountPillText: {
-      fontSize: 15,
-      fontWeight: "450",
-      color: "#333",
-      marginLeft: 3,
     },
   });
 

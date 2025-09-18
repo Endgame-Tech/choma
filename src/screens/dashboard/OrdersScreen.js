@@ -19,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
 import { COLORS, THEME } from "../../utils/colors";
 import apiService from "../../services/api";
+import cacheService from "../../services/cacheService";
 import { useAuth } from "../../hooks/useAuth";
 import NotificationIcon from "../../components/ui/NotificationIcon";
 import OrderCardSkeleton from "../../components/dashboard/OrderCardSkeleton";
@@ -187,11 +188,21 @@ const OrdersScreen = ({ navigation }) => {
     });
 
     if (hasActiveOrders && orders.length > 0 && selectedTab === "active") {
-      console.log("🔄 Starting intelligent order status updates...");
+      console.log("🔄 Starting optimized order status updates...");
       const interval = setInterval(async () => {
+        // Use cached data first, only fetch if stale
+        const userId = user?._id || user?.id;
+        if (userId) {
+          const cachedOrders = await cacheService.get('userOrders', userId);
+          if (cachedOrders && !cachedOrders.isStale) {
+            console.log("⚡ Using cached data for status check - skipping API call");
+            return;
+          }
+        }
+        
         console.log("🔄 Checking for order status updates...");
         await silentOrderUpdate(); // New function for status-only updates
-      }, 30000); // Check every 30 seconds for status changes only
+      }, 60000); // Reduced frequency to every 60 seconds (from 30s)
 
       setRealTimeUpdateInterval(interval);
     }
@@ -211,7 +222,7 @@ const OrdersScreen = ({ navigation }) => {
       const shouldRefresh = orders.length === 0 || lastUpdate > 300000; // 5 minutes
 
       if (shouldRefresh) {
-        console.log("🔄 Screen focused - major refresh needed");
+        console.log("🔄 Screen focused - loading orders with cache optimization");
         loadOrders();
       } else {
         console.log("🔄 Screen focused - using silent update");
@@ -229,8 +240,29 @@ const OrdersScreen = ({ navigation }) => {
     };
   }, []);
 
-  const loadOrders = async () => {
+  const loadOrders = async (forceRefresh = false) => {
     try {
+      const userId = user?._id || user?.id;
+      
+      // Check for cached orders first for optimistic loading
+      if (!forceRefresh && userId) {
+        const cachedOrders = await cacheService.get('userOrders', userId);
+        
+        if (cachedOrders && cachedOrders.data) {
+          console.log("🚀 Optimistic loading: showing cached orders");
+          setOrders(cachedOrders.data);
+          setLoading(false);
+          
+          // If data is stale, fetch fresh data in background
+          if (cachedOrders.isStale) {
+            console.log("🔄 Background refresh for stale orders data");
+          } else {
+            // Data is fresh, no need to fetch again
+            return;
+          }
+        }
+      }
+
       setLoading(true);
       setError(null);
 
@@ -369,6 +401,12 @@ const OrdersScreen = ({ navigation }) => {
       );
 
       setOrders(deduplicatedOrders);
+
+      // Cache the fresh orders data for future use
+      if (userId && deduplicatedOrders.length > 0) {
+        await cacheService.set('userOrders', deduplicatedOrders, userId);
+        console.log("📋 Orders data cached for faster future access");
+      }
 
       // Update tab counts based on deduplicated data - check delegationStatus first (chef updates), then fallback
       const activeCounts = deduplicatedOrders.filter((order) => {

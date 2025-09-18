@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   Image,
   TextInput,
@@ -11,7 +10,6 @@ import {
   StatusBar,
   RefreshControl,
   ActivityIndicator,
-  Animated,
   Modal,
   LayoutAnimation,
   UIManager,
@@ -49,6 +47,8 @@ import { DMSansFonts } from "../../constants/fonts";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 import TagFilterBar from "../../components/home/TagFilterBar";
 import tagService from "../../services/tagService";
+import MealPlanCard from "../../components/meal-plans/MealPlanCard";
+import SubscriptionHomeView from "../../components/home/SubscriptionHomeView";
 
 const { width } = Dimensions.get("window");
 
@@ -80,7 +80,7 @@ const HomeScreen = ({ navigation }) => {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const popularScrollRef = useRef(null);
   const bannerScrollRef = useRef(null);
-  const mealsScrollRef = useRef(null);
+  // mealsScrollRef moved to SubscriptionHomeView component
   const { mealPlans, loading, error, refreshing, refreshMealPlans } =
     useMealPlans();
   const { toggleBookmark, isBookmarked } = useBookmarks();
@@ -308,17 +308,18 @@ const HomeScreen = ({ navigation }) => {
     // and could be used to further filter the meal plans
   };
 
-  // Load banners, subscription, and orders from backend
+  // Load dashboard data with flexible authentication
   useEffect(() => {
-    // Load data concurrently for faster home screen loading
-    Promise.all([
-      loadBanners(true), // Force refresh on initial load
-      loadActiveSubscriptions(),
-      loadActiveOrders(),
-    ]).catch((error) => {
-      console.error("Error loading home screen data:", error);
-    });
+    // Load public data immediately (no auth required)
+    loadPublicDashboardData(true);
   }, []);
+
+  useEffect(() => {
+    // Load user-specific data when authenticated
+    if (user) {
+      loadUserDashboardData(true);
+    }
+  }, [user]);
 
   // Fetch discount data for meal plans
   useEffect(() => {
@@ -367,6 +368,173 @@ const HomeScreen = ({ navigation }) => {
 
     fetchDiscountData();
   }, [user, mealPlans]);
+
+  // Progressive loading with cached data shown immediately
+  const loadDashboardData = async (forceRefresh = false) => {
+    // Don't load data if user is not authenticated
+    if (!user) {
+      console.log("⚠️ Dashboard data loading skipped - user not authenticated");
+      return;
+    }
+    
+    try {
+      // Only show loading state on force refresh or when no cached data exists
+      if (forceRefresh || (banners.length === 0 && activeSubscriptions.length === 0 && activeOrders.length === 0)) {
+        setBannersLoading(true);
+        setSubscriptionLoading(true);
+        setOrdersLoading(true);
+      }
+      
+      const result = await apiService.getDashboardData(forceRefresh);
+      
+      if (result.success && result.data) {
+        const { banners, orders, subscriptions, mealPlans: dashboardMealPlans, tags } = result.data;
+        
+        // Update banners
+        if (banners) {
+          setBanners(Array.isArray(banners) ? banners : []);
+          console.log(`📢 Dashboard banners loaded: ${banners.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+        }
+        
+        // Update subscriptions
+        if (subscriptions) {
+          setActiveSubscriptions(Array.isArray(subscriptions) ? subscriptions : []);
+          console.log(`🔄 Dashboard subscriptions loaded: ${subscriptions.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+        }
+        
+        // Update orders
+        if (orders) {
+          setActiveOrders(Array.isArray(orders) ? orders : []);
+          console.log(`📦 Dashboard orders loaded: ${orders.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+        }
+        
+        // Update tags (if you have tag state)
+        if (tags) {
+          console.log(`🏷️ Dashboard tags loaded: ${tags.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+        }
+        
+        console.log(`✅ Dashboard data loaded successfully ${result.fromCache ? 'from cache' : 'fresh from server'}`);
+      } else {
+        console.error("❌ Failed to load dashboard data:", result.error);
+        // Fallback to individual API calls if batched call fails
+        await Promise.all([
+          loadBanners(forceRefresh),
+          loadActiveSubscriptions(),
+          loadActiveOrders(),
+        ]);
+      }
+    } catch (error) {
+      console.error("❌ Dashboard loading error:", error);
+      // Fallback to individual API calls if batched call fails
+      try {
+        await Promise.all([
+          loadBanners(forceRefresh),
+          loadActiveSubscriptions(),
+          loadActiveOrders(),
+        ]);
+      } catch (fallbackError) {
+        console.error("❌ Fallback loading also failed:", fallbackError);
+      }
+    } finally {
+      setBannersLoading(false);
+      setSubscriptionLoading(false);
+      setOrdersLoading(false);
+    }
+  };
+
+  // Load public dashboard data (banners, meal plans, tags) - no auth required
+  const loadPublicDashboardData = async (forceRefresh = false) => {
+    try {
+      setBannersLoading(true);
+      
+      const result = await apiService.getPublicDashboardData(forceRefresh);
+      
+      if (result.success && result.data) {
+        const { banners, mealPlans: dashboardMealPlans, tags } = result.data;
+        
+        // Update banners
+        if (banners) {
+          setBanners(Array.isArray(banners) ? banners : []);
+          console.log(`📢 Public dashboard banners loaded: ${banners.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+        }
+        
+        // Update tags (if you have tag state)
+        if (tags) {
+          console.log(`🏷️ Public dashboard tags loaded: ${tags.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+        }
+        
+        console.log(`✅ Public dashboard data loaded successfully ${result.fromCache ? 'from cache' : 'fresh from server'}`);
+      } else {
+        console.error("❌ Failed to load public dashboard data:", result.error);
+        // Fallback to individual API calls
+        await loadBanners(forceRefresh);
+      }
+    } catch (error) {
+      console.error("❌ Public dashboard loading error:", error);
+      // Fallback to individual API calls
+      try {
+        await loadBanners(forceRefresh);
+      } catch (fallbackError) {
+        console.error("❌ Public dashboard fallback also failed:", fallbackError);
+      }
+    } finally {
+      setBannersLoading(false);
+    }
+  };
+
+  // Load user-specific dashboard data (orders, subscriptions) - requires auth
+  const loadUserDashboardData = async (forceRefresh = false) => {
+    if (!user) {
+      console.log("⚠️ User dashboard data loading skipped - user not authenticated");
+      return;
+    }
+    
+    try {
+      setSubscriptionLoading(true);
+      setOrdersLoading(true);
+      
+      const result = await apiService.getUserDashboardData(forceRefresh);
+      
+      if (result.success && result.data) {
+        const { orders, subscriptions } = result.data;
+        
+        // Update subscriptions
+        if (subscriptions) {
+          setActiveSubscriptions(Array.isArray(subscriptions) ? subscriptions : []);
+          console.log(`🔄 User dashboard subscriptions loaded: ${subscriptions.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+        }
+        
+        // Update orders
+        if (orders) {
+          setActiveOrders(Array.isArray(orders) ? orders : []);
+          console.log(`📦 User dashboard orders loaded: ${orders.length} ${result.fromCache ? '(cached)' : '(fresh)'}`);
+        }
+        
+        console.log(`✅ User dashboard data loaded successfully ${result.fromCache ? 'from cache' : 'fresh from server'}`);
+      } else {
+        console.error("❌ Failed to load user dashboard data:", result.error);
+        // Fallback to individual API calls
+        await Promise.all([
+          loadActiveSubscriptions(),
+          loadActiveOrders(),
+        ]);
+      }
+    } catch (error) {
+      console.error("❌ User dashboard loading error:", error);
+      // Fallback to individual API calls
+      try {
+        await Promise.all([
+          loadActiveSubscriptions(),
+          loadActiveOrders(),
+        ]);
+      } catch (fallbackError) {
+        console.error("❌ User dashboard fallback also failed:", fallbackError);
+      }
+    } finally {
+      setSubscriptionLoading(false);
+      setOrdersLoading(false);
+    }
+  };
 
   const loadBanners = async (forceRefresh = false) => {
     try {
@@ -1496,379 +1664,7 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  const renderTodaysMeals = () => {
-    try {
-      // Use the first active subscription for My Today's Meals
-      const primarySubscription = activeSubscriptions[0];
-      if (!primarySubscription?.mealPlanId) {
-        console.log("⚠️ No primary subscription or mealPlanId found");
-        return null;
-      }
-
-      // Additional safety check to ensure mealPlanId has the required properties
-      if (!primarySubscription.mealPlanId?.weeklyMeals) {
-        console.log("⚠️ No weeklyMeals data found in mealPlanId");
-        return null;
-      }
-      // Calculate subscription day using same logic as RecurringDeliveryCard
-      const getSubscriptionDay = () => {
-        // If subscription is not yet activated (first delivery not completed), always show Day 1
-        if (
-          !primarySubscription.activationDeliveryCompleted ||
-          !primarySubscription.isActivated
-        ) {
-          console.log("🔄 Subscription not yet activated - showing Day 1");
-          return 1;
-        }
-
-        // If subscription has nextDelivery date, calculate based on that
-        if (primarySubscription.nextDelivery && primarySubscription.startDate) {
-          const startDate = new Date(primarySubscription.startDate);
-          const nextDelivery = new Date(primarySubscription.nextDelivery);
-
-          // Normalize dates to avoid timezone issues
-          const startDateNormalized = new Date(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate()
-          );
-          const nextDeliveryNormalized = new Date(
-            nextDelivery.getFullYear(),
-            nextDelivery.getMonth(),
-            nextDelivery.getDate()
-          );
-
-          const daysDiff = Math.floor(
-            (nextDeliveryNormalized - startDateNormalized) /
-              (1000 * 60 * 60 * 24)
-          );
-          return Math.max(1, daysDiff + 1);
-        }
-
-        // Fallback to current date calculation if nextDelivery not available
-        if (primarySubscription.startDate) {
-          const startDate = new Date(primarySubscription.startDate);
-          const currentDate = new Date();
-
-          // Normalize dates to avoid timezone issues
-          const startDateNormalized = new Date(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate()
-          );
-          const currentDateNormalized = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            currentDate.getDate()
-          );
-
-          const daysDiff = Math.floor(
-            (currentDateNormalized - startDateNormalized) /
-              (1000 * 60 * 60 * 24)
-          );
-          return Math.max(1, daysDiff + 1);
-        }
-
-        // Default to day 1 if no dates available
-        return 1;
-      };
-
-      const subscriptionDay = getSubscriptionDay();
-
-      // Map subscription day to week and day
-      // Day 1-7 = Week 1, Day 8-14 = Week 2, etc.
-      const weekNumber = Math.ceil(subscriptionDay / 7);
-      const dayInWeek = ((subscriptionDay - 1) % 7) + 1; // 1-7
-
-      // Handle cycling through weeks (after 4 weeks, start over)
-      const currentWeekNumber = ((weekNumber - 1) % 4) + 1; // 1-4
-
-      // Map subscription day to calendar day names (as used in database)
-      const dayNames = [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-      ];
-      const dayName = dayNames[dayInWeek - 1]; // dayInWeek is 1-7, array is 0-6
-
-      // Get My Today's Meals from the subscription's meal plan
-      const weeklyMeals = primarySubscription.mealPlanId?.weeklyMeals || {};
-      const currentWeek = weeklyMeals[`week${currentWeekNumber}`] || {};
-      const todaysMealsData = currentWeek[dayName] || {};
-
-      // Helper function to get specific meal assignment from weeklyMeals structure
-      const getMealAssignment = (mealType) => {
-        // Look in the organized weekly schedule for the assignment
-        const assignment = todaysMealsData[mealType.toLowerCase()];
-        return assignment;
-      };
-
-      // Helper function to get specific meal image from assignment data
-      const getMealImage = (mealType) => {
-        const assignment = getMealAssignment(mealType);
-
-        // Use the assignment's imageUrl if available
-        if (assignment?.imageUrl) {
-          return { uri: assignment.imageUrl };
-        }
-
-        // Fallback to meal plan image if specific meal image not found
-        const mealPlan = primarySubscription.mealPlanId;
-        if (mealPlan?.planImageUrl || mealPlan?.image || mealPlan?.coverImage) {
-          const fallbackImage =
-            mealPlan.planImageUrl || mealPlan.image || mealPlan.coverImage;
-          console.log(
-            `⚠️ HomeScreen - Using fallback meal plan image for ${mealType}:`,
-            fallbackImage
-          );
-          return { uri: fallbackImage };
-        }
-
-        console.log(
-          `❌ HomeScreen - No image found for ${mealType}, using default`
-        );
-        return require("../../assets/images/meal-plans/fitfuel.jpg");
-      };
-
-      // Helper function to get meal name from assignment data
-      const getMealName = (mealType) => {
-        const assignment = getMealAssignment(mealType);
-
-        // Use the assignment's custom title if available
-        if (assignment?.title) {
-          return assignment.title;
-        }
-
-        // If assignment exists but no title, it means meal is scheduled but no custom name
-        if (assignment) {
-          const capitalizedMealType =
-            mealType.charAt(0).toUpperCase() + mealType.slice(1);
-          console.log(
-            `⚠️ HomeScreen - Assignment exists but no title for ${mealType}, using default`
-          );
-          return `${capitalizedMealType} meal`;
-        }
-
-        console.log(`❌ HomeScreen - No assignment found for ${mealType}`);
-        return null;
-      };
-
-      // Helper function to get meal calories from assignment data
-      const getMealCalories = (mealType) => {
-        const assignment = getMealAssignment(mealType);
-
-        // Try to get calories from assignment
-        if (assignment?.calories) {
-          return assignment.calories;
-        }
-
-        // If assignment has meals info, try to calculate calories
-        if (assignment?.meals && typeof assignment.meals === "object") {
-          // This would need to be implemented based on your meal structure
-          // For now, return null since we don't have direct calorie data
-        }
-
-        return null;
-      };
-
-      const todaysMeals = {
-        breakfast: {
-          name: getMealName("breakfast"),
-          image: getMealImage("breakfast"),
-          calories: getMealCalories("breakfast"),
-          time: "8:00 AM",
-        },
-        lunch: {
-          name: getMealName("lunch"),
-          image: getMealImage("lunch"),
-          calories: getMealCalories("lunch"),
-          time: "1:00 PM",
-        },
-        dinner: {
-          name: getMealName("dinner"),
-          image: getMealImage("dinner"),
-          calories: getMealCalories("dinner"),
-          time: "7:00 PM",
-        },
-      };
-
-      // Filter out meals that don't have actual assignment data (no template fallbacks)
-      const availableMeals = Object.entries(todaysMeals).filter(
-        ([mealType, meal]) => {
-          const assignment = getMealAssignment(mealType);
-          // Only include meals that have actual assignment data
-          return assignment && meal.name;
-        }
-      );
-
-      // If no meals are available for today, show a message
-      if (availableMeals.length === 0) {
-        return (
-          <View style={styles(colors).todaysMealsSection}>
-            <Text style={styles(colors).sectionTitle}>
-              My Today's Meals - Day {subscriptionDay}
-            </Text>
-            <View style={styles(colors).noMealsContainer}>
-              <CustomIcon
-                name="restaurant-outline"
-                size={48}
-                color={colors.textMuted}
-              />
-              <Text style={styles(colors).noMealsTitle}>
-                No meals scheduled for today
-              </Text>
-              <Text style={styles(colors).noMealsText}>
-                Week {currentWeekNumber}, {dayName} meals are not available in
-                your meal plan. Please contact support.
-              </Text>
-              <TouchableOpacity
-                style={styles(colors).contactSupportButton}
-                onPress={() => setShowBrowseMode(true)}
-              >
-                <Text style={styles(colors).contactSupportText}>
-                  Browse Meal Plans
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        );
-      }
-
-      // Calculate delivery status based on real subscription data
-      const today = new Date();
-      const nextDelivery = new Date(primarySubscription.nextDelivery);
-      const isToday = nextDelivery.toDateString() === today.toDateString();
-      const deliveryTime = nextDelivery.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-
-      let deliveryStatus = "";
-      if (isToday) {
-        deliveryStatus = `🚚 Preparing your meals • Estimated delivery: ${deliveryTime}`;
-      } else {
-        const deliveryDate = nextDelivery.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        });
-        deliveryStatus = `📅 Next delivery: ${deliveryDate} at ${deliveryTime}`;
-      }
-
-      return (
-        <View style={styles(colors).todaysMealsSection}>
-          <Text style={styles(colors).sectionTitle}>
-            My Today's Meals - Day {subscriptionDay}
-          </Text>
-          <Text style={styles(colors).deliveryStatus}>{deliveryStatus}</Text>
-
-          {/* Dynamic layout: ScrollView for multiple meals, full width for single meal */}
-          {availableMeals.length === 1 ? (
-            // Single meal - full width card
-            <View style={styles(colors).singleMealContainer}>
-              {availableMeals.map(([mealType, meal]) => (
-                <TouchableOpacity
-                  key={mealType}
-                  style={styles(colors).fullWidthMealCard}
-                >
-                  <View style={styles(colors).todayMealImageContainer}>
-                    <Image
-                      source={meal.image}
-                      style={styles(colors).todayMealImage}
-                    />
-                    <LinearGradient
-                      colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.7)"]}
-                      style={styles(colors).todayMealOverlay}
-                    >
-                      <View style={styles(colors).mealTimeContainer}>
-                        <Text style={styles(colors).mealTime}>{meal.time}</Text>
-                      </View>
-                      <Text style={styles(colors).mealType}>
-                        {(mealType || "").charAt(0).toUpperCase() +
-                          (mealType || "").slice(1)}
-                      </Text>
-                      <Text
-                        style={styles(colors).todayMealName}
-                        numberOfLines={2}
-                      >
-                        {meal.name}
-                      </Text>
-                      {/* <Text style={styles(colors).mealCalories}>
-                        {meal.calories} cal
-                      </Text> */}
-                    </LinearGradient>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            // Multiple meals - horizontal scroll
-            <ScrollView
-              ref={mealsScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles(colors).mealsScroll}
-              scrollEventThrottle={16}
-              decelerationRate="fast"
-              snapToInterval={215} // Card width (200) + margin (15) for snapping
-              snapToAlignment="start"
-              onMomentumScrollEnd={(event) => {
-                const cardWidth = 200;
-                const cardMargin = 15;
-                const slideIndex = Math.round(
-                  event.nativeEvent.contentOffset.x / (cardWidth + cardMargin)
-                );
-                // Optional: You can track the current meal index if needed
-                // setCurrentMealIndex(slideIndex);
-              }}
-            >
-              {availableMeals.map(([mealType, meal]) => (
-                <TouchableOpacity
-                  key={mealType}
-                  style={styles(colors).todayMealCard}
-                >
-                  <View style={styles(colors).todayMealImageContainer}>
-                    <Image
-                      source={meal.image}
-                      style={styles(colors).todayMealImage}
-                    />
-                    <LinearGradient
-                      colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.7)"]}
-                      style={styles(colors).todayMealOverlay}
-                    >
-                      <View style={styles(colors).mealTimeContainer}>
-                        <Text style={styles(colors).mealTime}>{meal.time}</Text>
-                      </View>
-                      <Text style={styles(colors).mealType}>
-                        {(mealType || "").charAt(0).toUpperCase() +
-                          (mealType || "").slice(1)}
-                      </Text>
-                      <Text
-                        style={styles(colors).todayMealName}
-                        numberOfLines={2}
-                      >
-                        {meal.name}
-                      </Text>
-                      {/* <Text style={styles(colors).mealCalories}>
-                        {meal.calories} cal
-                      </Text> */}
-                    </LinearGradient>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-      );
-    } catch (error) {
-      console.error("❌ Error in renderTodaysMeals:", error);
-      return null;
-    }
-  };
+  // renderTodaysMeals function moved to SubscriptionHomeView component for better organization
 
   const renderSubscriptionStatus = (subscription = null) => {
     const targetSubscription = subscription || activeSubscriptions[0];
@@ -2188,6 +1984,59 @@ const HomeScreen = ({ navigation }) => {
             {getPlanDescription(plan) ||
               "Delicious and nutritious meal plan crafted for your healthy lifestyle"}
           </Text>
+
+          {/* Divider Stroke */}
+          <View style={styles(colors).popularCardDivider} />
+
+          {/* Rating, Duration, and Meal Type Row */}
+          <View style={styles(colors).popularCardMetaRow}>
+            {/* Rating */}
+            {(plan.rating || plan.averageRating) && (
+              <View style={styles(colors).popularCardMetaItem}>
+                <CustomIcon name="star" size={12} color="#FFD700" />
+                <Text style={styles(colors).popularCardMetaText}>
+                  {plan.rating || plan.averageRating || "4.5"}
+                </Text>
+              </View>
+            )}
+
+            {/* Duration */}
+            {(plan.duration || plan.durationDays || plan.durationWeeks) && (
+              <View style={styles(colors).popularCardMetaItem}>
+                <CustomIcon
+                  name="time"
+                  size={12}
+                  color="rgba(255, 255, 255, 0.8)"
+                />
+                <Text style={styles(colors).popularCardMetaText}>
+                  {plan.duration ||
+                    (plan.durationWeeks
+                      ? `${plan.durationWeeks} week(s)`
+                      : plan.durationDays
+                        ? `${plan.durationDays} days`
+                        : "1 week")}
+                </Text>
+              </View>
+            )}
+
+            {/* Meal Type */}
+            {(plan.mealType || plan.category || plan.tags?.[0]?.name) && (
+              <View style={styles(colors).popularCardMetaItem}>
+                <CustomIcon
+                  name="restaurant"
+                  size={12}
+                  color="rgba(255, 255, 255, 0.8)"
+                />
+                <Text style={styles(colors).popularCardMetaText}>
+                  {plan.mealType ||
+                    plan.category ||
+                    plan.tags?.[0]?.name ||
+                    "All Meals"}
+                </Text>
+              </View>
+            )}
+          </View>
+
           <Text style={styles(colors).popularCardPrice}>
             ₦{plan.price?.toLocaleString()}
           </Text>
@@ -2197,80 +2046,16 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const renderMealplanCard = (plan, index) => {
-    const imageSource = plan.image
-      ? typeof plan.image === "string"
-        ? { uri: plan.image }
-        : plan.image
-      : require("../../assets/images/meal-plans/fitfuel.jpg");
-
     return (
-      <TouchableOpacity
+      <MealPlanCard
         key={plan.id || plan._id}
-        style={styles(colors).mealplanCard}
+        plan={plan}
         onPress={() => navigation.navigate("MealPlanDetail", { bundle: plan })}
-        activeOpacity={0.8}
-      >
-        {/* Image Container */}
-        <View style={styles(colors).mealplanImageContainer}>
-          <Image
-            source={imageSource}
-            style={styles(colors).mealplanImage}
-            defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
-          />
-
-          {/* Heart Button positioned on top-right of image */}
-          <TouchableOpacity
-            style={styles(colors).mealplanHeartButton}
-            onPress={() => toggleBookmark(plan.id || plan._id)}
-            activeOpacity={0.7}
-          >
-            <CustomIcon
-              name="heart"
-              filled={isBookmarked(plan.id || plan._id)}
-              size={20}
-              color={
-                isBookmarked(plan.id || plan._id) ? colors.error : "#FF9A3F"
-              }
-            />
-          </TouchableOpacity>
-
-          {/* New Badge positioned on top-left of image - only show for new meals */}
-          {plan.isNew && (
-            <View style={styles(colors).newBadge}>
-              <Text style={styles(colors).newBadgeText}>New</Text>
-            </View>
-          )}
-
-          {/* Discount Pill - Bottom Right */}
-          {(() => {
-            const planDiscount = discountData[plan.id || plan._id];
-            const hasDiscount =
-              planDiscount && planDiscount.discountPercent > 0;
-            return hasDiscount ? (
-              <View style={styles(colors).homeDiscountPill}>
-                <CustomIcon name="gift" size={14} color="#333" />
-                <Text style={styles(colors).homeDiscountPillText}>
-                  Up to {planDiscount.discountPercent}% Off
-                </Text>
-              </View>
-            ) : null;
-          })()}
-        </View>
-
-        {/* Text Content Below Image */}
-        <View style={styles(colors).mealplanTextContent}>
-          <Text style={styles(colors).mealplanTitle} numberOfLines={1}>
-            {plan.name}
-          </Text>
-          <Text style={styles(colors).mealplanDescription} numberOfLines={2}>
-            {getPlanDescription(plan) ||
-              "Satisfy your junk food cravings with fast, delicious, and effortless delivery."}
-          </Text>
-          <Text style={styles(colors).mealplanPrice}>
-            ₦{plan.price?.toLocaleString()}
-          </Text>
-        </View>
-      </TouchableOpacity>
+        onBookmarkPress={() => toggleBookmark(plan.id || plan._id)}
+        isBookmarked={isBookmarked(plan.id || plan._id)}
+        discountData={discountData}
+        getPlanDescription={getPlanDescription}
+      />
     );
   };
 
@@ -2450,9 +2235,10 @@ const HomeScreen = ({ navigation }) => {
             refreshing={refreshing || subscriptionLoading}
             onRefresh={() => {
               refreshMealPlans();
-              loadBanners(true); // Force refresh banners on pull-to-refresh
-              loadActiveSubscriptions();
-              loadActiveOrders();
+              loadPublicDashboardData(true); // Public data refresh
+              if (user) {
+                loadUserDashboardData(true); // User data refresh
+              }
             }}
             colors={[colors.primary]}
             tintColor={colors.primary}
@@ -2595,8 +2381,9 @@ const HomeScreen = ({ navigation }) => {
 
                   {!loading && !error && (
                     <View style={styles(colors).mealplansGrid}>
-                      {filteredMealPlans
-                        .map((plan, index) => renderMealplanCard(plan, index))}
+                      {filteredMealPlans.map((plan, index) =>
+                        renderMealplanCard(plan, index)
+                      )}
                     </View>
                   )}
                 </View>
@@ -2605,14 +2392,17 @@ const HomeScreen = ({ navigation }) => {
           }
 
           // Calculate subscription progress for use in multiple components
-          if (!subscriptionLoading && activeSubscriptions.length > 0) {
+          if (!subscriptionLoading && (user?.hasActiveSubscription || activeSubscriptions.length > 0)) {
             // Show subscription-focused UI when user has active subscriptions
 
             return (
               // Subscription-focused UI
               <>
-                {/* My Today's Meals Section - only show for single subscription */}
-                {activeSubscriptions.length === 1 && renderTodaysMeals()}
+                {/* My Today's Meals Section - extracted to separate component */}
+                <SubscriptionHomeView 
+                  activeSubscriptions={activeSubscriptions}
+                  setShowBrowseMode={setShowBrowseMode}
+                />
 
                 {/* Multiple Subscription Cards Section */}
                 {renderSubscriptionCards()}
@@ -2753,9 +2543,9 @@ const HomeScreen = ({ navigation }) => {
 
                   {!loading && !error && (
                     <View style={styles(colors).mealplansGrid}>
-                      {filteredMealPlans
-                        
-                        .map((plan, index) => renderMealplanCard(plan, index))}
+                      {filteredMealPlans.map((plan, index) =>
+                        renderMealplanCard(plan, index)
+                      )}
                     </View>
                   )}
                 </View>
@@ -3229,27 +3019,6 @@ const styles = (colors) =>
       height: "100%",
       resizeMode: "cover",
     },
-    // Home Screen Discount Pill
-    homeDiscountPill: {
-      position: "absolute",
-      bottom: 8,
-      right: 8,
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#F3E9DF",
-      paddingHorizontal: 8,
-      paddingVertical: 7,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: "#1b1b1b",
-      zIndex: 10,
-    },
-    homeDiscountPillText: {
-      fontSize: 15,
-      fontWeight: "450",
-      color: "#333",
-      marginLeft: 3,
-    },
     popularHeartButton: {
       width: 36,
       height: 36,
@@ -3293,142 +3062,24 @@ const styles = (colors) =>
       paddingHorizontal: 0,
       gap: 20, // Uniform spacing between cards
     },
-    mealplanCard: {
-      width: "100%",
-      borderRadius: 20,
-      overflow: "hidden",
-      marginBottom: 0, // Remove margin as gap handles spacing
-    },
-    mealplanImageContainer: {
-      position: "relative",
-      height: 150, // Much larger image height
-      width: "100%",
-      borderRadius: 20,
-      overflow: "hidden",
-    },
-    mealplanImage: {
-      width: "100%",
-      height: "100%",
-      resizeMode: "cover",
-      borderRadius: 15,
-    },
-    mealplanHeartButton: {
-      position: "absolute",
-      top: 16,
-      right: 16,
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.black,
-      justifyContent: "center",
+    // Popular card meta styles
+    popularCardMetaRow: {
+      flexDirection: "row",
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: "#1b1b1b",
-    },
-    newBadge: {
-      position: "absolute",
-      top: 16,
-      left: 16,
-      backgroundColor: colors.error,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 20,
-    },
-    newBadgeText: {
-      color: colors.white,
-      fontSize: 12,
-      fontWeight: "bold",
-    },
-    mealplanTextContent: {
-      padding: 16,
-    },
-    mealplanTitle: {
-      fontSize: 18,
-      fontWeight: 450,
-      color: colors.text,
-      marginBottom: 6,
-    },
-    mealplanDescription: {
-      fontSize: 14,
-      color: colors.textSecondary,
       marginBottom: 8,
-      lineHeight: 20,
+      gap: 12,
     },
-    mealplanPrice: {
-      fontSize: 20,
-      fontWeight: "bold",
-      color: colors.text,
+    popularCardMetaItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
     },
-    // Subscription-focused UI Styles
-    todaysMealsSection: {
-      paddingHorizontal: 20,
-      paddingVertical: 15,
-    },
-    deliveryStatus: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      marginBottom: 15,
-      // fontStyle: "italic",
-    },
-    mealsScroll: {
-      marginTop: 5,
-    },
-    todayMealCard: {
-      width: 200,
-      height: 280,
-      marginRight: 15,
-      borderRadius: 20,
-      overflow: "hidden",
-    },
-    todayMealImageContainer: {
-      width: "100%",
-      height: "100%",
-      position: "relative",
-    },
-    todayMealImage: {
-      width: "100%",
-      height: "100%",
-      resizeMode: "cover",
-    },
-    todayMealOverlay: {
-      position: "absolute",
-      // top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      padding: 15,
-      // justifyContent: ",
-    },
-    mealTimeContainer: {
-      alignSelf: "flex-start",
-      top: 0,
-      backgroundColor: "rgba(255, 255, 255, 0.9)",
-      paddingHorizontal: 12,
-      paddingVertical: 2,
-      borderRadius: 15,
-    },
-    mealTime: {
+    popularCardMetaText: {
       fontSize: 12,
-      fontWeight: "600",
-      color: "#1b1b1b",
+      color: "rgba(255, 255, 255, 0.8)",
+      fontWeight: "500",
     },
-    mealType: {
-      fontSize: 16,
-      fontWeight: "bold",
-      color: colors.white,
-      marginBottom: 4,
-    },
-    todayMealName: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: colors.white,
-      marginBottom: 4,
-    },
-    mealCalories: {
-      fontSize: 14,
-      color: colors.white,
-      opacity: 0.9,
-    },
+    // Subscription-focused UI Styles moved to SubscriptionHomeView component
     subscriptionSection: {
       paddingHorizontal: 20,
       paddingVertical: 15,
@@ -3717,37 +3368,7 @@ const styles = (colors) =>
       fontWeight: "600",
       color: colors.white,
     },
-    // No meals container styles
-    noMealsContainer: {
-      alignItems: "center",
-      paddingVertical: 40,
-      paddingHorizontal: 20,
-    },
-    noMealsTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: colors.text,
-      marginTop: 16,
-      marginBottom: 8,
-    },
-    noMealsText: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: "center",
-      marginBottom: 20,
-      lineHeight: 20,
-    },
-    contactSupportButton: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      borderRadius: 80,
-    },
-    contactSupportText: {
-      color: colors.white,
-      fontSize: 14,
-      fontWeight: "600",
-    },
+    // No meals container styles moved to SubscriptionHomeView component
     // Back to plan styles
     backToPlanSection: {
       paddingHorizontal: 20,
@@ -3843,23 +3464,7 @@ const styles = (colors) =>
       paddingHorizontal: 20,
       paddingVertical: 15,
     },
-    // Single Meal Layout Styles
-    singleMealContainer: {
-      paddingHorizontal: 0,
-      alignItems: "center", // Center the single meal card
-      justifyContent: "center",
-    },
-    fullWidthMealCard: {
-      width: width - 40, // Full width minus section padding
-      height: 200,
-      borderRadius: 16,
-      overflow: "hidden",
-      elevation: 4,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 6,
-    },
+    // Single Meal Layout Styles moved to SubscriptionHomeView component
     orderCard: {
       marginBottom: 12,
     },

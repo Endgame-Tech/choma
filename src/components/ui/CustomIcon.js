@@ -150,6 +150,8 @@ const iconMap = {
 
   // Common icon name mappings for compatibility
   pause: ClockIcon,
+  time: ClockIcon,
+  "time-outline": ClockIcon,
   "restaurant-outline": FoodIcon,
   close: CloseIcon,
   "information-circle": DetailsIcon,
@@ -185,8 +187,6 @@ const CustomIcon = ({
     console.warn(`Requested: ${name}, Mapped to: ${iconName}`);
     return null;
   }
-
-  console.log(`CustomIcon: Rendering ${iconName} with color ${color}`);
 
   return (
     <View

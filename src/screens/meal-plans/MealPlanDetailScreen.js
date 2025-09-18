@@ -23,8 +23,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { CustomIcon } from "../../components/ui/CustomIcon";
+import CustomIcon from "../../components/ui/CustomIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import apiService from "../../services/api";
 import discountService from "../../services/discountService";
@@ -502,7 +501,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             {/* Discount pill on meal image - show if discount applies to this meal plan */}
             {discountInfo && discountInfo.discountPercent > 0 && (
               <View style={styles(colors).mealDiscountPill}>
-                <Ionicons name="gift" size={14} color="#333" />
+                <CustomIcon name="gift" size={14} color="#333" />
                 <Text style={styles(colors).mealDiscountPillText}>
                   {discountInfo.discountPercent}% Off
                 </Text>
@@ -651,7 +650,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 ],
               }}
             >
-              <Ionicons
+              <CustomIcon
                 name="chevron-down"
                 size={20}
                 color={colors.textSecondary}
@@ -718,7 +717,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                             {discountInfo &&
                               discountInfo.discountPercent > 0 && (
                                 <View style={styles(colors).mealDiscountPill}>
-                                  <Ionicons
+                                  <CustomIcon
                                     name="gift"
                                     size={14}
                                     color="#333"
@@ -894,7 +893,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     (feature) => (
       <View key={feature.title} style={styles(colors).featureItem}>
         <View style={styles(colors).featureIcon}>
-          <Ionicons name={feature.icon} size={24} color={colors.primary} />
+          <CustomIcon name={feature.icon} size={24} color={colors.primary} />
         </View>
         <View style={styles(colors).featureText}>
           <Text style={styles(colors).featureTitle}>{feature.title}</Text>
@@ -923,7 +922,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           showRightIcon={false}
         />
         <View style={styles(colors).errorContainer}>
-          <Ionicons
+          <CustomIcon
             name="alert-circle-outline"
             size={64}
             color={colors.error}
@@ -965,7 +964,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               fetchMealPlanDetails();
             }}
           >
-            <Ionicons name="refresh" size={20} color={colors.white} />
+            <CustomIcon name="refresh" size={20} color={colors.white} />
             <Text style={styles(colors).retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -1022,7 +1021,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               disabled={quantity <= 1}
               accessible={true}
             >
-              <Ionicons name="remove" size={20} color={"#FFFFFF"} />
+              <CustomIcon name="remove" size={20} color={"#FFFFFF"} />
             </TouchableOpacity>
             <Text
               style={styles(colors).quantityText}
@@ -1040,7 +1039,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               accessibilityRole="button"
               accessible={true}
             >
-              <Ionicons name="add" size={20} color={"#FFFFFF"} />
+              <CustomIcon name="add" size={20} color={"#FFFFFF"} />
             </TouchableOpacity>
           </View>
 
@@ -1051,7 +1050,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             accessibilityRole="button"
             accessible={true}
           >
-            <Ionicons name="heart-outline" size={24} color={colors.primary} />
+            <CustomIcon name="heart-outline" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -1068,13 +1067,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
           <View style={styles(colors).planMeta}>
             <View style={styles(colors).metaItem}>
-              <Ionicons name="star" size={16} color={colors.rating} />
+              <CustomIcon name="star" size={16} color={colors.rating} />
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.avgRating || bundle?.rating || 4.5}
               </Text>
             </View>
             <View style={styles(colors).metaItem}>
-              <Ionicons name="time" size={16} color={colors.textSecondary} />
+              <CustomIcon name="time" size={16} color={colors.textSecondary} />
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.durationWeeks
                   ? `${mealPlanDetails.durationWeeks} week${
@@ -1086,7 +1085,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               </Text>
             </View>
             <View style={styles(colors).metaItem}>
-              <Ionicons
+              <CustomIcon
                 name="restaurant"
                 size={16}
                 color={colors.textSecondary}
@@ -1104,7 +1103,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             {mealPlanDetails?.mealTypes &&
               mealPlanDetails.mealTypes.length > 0 && (
                 <View style={styles(colors).metaItem}>
-                  <Ionicons
+                  <CustomIcon
                     name="list"
                     size={16}
                     color={colors.textSecondary}
@@ -1132,7 +1131,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   ₦{discountInfo.originalPrice.toLocaleString()}
                 </Text>
                 <View style={styles(colors).discountPill}>
-                  <Ionicons name="gift" size={18} color={colors.primary} />
+                  <CustomIcon name="gift" size={18} color={colors.primary} />
                   <Text style={styles(colors).discountPillText}>
                     Up to {discountInfo.discountPercent}% Off
                   </Text>
@@ -1391,7 +1390,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               Additional Information
             </Text>
             <View style={styles(colors).adminNotesContainer}>
-              <Ionicons
+              <CustomIcon
                 name="information-circle"
                 size={20}
                 color={colors.primary}
@@ -1416,7 +1415,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           accessibilityRole="button"
           accessible={true}
         >
-          <Ionicons name="filter" size={20} color={colors.border2} />
+          <CustomIcon name="filter" size={20} color={colors.border2} />
           <Text style={styles(colors).customizeText}></Text>
         </TouchableOpacity>
 
