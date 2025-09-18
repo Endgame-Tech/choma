@@ -2596,7 +2596,6 @@ const HomeScreen = ({ navigation }) => {
                   {!loading && !error && (
                     <View style={styles(colors).mealplansGrid}>
                       {filteredMealPlans
-                        .slice(0, 4)
                         .map((plan, index) => renderMealplanCard(plan, index))}
                     </View>
                   )}
@@ -2755,7 +2754,7 @@ const HomeScreen = ({ navigation }) => {
                   {!loading && !error && (
                     <View style={styles(colors).mealplansGrid}>
                       {filteredMealPlans
-                        .slice(0, 4)
+                        
                         .map((plan, index) => renderMealplanCard(plan, index))}
                     </View>
                   )}

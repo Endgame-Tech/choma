@@ -171,17 +171,20 @@ const EditBannerModal: React.FC<EditBannerModalProps> = ({
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
                   📐 <strong>Design Guidelines:</strong><br/>
-                  • Upload a complete banner design (recommended: 375x140px)<br/>
-                  • This image will fill the entire banner space<br/>
+                  • Upload a complete banner design (1200x400px - 3:1 aspect ratio)<br/>
+                  • Image will be automatically optimized to banner dimensions<br/>
                   • The CTA button will overlay on the bottom-right corner<br/>
+                  • No cropping needed - upload your final design<br/>
                   • Supports static images (JPG, PNG) and animated GIFs
                 </p>
               </div>
               <ImageUpload
                 currentImageUrl={formData.imageUrl}
                 onImageUpload={(imageUrl) => setFormData(prev => ({ ...prev, imageUrl }))}
-                maxSizeMB={10}
+                maxSizeMB={5}
                 label="Upload Banner Design"
+                enableCropping={false}
+                uploadEndpoint="/upload/banner-image"
               />
 
               {/* Manual URL input as alternative */}

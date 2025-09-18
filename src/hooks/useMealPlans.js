@@ -19,10 +19,10 @@ export const useMealPlans = () => {
         setError(null);
 
         console.log(
-          "🍽️ Fetching popular meal plans from backend...",
+          "🍽️ Fetching all meal plans from backend...",
           forceRefresh ? "(forced refresh)" : ""
         );
-        const response = await apiService.getPopularMealPlans(forceRefresh);
+        const response = await apiService.getMealPlans(forceRefresh);
 
         if (response.success) {
           // Transform backend data to match frontend expectations

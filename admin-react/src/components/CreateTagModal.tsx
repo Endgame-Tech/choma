@@ -158,20 +158,28 @@ const CreateTagModal: React.FC<CreateTagModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Tag Image *
             </label>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                📐 <strong>Design Guidelines:</strong><br/>
+                • Upload a square icon or image (400x400px - 1:1 aspect ratio)<br/>
+                • Image will be automatically optimized to tag dimensions<br/>
+                • Perfect for icons, logos, or simple graphics<br/>
+                • No cropping needed - upload your final design<br/>
+                • Supports JPG, PNG, and WebP formats
+              </p>
+            </div>
             <ImageUpload
               onImageUpload={handleImageUpload}
               currentImageUrl={formData.image}
-              label="Upload tag image"
+              label="Upload Tag Image"
               className="w-full"
-              cropAspectRatio={1}
+              enableCropping={false}
+              maxSizeMB={5}
               uploadEndpoint="/upload/tag-image"
             />
             {errors.image && (
               <p className="text-red-500 text-sm mt-1">{errors.image}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
-              Upload an icon or image to represent this tag. Images will be cropped to square format.
-            </p>
           </div>
 
           {/* Description */}

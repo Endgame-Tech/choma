@@ -18,9 +18,9 @@ import {
 } from 'phosphor-react'
 import chomablob2 from '../assets/images/chomablob2.svg'
 import backgroundSvg from '../assets/images/background.svg'
-import femaleChefGif from '../assets/images/femaleChef.gif'
+import femaleChefGif from '../assets/images/herofood/herofood1.png'
 import takeAwayGif from '../assets/images/takeAway.gif'
-import bestPrice from '../assets/images/bestPrice.gif'
+import bestPrice from '../assets/images/mealplanimage1.png'
 import googleplayStoreLogo from '../assets/images/googleplayStoreLogo.svg'
 import appleLogo from '../assets/images/appleLogo.svg'
 
