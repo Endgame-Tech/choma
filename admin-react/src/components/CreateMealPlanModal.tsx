@@ -1,5 +1,5 @@
 import React from 'react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { type MealPlan } from '../services/mealApi'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import ImageUpload from './ImageUpload'
