@@ -91,7 +91,7 @@ router.delete('/:ratingId', asyncHandler(async (req, res) => {
  * @desc Get current user's ratings
  * @access Private
  */
-router.get('/my-ratings', cacheMiddleware.userShort, asyncHandler(async (req, res) => {
+router.get('/my-ratings', asyncHandler(async (req, res) => {
   const options = {
     page: parseInt(req.query.page) || 1,
     limit: parseInt(req.query.limit) || 20,
@@ -114,7 +114,7 @@ router.get('/my-ratings', cacheMiddleware.userShort, asyncHandler(async (req, re
  * @desc Get ratings for a specific entity
  * @access Private
  */
-router.get('/entity/:entityType/:entityId', cacheMiddleware.short, asyncHandler(async (req, res) => {
+router.get('/entity/:entityType/:entityId', asyncHandler(async (req, res) => {
   const { entityType, entityId } = req.params;
   
   const options = {
@@ -142,7 +142,7 @@ router.get('/entity/:entityType/:entityId', cacheMiddleware.short, asyncHandler(
  * @desc Get rating statistics for a specific entity
  * @access Private
  */
-router.get('/entity/:entityType/:entityId/stats', cacheMiddleware.medium, asyncHandler(async (req, res) => {
+router.get('/entity/:entityType/:entityId/stats', asyncHandler(async (req, res) => {
   const { entityType, entityId } = req.params;
 
   const stats = await ratingService.getEntityStats(entityId, entityType);
