@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { type MealPlan } from '../services/mealApi'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import ImageUpload from './ImageUpload'
-import { tagsApi, type Tag } from '../services/tagApi'
+import TagSelector from './TagSelector'
 
 interface CreateMealPlanModalProps {
   isOpen: boolean
@@ -36,27 +36,6 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
   })
 
   const [submitting, setSubmitting] = useState(false)
-  const [tags, setTags] = useState<Tag[]>([])
-  const [loadingTags, setLoadingTags] = useState(false)
-
-  // Fetch tags when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      fetchTags()
-    }
-  }, [isOpen])
-
-  const fetchTags = async () => {
-    try {
-      setLoadingTags(true)
-      const response = await tagsApi.getAllTags()
-      setTags(response.data)
-    } catch (error) {
-      console.error('Error fetching tags:', error)
-    } finally {
-      setLoadingTags(false)
-    }
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -310,34 +289,15 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
             </div>
 
             {/* Tag Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
-                Tag (Optional)
-              </label>
-              {loadingTags ? (
-                <div className="flex items-center justify-center py-4">
-                  <i className="fi fi-sr-loading animate-spin mr-2"></i>
-                  Loading tags...
-                </div>
-              ) : (
-                <select
-                  name="tagId"
-                  value={formData.tagId}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">No Tag (Default)</option>
-                  {tags.map((tag) => (
-                    <option key={tag._id} value={tag._id}>
-                      {tag.name} ({tag.mealPlanCount || 0} plans)
-                    </option>
-                  ))}
-                </select>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                Select a tag to categorize this meal plan for easier filtering on the home screen
-              </p>
-            </div>
+            <TagSelector
+              selectedTagId={formData.tagId}
+              onTagChange={(tagId) => setFormData(prev => ({ ...prev, tagId }))}
+              showCreateButton={true}
+              onCreateTag={() => {
+                // You could open a tag creation modal here if needed
+                alert('Tag creation from this modal is not yet implemented. Please use the View Tags button in the main meal plans page.');
+              }}
+            />
 
             {/* Admin Notes */}
             <div>

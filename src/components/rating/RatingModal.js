@@ -632,9 +632,9 @@ const styles = (colors) =>
       justifyContent: "center",
     },
     cancelButton: {
-      backgroundColor: colors.background || "#FFFFFF",
-      borderWidth: 1,
-      borderColor: colors.border || "#D1D5DB",
+      backgroundColor: colors.background,
+      borderWidth: 1.5,
+      borderColor: colors.border ,
       marginRight: 8,
     },
     cancelButtonText: {
@@ -643,7 +643,7 @@ const styles = (colors) =>
       color: colors.textSecondary ,
     },
     submitButton: {
-      backgroundColor: colors.background,
+      backgroundColor: colors.black,
       marginLeft: 8,
     },
     submitButtonText: {

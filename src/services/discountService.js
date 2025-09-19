@@ -110,6 +110,13 @@ class DiscountService {
    * @returns {Array} Discount rules
    */
   async getMealPlanDiscountRules(mealPlanId) {
+    // Validate meal plan ID first
+    if (!mealPlanId || mealPlanId === 'undefined' || mealPlanId === 'null') {
+      console.warn('Invalid meal plan ID provided, falling back to global rules:', mealPlanId);
+      const globalResult = await apiService.getGlobalDiscountRules();
+      return globalResult.success && globalResult.data ? globalResult.data : [];
+    }
+
     const cacheKey = `rules_${mealPlanId}`;
     
     if (this.discountRulesCache.has(cacheKey)) {

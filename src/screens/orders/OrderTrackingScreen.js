@@ -53,71 +53,122 @@ const OrderTrackingScreen = ({ navigation }) => {
 
       // Process regular orders
       if (ordersResult.success) {
-        const orders =
-          ordersResult.data?.data ||
-          ordersResult.data ||
-          ordersResult.orders ||
-          [];
-        const regularActiveOrders = Array.isArray(orders)
-          ? orders.filter((order) => {
-              // Check both 'status' and 'orderStatus' fields
-              const status = (
-                order.status ||
-                order.orderStatus ||
-                ""
-              ).toLowerCase();
-              return (
-                status &&
-                !["delivered", "cancelled", "completed"].includes(status)
-              );
-            })
-          : [];
+        let orders;
+        try {
+          orders =
+            ordersResult.data?.data ||
+            ordersResult.data ||
+            ordersResult.orders ||
+            [];
+          
+          // Ensure orders is an iterable array
+          if (!Array.isArray(orders)) {
+            console.warn("❌ Orders data is not an array:", typeof orders, orders);
+            orders = [];
+          }
+        } catch (error) {
+          console.error("❌ Error processing orders data:", error);
+          orders = [];
+        }
+        
+        const regularActiveOrders = orders.filter((order) => {
+          try {
+            // Check both 'status' and 'orderStatus' fields
+            const status = (
+              order.status ||
+              order.orderStatus ||
+              ""
+            ).toLowerCase();
+            return (
+              status &&
+              !["delivered", "cancelled", "completed"].includes(status)
+            );
+          } catch (error) {
+            console.error("❌ Error filtering order:", error);
+            return false;
+          }
+        });
 
-        allActiveOrders = [...regularActiveOrders];
+        allActiveOrders = Array.isArray(regularActiveOrders) ? [...regularActiveOrders] : [];
       }
 
       // Process assigned orders (orders with chefs that are in progress)
       if (assignedOrdersResult.success) {
-        const assignedOrders =
-          assignedOrdersResult.data?.data ||
-          assignedOrdersResult.data ||
-          assignedOrdersResult.orders ||
-          [];
-        const activeAssignedOrders = Array.isArray(assignedOrders)
-          ? assignedOrders.filter((order) => {
-              // Check both 'status' and 'orderStatus' fields
-              const status = (
-                order.status ||
-                order.orderStatus ||
-                ""
-              ).toLowerCase();
-              return (
-                status &&
-                !["delivered", "cancelled", "completed"].includes(status)
-              );
-            })
-          : [];
+        let assignedOrders;
+        try {
+          assignedOrders =
+            assignedOrdersResult.data?.data ||
+            assignedOrdersResult.data ||
+            assignedOrdersResult.orders ||
+            [];
+          
+          // Ensure assignedOrders is an iterable array
+          if (!Array.isArray(assignedOrders)) {
+            console.warn("❌ Assigned orders data is not an array:", typeof assignedOrders, assignedOrders);
+            assignedOrders = [];
+          }
+        } catch (error) {
+          console.error("❌ Error processing assigned orders data:", error);
+          assignedOrders = [];
+        }
+        
+        const activeAssignedOrders = assignedOrders.filter((order) => {
+          try {
+            // Check both 'status' and 'orderStatus' fields
+            const status = (
+              order.status ||
+              order.orderStatus ||
+              ""
+            ).toLowerCase();
+            return (
+              status &&
+              !["delivered", "cancelled", "completed"].includes(status)
+            );
+          } catch (error) {
+            console.error("❌ Error filtering assigned order:", error);
+            return false;
+          }
+        });
 
-        allActiveOrders = [...allActiveOrders, ...activeAssignedOrders];
+        allActiveOrders = [
+          ...(Array.isArray(allActiveOrders) ? allActiveOrders : []), 
+          ...(Array.isArray(activeAssignedOrders) ? activeAssignedOrders : [])
+        ];
       }
 
       // Process subscription-based orders (create virtual order from subscription)
       if (subscriptionsResult.success && !allActiveOrders.length) {
-        const subscriptions =
-          subscriptionsResult.data?.data ||
-          subscriptionsResult.data ||
-          subscriptionsResult.subscriptions ||
-          [];
-        const activeSubscriptions = Array.isArray(subscriptions)
-          ? subscriptions.filter((sub) => {
-              const status = sub.status?.toLowerCase();
-              return (
-                status === "active" ||
-                status === "paid" ||
-                sub.paymentStatus === "Paid"
-              );
-            })
-          : [];
+        let subscriptions;
+        try {
+          subscriptions =
+            subscriptionsResult.data?.data ||
+            subscriptionsResult.data ||
+            subscriptionsResult.subscriptions ||
+            [];
+          
+          // Ensure subscriptions is an iterable array
+          if (!Array.isArray(subscriptions)) {
+            console.warn("❌ Subscriptions data is not an array:", typeof subscriptions, subscriptions);
+            subscriptions = [];
+          }
+        } catch (error) {
+          console.error("❌ Error processing subscriptions data:", error);
+          subscriptions = [];
+        }
+        
+        const activeSubscriptions = subscriptions.filter((sub) => {
+          try {
+            const status = sub.status?.toLowerCase();
+            return (
+              status === "active" ||
+              status === "paid" ||
+              sub.paymentStatus === "Paid"
+            );
+          } catch (error) {
+            console.error("❌ Error filtering subscription:", error);
+            return false;
+          }
+        });
 
         // Convert active subscriptions to virtual orders for tracking
         const subscriptionOrders = activeSubscriptions.map((subscription) => ({
@@ -145,10 +196,16 @@ const OrderTrackingScreen = ({ navigation }) => {
           isSubscriptionOrder: true,
         }));
 
-        allActiveOrders = [...allActiveOrders, ...subscriptionOrders];
+        allActiveOrders = [
+          ...(Array.isArray(allActiveOrders) ? allActiveOrders : []), 
+          ...(Array.isArray(subscriptionOrders) ? subscriptionOrders : [])
+        ];
       }
 
-      setActiveOrders(allActiveOrders);
+      // Ensure allActiveOrders is a proper array before setting
+      const ordersToSet = Array.isArray(allActiveOrders) ? allActiveOrders : [];
+      console.log(`📋 Setting ${ordersToSet.length} active orders`);
+      setActiveOrders(ordersToSet);
     } catch (error) {
       console.error("Error loading orders:", error);
       setActiveOrders([]);

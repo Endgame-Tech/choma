@@ -100,7 +100,7 @@ const TagFilterBar = memo(
         setExpandedTagId(newTagId);
         animateDropdownIn();
       } else if (newTagId === null) {
-        // Clearing selection - hide dropdown
+        // Clearing selection - hide dropdown and reset everything
         setExpandedTagId(null);
         setSelectedWeek(null);
         animateDropdownOut();
@@ -110,7 +110,7 @@ const TagFilterBar = memo(
       setTimeout(() => {
         onTagSelect(newTagId, tag);
         setAnimating(false);
-      }, 150);
+      }, 100);
     };
 
     const fetchWeekOptionsForTag = async (tag) => {
@@ -146,8 +146,8 @@ const TagFilterBar = memo(
           const formattedOptions = durations.map((weeks) => ({
             id: weeks,
             label: weeks === 1 ? "1 Week Plan" : `${weeks} Week Plan`,
-            // weeks: weeks,
-            // description: `${weeks} week${weeks > 1 ? "s" : ""} duration`,
+            weeks: weeks,
+            description: `${weeks} week${weeks > 1 ? "s" : ""} duration`,
           }));
 
           setWeekOptions((prev) => ({
@@ -167,9 +167,10 @@ const TagFilterBar = memo(
     };
 
     const animateDropdownIn = () => {
-      Animated.timing(dropdownAnim, {
+      Animated.spring(dropdownAnim, {
         toValue: 1,
-        duration: 300,
+        tension: 100,
+        friction: 8,
         useNativeDriver: false,
       }).start();
     };
@@ -177,18 +178,40 @@ const TagFilterBar = memo(
     const animateDropdownOut = () => {
       Animated.timing(dropdownAnim, {
         toValue: 0,
-        duration: 200,
+        duration: 250,
         useNativeDriver: false,
       }).start();
     };
 
     const handleWeekSelect = (weekOption, tag) => {
-      setSelectedWeek(weekOption);
-      console.log(`📅 Selected ${weekOption.label} for tag: ${tag.name}`);
-
-      // Call parent callback if provided
-      if (onWeekSelect) {
-        onWeekSelect(weekOption, tag);
+      // Toggle week selection - if same week clicked, deselect it
+      const newSelectedWeek = selectedWeek?.id === weekOption.id ? null : weekOption;
+      setSelectedWeek(newSelectedWeek);
+      
+      if (newSelectedWeek) {
+        console.log(`📅 Selected ${weekOption.label} for tag: ${tag.name}`);
+        
+        // Call parent callback with duration filtering
+        if (onWeekSelect) {
+          onWeekSelect(weekOption.weeks, tag);
+        }
+        
+        // Also call onTagSelect to trigger filtering with both tag and duration
+        if (onTagSelect) {
+          onTagSelect(tag._id, tag, weekOption.weeks);
+        }
+      } else {
+        console.log(`📅 Deselected week filter for tag: ${tag.name}`);
+        
+        // Call parent callback to clear week filtering (show all plans for tag)
+        if (onWeekSelect) {
+          onWeekSelect(null, tag);
+        }
+        
+        // Call onTagSelect to show all plans for this tag
+        if (onTagSelect) {
+          onTagSelect(tag._id, tag, null);
+        }
       }
     };
 
@@ -273,7 +296,7 @@ const TagFilterBar = memo(
               setTimeout(() => {
                 onTagSelect(null, null);
                 setAnimating(false);
-              }, 150);
+              }, 100);
             }}
           >
             <View
@@ -354,12 +377,17 @@ const TagFilterBar = memo(
                 ]}
               >
                 <Image
-                  source={{
-                    uri: tag.image,
-                    cache: "default",
-                  }}
+                  source={
+                    tag.image
+                      ? {
+                          uri: tag.image,
+                          cache: "default",
+                        }
+                      : require("../../assets/images/meal-plans/fitfuel.jpg")
+                  }
                   style={styles(colors).tagImage}
                   resizeMode="cover"
+                  defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
                   onError={(error) => {
                     console.log(
                       `Failed to load tag image for ${tag.name}:`,
@@ -394,25 +422,7 @@ const TagFilterBar = memo(
               },
             ]}
           >
-            {/* <View style={styles(colors).dropdownHeader}>
-              <Text style={styles(colors).dropdownTitle}>
-                Choose Plan Duration
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setExpandedTagId(null);
-                  setSelectedWeek(null);
-                  animateDropdownOut();
-                }}
-                style={styles(colors).closeButton}
-              >
-                <CustomIcon
-                  name="close"
-                  size={16}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </View> */}
+            
 
             <ScrollView
               horizontal
@@ -440,6 +450,7 @@ const TagFilterBar = memo(
                         tags.find((t) => t._id === expandedTagId)
                       )
                     }
+                    activeOpacity={0.7}
                   >
                     <Text
                       style={[
@@ -449,15 +460,6 @@ const TagFilterBar = memo(
                       ]}
                     >
                       {weekOption.label}
-                    </Text>
-                    <Text
-                      style={[
-                        styles(colors).weekOptionDescription,
-                        selectedWeek?.id === weekOption.id &&
-                          styles(colors).selectedWeekOptionDescription,
-                      ]}
-                    >
-                      {weekOption.description}
                     </Text>
                   </TouchableOpacity>
                 ))
@@ -540,11 +542,11 @@ const styles = (colors) =>
     tagName: {
       fontSize: 12,
       fontWeight: "500",
-      color: colors.text,
+      color: colors.black,
       textAlign: "center",
     },
     selectedTagName: {
-      color: colors.surface,
+      color: colors.black,
       fontWeight: "600",
     },
     skeletonTag: {
@@ -569,10 +571,11 @@ const styles = (colors) =>
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
+      color: colors.black,
       minWidth: 70,
     },
     filterButtonActive: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.black,
       borderColor: colors.primary,
       shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 2 },
@@ -608,12 +611,12 @@ const styles = (colors) =>
       width: 4,
       height: 4,
       borderRadius: 2,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.black,
     },
     filterText: {
       fontSize: 12,
       fontWeight: "500",
-      color: colors.text,
+      color: colors.black,
       textAlign: "center",
     },
     filterTextActive: {
@@ -622,46 +625,30 @@ const styles = (colors) =>
     },
     // Dropdown styles
     dropdownContainer: {
-      backgroundColor: colors.surface,
+      backgroundColor: colors.cardbackground,
       marginHorizontal: 20,
       marginTop: 10,
-      overflow: "hidden",
-    },
-    dropdownHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    dropdownTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
+      borderRadius: 32,
     },
     closeButton: {
       padding: 4,
     },
     weekOptionsContainer: {
-      paddingHorizontal: 16,
+      // paddingHorizontal: 16,
       paddingVertical: 12,
     },
     weekOption: {
       backgroundColor: colors.background,
-      borderRadius: 12,
+      borderRadius: 42,
       paddingVertical: 10,
-      paddingHorizontal: 16,
+      paddingHorizontal: 12,
       marginRight: 12,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
-      minWidth: 120,
     },
     selectedWeekOption: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: colors.black,
       shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
@@ -669,23 +656,15 @@ const styles = (colors) =>
       elevation: 3,
     },
     weekOptionText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.text,
+      fontSize: 12,
+      fontWeight: "semibold",
+      color: colors.black,
       textAlign: "center",
     },
     selectedWeekOptionText: {
-      color: colors.surface,
+      color: colors.primaryDark2,
     },
-    weekOptionDescription: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      textAlign: "center",
-      marginTop: 2,
-    },
-    selectedWeekOptionDescription: {
-      color: "rgba(255, 255, 255, 0.8)",
-    },
+   
     loadingContainer: {
       flex: 1,
       justifyContent: "center",

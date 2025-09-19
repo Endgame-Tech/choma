@@ -21,7 +21,7 @@ const StandardHeader = ({
     <View style={styles(colors).header}>
       {/* Left side - Back button */}
       <TouchableOpacity style={styles(colors).backButton} onPress={onBackPress}>
-        <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <Ionicons name="chevron-back" size={20} color={colors.text} />
       </TouchableOpacity>
 
       {/* Center - Title */}

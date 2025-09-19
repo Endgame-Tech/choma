@@ -108,8 +108,70 @@ class CloudStorageService {
   }
 
   /**
+   * Upload image during signup (no auth required)
+   */
+  async uploadSignupImage(imageUri, userId) {
+    try {
+      console.log("🔄 Starting signup image upload to backend...");
+      console.log("Image URI:", imageUri);
+      console.log("User ID:", userId);
+
+      const formData = new FormData();
+
+      formData.append("image", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: `profile_${userId}_${Date.now()}.jpg`,
+      });
+
+      // Get the API base URL from constants
+      const API_BASE_URL = APP_CONFIG.API_BASE_URL.replace("/api", "");
+      const uploadUrl = `${API_BASE_URL}/api/upload/signup-profile-image`;
+
+      console.log("Upload URL:", uploadUrl);
+
+      const headers = {
+        "Content-Type": "multipart/form-data",
+      };
+
+      console.log("Making signup image upload request...");
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+        headers: headers,
+      });
+
+      console.log("Response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Upload failed with status:", response.status);
+        console.error("Error response:", errorText);
+        throw new Error(
+          `Upload failed: ${response.status} - ${response.statusText}. ${errorText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("Upload response data:", data);
+
+      if (!data.success) {
+        throw new Error(
+          data.message || "Upload failed - server returned success: false"
+        );
+      }
+
+      console.log("✅ Signup image uploaded successfully:", data.imageUrl);
+      return data.imageUrl;
+    } catch (error) {
+      console.error("❌ Error uploading signup image:", error);
+      throw new Error(`Signup image upload failed: ${error.message}`);
+    }
+  }
+
+  /**
    * Alternative: Simple backend upload
-   * Upload to your own backend server
+   * Upload to your own backend server (for authenticated users)
    */
   async uploadToBackend(imageUri, userId) {
     try {

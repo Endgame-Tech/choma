@@ -20,14 +20,8 @@ router.get('/public', async (req, res) => {
       mealPlans,
       tags
     ] = await Promise.all([
-      // Get active banners
-      PromoBanner.find({ 
-        isActive: true,
-        $or: [
-          { expiresAt: { $gte: new Date() } },
-          { expiresAt: null }
-        ]
-      }).sort({ sortOrder: 1, createdAt: -1 }),
+      // Get active banners using the proper method
+      PromoBanner.getActiveBanners(),
       
       // Get meal plans (limited for performance)
       MealPlan.find({ isActive: true })
@@ -135,14 +129,8 @@ router.get('/', auth, async (req, res) => {
       mealPlans,
       tags
     ] = await Promise.all([
-      // Get active banners
-      PromoBanner.find({ 
-        isActive: true,
-        $or: [
-          { expiresAt: { $gte: new Date() } },
-          { expiresAt: null }
-        ]
-      }).sort({ sortOrder: 1, createdAt: -1 }),
+      // Get active banners using the proper method
+      PromoBanner.getActiveBanners(),
       
       // Get user's active orders
       Order.find({ 

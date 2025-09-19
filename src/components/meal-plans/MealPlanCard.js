@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import CustomIcon from "../ui/CustomIcon";
 import { useTheme } from "../../styles/theme";
@@ -15,12 +15,19 @@ const MealPlanCard = ({
   showRatingButton = false,
 }) => {
   const { colors } = useTheme();
+  const [imageError, setImageError] = useState(false);
 
-  const imageSource = plan.image
-    ? typeof plan.image === "string"
+  const imageSource =
+    imageError || !plan.image
+      ? require("../../assets/images/meal-plans/fitfuel.jpg")
+      : typeof plan.image === "string"
       ? { uri: plan.image }
-      : plan.image
-    : require("../../assets/images/meal-plans/fitfuel.jpg");
+      : plan.image;
+
+  const handleImageError = () => {
+    console.log(`Failed to load meal plan image for ${plan.name}:`, plan.image);
+    setImageError(true);
+  };
 
   const planDiscount = discountData[plan.id || plan._id];
   const hasDiscount = planDiscount && planDiscount.discountPercent > 0;
@@ -37,6 +44,7 @@ const MealPlanCard = ({
           source={imageSource}
           style={styles(colors).mealplanImage}
           defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+          onError={handleImageError}
         />
 
         {/* Heart Button positioned on top-right of image */}
@@ -83,20 +91,15 @@ const MealPlanCard = ({
 
         {/* Rating, Duration, and Meal Type Row */}
         <View style={styles(colors).mealplanMetaRow}>
-          {/* Rating */}
-          {(plan.rating || plan.averageRating) && (
-            <View style={styles(colors).mealplanMetaItem}>
-              <CustomIcon name="star-filled" size={12} color={colors.primary} />
-              <Text style={styles(colors).mealplanMetaText}>
-                {plan.rating || plan.averageRating || "4.5"}
-              </Text>
-            </View>
-          )}
-
           {/* Duration */}
           {(plan.duration || plan.durationDays || plan.durationWeeks) && (
             <View style={styles(colors).mealplanMetaItem}>
-              <CustomIcon name="time" size={12} color={colors.text} />
+              <CustomIcon
+                name="clock-filled"
+                size={12}
+                color={colors.text}
+                opacity={0.8}
+              />
               <Text style={styles(colors).mealplanMetaText}>
                 {plan.duration ||
                   (plan.durationWeeks
@@ -111,7 +114,12 @@ const MealPlanCard = ({
           {/* Meal Type */}
           {(plan.mealType || plan.category || plan.tags?.[0]?.name) && (
             <View style={styles(colors).mealplanMetaItem}>
-              <CustomIcon name="food" size={12} color={colors.text} />
+              <CustomIcon
+                name="list-filled"
+                size={12}
+                color={colors.text}
+                opacity={0.8}
+              />
               <Text style={styles(colors).mealplanMetaText}>
                 {plan.mealType ||
                   plan.category ||
@@ -124,27 +132,29 @@ const MealPlanCard = ({
 
         <View style={styles(colors).mealplanBottomRow}>
           <View style={styles(colors).mealplanPriceContainer}>
-            <Text style={styles(colors).mealplanPrice}>
-              ₦{plan.price?.toLocaleString()}
-            </Text>
+            <View style={styles(colors).priceRatingRow}>
+              <Text style={styles(colors).mealplanPrice}>
+                ₦{plan.price?.toLocaleString()}
+              </Text>
 
-            {/* Show average rating if available */}
-            {(plan.rating || plan.averageRating || plan.avgRating) && (
-              <View style={styles(colors).ratingDisplay}>
-                <CustomIcon
-                  name="star-filled"
-                  size={12}
-                  color={colors.rating || colors.primary}
-                />
-                <Text style={styles(colors).ratingText}>
-                  {(
-                    plan.rating ||
-                    plan.averageRating ||
-                    plan.avgRating
-                  ).toFixed(1)}
-                </Text>
-              </View>
-            )}
+              {/* Show average rating beside price */}
+              {(plan.rating || plan.averageRating || plan.avgRating) && (
+                <View style={styles(colors).ratingDisplay}>
+                  <CustomIcon
+                    name="star-filled"
+                    size={12}
+                    color={colors.rating || colors.primary}
+                  />
+                  <Text style={styles(colors).ratingText}>
+                    {(
+                      plan.rating ||
+                      plan.averageRating ||
+                      plan.avgRating
+                    ).toFixed(1)}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Rating Button */}
@@ -256,6 +266,12 @@ const styles = (colors) =>
     mealplanPriceContainer: {
       flex: 1,
     },
+    priceRatingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
     mealplanPrice: {
       fontSize: 20,
       fontWeight: "bold",
@@ -265,11 +281,10 @@ const styles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       gap: 2,
-      marginTop: 2,
     },
     ratingText: {
-      fontSize: 11,
-      fontWeight: "600",
+      fontSize: 15,
+      fontWeight: "800",
       color: colors.text,
     },
     rateButton: {
@@ -300,8 +315,9 @@ const styles = (colors) =>
     },
     mealplanMetaText: {
       fontSize: 12,
+      opacity: 0.8,
       color: colors.text,
-      fontWeight: "500",
+      fontWeight: "700",
     },
   });
 export default MealPlanCard;

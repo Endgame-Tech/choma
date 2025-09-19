@@ -4,6 +4,7 @@ import { mealPlansApi, type MealPlan as ApiMealPlan, type MealPlanFilters } from
 import { PermissionGate, usePermissionCheck } from '../contexts/PermissionContext'
 import CreateMealPlanModal from '../components/CreateMealPlanModal'
 import CreateTagModal from '../components/CreateTagModal'
+import ViewTagsModal from '../components/ViewTagsModal'
 import EditMealPlanModal from '../components/EditMealPlanModal'
 import DuplicateMealPlanModal from '../components/DuplicateMealPlanModal'
 import MealPlanScheduler from '../components/MealPlanScheduler'
@@ -28,6 +29,8 @@ const MealPlans: React.FC = () => {
 
   // Search input state (separate from filters for debouncing)
   const [searchInput, setSearchInput] = useState('')
+  const [allMealPlans, setAllMealPlans] = useState<UiMealPlan[]>([])
+  const [filteredMealPlans, setFilteredMealPlans] = useState<UiMealPlan[]>([])
 
   // Filters
   const [filters, setFilters] = useState<MealPlanFilters>({
@@ -35,12 +38,15 @@ const MealPlans: React.FC = () => {
     limit: 20,
     search: '',
     isPublished: undefined,
-    durationWeeks: undefined
+    durationWeeks: undefined,
+    sortBy: 'planName',
+    sortOrder: 'asc'
   })
 
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [createTagModalOpen, setCreateTagModalOpen] = useState(false)
+  const [viewTagsModalOpen, setViewTagsModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
   const [schedulerModalOpen, setSchedulerModalOpen] = useState(false)
@@ -64,14 +70,32 @@ const MealPlans: React.FC = () => {
   // Selected meal plans for bulk operations
   const [selectedMealPlans, setSelectedMealPlans] = useState<string[]>([])
 
-  // Debounce search input
+  // Get display meal plans (filtered results when searching, all meal plans otherwise)
+  const displayMealPlans = searchInput.trim() ? filteredMealPlans : mealPlans
+
+  // Handle search with immediate client-side filtering + debounced server search
   useEffect(() => {
+    // Immediate client-side search
+    if (searchInput.trim()) {
+      const filtered = allMealPlans.filter(plan =>
+        plan.planName.toLowerCase().includes(searchInput.toLowerCase()) ||
+        (plan.description && typeof plan.description === 'string' && plan.description.toLowerCase().includes(searchInput.toLowerCase())) ||
+        (plan.targetAudience && plan.targetAudience.toLowerCase().includes(searchInput.toLowerCase()))
+      )
+      setFilteredMealPlans(filtered)
+    } else {
+      setFilteredMealPlans(allMealPlans)
+    }
+
+    // Debounced server search for more comprehensive results
     const timer = setTimeout(() => {
-      setFilters(prev => ({ ...prev, search: searchInput, page: 1 }))
-    }, 500) // 500ms delay
+      if (searchInput.trim()) {
+        fetchMealPlansWithSearch(searchInput)
+      }
+    }, 500)
 
     return () => clearTimeout(timer)
-  }, [searchInput])
+  }, [searchInput, allMealPlans])
 
   useEffect(() => {
     fetchMealPlans()
@@ -129,6 +153,8 @@ const MealPlans: React.FC = () => {
         }
       })
       setMealPlans(uiPlans)
+      setAllMealPlans(uiPlans)
+      setFilteredMealPlans(uiPlans)
       // store api plans by id for components that need the API shape
       const map: Record<string, ApiMealPlan> = {}
       apiPlans.forEach(p => { map[p._id] = p })
@@ -144,6 +170,65 @@ const MealPlans: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Failed to fetch meal plans')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchMealPlansWithSearch = async (searchTerm: string) => {
+    try {
+      const searchFilters = { ...filters, search: searchTerm, page: 1 }
+      const response = await mealPlansApi.getAllMealPlans(searchFilters) as { data: { mealPlans: ApiMealPlan[]; pagination: typeof pagination } }
+
+      // Use the same transformation logic as in fetchMealPlans
+      const apiPlans = response.data.mealPlans || []
+      const uiPlans: UiMealPlan[] = apiPlans.map((p) => {
+        const statsRecord = p.stats as unknown as Record<string, unknown> | undefined
+        const possibleTotalAssignments = typeof statsRecord?.totalMealsAssigned === 'number'
+          ? statsRecord!.totalMealsAssigned as number
+          : (typeof statsRecord?.totalAssignments === 'number' ? statsRecord!.totalAssignments as number : undefined)
+
+        const extra = p as unknown as Record<string, unknown>
+        const planImageUrl = typeof extra?.planImageUrl === 'string' ? extra.planImageUrl as string : p.coverImage
+        const category = typeof extra?.category === 'string' ? extra.category as string : undefined
+        const tags = Array.isArray(extra?.tags) ? (extra.tags as unknown[]).map(String) : []
+
+        return {
+          _id: p._id,
+          planId: p.planId,
+          planName: p.planName,
+          description: p.description,
+          coverImage: p.coverImage,
+          durationWeeks: p.durationWeeks,
+          targetAudience: p.targetAudience,
+          mealTypes: p.mealTypes,
+          planFeatures: p.planFeatures,
+          adminNotes: p.adminNotes,
+          totalPrice: p.totalPrice,
+          isPublished: p.isPublished,
+          isActive: p.isActive,
+          nutritionInfo: {
+            avgCaloriesPerDay: p.nutritionInfo?.avgCaloriesPerDay,
+            totalCalories: p.nutritionInfo?.totalCalories,
+            avgCaloriesPerMeal: p.nutritionInfo?.avgCaloriesPerMeal,
+          },
+          stats: {
+            avgMealsPerDay: p.stats?.avgMealsPerDay,
+            totalDays: p.stats?.totalDays,
+            totalAssignments: possibleTotalAssignments,
+          },
+          assignmentCount: p.assignmentCount,
+          assignments: (p.assignments ?? []).map(a => a as unknown as Record<string, unknown>),
+          planImageUrl,
+          category,
+          tags,
+        }
+      })
+
+      setMealPlans(uiPlans)
+      setFilteredMealPlans(uiPlans)
+      setPagination(response.data.pagination)
+    } catch (err) {
+      console.error('Search failed:', err)
+      // Don't show error for search failures, just keep current results
     }
   }
 
@@ -319,11 +404,98 @@ const MealPlans: React.FC = () => {
   }
 
   const handleSelectAll = () => {
-    if (selectedMealPlans.length === mealPlans.length) {
+    if (selectedMealPlans.length === displayMealPlans.length) {
       setSelectedMealPlans([])
     } else {
-      setSelectedMealPlans(mealPlans.map(plan => plan._id))
+      setSelectedMealPlans(displayMealPlans.map(plan => plan._id))
     }
+  }
+
+  const handleBulkPublish = async () => {
+    if (selectedMealPlans.length === 0) return
+
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Publish Selected Meal Plans',
+      message: `Are you sure you want to publish ${selectedMealPlans.length} selected meal plan${selectedMealPlans.length > 1 ? 's' : ''}?\n\nThis action will make them visible to customers and they will be available for subscription.`,
+      type: 'info',
+      confirmText: `Publish ${selectedMealPlans.length} Plan${selectedMealPlans.length > 1 ? 's' : ''}`,
+      onConfirm: async () => {
+        setConfirmationModal(prev => ({ ...prev, loading: true }))
+        try {
+          // Publish each meal plan individually since there might not be a bulk publish API
+          for (const planId of selectedMealPlans) {
+            await mealPlansApi.publishMealPlan(planId)
+          }
+
+          setSelectedMealPlans([])
+          await fetchMealPlans()
+          setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
+        } catch (err) {
+          alert(`Failed to publish meal plans: ${err instanceof Error ? err.message : 'Unknown error'}`)
+          setConfirmationModal(prev => ({ ...prev, loading: false }))
+        }
+      },
+      loading: false
+    })
+  }
+
+  const handleBulkUnpublish = async () => {
+    if (selectedMealPlans.length === 0) return
+
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Unpublish Selected Meal Plans',
+      message: `Are you sure you want to unpublish ${selectedMealPlans.length} selected meal plan${selectedMealPlans.length > 1 ? 's' : ''}?\n\nThis action will hide them from customers and they will no longer be available for subscription.`,
+      type: 'warning',
+      confirmText: `Unpublish ${selectedMealPlans.length} Plan${selectedMealPlans.length > 1 ? 's' : ''}`,
+      onConfirm: async () => {
+        setConfirmationModal(prev => ({ ...prev, loading: true }))
+        try {
+          // Unpublish each meal plan individually since there might not be a bulk unpublish API
+          for (const planId of selectedMealPlans) {
+            await mealPlansApi.unpublishMealPlan(planId)
+          }
+
+          setSelectedMealPlans([])
+          await fetchMealPlans()
+          setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
+        } catch (err) {
+          alert(`Failed to unpublish meal plans: ${err instanceof Error ? err.message : 'Unknown error'}`)
+          setConfirmationModal(prev => ({ ...prev, loading: false }))
+        }
+      },
+      loading: false
+    })
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedMealPlans.length === 0) return
+
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Delete Selected Meal Plans',
+      message: `⚠️ DANGER: Are you sure you want to permanently delete ${selectedMealPlans.length} selected meal plan${selectedMealPlans.length > 1 ? 's' : ''}?\n\nThis action cannot be undone and will remove:\n• All meal plan data and images\n• Assigned meals and schedules\n• Customer subscriptions\n• Assignment history\n\nDeleted meal plans cannot be recovered.`,
+      type: 'danger',
+      confirmText: `Delete ${selectedMealPlans.length} Plan${selectedMealPlans.length > 1 ? 's' : ''}`,
+      onConfirm: async () => {
+        setConfirmationModal(prev => ({ ...prev, loading: true }))
+        try {
+          // Delete each meal plan individually since there might not be a bulk delete API
+          for (const planId of selectedMealPlans) {
+            await mealPlansApi.deleteMealPlan(planId, true) // force delete
+          }
+
+          setSelectedMealPlans([])
+          await fetchMealPlans()
+          setConfirmationModal(prev => ({ ...prev, isOpen: false, loading: false }))
+        } catch (err) {
+          alert(`Failed to delete meal plans: ${err instanceof Error ? err.message : 'Unknown error'}`)
+          setConfirmationModal(prev => ({ ...prev, loading: false }))
+        }
+      },
+      loading: false
+    })
   }
 
   if (loading) {
@@ -390,14 +562,14 @@ const MealPlans: React.FC = () => {
             </button>
           </div>
 
-          {/* Create Tags Button */}
+          {/* View Tags Button */}
           <PermissionGate module="mealPlans" action="create">
             <button
-              onClick={() => setCreateTagModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-green-600 dark:bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
+              onClick={() => setViewTagsModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
             >
-              <i className="fi fi-sr-tags mr-2"></i>
-              Create Tags
+              <i className="fi fi-sr-eye mr-2"></i>
+              View Tags
             </button>
           </PermissionGate>
 
@@ -416,7 +588,7 @@ const MealPlans: React.FC = () => {
 
       {/* Filters and Search */}
       <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Search</label>
@@ -474,6 +646,31 @@ const MealPlans: React.FC = () => {
             </select>
           </div>
 
+          {/* Sort By */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Sort By</label>
+            <select
+              value={`${filters.sortBy}-${filters.sortOrder}`}
+              onChange={(e) => {
+                const [sortBy, sortOrder] = e.target.value.split('-') as ['planName' | 'createdAt', 'asc' | 'desc']
+                setFilters(prev => ({
+                  ...prev,
+                  sortBy,
+                  sortOrder,
+                  page: 1
+                }))
+              }}
+              aria-label="Sort meal plans"
+              title="Choose how to sort the meal plans"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="planName-asc">Name (A-Z)</option>
+              <option value="planName-desc">Name (Z-A)</option>
+              <option value="createdAt-desc">Newest First</option>
+              <option value="createdAt-asc">Oldest First</option>
+            </select>
+          </div>
+
           {/* Results per page */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Per Page</label>
@@ -493,8 +690,57 @@ const MealPlans: React.FC = () => {
         </div>
       </div>
 
+      {/* Bulk Actions */}
+      {selectedMealPlans.length > 0 && (
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-blue-800 dark:text-blue-300">
+              {selectedMealPlans.length} meal plan{selectedMealPlans.length > 1 ? 's' : ''} selected
+            </span>
+            <div className="flex items-center space-x-2">
+              <PermissionGate module="mealPlans" action="publish">
+                <button
+                  onClick={handleBulkPublish}
+                  className="text-sm bg-green-600 dark:bg-green-700 text-white px-3 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
+                >
+                  <i className="fi fi-sr-check mr-1"></i>
+                  Publish Selected
+                </button>
+              </PermissionGate>
+
+              <PermissionGate module="mealPlans" action="publish">
+                <button
+                  onClick={handleBulkUnpublish}
+                  className="text-sm bg-orange-600 dark:bg-orange-700 text-white px-3 py-2 rounded-lg hover:bg-orange-700 dark:hover:bg-orange-800 transition-colors"
+                >
+                  <i className="fi fi-sr-cross mr-1"></i>
+                  Unpublish Selected
+                </button>
+              </PermissionGate>
+
+              <PermissionGate module="mealPlans" action="delete">
+                <button
+                  onClick={handleBulkDelete}
+                  className="text-sm bg-red-600 dark:bg-red-700 text-white px-3 py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors"
+                >
+                  <i className="fi fi-sr-trash mr-1"></i>
+                  Delete Selected
+                </button>
+              </PermissionGate>
+
+              <button
+                onClick={() => setSelectedMealPlans([])}
+                className="text-sm text-gray-600 dark:text-neutral-300 hover:text-gray-800 dark:hover:text-neutral-100 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Clear Selection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Meal Plans Grid */}
-      {mealPlans.length === 0 ? (
+      {displayMealPlans.length === 0 ? (
         <div className="text-center py-12 bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
           <div className="text-4xl mb-2"><i className="fi fi-sr-clipboard-list"></i></div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 mb-2">No meal plans found</h3>
@@ -515,26 +761,43 @@ const MealPlans: React.FC = () => {
         </div>
       ) : viewMode === 'cards' ? (
         /* Card View */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {mealPlans.map((plan) => (
-            <MealPlanCard
-              key={plan._id}
-              mealPlan={plan}
-              onEdit={hasPermission('mealPlans', 'edit') ? (plan) => {
-                setSelectedMealPlan(plan)
-                setEditModalOpen(true)
-              } : undefined}
-              onDelete={hasPermission('mealPlans', 'delete') ? handleDeleteMealPlan : undefined}
-              onSchedule={hasPermission('mealPlans', 'schedule') ? (plan) => {
-                setSelectedMealPlan(plan)
-                setSchedulerModalOpen(true)
-              } : undefined}
-              onTogglePublish={hasPermission('mealPlans', 'publish') ? handleTogglePublish : undefined}
-              onDuplicate={hasPermission('mealPlans', 'create') ? handleDuplicateMealPlan : undefined}
-              onSelect={handleSelectMealPlan}
-              isSelected={selectedMealPlans.includes(plan._id)}
-            />
-          ))}
+        <div className="space-y-6">
+          {/* Select All for Cards */}
+          <div className="flex items-center justify-between mb-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                className="rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500 mr-2"
+                checked={selectedMealPlans.length === displayMealPlans.length && displayMealPlans.length > 0}
+                onChange={handleSelectAll}
+              />
+              <span className="text-sm text-gray-600 dark:text-neutral-300">Select All Meal Plans</span>
+            </label>
+            <span className="text-sm text-gray-500 dark:text-neutral-400">{displayMealPlans.length} meal plans</span>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {displayMealPlans.map((plan) => (
+              <MealPlanCard
+                key={plan._id}
+                mealPlan={plan}
+                onEdit={hasPermission('mealPlans', 'edit') ? (plan) => {
+                  setSelectedMealPlan(plan)
+                  setEditModalOpen(true)
+                } : undefined}
+                onDelete={hasPermission('mealPlans', 'delete') ? handleDeleteMealPlan : undefined}
+                onSchedule={hasPermission('mealPlans', 'schedule') ? (plan) => {
+                  setSelectedMealPlan(plan)
+                  setSchedulerModalOpen(true)
+                } : undefined}
+                onTogglePublish={hasPermission('mealPlans', 'publish') ? handleTogglePublish : undefined}
+                onDuplicate={hasPermission('mealPlans', 'create') ? handleDuplicateMealPlan : undefined}
+                onSelect={handleSelectMealPlan}
+                isSelected={selectedMealPlans.includes(plan._id)}
+              />
+            ))}
+          </div>
         </div>
       ) : (
         /* Table View */
@@ -547,7 +810,7 @@ const MealPlans: React.FC = () => {
                     <input
                       type="checkbox"
                       className="rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500"
-                      checked={selectedMealPlans.length === mealPlans.length && mealPlans.length > 0}
+                      checked={selectedMealPlans.length === displayMealPlans.length && displayMealPlans.length > 0}
                       onChange={handleSelectAll}
                       aria-label="Select all meal plans"
                       title="Select all meal plans"
@@ -574,7 +837,7 @@ const MealPlans: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white/90 dark:bg-neutral-800/90 divide-y divide-gray-200 dark:divide-neutral-700">
-                {mealPlans.map((plan) => (
+                {displayMealPlans.map((plan) => (
                   <tr key={plan._id} className="hover:bg-gray-100 dark:hover:bg-neutral-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
@@ -838,6 +1101,12 @@ const MealPlans: React.FC = () => {
           />
         </>
       )}
+
+      {/* View Tags Modal */}
+      <ViewTagsModal
+        isOpen={viewTagsModalOpen}
+        onClose={() => setViewTagsModalOpen(false)}
+      />
 
       {/* Create Tag Modal */}
       <CreateTagModal

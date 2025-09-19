@@ -11,7 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import CustomIcon from "../../components/ui/CustomIcon";
 import { THEME } from "../../utils/colors";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../styles/theme";
@@ -460,7 +460,7 @@ const SettingsScreen = ({ navigation }) => {
   ) => (
     <View style={styles(colors).settingItem}>
       <View style={styles(colors).settingIcon}>
-        <Ionicons name={icon} size={20} color={colors.primary} />
+        <CustomIcon name={icon} size={20} color={colors.primary} />
       </View>
       <View style={styles(colors).settingContent}>
         <Text style={styles(colors).settingTitle}>{title}</Text>
@@ -477,7 +477,7 @@ const SettingsScreen = ({ navigation }) => {
           disabled={loading}
         />
       ) : (
-        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        <CustomIcon name="chevron-forward" size={20} color={colors.textMuted} />
       )}
     </View>
   );
@@ -491,7 +491,7 @@ const SettingsScreen = ({ navigation }) => {
   ) => (
     <TouchableOpacity style={styles(colors).actionItem} onPress={onPress}>
       <View style={styles(colors).settingIcon}>
-        <Ionicons name={icon} size={20} color={colors.primary} />
+        <CustomIcon name={icon} size={20} color={colors.primary} />
       </View>
       <View style={styles(colors).settingContent}>
         <Text style={styles(colors).settingTitle}>{title}</Text>
@@ -499,7 +499,7 @@ const SettingsScreen = ({ navigation }) => {
           {subtitle} • Current: {currentValue.replace("_", " ").toUpperCase()}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+      <CustomIcon name="chevron-forward" size={20} color={colors.textMuted} />
     </TouchableOpacity>
   );
 
@@ -512,7 +512,7 @@ const SettingsScreen = ({ navigation }) => {
   ) => (
     <TouchableOpacity style={styles(colors).actionItem} onPress={onPress}>
       <View style={styles(colors).settingIcon}>
-        <Ionicons name={icon} size={20} color={color} />
+        <CustomIcon name={icon} size={20} color={color} />
       </View>
       <View style={styles(colors).settingContent}>
         <Text style={[styles(colors).settingTitle, { color }]}>{title}</Text>
@@ -520,7 +520,7 @@ const SettingsScreen = ({ navigation }) => {
           <Text style={styles(colors).settingSubtitle}>{subtitle}</Text>
         )}
       </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+      <CustomIcon name="chevron-forward" size={20} color={colors.textMuted} />
     </TouchableOpacity>
   );
 
@@ -537,7 +537,7 @@ const SettingsScreen = ({ navigation }) => {
           style={styles(colors).backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <CustomIcon name="chevron-back" size={20} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles(colors).headerTitle}>Settings</Text>
         <View style={styles(colors).placeholder} />
@@ -561,7 +561,7 @@ const SettingsScreen = ({ navigation }) => {
             )}
 
             {renderSettingItem(
-              "moon",
+              "dark",
               "Dark Mode",
               "Switch to dark theme",
               isDark,
@@ -569,7 +569,7 @@ const SettingsScreen = ({ navigation }) => {
             )}
 
             {renderSettingItem(
-              "finger-print",
+              "biometric",
               "Biometric Authentication",
               "Use fingerprint or face ID for quick access",
               settings.biometricAuth,
@@ -592,7 +592,7 @@ const SettingsScreen = ({ navigation }) => {
 
           <View style={styles(colors).settingsGroup}>
             {renderSettingItem(
-              "analytics",
+              "data",
               "Data Collection",
               "Help improve app with anonymous usage data",
               settings.dataCollection,
@@ -600,14 +600,14 @@ const SettingsScreen = ({ navigation }) => {
             )}
 
             {renderActionItem(
-              "shield-checkmark",
+              "shield",
               "Privacy Policy",
               "Learn how we protect your data",
               handlePrivacy
             )}
 
             {renderActionItem(
-              "document-text",
+              "list",
               "Terms of Service",
               "Read our terms and conditions",
               handleTerms
@@ -621,7 +621,7 @@ const SettingsScreen = ({ navigation }) => {
 
           <View style={styles(colors).settingsGroup}>
             {renderFrequencyItem(
-              "time",
+              "frequency",
               "Prompt Frequency",
               "How often you want to be asked for ratings",
               ratingPreferences.promptFrequency,
@@ -629,7 +629,7 @@ const SettingsScreen = ({ navigation }) => {
             )}
 
             {renderSettingItem(
-              "checkmark-circle",
+              "cart",
               "Order Completion Prompts",
               "Ask for ratings when orders are completed",
               ratingPreferences.orderCompletionPrompts,
@@ -637,7 +637,7 @@ const SettingsScreen = ({ navigation }) => {
             )}
 
             {renderSettingItem(
-              "calendar",
+              "mission",
               "Subscription Milestone Prompts",
               "Ask for ratings at subscription milestones",
               ratingPreferences.subscriptionMilestonePrompts,
@@ -645,7 +645,7 @@ const SettingsScreen = ({ navigation }) => {
             )}
 
             {renderSettingItem(
-              "car",
+              "delivery-man",
               "Delivery Rating Prompts",
               "Ask for ratings after deliveries",
               ratingPreferences.deliveryRatingPrompts,
@@ -675,7 +675,7 @@ const SettingsScreen = ({ navigation }) => {
             )}
 
             {renderActionItem(
-              "mail",
+              "email",
               "Contact Us",
               "Send us your feedback or questions",
               handleContactUs
@@ -703,7 +703,7 @@ const SettingsScreen = ({ navigation }) => {
             )}
 
             {renderActionItem(
-              "refresh",
+              "reorder",
               "Check for Updates",
               "Make sure you have the latest version",
               handleCheckUpdates
@@ -721,7 +721,7 @@ const SettingsScreen = ({ navigation }) => {
 
           <View style={styles(colors).settingsGroup}>
             {renderActionItem(
-              "log-out",
+              "sign-out",
               "Sign Out",
               "Sign out of your account",
               () =>
@@ -734,7 +734,7 @@ const SettingsScreen = ({ navigation }) => {
             )}
 
             {renderActionItem(
-              "trash",
+              "remove",
               "Delete Account",
               "Permanently delete your account and data",
               () =>

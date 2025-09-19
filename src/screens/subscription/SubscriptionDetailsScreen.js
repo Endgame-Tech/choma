@@ -325,7 +325,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
           style={styles(colors).backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles(colors).headerTitle}>Subscription Details</Text>
         <View style={styles(colors).placeholder} />
@@ -516,8 +516,8 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                       subscription.durationWeeks === 1 ? "week" : "weeks"
                     }`
                   : subscription.duration
-                    ? subscription.duration
-                    : "4 weeks"}
+                  ? subscription.duration
+                  : "4 weeks"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
@@ -526,8 +526,8 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                 {subscription.startDate
                   ? formatDate(subscription.startDate)
                   : subscription.createdAt
-                    ? formatDate(subscription.createdAt)
-                    : "Today"}
+                  ? formatDate(subscription.createdAt)
+                  : "Today"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
@@ -536,8 +536,8 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                 {subscription.nextDelivery
                   ? formatDate(subscription.nextDelivery)
                   : subscription.endDate
-                    ? formatDate(subscription.endDate)
-                    : "Soon"}
+                  ? formatDate(subscription.endDate)
+                  : "Soon"}
               </Text>
             </View>
           </View>
@@ -567,10 +567,10 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                 {subscription.paymentDate
                   ? formatDate(subscription.paymentDate)
                   : subscription.createdAt || subscription.createdDate
-                    ? formatDate(
-                        subscription.createdAt || subscription.createdDate
-                      )
-                    : "Recently"}
+                  ? formatDate(
+                      subscription.createdAt || subscription.createdDate
+                    )
+                  : "Recently"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>

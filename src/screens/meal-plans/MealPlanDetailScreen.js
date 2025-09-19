@@ -33,6 +33,9 @@ import {
   formatNumber,
   formatCalories,
   formatNutritionValue,
+  formatApproximateNumber,
+  formatApproximateCalories,
+  formatApproximateNutritionValue,
 } from "../../utils/numberUtils";
 import { THEME } from "../../utils/colors";
 import MealPlanDetailSkeleton from "../../components/meal-plans/MealPlanDetailSkeleton";
@@ -53,7 +56,25 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
   // Fetch ratings for this meal plan
   const fetchRatings = useCallback(async () => {
-    if (!mealPlanDetails) return;
+    console.log("🚀 fetchRatings called - entry point", {
+      mealPlanDetailsInside: !!mealPlanDetails,
+      mealPlanDetailsId: mealPlanDetails?._id,
+      bundleId: bundle?._id,
+    });
+
+    if (!mealPlanDetails) {
+      console.log("❌ fetchRatings: no mealPlanDetails, returning early", {
+        mealPlanDetailsType: typeof mealPlanDetails,
+        mealPlanDetailsValue: mealPlanDetails,
+      });
+      return;
+    }
+
+    console.log("🔄 fetchRatings: starting execution", {
+      mealPlanDetailsId: mealPlanDetails._id,
+      bundleId: bundle?._id,
+      hasRatingApi: !!ratingApi,
+    });
 
     try {
       setRatingsLoading(true);
@@ -64,12 +85,35 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         bundle.planId;
 
       // Get rating statistics
+      console.log("📊 About to call ratingApi.getEntityStats with:", {
+        entityType: "meal_plan",
+        mealPlanId: mealPlanId,
+      });
+
       const statsResponse = await ratingApi.getEntityStats(
         "meal_plan",
         mealPlanId
       );
+
+      console.log("📊 Rating stats API response:", {
+        success: statsResponse?.success,
+        hasData: !!statsResponse?.data,
+        responseKeys: Object.keys(statsResponse || {}),
+      });
       if (statsResponse.success) {
+        console.log("📊 Rating stats fetched:", statsResponse.data);
+        console.log(
+          "   totalRatings:",
+          statsResponse.data?.overallStats?.totalRatings
+        );
+        console.log(
+          "   averageRating:",
+          statsResponse.data?.overallStats?.averageRating
+        );
         setRatingStats(statsResponse.data);
+      } else {
+        console.log("❌ Failed to fetch rating stats:", statsResponse);
+        setRatingStats(null);
       }
 
       // Get existing ratings (first page for display)
@@ -83,7 +127,22 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         }
       );
       if (ratingsResponse.success) {
+        console.log(
+          "📝 Existing ratings fetched:",
+          ratingsResponse.data.ratings?.length || 0
+        );
+        console.log(
+          "   ratings details:",
+          ratingsResponse.data.ratings?.map((r) => ({
+            id: r._id,
+            overallRating: r.overallRating,
+            comment: r.comment,
+            ratedBy: r.ratedBy?.name || r.ratedBy,
+          }))
+        );
         setExistingRatings(ratingsResponse.data.ratings || []);
+      } else {
+        console.log("❌ Failed to fetch existing ratings:", ratingsResponse);
       }
 
       // Check if current user has already rated this meal plan
@@ -92,13 +151,39 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         ratingType: "meal_plan",
       });
       if (userRatingsResponse.success) {
+        console.log("🔍 Looking for existing user rating:");
+        console.log("   mealPlanId:", mealPlanId);
+        console.log(
+          "   all user ratings:",
+          userRatingsResponse.data.ratings?.map((r) => ({
+            id: r._id,
+            ratedEntity: r.ratedEntity,
+            overallRating: r.overallRating,
+          }))
+        );
+
         const userMealPlanRating = userRatingsResponse.data.ratings?.find(
           (rating) => rating.ratedEntity === mealPlanId
         );
+
+        console.log("   found existing rating:", !!userMealPlanRating);
+        if (userMealPlanRating) {
+          console.log("   existing rating details:", {
+            id: userMealPlanRating._id,
+            overallRating: userMealPlanRating.overallRating,
+            comment: userMealPlanRating.comment,
+          });
+        }
+
         setUserRating(userMealPlanRating || null);
       }
     } catch (error) {
-      console.error("Error fetching ratings:", error);
+      console.error("❌ Error in fetchRatings:", error);
+      console.error("❌ Error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
     } finally {
       setRatingsLoading(false);
     }
@@ -107,16 +192,48 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   // Handle rating submission
   const handleRatingSubmit = async (ratingData) => {
     try {
+      console.log("🔍 Rating submission debug:");
+      console.log("   userRating exists:", !!userRating);
+      console.log("   userRating._id:", userRating?._id);
+
       if (userRating) {
         // Update existing rating
+        console.log("📝 Updating existing rating:", userRating._id);
         await ratingApi.updateRating(userRating._id, ratingData);
       } else {
         // Create new rating
+        console.log("➕ Creating new rating");
         await ratingApi.createRating(ratingData);
       }
 
       // Refresh ratings after submission
+      console.log("🔄 Refreshing ratings and stats after submission...");
       await fetchRatings();
+
+      // Force a delay to ensure backend processing is complete
+      setTimeout(async () => {
+        console.log("🔄 Secondary refresh of ratings after delay...");
+        await fetchRatings();
+      }, 2000);
+
+      // Refresh meal plan details to get updated avgRating
+      const planId =
+        mealPlanDetails._id ||
+        mealPlanDetails.planId ||
+        bundle._id ||
+        bundle.planId;
+      if (planId) {
+        try {
+          const response = await apiService.request(`/mealplans/${planId}`);
+          if (response.success && response.data) {
+            setMealPlanDetails(response.data);
+            console.log("✅ Meal plan details refreshed with updated rating");
+          }
+        } catch (refreshError) {
+          console.error("Error refreshing meal plan details:", refreshError);
+          // Don't show error to user as rating submission was successful
+        }
+      }
 
       // Subtle success feedback without intrusive popup
       console.log("✅ Rating submitted successfully");
@@ -128,6 +245,20 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       let errorMessage = "Failed to submit rating. Please try again.";
 
       if (error.message && error.message.includes("already rated")) {
+        // This means the rating was already created, try to update it instead
+        console.log(
+          "⚠️ Rating already exists, attempting to find and update it"
+        );
+        try {
+          // Refresh ratings to get the latest user rating
+          await fetchRatings();
+          // The error suggests the rating exists but our frontend didn't detect it
+          errorMessage = "Your rating has been recorded successfully.";
+          Alert.alert("Rating Updated", errorMessage, [{ text: "OK" }]);
+          return; // Don't show the error, treat as success
+        } catch (fetchError) {
+          console.error("Error fetching updated ratings:", fetchError);
+        }
         errorMessage =
           "You have already rated this meal plan. Your rating has been updated.";
       } else if (error.message && error.message.includes("not found")) {
@@ -216,15 +347,18 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         : "4 weeks";
       const price = mealPlanDetails?.basePrice || bundle?.price || 25000;
       const calories = mealPlanDetails?.nutritionInfo?.avgCaloriesPerDay
-        ? formatCalories(mealPlanDetails.nutritionInfo.avgCaloriesPerDay)
+        ? formatApproximateCalories(
+            mealPlanDetails.nutritionInfo.avgCaloriesPerDay
+          )
         : "N/A";
       const protein = mealPlanDetails?.nutritionInfo?.totalProtein
-        ? formatNutritionValue(
+        ? formatApproximateNutritionValue(
             Math.round(
               mealPlanDetails.nutritionInfo.totalProtein /
                 (mealPlanDetails.durationWeeks * 7)
-            )
-          ) + "g"
+            ),
+            "g"
+          )
         : "N/A";
 
       const shareMessage =
@@ -325,14 +459,43 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         setDiscountLoading(true);
         console.log("💰 Fetching discount info for user and meal plan");
         console.log("💰 User ID:", userId);
+
+        // Extract meal plan ID with multiple fallbacks
+        const mealPlanId =
+          mealPlanDetails._id ||
+          mealPlanDetails.id ||
+          mealPlanDetails.planId ||
+          bundle._id ||
+          bundle.id ||
+          bundle.planId;
+
+        console.log("💰 Meal plan ID:", mealPlanId);
         console.log(
-          "💰 Meal plan ID:",
-          mealPlanDetails.id || mealPlanDetails._id
+          "💰 DEBUG - mealPlanDetails keys:",
+          Object.keys(mealPlanDetails || {})
         );
+
+        if (!mealPlanId) {
+          console.error("❌ No meal plan ID found in any expected field");
+          setDiscountInfo({
+            discountPercent: 0,
+            discountAmount: 0,
+            reason: "No meal plan ID available",
+          });
+          setDiscountLoading(false);
+          return;
+        }
+
+        // Create a meal plan object with guaranteed ID for discount calculation
+        const mealPlanForDiscount = {
+          ...mealPlanDetails,
+          _id: mealPlanId,
+          id: mealPlanId,
+        };
 
         const discount = await discountService.calculateDiscount(
           user,
-          mealPlanDetails
+          mealPlanForDiscount
         );
         console.log("💰 Discount calculated:", discount);
 
@@ -353,12 +516,130 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     fetchDiscountInfo();
   }, [user, mealPlanDetails]);
 
+  // Debug mealPlanDetails changes
+  useEffect(() => {
+    console.log("🎯 mealPlanDetails changed:", {
+      hasMealPlanDetails: !!mealPlanDetails,
+      mealPlanId: mealPlanDetails?._id || mealPlanDetails?.planId,
+      planName: mealPlanDetails?.planName,
+      fetchRatingsExists: typeof fetchRatings === "function",
+    });
+  }, [mealPlanDetails]);
+
   // Fetch ratings when meal plan details are loaded
   useEffect(() => {
+    console.log("🎯 Rating useEffect triggered:", {
+      mealPlanDetails: !!mealPlanDetails,
+      mealPlanId: mealPlanDetails?._id || mealPlanDetails?.planId,
+      fetchRatingsType: typeof fetchRatings,
+    });
+
     if (mealPlanDetails) {
-      fetchRatings();
+      console.log("🔄 Calling fetchRatings directly from useEffect...");
+
+      // Call fetchRatings directly to avoid closure issues
+      const fetchRatingsDirectly = async () => {
+        console.log("🚀 fetchRatingsDirectly - entry point", {
+          mealPlanDetailsInside: !!mealPlanDetails,
+          mealPlanDetailsId: mealPlanDetails?._id,
+        });
+
+        try {
+          setRatingsLoading(true);
+          const mealPlanId =
+            mealPlanDetails._id ||
+            mealPlanDetails.planId ||
+            bundle._id ||
+            bundle.planId;
+
+          console.log("📊 About to call ratingApi.getEntityStats with:", {
+            entityType: "meal_plan",
+            mealPlanId: mealPlanId,
+          });
+
+          const statsResponse = await ratingApi.getEntityStats(
+            "meal_plan",
+            mealPlanId
+          );
+
+          console.log("📊 Rating stats API response:", {
+            success: statsResponse?.success,
+            hasData: !!statsResponse?.data,
+            responseKeys: Object.keys(statsResponse || {}),
+          });
+
+          if (statsResponse.success) {
+            console.log("📊 Rating stats fetched:", statsResponse.data);
+            setRatingStats(statsResponse.data);
+          } else {
+            console.log("❌ Failed to fetch rating stats:", statsResponse);
+            setRatingStats(null);
+          }
+
+          // Get existing ratings
+          const ratingsResponse = await ratingApi.getEntityRatings(
+            "meal_plan",
+            mealPlanId,
+            {
+              limit: 5,
+              sortBy: "createdAt",
+              sortOrder: "desc",
+            }
+          );
+
+          console.log("📝 Ratings API full response:", {
+            success: ratingsResponse?.success,
+            hasData: !!ratingsResponse?.data,
+            dataKeys: Object.keys(ratingsResponse?.data || {}),
+            ratingsArray: ratingsResponse?.data?.ratings,
+            ratingsLength: ratingsResponse?.data?.ratings?.length,
+            totalCount: ratingsResponse?.data?.totalCount,
+            pagination: ratingsResponse?.data?.pagination,
+            fullData: ratingsResponse?.data,
+            isDataArray: Array.isArray(ratingsResponse?.data),
+            dataLength: Array.isArray(ratingsResponse?.data)
+              ? ratingsResponse.data.length
+              : 0,
+          });
+
+          if (ratingsResponse.success) {
+            // The actual structure is: response.data.data.ratings
+            const ratingsArray =
+              ratingsResponse.data?.data?.ratings ||
+              ratingsResponse.data?.ratings ||
+              (Array.isArray(ratingsResponse.data) ? ratingsResponse.data : []);
+
+            console.log("📝 Existing ratings fetched:", ratingsArray.length);
+            console.log(
+              "📝 Rating comments:",
+              ratingsArray.map((r) => ({
+                id: r._id,
+                overallRating: r.overallRating,
+                comment: r.comment,
+                hasComment: !!r.comment,
+                commentLength: r.comment?.length || 0,
+                ratedBy: r.ratedBy?.name || r.ratedBy,
+              }))
+            );
+            setExistingRatings(ratingsArray);
+          } else {
+            console.log(
+              "❌ Failed to fetch existing ratings:",
+              ratingsResponse
+            );
+          }
+        } catch (error) {
+          console.error("❌ Error in fetchRatingsDirectly:", error);
+        } finally {
+          setRatingsLoading(false);
+        }
+      };
+
+      fetchRatingsDirectly();
+    } else {
+      console.log("❌ Skipping fetchRatings - no mealPlanDetails");
     }
-  }, [mealPlanDetails, fetchRatings]);
+  }, [mealPlanDetails]);
 
   // Edited to trigger Codacy CLI analysis
   // Transform backend weekly meals data to display format
@@ -1179,8 +1460,8 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
           <View style={styles(colors).planMeta}>
             <View style={styles(colors).metaItem}>
-              <CustomIcon name="star-filled" size={16} color={colors.rating} />
-              <Text style={styles(colors).metaText}>
+              <CustomIcon name="star-filled" size={20} color={colors.rating} />
+              <Text style={styles(colors).metaText2}>
                 {mealPlanDetails?.avgRating || bundle?.rating || 4.5}
               </Text>
             </View>
@@ -1188,7 +1469,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <CustomIcon name="time" size={16} color={colors.textSecondary} />
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.durationWeeks
-                  ? `${mealPlanDetails.durationWeeks} week${
+                  ? `~${mealPlanDetails.durationWeeks} week${
                       mealPlanDetails.durationWeeks !== 1 ? "s" : ""
                     }`
                   : mealPlanDetails?.planDuration ||
@@ -1300,7 +1581,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   <Text style={styles(colors).nutritionOverviewEmoji}>🔥</Text>
                 </View>
                 <Text style={styles(colors).nutritionOverviewValue}>
-                  {formatCalories(
+                  {formatApproximateCalories(
                     mealPlanDetails.nutritionInfo.totalCalories
                   ) || "N/A"}
                 </Text>
@@ -1328,7 +1609,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   <Text style={styles(colors).nutritionOverviewEmoji}>👌</Text>
                 </View>
                 <Text style={styles(colors).nutritionOverviewValue}>
-                  {formatCalories(
+                  {formatApproximateCalories(
                     mealPlanDetails.nutritionInfo.avgCaloriesPerDay
                   ) || "N/A"}
                 </Text>
@@ -1353,12 +1634,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
                     {mealPlanDetails.nutritionInfo.totalProtein
-                      ? formatNutritionValue(
+                      ? formatApproximateNutritionValue(
                           Math.round(
                             mealPlanDetails.nutritionInfo.totalProtein /
                               (mealPlanDetails.durationWeeks * 7)
-                          )
-                        ) + "g"
+                          ),
+                          "g"
+                        )
                       : "N/A"}
                   </Text>
                   <Text style={styles(colors).nutritionCardLabel}>Protein</Text>
@@ -1377,12 +1659,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
                     {mealPlanDetails.nutritionInfo.totalCarbs
-                      ? formatNutritionValue(
+                      ? formatApproximateNutritionValue(
                           Math.round(
                             mealPlanDetails.nutritionInfo.totalCarbs /
                               (mealPlanDetails.durationWeeks * 7)
-                          )
-                        ) + "g"
+                          ),
+                          "g"
+                        )
                       : "N/A"}
                   </Text>
                   <Text style={styles(colors).nutritionCardLabel}>Carbs</Text>
@@ -1401,12 +1684,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
                     {mealPlanDetails.nutritionInfo.totalFat
-                      ? formatNutritionValue(
+                      ? formatApproximateNutritionValue(
                           Math.round(
                             mealPlanDetails.nutritionInfo.totalFat /
                               (mealPlanDetails.durationWeeks * 7)
-                          )
-                        ) + "g"
+                          ),
+                          "g"
+                        )
                       : "N/A"}
                   </Text>
                   <Text style={styles(colors).nutritionCardLabel}>Fat</Text>
@@ -1425,12 +1709,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).nutritionCardContent}>
                   <Text style={styles(colors).nutritionCardValue}>
                     {mealPlanDetails.nutritionInfo.totalFiber
-                      ? formatNutritionValue(
+                      ? formatApproximateNutritionValue(
                           Math.round(
                             mealPlanDetails.nutritionInfo.totalFiber /
                               (mealPlanDetails.durationWeeks * 7)
-                          )
-                        ) + "g"
+                          ),
+                          "g"
+                        )
                       : "N/A"}
                   </Text>
                   <Text style={styles(colors).nutritionCardLabel}>Fiber</Text>
@@ -1446,10 +1731,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <View style={styles(colors).nutritionSummaryRow}>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
-                    {formatNutritionValue(
-                      mealPlanDetails.nutritionInfo.totalProtein
+                    {formatApproximateNutritionValue(
+                      mealPlanDetails.nutritionInfo.totalProtein,
+                      "g"
                     ) || "N/A"}
-                    g
                   </Text>
                   <Text style={styles(colors).nutritionSummaryLabel}>
                     Protein
@@ -1457,10 +1742,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 </View>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
-                    {formatNutritionValue(
-                      mealPlanDetails.nutritionInfo.totalCarbs
+                    {formatApproximateNutritionValue(
+                      mealPlanDetails.nutritionInfo.totalCarbs,
+                      "g"
                     ) || "N/A"}
-                    g
                   </Text>
                   <Text style={styles(colors).nutritionSummaryLabel}>
                     Carbs
@@ -1468,19 +1753,19 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 </View>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
-                    {formatNutritionValue(
-                      mealPlanDetails.nutritionInfo.totalFat
+                    {formatApproximateNutritionValue(
+                      mealPlanDetails.nutritionInfo.totalFat,
+                      "g"
                     ) || "N/A"}
-                    g
                   </Text>
                   <Text style={styles(colors).nutritionSummaryLabel}>Fat</Text>
                 </View>
                 <View style={styles(colors).nutritionSummaryItem}>
                   <Text style={styles(colors).nutritionSummaryValue}>
-                    {formatNutritionValue(
-                      mealPlanDetails.nutritionInfo.totalFiber
+                    {formatApproximateNutritionValue(
+                      mealPlanDetails.nutritionInfo.totalFiber,
+                      "g"
                     ) || "N/A"}
-                    g
                   </Text>
                   <Text style={styles(colors).nutritionSummaryLabel}>
                     Fiber
@@ -1531,12 +1816,41 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           </View>
 
           {/* Rating Statistics */}
-          {ratingStats && (ratingStats.overallStats?.totalRatings || 0) > 0 ? (
+          {(() => {
+            const hasRatingStats = !!ratingStats;
+            const totalRatings =
+              ratingStats?.data?.overallStats?.totalRatings || 0;
+            const averageRating =
+              ratingStats?.data?.overallStats?.averageRating || 0;
+            const shouldShowRatings = hasRatingStats && totalRatings > 0;
+
+            console.log("🎯 Rating display condition check:");
+            console.log("   hasRatingStats:", hasRatingStats);
+            console.log("   totalRatings:", totalRatings);
+            console.log("   shouldShowRatings:", shouldShowRatings);
+            console.log("   existingRatings.length:", existingRatings.length);
+
+            // Show ratings if we have rating stats OR if we have existing ratings
+            const finalShouldShow =
+              shouldShowRatings || existingRatings.length > 0;
+            console.log("   finalShouldShow:", finalShouldShow);
+
+            return finalShouldShow;
+          })() ? (
             <View style={styles(colors).ratingStatsContainer}>
               <View style={styles(colors).ratingOverview}>
                 <View style={styles(colors).averageRatingContainer}>
                   <Text style={styles(colors).averageRatingNumber}>
-                    {ratingStats.overallStats.averageRating.toFixed(1)}
+                    {ratingStats?.data?.overallStats?.averageRating
+                      ? ratingStats.data.overallStats.averageRating.toFixed(1)
+                      : existingRatings.length > 0
+                      ? (
+                          existingRatings.reduce(
+                            (sum, r) => sum + r.overallRating,
+                            0
+                          ) / existingRatings.length
+                        ).toFixed(1)
+                      : "0.0"}
                   </Text>
                   <View style={styles(colors).starsContainer}>
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -1544,14 +1858,30 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                         key={star}
                         name={
                           star <=
-                          Math.round(ratingStats.overallStats.averageRating)
+                          Math.round(
+                            ratingStats?.data?.overallStats?.averageRating ||
+                              (existingRatings.length > 0
+                                ? existingRatings.reduce(
+                                    (sum, r) => sum + r.overallRating,
+                                    0
+                                  ) / existingRatings.length
+                                : 0)
+                          )
                             ? "star-filled"
                             : "star"
                         }
                         size={14}
                         color={
                           star <=
-                          Math.round(ratingStats.overallStats.averageRating)
+                          Math.round(
+                            ratingStats?.data?.overallStats?.averageRating ||
+                              (existingRatings.length > 0
+                                ? existingRatings.reduce(
+                                    (sum, r) => sum + r.overallRating,
+                                    0
+                                  ) / existingRatings.length
+                                : 0)
+                          )
                             ? colors.rating
                             : colors.textMuted
                         }
@@ -1559,8 +1889,15 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     ))}
                   </View>
                   <Text style={styles(colors).totalRatingsText}>
-                    {ratingStats?.overallStats?.totalRatings || 0} rating
-                    {(ratingStats?.overallStats?.totalRatings || 0) !== 1
+                    {formatApproximateNumber(
+                      ratingStats?.data?.overallStats?.totalRatings ||
+                        existingRatings.length ||
+                        0
+                    )}{" "}
+                    rating
+                    {(ratingStats?.data?.overallStats?.totalRatings ||
+                      existingRatings.length ||
+                      0) !== 1
                       ? "s"
                       : ""}
                   </Text>
@@ -1570,13 +1907,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 <View style={styles(colors).ratingDistribution}>
                   {[5, 4, 3, 2, 1].map((rating) => {
                     const count =
-                      ratingStats?.overallStats?.ratingCounts?.[
+                      ratingStats?.data?.overallStats?.ratingCounts?.[
                         rating.toString()
                       ] || 0;
                     const percentage =
-                      (ratingStats?.overallStats?.totalRatings || 0) > 0
+                      (ratingStats?.data?.overallStats?.totalRatings || 0) > 0
                         ? (count /
-                            (ratingStats?.overallStats?.totalRatings || 1)) *
+                            (ratingStats?.data?.overallStats?.totalRatings ||
+                              1)) *
                           100
                         : 0;
 
@@ -1602,7 +1940,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                           />
                         </View>
                         <Text style={styles(colors).ratingDistributionCount}>
-                          {count}
+                          {formatApproximateNumber(count)}
                         </Text>
                       </View>
                     );
@@ -1626,20 +1964,32 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <Text style={styles(colors).recentReviewsTitle}>
                 Recent Reviews
               </Text>
-              {existingRatings.slice(0, 3).map((rating) => (
-                <RatingDisplay
-                  key={rating._id}
-                  ratings={[rating]}
-                  showSummary={false}
-                  showAspects={false}
-                  style={styles(colors).reviewItem}
-                />
-              ))}
+              {existingRatings.slice(0, 3).map((rating) => {
+                console.log("🔍 Rendering RatingDisplay for rating:", {
+                  id: rating._id,
+                  overallRating: rating.overallRating,
+                  hasComment: !!rating.comment,
+                  comment: rating.comment,
+                  commentPreview:
+                    rating.comment?.substring(0, 50) +
+                    (rating.comment?.length > 50 ? "..." : ""),
+                });
+
+                return (
+                  <RatingDisplay
+                    key={rating._id}
+                    ratings={[rating]}
+                    showSummary={false}
+                    showAspects={false}
+                    style={styles(colors).reviewItem}
+                  />
+                );
+              })}
               {existingRatings.length > 3 && (
                 <TouchableOpacity style={styles(colors).viewAllReviewsButton}>
                   <Text style={styles(colors).viewAllReviewsText}>
                     View all{" "}
-                    {ratingStats?.overallStats?.totalRatings ||
+                    {ratingStats?.data?.overallStats?.totalRatings ||
                       existingRatings.length}{" "}
                     reviews
                   </Text>
@@ -1903,6 +2253,14 @@ const styles = (colors) =>
     },
     metaText: {
       fontSize: 14,
+      color: colors.textSecondary,
+      marginLeft: 4,
+      fontWeight: "500",
+      flexShrink: 1,
+      minWidth: 0,
+    },
+    metaText2: {
+      fontSize: 20,
       color: colors.textSecondary,
       marginLeft: 4,
       fontWeight: "500",

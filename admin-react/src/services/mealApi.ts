@@ -140,6 +140,8 @@ export interface MealFilters {
   search?: string
   category?: string
   isAvailable?: boolean
+  sortBy?: 'name' | 'createdAt'
+  sortOrder?: 'asc' | 'desc'
 }
 
 export interface MealPlanFilters {
@@ -148,12 +150,24 @@ export interface MealPlanFilters {
   search?: string
   isPublished?: boolean
   durationWeeks?: number
+  sortBy?: 'planName' | 'createdAt'
+  sortOrder?: 'asc' | 'desc'
 }
 
 export interface MealPlanResponse {
   success: boolean
   data: MealPlan
   message?: string
+}
+
+export interface DeleteDuplicatesResponse {
+  success: boolean
+  message: string
+  data: {
+    duplicateGroupsFound: number
+    mealsDeleted: number
+    assignmentsUpdated: number
+  }
 }
 
 // Meals API
@@ -230,12 +244,12 @@ export const mealsApi = {
   },
 
   // Delete duplicate meals
-  async deleteDuplicateMeals() {
+  async deleteDuplicateMeals(): Promise<DeleteDuplicatesResponse> {
     // Use a longer timeout for this potentially heavy operation
     const response = await api.delete('/meals/duplicates', { 
       timeout: 120000 // 2 minutes timeout for duplicate deletion
     })
-    return response.data
+    return response.data as DeleteDuplicatesResponse
   }
 }
 

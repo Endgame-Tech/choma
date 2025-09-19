@@ -18,7 +18,7 @@ import { useTheme } from "../styles/theme";
 import { createStylesWithDMSans } from "../utils/fontUtils";
 
 // Import all screen components
-import HomeScreen from "../screens/home/HomeScreen1";
+import HomeScreen from "../screens/home/HomeScreen";
 import WelcomeScreen from "../screens/home/WelcomeScreen";
 
 // Removed SwipeableTabNavigator - using default navigation

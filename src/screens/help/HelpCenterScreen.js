@@ -157,7 +157,7 @@ const HelpCenterScreen = ({ navigation }) => {
           style={styles(colors).backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles(colors).headerTitle}>Help Center</Text>
         <View style={styles(colors).placeholder} />

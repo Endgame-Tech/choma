@@ -40,6 +40,14 @@ const OrdersScreen = ({ navigation }) => {
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orders, setOrders] = useState([]);
+
+  // Ensure orders is always an array
+  useEffect(() => {
+    if (!Array.isArray(orders)) {
+      console.warn("Orders state is not an array, resetting to empty array");
+      setOrders([]);
+    }
+  }, [orders]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -177,29 +185,39 @@ const OrdersScreen = ({ navigation }) => {
     }
 
     // Only set up real-time updates if we have active orders and user is on active tab
-    const hasActiveOrders = orders && Array.isArray(orders) && orders.some((order) => {
-      const status = (
-        order.delegationStatus ||
-        order.status ||
-        order.orderStatus ||
-        ""
-      ).toLowerCase();
-      return status && !["cancelled", "delivered"].includes(status);
-    });
+    const hasActiveOrders =
+      orders &&
+      Array.isArray(orders) &&
+      orders.some((order) => {
+        const status = (
+          order.delegationStatus ||
+          order.status ||
+          order.orderStatus ||
+          ""
+        ).toLowerCase();
+        return status && !["cancelled", "delivered"].includes(status);
+      });
 
-    if (hasActiveOrders && orders && orders.length > 0 && selectedTab === "active") {
+    if (
+      hasActiveOrders &&
+      orders &&
+      orders.length > 0 &&
+      selectedTab === "active"
+    ) {
       console.log("🔄 Starting optimized order status updates...");
       const interval = setInterval(async () => {
         // Use cached data first, only fetch if stale
         const userId = user?._id || user?.id;
         if (userId) {
-          const cachedOrders = await cacheService.get('userOrders', userId);
+          const cachedOrders = await cacheService.get("userOrders", userId);
           if (cachedOrders && !cachedOrders.isStale) {
-            console.log("⚡ Using cached data for status check - skipping API call");
+            console.log(
+              "⚡ Using cached data for status check - skipping API call"
+            );
             return;
           }
         }
-        
+
         console.log("🔄 Checking for order status updates...");
         await silentOrderUpdate(); // New function for status-only updates
       }, 60000); // Reduced frequency to every 60 seconds (from 30s)
@@ -222,7 +240,9 @@ const OrdersScreen = ({ navigation }) => {
       const shouldRefresh = orders.length === 0 || lastUpdate > 300000; // 5 minutes
 
       if (shouldRefresh) {
-        console.log("🔄 Screen focused - loading orders with cache optimization");
+        console.log(
+          "🔄 Screen focused - loading orders with cache optimization"
+        );
         loadOrders();
       } else {
         console.log("🔄 Screen focused - using silent update");
@@ -243,16 +263,16 @@ const OrdersScreen = ({ navigation }) => {
   const loadOrders = async (forceRefresh = false) => {
     try {
       const userId = user?._id || user?.id;
-      
+
       // Check for cached orders first for optimistic loading
       if (!forceRefresh && userId) {
-        const cachedOrders = await cacheService.get('userOrders', userId);
-        
+        const cachedOrders = await cacheService.get("userOrders", userId);
+
         if (cachedOrders && cachedOrders.data) {
           console.log("🚀 Optimistic loading: showing cached orders");
           setOrders(cachedOrders.data);
           setLoading(false);
-          
+
           // If data is stale, fetch fresh data in background
           if (cachedOrders.isStale) {
             console.log("🔄 Background refresh for stale orders data");
@@ -404,7 +424,7 @@ const OrdersScreen = ({ navigation }) => {
 
       // Cache the fresh orders data for future use
       if (userId && deduplicatedOrders.length > 0) {
-        await cacheService.set('userOrders', deduplicatedOrders, userId);
+        await cacheService.set("userOrders", deduplicatedOrders, userId);
         console.log("📋 Orders data cached for faster future access");
       }
 
@@ -797,7 +817,7 @@ const OrdersScreen = ({ navigation }) => {
           style={styles(colors).backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles(colors).headerContent}>
@@ -825,7 +845,7 @@ const OrdersScreen = ({ navigation }) => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles(colors).tabsContent}
         >
-          {tabs.map(renderTabButton)}
+          {Array.isArray(tabs) && tabs.map(renderTabButton)}
         </ScrollView>
       </View>
 
@@ -849,7 +869,7 @@ const OrdersScreen = ({ navigation }) => {
               <OrderCardSkeleton key={index} />
             ))}
           </View>
-        ) : filteredOrders.length > 0 ? (
+        ) : Array.isArray(filteredOrders) && filteredOrders.length > 0 ? (
           <View style={styles(colors).ordersContainer}>
             {selectedTab === "active"
               ? filteredOrders.map(renderActiveOrder)

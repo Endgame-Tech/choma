@@ -89,14 +89,14 @@ const MealPlansScreen = ({ navigation }) => {
                 discountPercent: 0,
                 discountAmount: 0,
                 reason: "No discount available",
-              }
+              },
             };
           }
         });
 
         // Wait for all discount calculations to complete in parallel
         const discountResults = await Promise.all(discountPromises);
-        
+
         // Convert results array to discounts object
         discountResults.forEach(({ planId, discount }) => {
           discounts[planId] = discount;
@@ -297,7 +297,7 @@ const MealPlansScreen = ({ navigation }) => {
           style={styles(colors).backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles(colors).headerContent}>

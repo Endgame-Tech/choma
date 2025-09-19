@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { mealsApi, type Meal, type MealFilters } from '../services/mealApi'
+import { mealsApi, type Meal, type MealFilters, type DeleteDuplicatesResponse } from '../services/mealApi'
 import CreateMealModal from '../components/CreateMealModal'
 import EditMealModal from '../components/EditMealModal'
 import BulkMealUpload from '../components/BulkMealUpload'
@@ -36,7 +36,9 @@ const Meals: React.FC = () => {
     limit: 20,
     search: '',
     category: '',
-    isAvailable: undefined
+    isAvailable: undefined,
+    sortBy: 'name',
+    sortOrder: 'asc'
   })
 
   // Modals
@@ -69,7 +71,7 @@ const Meals: React.FC = () => {
   // Load initial data and when non-search filters change
   useEffect(() => {
     fetchMeals()
-  }, [filters.category, filters.isAvailable, filters.page, filters.limit])
+  }, [filters.category, filters.isAvailable, filters.page, filters.limit, filters.sortBy, filters.sortOrder])
 
   // Load all meals once for bulk operations (no pagination)
   useEffect(() => {
@@ -377,7 +379,7 @@ const Meals: React.FC = () => {
           setLoading(true)
 
           console.log('🔄 Starting duplicate deletion process...')
-          const result = await mealsApi.deleteDuplicateMeals()
+          const result: DeleteDuplicatesResponse = await mealsApi.deleteDuplicateMeals()
 
           if (currentAdmin) {
             await activityLogger.logActivity({
@@ -387,9 +389,9 @@ const Meals: React.FC = () => {
               adminEmail: currentAdmin.email,
               module: 'meals',
               details: {
-                duplicateGroupsFound: (result as any).data?.duplicateGroupsFound || 0,
-                mealsDeleted: (result as any).data?.mealsDeleted || 0,
-                assignmentsUpdated: (result as any).data?.assignmentsUpdated || 0
+                duplicateGroupsFound: result.data?.duplicateGroupsFound || 0,
+                mealsDeleted: result.data?.mealsDeleted || 0,
+                assignmentsUpdated: result.data?.assignmentsUpdated || 0
               },
               successful: true
             })
@@ -401,16 +403,16 @@ const Meals: React.FC = () => {
           setConfirmationModal({ isOpen: false, title: '', message: '', type: 'info', confirmText: 'Confirm', onConfirm: () => { }, loading: false })
 
           // Show success message with details
-          const resultData = (result as any)
-          alert(`✅ ${resultData.message}\n\nDetails:\n- ${resultData.data?.duplicateGroupsFound || 0} duplicate groups found\n- ${resultData.data?.mealsDeleted || 0} meals deleted\n- ${resultData.data?.assignmentsUpdated || 0} assignments updated`)
+          alert(`✅ ${result.message}\n\nDetails:\n- ${result.data?.duplicateGroupsFound || 0} duplicate groups found\n- ${result.data?.mealsDeleted || 0} meals deleted\n- ${result.data?.assignmentsUpdated || 0} assignments updated`)
 
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Delete duplicates error:', error)
 
           // Handle specific error types
-          if (error?.code === 'ECONNABORTED') {
+          const axiosError = error as { code?: string; response?: { status: number } }
+          if (axiosError?.code === 'ECONNABORTED') {
             alert('⏱️ The operation is taking longer than expected. Please check the backend logs and try again in a few minutes.')
-          } else if (error?.response?.status === 500) {
+          } else if (axiosError?.response?.status === 500) {
             alert('❌ Server error occurred during duplicate deletion. Please check the backend logs and try again.')
           } else {
             alert('❌ Failed to delete duplicate meals. Please try again.')
@@ -624,7 +626,7 @@ const Meals: React.FC = () => {
 
       {/* Filters and Search */}
       <div className="bg-white/90 dark:bg-neutral-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Search</label>
@@ -694,6 +696,26 @@ const Meals: React.FC = () => {
               <option value={20}>20</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">Sort By</label>
+            <select
+              value={`${filters.sortBy}-${filters.sortOrder}`}
+              onChange={(e) => {
+                const [sortBy, sortOrder] = e.target.value.split('-') as ['name' | 'createdAt', 'asc' | 'desc']
+                setFilters(prev => ({ ...prev, sortBy, sortOrder, page: 1 }))
+              }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white/90 dark:bg-neutral-800/90 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Sort meals by"
+              title="Sort meals by"
+            >
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+              <option value="createdAt-desc">Date Created (Newest)</option>
+              <option value="createdAt-asc">Date Created (Oldest)</option>
             </select>
           </div>
         </div>

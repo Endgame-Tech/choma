@@ -67,6 +67,26 @@ exports.deleteDiscountRule = async (req, res) => {
 exports.getDiscountRulesForMealPlan = async (req, res) => {
   try {
     const mealPlanId = req.params.id;
+    
+    // Validate meal plan ID
+    if (!mealPlanId || mealPlanId === 'undefined' || mealPlanId === 'null') {
+      console.error('Invalid meal plan ID provided:', mealPlanId);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Valid meal plan ID is required' 
+      });
+    }
+
+    // Validate ObjectId format
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(mealPlanId)) {
+      console.error('Invalid ObjectId format for meal plan ID:', mealPlanId);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid meal plan ID format' 
+      });
+    }
+
     const rules = await DiscountRule.find({
       isActive: true,
       $and: [

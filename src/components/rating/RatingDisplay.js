@@ -10,6 +10,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import StarRating from "./StarRating";
 import { useTheme } from "../../styles/theme";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
+import UserAvatar from "../ui/UserAvatar";
 
 const RatingDisplay = ({
   entityId,
@@ -26,6 +28,7 @@ const RatingDisplay = ({
   loading = false,
   style,
 }) => {
+  const { colors } = useTheme();
   const [expandedAspects, setExpandedAspects] = useState(false);
   const [expandedRating, setExpandedRating] = useState(null);
 
@@ -212,26 +215,30 @@ const RatingDisplay = ({
     return (
       <TouchableOpacity
         key={rating._id}
-        style={styles.ratingCard}
+        style={styles(colors).ratingCard}
         onPress={() => onRatingPress?.(rating)}
         activeOpacity={0.9}
       >
         {/* Header */}
-        <View style={styles.ratingHeader}>
-          <View style={styles.ratingInfo}>
-            <StarRating value={rating.overallRating} readOnly size={16} />
-            <View style={styles.ratingMeta}>
-              <Text style={styles.raterName}>{rating.ratedBy.name}</Text>
-              <View style={styles.ratingDetails}>
-                <Text style={styles.ratingDate}>
-                  {formatDate(rating.createdAt)}
-                </Text>
-                {rating.isVerifiedExperience && (
-                  <View style={styles.verifiedBadge}>
-                    <Text style={styles.verifiedText}>Verified</Text>
-                  </View>
-                )}
+        <View style={styles(colors).ratingHeader}>
+          <View style={styles(colors).userSection}>
+            <UserAvatar 
+              user={rating.ratedBy} 
+              size={40} 
+              fontSize={16}
+            />
+            <View style={styles(colors).ratingInfo}>
+              <View style={styles(colors).ratingMeta}>
+                <Text style={styles(colors).raterName}>{rating.ratedBy?.name || 'Anonymous'}</Text>
+                <View style={styles(colors).ratingDetails}>
+                  {rating.isVerifiedExperience && (
+                    <View style={styles(colors).verifiedBadge}>
+                      <Text style={styles(colors).verifiedText}>Verified</Text>
+                    </View>
+                  )}
+                </View>
               </View>
+              <StarRating value={rating.overallRating} readOnly size={16} />
             </View>
           </View>
 
@@ -246,8 +253,8 @@ const RatingDisplay = ({
 
         {/* Comment */}
         {hasComment && (
-          <View style={styles.commentContainer}>
-            <Text style={styles.commentText}>{rating.comment}</Text>
+          <View style={styles(colors).commentContainer}>
+            <Text style={styles(colors).commentText}>{rating.comment}</Text>
           </View>
         )}
 
@@ -307,21 +314,21 @@ const RatingDisplay = ({
 
   if (loading) {
     return (
-      <View style={[styles.container, style]}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Loading ratings...</Text>
+      <View style={[styles(colors).container, style]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles(colors).loadingText}>Loading ratings...</Text>
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={[styles.container, style]}
+      style={[styles(colors).container, style]}
       showsVerticalScrollIndicator={false}
     >
       {/* Summary Section */}
       {showSummary && summary && (
-        <View style={styles.summaryCard}>
+        <View style={styles(colors).summaryCard}>
           {/* Overall Stats */}
           <View style={styles.overallStats}>
             <Text style={styles.overallTitle}>Overall Rating</Text>
@@ -359,7 +366,7 @@ const RatingDisplay = ({
       {/* Individual Ratings */}
       {showRatings && ratings.length > 0 && (
         <View style={styles.ratingsSection}>
-          <Text style={styles.ratingsSectionTitle}>Recent Reviews</Text>
+          {/* <Text style={styles.ratingsSectionTitle}>Recent Reviews</Text> */}
           {ratings.slice(0, limit).map(renderRatingItem)}
 
           {/* Load More */}
@@ -396,21 +403,13 @@ const styles = (colors) =>
       textAlign: "center",
       marginTop: 16,
       fontSize: 16,
-      color: "#6B7280",
+      color: colors.textSecondary,
     },
     summaryCard: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.background,
       borderRadius: 12,
       padding: 20,
       marginBottom: 20,
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.1,
-      shadowRadius: 3.84,
-      elevation: 5,
     },
     overallStats: {
       alignItems: "center",
@@ -537,17 +536,17 @@ const styles = (colors) =>
       color: "#111827",
     },
     ratingCard: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: "#E5E7EB",
+      padding: 6,
     },
     ratingHeader: {
+      marginBottom: 12,
+    },
+    userSection: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "flex-start",
-      marginBottom: 8,
+      gap: 12,
     },
     ratingInfo: {
       flex: 1,
@@ -558,8 +557,8 @@ const styles = (colors) =>
     },
     raterName: {
       fontSize: 14,
-      fontWeight: "500",
-      color: "#111827",
+      fontWeight: "600",
+      color: colors.text,
     },
     ratingDetails: {
       flexDirection: "row",
@@ -568,29 +567,30 @@ const styles = (colors) =>
     },
     ratingDate: {
       fontSize: 12,
-      color: "#6B7280",
+      color: colors.textSecondary,
     },
     verifiedBadge: {
-      backgroundColor: "#D1FAE5",
+      backgroundColor: colors.successBackground,
       paddingHorizontal: 6,
       paddingVertical: 2,
       borderRadius: 4,
     },
     verifiedText: {
       fontSize: 10,
-      color: "#065F46",
+      color: colors.success,
       fontWeight: "500",
     },
     helpfulVotes: {
       fontSize: 12,
-      color: "#6B7280",
+      color: colors.textSecondary,
     },
     commentContainer: {
+      marginTop: 8,
       marginBottom: 12,
     },
     commentText: {
       fontSize: 14,
-      color: "#374151",
+      color: colors.text,
       lineHeight: 20,
     },
     tagsContainer: {

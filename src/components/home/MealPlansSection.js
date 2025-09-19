@@ -159,6 +159,17 @@ const MealPlansSection = ({
         }
       }
 
+      // Refresh meal plans list to get updated ratings
+      if (onRefresh) {
+        try {
+          await onRefresh();
+          console.log("✅ Meal plans refreshed with updated ratings");
+        } catch (refreshError) {
+          console.error("Error refreshing meal plans:", refreshError);
+          // Don't show error to user as rating submission was successful
+        }
+      }
+
       console.log("✅ Rating submitted successfully");
       // Simple success feedback without intrusive popup
       // Could add a toast notification here instead

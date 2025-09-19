@@ -319,7 +319,7 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                 style={styles.backButton}
                 onPress={() => navigation.goBack()}
               >
-                <Ionicons name="chevron-back" size={24} color="#666" />
+                <Ionicons name="chevron-back" size={20} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -391,8 +391,8 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                     {isResending
                       ? "Sending..."
                       : canResend
-                        ? "Resend Code"
-                        : `Resend in ${formatTime(countdown)}`}
+                      ? "Resend Code"
+                      : `Resend in ${formatTime(countdown)}`}
                   </Text>
                 </TouchableOpacity>
               </View>

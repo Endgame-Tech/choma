@@ -378,7 +378,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
               style={styles(colors).backButton}
               onPress={() => navigation.goBack()}
             >
-              <Ionicons name="chevron-back" size={24} color={colors.text} />
+              <Ionicons name="chevron-back" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
 

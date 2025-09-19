@@ -21,10 +21,15 @@ import ClockFilledIcon from "../../../assets/images/icons/ui/clock-filled.svg";
 import CloseIcon from "../../../assets/images/icons/ui/close.svg";
 import notificationIcon from "../../../assets/images/icons/ui/notification.svg";
 import notificationFilledIcon from "../../../assets/images/icons/ui/notification-filled.svg";
+import DarkIcon from "../../../assets/images/icons/ui/dark.svg";
+import DataIcon from "../../../assets/images/icons/ui/data.svg";
+import DataFilledIcon from "../../../assets/images/icons/ui/data-filled.svg";
 import DeliveryManIcon from "../../../assets/images/icons/ui/delivery-man.svg";
 import DeliveryManFilledIcon from "../../../assets/images/icons/ui/delivery-man-filled.svg";
 import DetailsIcon from "../../../assets/images/icons/ui/details.svg";
 import DetailsFilledIcon from "../../../assets/images/icons/ui/details-filled.svg";
+import DownloadIcon from "../../../assets/images/icons/ui/download.svg";
+import DownloadFilledIcon from "../../../assets/images/icons/ui/download-filled.svg";
 import EditIcon from "../../../assets/images/icons/ui/edit.svg";
 import EditFilledIcon from "../../../assets/images/icons/ui/edit--filled.svg";
 import EmailIcon from "../../../assets/images/icons/ui/email.svg";
@@ -47,6 +52,9 @@ import HeartIcon from "../../../assets/images/icons/ui/heart.svg";
 import HeartFilledIcon from "../../../assets/images/icons/ui/heart-filled.svg";
 import HomeIcon from "../../../assets/images/icons/ui/home.svg";
 import HomeFilledIcon from "../../../assets/images/icons/ui/home-filled.svg";
+import FrequencyIcon from "../../../assets/images/icons/ui/frequency.svg";
+import missionIcon from "../../../assets/images/icons/ui/mission.svg";
+import missionFilledIcon from "../../../assets/images/icons/ui/mission-filled.svg";
 import ListIcon from "../../../assets/images/icons/ui/list.svg";
 import ListFilledIcon from "../../../assets/images/icons/ui/list-filled.svg";
 import LocationIcon from "../../../assets/images/icons/ui/location.svg";
@@ -75,6 +83,7 @@ import ShareIcon from "../../../assets/images/icons/ui/share.svg";
 import ShareFilledIcon from "../../../assets/images/icons/ui/share-filled.svg";
 import ShieldIcon from "../../../assets/images/icons/ui/shield.svg";
 import ShieldFilledIcon from "../../../assets/images/icons/ui/shield-filled.svg";
+import SignOutIcon from "../../../assets/images/icons/ui/sign-out.svg";
 import StarIcon from "../../../assets/images/icons/ui/star.svg";
 import StarFilledIcon from "../../../assets/images/icons/ui/star-filled.svg";
 import WalletIcon from "../../../assets/images/icons/ui/wallet.svg";
@@ -98,12 +107,15 @@ const iconMap = {
   "chevron-up": chevronUpIcon,
   clock: ClockIcon,
   "clock-filled": ClockFilledIcon,
-  notification: notificationIcon,
-  "notification-filled": notificationFilledIcon,
+  dark: DarkIcon,
+  data: DataIcon,
+  "data-filled": DataFilledIcon,
   "delivery-man": DeliveryManIcon,
   "delivery-man-filled": DeliveryManFilledIcon,
   details: DetailsIcon,
   "details-filled": DetailsFilledIcon,
+  download: DownloadIcon,
+  "download-filled": DownloadFilledIcon,
   edit: EditIcon,
   "edit-filled": EditFilledIcon,
   ellipsis: MoreIcon,
@@ -120,6 +132,7 @@ const iconMap = {
   flame: FlameIcon,
   food: FoodIcon,
   "food-filled": FoodFilledIcon,
+  frequency: FrequencyIcon,
   "hand-wave": HandWaveIcon,
   "hand-wave-filled": HandWaveFilledIcon,
   gift: GiftIcon,
@@ -135,8 +148,12 @@ const iconMap = {
   massage: MassageIcon,
   "massage-filled": MassageFilledIcon,
   medal: MedalIcon,
+  mission: missionIcon,
+  "mission-filled": missionFilledIcon,
   muscle: MuscleIcon,
   "muscle-filled": MuscleFilledIcon,
+  notification: notificationIcon,
+  "notification-filled": notificationFilledIcon,
   notifications: notificationIcon,
   "notifications-filled": notificationFilledIcon,
   overview: OverviewIcon,
@@ -149,10 +166,11 @@ const iconMap = {
   send: SendIcon,
   "send-filled": SendFilledIcon,
   settings: SettingsIcon,
-  settings: SettingsFilledIcon,
+  "settings-filled": SettingsFilledIcon,
   share: ShareIcon,
   "share-filled": ShareFilledIcon,
   shield: ShieldIcon,
+  "sign-out": SignOutIcon,
   "shield-filled": ShieldFilledIcon,
   star: StarIcon,
   "star-filled": StarFilledIcon,

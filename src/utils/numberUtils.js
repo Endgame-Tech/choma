@@ -67,3 +67,48 @@ export const formatWeight = (grams) => {
 
   return `${grams}g`;
 };
+
+/**
+ * Format number with approximation prefix (~) for user-friendly display
+ * @param {number} value - The number to format
+ * @param {number} decimals - Number of decimal places (default: 1)
+ * @returns {string} - Formatted string with ~ prefix (e.g., "~1.2K", "~3.5M")
+ */
+export const formatApproximateNumber = (value, decimals = 1) => {
+  const formatted = formatNumber(value, decimals);
+
+  // Don't add ~ for exact zeros or very small numbers under 10
+  if (
+    formatted === "0" ||
+    (Math.abs(Number(value)) < 10 && Math.abs(Number(value)) % 1 === 0)
+  ) {
+    return formatted;
+  }
+
+  return `~${formatted}`;
+};
+
+/**
+ * Format approximate nutrition value with unit suffix
+ * @param {number} value - The nutrition value
+ * @param {string} unit - The unit (e.g., "g", "mg", "")
+ * @param {number} decimals - Number of decimal places
+ * @returns {string} - Formatted string with ~ prefix and unit
+ */
+export const formatApproximateNutritionValue = (
+  value,
+  unit = "",
+  decimals = 1
+) => {
+  const formattedNumber = formatApproximateNumber(value, decimals);
+  return unit ? `${formattedNumber}${unit}` : formattedNumber;
+};
+
+/**
+ * Format approximate calories (no unit, but with ~K/M formatting)
+ * @param {number} calories - The calorie value
+ * @returns {string} - Formatted calories with ~ prefix
+ */
+export const formatApproximateCalories = (calories) => {
+  return formatApproximateNumber(calories, 0);
+};

@@ -53,6 +53,43 @@ router.get("/logo", (req, res) => {
   });
 });
 
+// Upload profile image during signup (no auth required)
+router.post(
+  "/signup-profile-image",
+  uploadToFolder("profiles").single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No image file provided",
+        });
+      }
+
+      // The file is already uploaded to Cloudinary by multer
+      const imageUrl = req.file.path;
+      const publicId = req.file.filename;
+
+      console.log("✅ Signup profile image uploaded successfully to:", imageUrl);
+
+      res.json({
+        success: true,
+        message: "Profile image uploaded successfully",
+        imageUrl: imageUrl,
+        publicId: publicId,
+      });
+    } catch (error) {
+      console.error("Signup profile image upload error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to upload profile image",
+        error:
+          process.env.NODE_ENV === "development" ? error.message : undefined,
+      });
+    }
+  }
+);
+
 // Upload profile image endpoint (authenticated users)
 router.post(
   "/profile-image",

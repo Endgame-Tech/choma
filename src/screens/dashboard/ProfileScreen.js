@@ -2313,6 +2313,7 @@ Your meal plan has been updated with fresh options.`;
                       name="share"
                       size={20}
                       color={colors.text}
+                      opacity={0.7}
                     />
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -2323,6 +2324,7 @@ Your meal plan has been updated with fresh options.`;
                       name="settings"
                       size={20}
                       color={colors.text}
+                      opacity={0.7}
                     />
                   </TouchableOpacity>
                 </View>

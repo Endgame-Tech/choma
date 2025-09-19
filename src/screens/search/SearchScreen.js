@@ -332,7 +332,7 @@ const SearchScreen = ({ navigation }) => {
   };
 
   const performLocalSearch = (query, filters) => {
-    let results = [...mealPlans];
+    let results = Array.isArray(mealPlans) ? [...mealPlans] : [];
 
     // Filter by search query
     if (query.trim()) {

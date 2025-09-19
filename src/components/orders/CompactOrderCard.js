@@ -632,7 +632,7 @@ const CompactOrderCard = ({
                 </Text>
 
                 <View style={styles(colors).progressContainer}>
-                  {orderSteps.map((step, index) =>
+                  {Array.isArray(orderSteps) && orderSteps.map((step, index) =>
                     renderProgressStep(step, index)
                   )}
                 </View>

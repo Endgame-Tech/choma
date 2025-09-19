@@ -1,217 +1,647 @@
- Auth middleware - decoded token: {
-  id: '68c541aef28ad35854e590c4',
-  email: 'eberetestimony7@gmail.com',
-  endpoint: '/68c661195c2db3b65c2952e4/next-delivery'
+ Opening on Android...
+› Opening exp+choma://expo-development-client/?url=http%3A%2F%2F192.168.100.9%3A8081 on 23021RAAEG
+› Press ? │ show all commands
+ LOG  Deep link received: exp+choma://expo-development-client/?url=http%3A%2F%2F192.168.100.9%3A8081
+ LOG  Parsed deep link: {"hostname": "expo-development-client", "path": "", "queryParams": {"url": "http://192.168.100.9:8081"}}
+ WARN  Unknown deep link hostname: expo-development-client
+Android Bundled 179ms index.js (1 module)
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  📱 Initializing Choma app...
+ LOG  🔤 Loading DM Sans fonts...
+ LOG  ✅ DM Sans fonts loaded successfully!
+ LOG  ✅ Font overrides applied - using DM Sans
+ LOG  🔥 Setting up push notifications...
+ LOG  🔗 Deep linking initialized
+ LOG  ✅ App initialization complete
+ LOG  App opened with deep link: exp+choma://expo-development-client/?url=http%3A%2F%2F192.168.100.9%3A8081
+ LOG  Parsed deep link: {"hostname": "expo-development-client", "path": "", "queryParams": {"url": "http://192.168.100.9:8081"}}
+ WARN  Navigation ref not available
+ LOG  🔥 Initializing Firebase app...
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
+ of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApps()` instead.
+ LOG  ✅ Firebase app already initialized: [DEFAULT]
+ LOG  🔥 Initializing Firebase messaging
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
+ of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApps()` instead.
+ LOG  📱 Environment: {"appOwnership": null, "appsCount": 1, "executionEnvironment": "bare", "firebaseAvailable": true, "isDev": true}
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
+ of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
+ of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `getToken`. Please use `getToken()` instead.
+ LOG  ℹ️ Loading notifications from backend... 
+ LOG  🔍 Checking authentication status...
+ LOG  🚀 Initializing API service...
+ LOG  ✅ API service initialized with stored token
+ LOG  📱 Token found, verifying with backend...
+ LOG  🔍 API Service Auth Debug:
+ LOG    - Has token: true
+ LOG    - Token preview: eyJhbGciOiJIUzI1NiIs...
+ LOG    - User ID: 68c99bbcdace921f3460f79a
+ LOG  🔥 Firebase FCM Token obtained: dBExOTj4ROamUsyBokWax7:APA91bERBSLu9nGQqdhH5nX8cS-...
+ LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/notifications?_t=1758243794710
+ LOG  📋 Cache HIT (storage): authUser
+ LOG  🚀 Optimistic loading: returning cached user data
+ LOG  ⏱️ Rate limiting: waiting 149ms before next request
+ LOG  ✅ User authenticated (cached): legendetestimony@gmail.com
+ LOG  ✅ Using Firebase FCM for push notifications
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
+ of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
+ of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `onMessage`. Please use `onMessage()` instead.
+ LOG  📱 Registering FCM push token: {"deviceId": "Redmi Note 12", "platform": "android", "token": "dBExOTj4ROamUsyBokWa...", "tokenType": "fcm"}
+ LOG  ⏱️ Rate limiting: waiting 137ms before next request
+ LOG  📱 Biometric auth initialized
+ LOG  Available biometric types: [1]
+ LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
+ LOG  🏷️ TagFilterBar component mounted/rendered
+ LOG  🏷️ TagFilterBar render state: {"loading": true, "tags": [], "tagsLength": 0}
+ LOG  ℹ️ Loading notifications from backend... 
+ LOG  🔄 TagFilterBar fetchTags called
+ LOG  🌐 Fetching fresh tags from API...
+ LOG  🌐 TagService fetching from: http://192.168.100.9:5001/api/tags?_t=1758243795588
+ LOG  🍽️ Fetching all meal plans from backend...
+ LOG  🔄 Fetching meal plans from backend...
+ LOG  🌐 API URL: http://192.168.100.9:5001/api/mealplans
+ LOG  ⭐ Fetching popular meal plans from backend...
+ LOG  🔄 Fetching popular meal plans from backend...
+ LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
+ LOG  🏷️ TagFilterBar component mounted/rendered
+ LOG  🏷️ TagFilterBar render state: {"loading": true, "tags": [], "tagsLength": 0}
+ LOG  🔄 Force refresh requested for publicDashboard
+ LOG  🔄 Fetching user dashboard data...
+ LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/mealplans/popular
+ LOG  ⏱️ Rate limiting: waiting 193ms before next request
+ LOG  ⏱️ Rate limiting: waiting 190ms before next request
+ LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://192.168.100.9:5001/api/auth/push-token"}
+ LOG  API Request (Attempt 1): POST http://192.168.100.9:5001/api/auth/push-token
+ LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://192.168.100.9:5001/api/auth/profile"}
+ LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/auth/profile
+ LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/notifications?_t=1758243796320
+ LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://192.168.100.9:5001/api/auth/dashboard"}
+ LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/auth/dashboard
+ LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/dashboard/public?_t=1758243795631
+ LOG  🏥 Backend health check: PASS
+ LOG  📋 Cache HIT (storage): mealPlans
+ LOG  🔄 Background refresh for stale mealPlans
+ LOG  ✅ Successfully loaded 7 meal plans
+ LOG  📋 Meal plan names: Testing, Testing (Copy), Testing (Copy) (Copy), FitFam Fuel, FitFam Fuel (Copy), FitFam Fuel (Copy) (Copy), hh
+ LOG  ⏱️ Rate limiting: waiting 120ms before next request
+ LOG  📦 Received 7 meal plans, starting progressive rendering...
+ LOG  ✅ Started progressive loading of 7 meal plans
+ LOG  ℹ️ Raw API response structure: {
+  "success": true,
+  "data": {
+    "success": true,
+    "data": {
+      "notifications": [
+        {
+          "_id": "68cae799c1292299a51f43a8",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "Payment Successful! 💳",
+          "message": "Your payment of ₦5226 has been processed successfully.",
+          "type": "payment_success",
+          "isRead": true,
+          "data": {
+            "amount": 5226,
+            "reference": "choma-1758128025974-46845",
+            "subscriptionId": "68cae78dc1292299a51f436a"
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-10-17T16:53:45.763Z",
+          "createdAt": "2025-09-17T16:53:45.764Z",
+          "updatedAt": "2025-09-17T17:13:42.499Z",
+          "__v": 0,
+          "pushSentAt": "2025-09-17T16:53:46.150Z"
+        },
+        {
+          "_id": "68cae798c1292299a51f4399",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "Subscription Activated! ✅",
+          "message": "Your hh subscription is now active. Your meals start on Thu Sep 18 2025 17:53:32 GMT+0100 (West Africa Standard Time).",
+          "type": "subscription_created",
+          "isRead": true,
+          "data": {
+            "planName": "hh",
+            "startDate": "2025-09-18T16:53:32.705Z",
+            "frequency": "all",
+            "duration": null
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-10-17T16:53:44.943Z",
+          "createdAt": "2025-09-17T16:53:44.944Z",
+          "updatedAt": "2025-09-17T17:13:48.100Z",
+          "__v": 0,
+          "pushSentAt": "2025-09-17T16:53:45.359Z"
+        },
+        {
+          "_id": "68cae797c1292299a51f4390",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "Order Confirmed! 📦",
+          "message": "Order #ORD-1758128023639-V5KMC3HE7 has been confirmed and is being prepared by our chef.",
+          "type": "order_confirmed",
+          "isRead": false,
+          "data": {
+            "orderNumber": "ORD-1758128023639-V5KMC3HE7",
+            "planName": "hh",
+            "deliveryDate": "2025-09-18T16:53:32.705Z",
+            "totalAmount": 5226
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-10-17T16:53:43.919Z",
+          "createdAt": "2025-09-17T16:53:43.920Z",
+          "updatedAt": "2025-09-17T16:53:44.674Z",
+          "__v": 0,
+          "pushSentAt": "2025-09-17T16:53:44.673Z"
+        },
+        {
+          "_id": "68cad641e5caf1a0830f1ac2",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:39:45.787Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:39:45.787Z",
+          "expiresAt": "2025-10-17T15:39:45.787Z",
+          "updatedAt": "2025-09-17T15:39:45.787Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad601e5caf1a0830f1a68",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:38:41.130Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:38:41.130Z",
+          "expiresAt": "2025-10-17T15:38:41.130Z",
+          "updatedAt": "2025-09-17T15:38:41.130Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad39ce5caf1a0830f19f1",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:28:28.023Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:28:28.023Z",
+          "expiresAt": "2025-10-17T15:28:28.023Z",
+          "updatedAt": "2025-09-17T15:28:28.023Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad386e5caf1a0830f19bb",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:28:06.550Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:28:06.550Z",
+          "expiresAt": "2025-10-17T15:28:06.551Z",
+          "updatedAt": "2025-09-17T15:28:06.550Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad359e5caf1a0830f19a3",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:27:21.936Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:27:21.937Z",
+          "expiresAt": "2025-10-17T15:27:21.937Z",
+          "updatedAt": "2025-09-17T15:27:21.937Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad236e5caf1a0830f192e",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:22:30.383Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:22:30.383Z",
+          "expiresAt": "2025-10-17T15:22:30.384Z",
+          "updatedAt": "2025-09-17T15:22:30.383Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad22ee5caf1a0830f1920",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:22:22.269Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:22:22.269Z",
+          "expiresAt": "2025-10-17T15:22:22.269Z",
+          "updatedAt": "2025-09-17T15:22:22.269Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad1d5e5caf1a0830f18f6",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:20:53.463Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:20:53.463Z",
+          "expiresAt": "2025-10-17T15:20:53.464Z",
+          "updatedAt": "2025-09-17T15:20:53.463Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cacfbae5caf1a0830f18a5",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:11:54.208Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:11:54.208Z",
+          "expiresAt": "2025-10-17T15:11:54.208Z",
+          "updatedAt": "2025-09-17T15:11:54.208Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cacfa3e5caf1a0830f1880",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:11:31.070Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:11:31.070Z",
+          "expiresAt": "2025-10-17T15:11:31.071Z",
+          "updatedAt": "2025-09-17T15:11:31.070Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cacf92e5caf1a0830f1876",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": true,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:11:14.567Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:11:14.567Z",
+          "expiresAt": "2025-10-17T15:11:14.581Z",
+          "updatedAt": "2025-09-17T15:28:14.589Z",
+          "__v": 0
+        },
+        {
+          "_id": "68c99bbcdace921f3460f79e",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "Welcome to Choma! 🎉",
+          "message": "Hi Testimony Ebere! Welcome to our delicious food family. Browse our meal plans and start your healthy eating journey today!",
+          "type": "welcome",
+          "isRead": true,
+          "data": {
+            "isWelcome": true,
+            "action": "explore_meal_plans"
+          },
+          "priority": "high",
+          "pushSent": false,
+          "expiresAt": "2025-10-16T17:17:48.830Z",
+          "createdAt": "2025-09-16T17:17:48.832Z",
+          "updatedAt": "2025-09-17T09:21:03.142Z",
+          "__v": 0
+        }
+      ],
+      "pagination": {
+        "currentPage": 1,
+        "totalPages": 1,
+        "totalNotifications": 15,
+        "hasNext": false,
+        "hasPrev": false,
+        "unreadCount": 11
+      }
+    }
+  }
 }
-17:03:54 [http]: Request Completed {
-  "service": "choma-backend",
-  "id": "eujv5ygex",
-  "method": "GET",
-  "url": "/api/subscriptions/68c661195c2db3b65c2952e4/next-delivery",
-  "statusCode": 304,
-  "duration": "1292ms",
-  "contentLength": 0
-}
-17:04:07 [http]: Incoming Request {
-  "service": "choma-backend",
-  "id": "scd9vjzck",
-  "method": "GET",
-  "url": "/api/admin/notifications/?limit=50",
-  "ip": "127.0.0.1",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
-}
-17:04:07 [http]: Incoming Request {
-  "service": "choma-backend",
-  "id": "fwazx2fey",
-  "method": "GET",
-  "url": "/api/admin/notifications/unread-count",
-  "ip": "127.0.0.1",
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
-}
-17:04:08 [http]: Incoming Request {
-  "service": "choma-backend",
-  "id": "25avc63hf",
-  "method": "GET",
-  "url": "/api/driver/location/68c6612a5c2db3b65c2952ed",
-  "ip": "10.226.105.94",
-  "userAgent": "okhttp/4.9.2"
-}
-🔍 Driver location debug for Legend Testimony:
-   - currentLocation exists: true
-   - currentLocation: {
-  type: 'Point',
-  coordinates: [ 7.4514432, 9.0570752 ],
-  lastUpdated: 2025-09-14T14:07:45.593Z
-}
-   - coordinates exists: true
-   - coordinates: [ 7.4514432, 9.0570752 ]
-17:04:08 [http]: Request Completed {
-  "service": "choma-backend",
-  "id": "25avc63hf",
-  "method": "GET",
-  "url": "/api/driver/location/68c6612a5c2db3b65c2952ed",
-  "statusCode": 304,
-  "duration": "363ms",
-  "contentLength": 0
-}
-17:04:08 [http]: Request Completed {
-  "service": "choma-backend",
-  "id": "fwazx2fey",
-  "method": "GET",
-  "url": "/api/admin/notifications/unread-count",
-  "statusCode": 200,
-  "duration": "1231ms",
-  "contentLength": "41"
-}
-17:04:09 [http]: Request Completed {
-  "service": "choma-backend",
-  "id": "scd9vjzck",
-  "method": "GET",
-  "url": "/api/admin/notifications/?limit=50",
-  "statusCode": 200,
-  "duration": "1913ms",
-  "contentLength": "161"
-}
-
-
-
-
-
-
- API Request (Attempt 1): GET http://10.226.105.28:5001/api/subscriptions/68c661195c2db3b65c2952e4/next-delivery
- LOG  ❌ HomeScreen - No assignment found for lunch
- LOG  ⚠️ HomeScreen - Using fallback meal plan image for lunch: https://i.ytimg.com/vi/uEZ0k4Pm0UE/maxresdefault.jpg
- LOG  ❌ HomeScreen - No assignment found for dinner
- LOG  ⚠️ HomeScreen - Using fallback meal plan image for dinner: https://i.ytimg.com/vi/uEZ0k4Pm0UE/maxresdefault.jpg
- LOG  Track driver: {"_id": "68c0ca6fd31fbb0fb313f125", "fullName": "Legend Testimony", "phone": "08139120289"}
- LOG  ❌ HomeScreen - No assignment found for lunch
- LOG  ⚠️ HomeScreen - Using fallback meal plan image for lunch: https://i.ytimg.com/vi/uEZ0k4Pm0UE/maxresdefault.jpg
- LOG  ❌ HomeScreen - No assignment found for dinner
- LOG  ⚠️ HomeScreen - Using fallback meal plan image for dinner: https://i.ytimg.com/vi/uEZ0k4Pm0UE/maxresdefault.jpg
- LOG  🔌 Connecting to driver tracking: http://10.226.105.28:5001
- LOG  🔍 Starting driver tracking for order: 68c6612a5c2db3b65c2952ed
- LOG  📋 Order info available: true
- LOG  👨‍✈️ Driver assignment info: {"_id": "68c6c6b05c2db3b65c29590d", "confirmationCode": "NT72Q7", "deliveryLocation": {"address": "Feder
-al Capital Territory, Nigeria", "area": "Unknown Area", "coordinates": [0, 0], "instructions": ""}, "driver": {"_id": "68c0ca6fd31fbb0fb313f
-125", "fullName": "Legend Testimony", "phone": "08139120289"}, "estimatedDeliveryTime": "2025-09-14T14:29:16.640Z", "estimatedPickupTime": "
-2025-09-14T13:59:16.640Z", "pickupLocation": {"address": "Real Tower center, utako, Abuja, Jigawa", "chefId": "68c0c952d31fbb0fb313f0a8", "chefName": "Legend Testimony", "chefPhone": "+2348139120289", "coordinates": [0, 0], "instructions": ""}, "status": "picked_up"}
- ERROR  ❌ Not connected - cannot track order
- LOG  ✅ Connected to driver tracking
- LOG  🔍 Checking connection status...
- LOG  📊 Connection status: {"isConnected": true, "reconnectAttempts": 0}
- LOG  ⚠️ No driver location received after 5 seconds, checking fallback options...
- LOG  🔄 Attempting to get driver location from API...
- LOG  ❌ HomeScreen - No assignment found for lunch
- LOG  ⚠️ HomeScreen - Using fallback meal plan image for lunch: https://i.ytimg.com/vi/uEZ0k4Pm0UE/maxresdefault.jpg
- LOG  ❌ HomeScreen - No assignment found for dinner
- LOG  ⚠️ HomeScreen - Using fallback meal plan image for dinner: https://i.ytimg.com/vi/uEZ0k4Pm0UE/maxresdefault.jpg
- LOG  📍 Driver location from API: {"data": {"assignmentStatus": "picked_up", "driverId": "68c0ca6fd31fbb0fb313f125", "driverName": "Legend 
-Testimony", "location": {"lastUpdated": "2025-09-14T14:07:45.593Z", "latitude": 9.0570752, "longitude": 7.4514432}, "rating": {"average": 5, "count": 0}}, "success": true}
- LOG  ✅ Driver location set from API fallback
-
-
-
-
- ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. Error Component Stack
-    at BrowserRouter (react-router-dom.js?v=41dc31b5:5247:5)
-    at DeliveryProvider (DeliveryContext.tsx:34:69)
-    at LocationProvider (LocationContext.tsx:32:69)
-    at AuthProvider (AuthContext.tsx:21:61)
-    at App (<anonymous>)
-overrideMethod @ hook.js:608
-warnOnce @ react-router-dom.js?v=41dc31b5:4393
-logDeprecation @ react-router-dom.js?v=41dc31b5:4396
-logV6DeprecationWarnings @ react-router-dom.js?v=41dc31b5:4399
-(anonymous) @ react-router-dom.js?v=41dc31b5:5271
-commitHookEffectListMount @ chunk-PJEEZAML.js?v=41dc31b5:16915
-commitPassiveMountOnFiber @ chunk-PJEEZAML.js?v=41dc31b5:18156
-commitPassiveMountEffects_complete @ chunk-PJEEZAML.js?v=41dc31b5:18129
-commitPassiveMountEffects_begin @ chunk-PJEEZAML.js?v=41dc31b5:18119
-commitPassiveMountEffects @ chunk-PJEEZAML.js?v=41dc31b5:18109
-flushPassiveEffectsImpl @ chunk-PJEEZAML.js?v=41dc31b5:19490
-flushPassiveEffects @ chunk-PJEEZAML.js?v=41dc31b5:19447
-(anonymous) @ chunk-PJEEZAML.js?v=41dc31b5:19328
-workLoop @ chunk-PJEEZAML.js?v=41dc31b5:197
-flushWork @ chunk-PJEEZAML.js?v=41dc31b5:176
-performWorkUntilDeadline @ chunk-PJEEZAML.js?v=41dc31b5:384Understand this warning
-3websocket.ts:210 🔌 Disconnected from delivery service
-2LocationContext.tsx:195 [Location] Geolocation permission granted
-2websocket.ts:82 [WS] Successfully connected to server
-content.js:1454 Video element not found for attaching listeners.
-(anonymous) @ content.js:1454
-nc @ content.js:32
-ms @ content.js:32
-vz @ content.js:32
-aa @ content.js:30
-_W @ content.js:32
-rA @ content.js:32
-qz @ content.js:32
-M @ content.js:17
-C @ content.js:17Understand this warning
-2websocket.ts:82 [WS] Successfully connected to server
-websocket.ts:87 [WS] Driver connection confirmed: {message: 'Connected to delivery service', driverId: '68c0ca6fd31fbb0fb313f125'}
-ProtectedRoute.tsx:30 [WS] WebSocket connected
-websocket.ts:87 [WS] Driver connection confirmed: {message: 'Connected to delivery service', driverId: '68c0ca6fd31fbb0fb313f125'}
-websocket.ts:87 [WS] Driver connection confirmed: {message: 'Connected to delivery service', driverId: '68c0ca6fd31fbb0fb313f125'}
-content.js:1454 Video element not found for attaching listeners.
-(anonymous) @ content.js:1454
-nc @ content.js:32
-ms @ content.js:32
-vz @ content.js:32
-aa @ content.js:30
-_W @ content.js:32
-rA @ content.js:32
-qz @ content.js:32
-M @ content.js:17
-C @ content.js:17Understand this warning
-websocket.ts:87 [WS] Driver connection confirmed: {message: 'Connected to delivery service', driverId: '68c0ca6fd31fbb0fb313f125'}
-content.js:1454 Video element not found for attaching listeners.
-(anonymous) @ content.js:1454
-nc @ content.js:32
-ms @ content.js:32
-vz @ content.js:32
-aa @ content.js:30
-_W @ content.js:32
-rA @ content.js:32
-qz @ content.js:32
-M @ content.js:17
-C @ content.js:17Understand this warning
-websocket.ts:103 🔌 Disconnected: io client disconnect
-2websocket.ts:210 🔌 Disconnected from delivery service
-2websocket.ts:82 [WS] Successfully connected to server
-websocket.ts:87 [WS] Driver connection confirmed: {message: 'Connected to delivery service', driverId: '68c0ca6fd31fbb0fb313f125'}
-websocket.ts:87 [WS] Driver connection confirmed: {message: 'Connected to delivery service', driverId: '68c0ca6fd31fbb0fb313f125'}
-api.ts:170 📁 Using cached assignments data
-websocket.ts:82 [WS] Successfully connected to server
-websocket.ts:87 [WS] Driver connection confirmed: {message: 'Connected to delivery service', driverId: '68c0ca6fd31fbb0fb313f125'}
-websocket.ts:82 [WS] Successfully connected to server
-websocket.ts:87 [WS] Driver connection confirmed: {message: 'Connected to delivery service', driverId: '68c0ca6fd31fbb0fb313f125'}
-api.ts:170 📁 Using cached assignments data
-api.ts:134 📁 Using cached profile data
-Dashboard.tsx:82 🟢 Attempting to go online...
-websocket.ts:66 [WS] WebSocket connection timeout - continuing without real-time features
-overrideMethod @ hook.js:608
-(anonymous) @ websocket.ts:66
-setTimeout
-(anonymous) @ websocket.ts:63
-connect @ websocket.ts:34
-(anonymous) @ useWebSocket.ts:50
-(anonymous) @ useWebSocket.ts:111
-commitHookEffectListMount @ chunk-PJEEZAML.js?v=41dc31b5:16915
-commitPassiveMountOnFiber @ chunk-PJEEZAML.js?v=41dc31b5:18156
-commitPassiveMountEffects_complete @ chunk-PJEEZAML.js?v=41dc31b5:18129
-commitPassiveMountEffects_begin @ chunk-PJEEZAML.js?v=41dc31b5:18119
-commitPassiveMountEffects @ chunk-PJEEZAML.js?v=41dc31b5:18109
-flushPassiveEffectsImpl @ chunk-PJEEZAML.js?v=41dc31b5:19490
-flushPassiveEffects @ chunk-PJEEZAML.js?v=41dc31b5:19447
-(anonymous) @ chunk-PJEEZAML.js?v=41dc31b5:19328
-workLoop @ chunk-PJEEZAML.js?v=41dc31b5:197
-flushWork @ chunk-PJEEZAML.js?v=41dc31b5:176
-performWorkUntilDeadline @ chunk-PJEEZAML.js?v=41dc31b5:384Understand this warning
-websocket.ts:103 🔌 Disconnected: io client disconnect
-websocket.ts:82 [WS] Successfully connected to server
-websocket.ts:87 [WS] Driver connection confirmed: {message: 'Connected to delivery service', driverId: '68c0ca6fd31fbb0fb313f125'}
-Dashboard.tsx:84 🟢 Go online response: {success: true, data: {…}, message: 'You are now online and ready to receive assignments'}
-api.ts:134 📁 Using cached profile data
-Dashboard.tsx:91 🟢 Profile after going online: {vehicleInfo: {…}, currentLocation: {…}, rating: {…}, deliveryStats: {…}, earnings: {…}, …}accountStatus: "approved"bankAccount: {isVerified: false}createdAt: "2025-09-10T00:46:39.943Z"currentLocation: coordinates: (2) [7.4514432, 9.0570752]lastUpdated: "2025-09-14T14:07:45.593Z"type: "Point"[[Prototype]]: ObjectdeliveryStats: {totalDeliveries: 0, completedDeliveries: 5, cancelledDeliveries: 0, totalDistance: 7, averageDeliveryTime: 0}deviceTokens: []documents: {license: {…}, vehicle: {…}}driverId: "DR0001"earnings: {totalEarnings: 0, pendingEarnings: 0, weeklyEarnings: 0, monthlyEarnings: 0}email: "legendetestimony@gmail.com"fullName: "Legend Testimony"id: "68c0ca6fd31fbb0fb313f125"isAvailable: truejoinDate: "2025-09-10T00:46:39.941Z"lastActiveAt: "2025-09-14T16:02:01.466Z"licenseNumber: "ABC000AA01"phone: "08139120289"rating: {average: 5, count: 0}status: "online"updatedAt: "2025-09-14T16:02:01.467Z"vehicleInfo: {type: 'motorcycle', model: 'Lexus 3350', plateNumber: 'ABC-123DE', capacity: 10}workingHours: {start: '08:00', end: '18:00'}__v: 0_id: "68c0ca6fd31fbb0fb313f125"[[Prototype]]: Object
-2localhost/:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+ LOG  ℹ️ Notification API response: {"actualDataExists": true, "dataExists": true, "notificationsCount": 15, "notificationsExists": true, "responseDataType": "object", "success": true, "unreadCount": 11}
+ LOG  📋 Processing notifications: {"firstNotification": {"isRead": true, "title": "Payment Successful! 💳", "type": "payment_success"}, "notificationArray": true, "notificationCount": 15}
+ LOG  ✅ Notifications loaded successfully: 15 Unread count (API/Local/Final): 11 11 11
+ LOG  📦 TagService API response: {"count": 2, "data": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "createdAt": "2025-09-17T11:16:19.730Z
+", "description": "", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1758107789/choma/tags/sawopfmqbsq4t9xkfzye.jpg", "isActiv
+e": true, "mealPlanCount": 1, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-17T11:16:19.922Z"}, {"__v": 0, "_id": "
+68cc91fa44aa0b7e6c86b0dc", "createdAt": "2025-09-18T23:12:58.763Z", "description": "nnn", "image": "https://res.cloudinary.com/dql0tbyes/ima
+ge/upload/v1758237168/choma/tags/cshuyesey0dcwtecu4ez.jpg", "isActive": true, "mealPlanCount": 1, "name": "Mama's Kitchen", "sortOrder": 1, "tagId": "TAG002", "updatedAt": "2025-09-18T23:12:58.897Z"}], "success": true}
+ LOG  ✅ Loaded 2 tags for filtering
+ LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
+ LOG  🏷️ TagFilterBar component mounted/rendered
+ LOG  🏷️ TagFilterBar render state: {"loading": false, "tags": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "createdAt": "2025-09-17T11:1
+6                                                                                                                                          6
+:19.730Z", "description": "", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1758107789/choma/tags/sawopfmqbsq4t9xkfzye.jpg", 
+"isActive": true, "mealPlanCount": 1, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-17T11:16:19.922Z"}, {"__v": 0, 
+"_id": "68cc91fa44aa0b7e6c86b0dc", "createdAt": "2025-09-18T23:12:58.763Z", "description": "nnn", "image": "https://res.cloudinary.com/dql0t
+byes/image/upload/v1758237168/choma/tags/cshuyesey0dcwtecu4ez.jpg", "isActive": true, "mealPlanCount": 1, "name": "Mama's Kitchen", "sortOrder": 1, "tagId": "TAG002", "updatedAt": "2025-09-18T23:12:58.897Z"}], "tagsLength": 2}
+ LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/mealplans
+ LOG  💰 HomeScreen: Fetching discount data for meal plans
+ LOG  💰 Fetching meal plan discount rules for: 68caa44b34aac7e3fcf1ae3b
+ LOG  ⏱️ Rate limiting: waiting 178ms before next request
+ LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
+ LOG  🏷️ TagFilterBar component mounted/rendered
+ LOG  🏷️ TagFilterBar render state: {"loading": false, "tags": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "createdAt": "2025-09-17T11:1
+6                                                                                                                                          6
+:19.730Z", "description": "", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1758107789/choma/tags/sawopfmqbsq4t9xkfzye.jpg", 
+"isActive": true, "mealPlanCount": 1, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-17T11:16:19.922Z"}, {"__v": 0, 
+"_id": "68cc91fa44aa0b7e6c86b0dc", "createdAt": "2025-09-18T23:12:58.763Z", "description": "nnn", "image": "https://res.cloudinary.com/dql0t
+byes/image/upload/v1758237168/choma/tags/cshuyesey0dcwtecu4ez.jpg", "isActive": true, "mealPlanCount": 1, "name": "Mama's Kitchen", "sortOrder": 1, "tagId": "TAG002", "updatedAt": "2025-09-18T23:12:58.897Z"}], "tagsLength": 2}
+ LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/meal-plans/68caa44b34aac7e3fcf1ae3b/discount-rules
+ LOG  ✅ Successfully loaded 7 popular meal plans
+ LOG  ✅ Successfully loaded 7 popular meal plans
+ LOG  🔄 Background: updated cached user data
+ LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
+ LOG  🏷️ TagFilterBar component mounted/rendered
+ LOG  🏷️ TagFilterBar render state: {"loading": false, "tags": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "createdAt": "2025-09-17T11:1
+6                                                                                                                                          6
+:19.730Z", "description": "", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1758107789/choma/tags/sawopfmqbsq4t9xkfzye.jpg", 
+"isActive": true, "mealPlanCount": 1, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-17T11:16:19.922Z"}, {"__v": 0, 
+"_id": "68cc91fa44aa0b7e6c86b0dc", "createdAt": "2025-09-18T23:12:58.763Z", "description": "nnn", "image": "https://res.cloudinary.com/dql0t
+byes/image/upload/v1758237168/choma/tags/cshuyesey0dcwtecu4ez.jpg", "isActive": true, "mealPlanCount": 1, "name": "Mama's Kitchen", "sortOrder": 1, "tagId": "TAG002", "updatedAt": "2025-09-18T23:12:58.897Z"}], "tagsLength": 2}
+ LOG  📋 Cache SET: authUser (520 bytes)
+ LOG  ✅ FCM push token registered with backend: {"data": {"message": "Push token registered successfully", "success": true}, "success": truue}
+ LOG  ✅ Push notifications initialized successfully
+ LOG  ℹ️ Raw API response structure: {
+  "success": true,
+  "data": {
+    "success": true,
+    "data": {
+      "notifications": [
+        {
+          "_id": "68cae799c1292299a51f43a8",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "Payment Successful! 💳",
+          "message": "Your payment of ₦5226 has been processed successfully.",
+          "type": "payment_success",
+          "isRead": true,
+          "data": {
+            "amount": 5226,
+            "reference": "choma-1758128025974-46845",
+            "subscriptionId": "68cae78dc1292299a51f436a"
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-10-17T16:53:45.763Z",
+          "createdAt": "2025-09-17T16:53:45.764Z",
+          "updatedAt": "2025-09-17T17:13:42.499Z",
+          "__v": 0,
+          "pushSentAt": "2025-09-17T16:53:46.150Z"
+        },
+        {
+          "_id": "68cae798c1292299a51f4399",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "Subscription Activated! ✅",
+          "message": "Your hh subscription is now active. Your meals start on Thu Sep 18 2025 17:53:32 GMT+0100 (West Africa Standard Time).",
+          "type": "subscription_created",
+          "isRead": true,
+          "data": {
+            "planName": "hh",
+            "startDate": "2025-09-18T16:53:32.705Z",
+            "frequency": "all",
+            "duration": null
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-10-17T16:53:44.943Z",
+          "createdAt": "2025-09-17T16:53:44.944Z",
+          "updatedAt": "2025-09-17T17:13:48.100Z",
+          "__v": 0,
+          "pushSentAt": "2025-09-17T16:53:45.359Z"
+        },
+        {
+          "_id": "68cae797c1292299a51f4390",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "Order Confirmed! 📦",
+          "message": "Order #ORD-1758128023639-V5KMC3HE7 has been confirmed and is being prepared by our chef.",
+          "type": "order_confirmed",
+          "isRead": false,
+          "data": {
+            "orderNumber": "ORD-1758128023639-V5KMC3HE7",
+            "planName": "hh",
+            "deliveryDate": "2025-09-18T16:53:32.705Z",
+            "totalAmount": 5226
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-10-17T16:53:43.919Z",
+          "createdAt": "2025-09-17T16:53:43.920Z",
+          "updatedAt": "2025-09-17T16:53:44.674Z",
+          "__v": 0,
+          "pushSentAt": "2025-09-17T16:53:44.673Z"
+        },
+        {
+          "_id": "68cad641e5caf1a0830f1ac2",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:39:45.787Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:39:45.787Z",
+          "expiresAt": "2025-10-17T15:39:45.787Z",
+          "updatedAt": "2025-09-17T15:39:45.787Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad601e5caf1a0830f1a68",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:38:41.130Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:38:41.130Z",
+          "expiresAt": "2025-10-17T15:38:41.130Z",
+          "updatedAt": "2025-09-17T15:38:41.130Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad39ce5caf1a0830f19f1",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:28:28.023Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:28:28.023Z",
+          "expiresAt": "2025-10-17T15:28:28.023Z",
+          "updatedAt": "2025-09-17T15:28:28.023Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad386e5caf1a0830f19bb",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:28:06.550Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:28:06.550Z",
+          "expiresAt": "2025-10-17T15:28:06.551Z",
+          "updatedAt": "2025-09-17T15:28:06.550Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad359e5caf1a0830f19a3",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:27:21.936Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:27:21.937Z",
+          "expiresAt": "2025-10-17T15:27:21.937Z",
+          "updatedAt": "2025-09-17T15:27:21.937Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad236e5caf1a0830f192e",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:22:30.383Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:22:30.383Z",
+          "expiresAt": "2025-10-17T15:22:30.384Z",
+          "updatedAt": "2025-09-17T15:22:30.383Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad22ee5caf1a0830f1920",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:22:22.269Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:22:22.269Z",
+          "expiresAt": "2025-10-17T15:22:22.269Z",
+          "updatedAt": "2025-09-17T15:22:22.269Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cad1d5e5caf1a0830f18f6",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+          "message": "This is a test push notification from development mode!",
+          "type": "test",
+          "isRead": false,
+          "data": {
+            "environment": "development",
+            "timestamp": "2025-09-17T15:20:53.463Z"
+          },
+          "priority": "medium",
+          "pushSent": false,
+          "createdAt": "2025-09-17T15:20:53.463Z",
+          "expiresAt": "2025-10-17T15:20:53.464Z",
+          "updatedAt": "2025-09-17T15:20:53.463Z",
+          "__v": 0
+        },
+        {
+          "_id": "68cacfbae5caf1a0830f18a5",
+          "userId": "68c99bbcdace921f3460f79a",
+          "title": "🧪 Test Push Notification",
+   

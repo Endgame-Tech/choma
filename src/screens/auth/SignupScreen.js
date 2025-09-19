@@ -521,17 +521,29 @@ const SignupScreen = ({ navigation, route }) => {
       if (profileImage?.uri) {
         try {
           console.log("Uploading profile image to cloud storage...");
-          cloudImageUrl = await CloudStorageService.uploadToBackend(
+          cloudImageUrl = await CloudStorageService.uploadSignupImage(
             profileImage.uri,
             email
           );
           console.log("Profile image uploaded successfully:", cloudImageUrl);
         } catch (uploadError) {
           console.error("Image upload failed:", uploadError);
-          showError(
-            "Image Upload Failed",
-            "Failed to upload profile image, but registration will continue without it."
-          );
+          // Instead of showing error and continuing, ask user what to do
+          const shouldContinue = await new Promise((resolve) => {
+            showAlert({
+              title: "Image Upload Failed",
+              message: "Failed to upload your profile image. Would you like to continue registration without the image or try again?",
+              buttons: [
+                { text: "Continue Without Image", onPress: () => resolve(true) },
+                { text: "Try Again", onPress: () => resolve(false) },
+              ],
+              type: "warning",
+            });
+          });
+          
+          if (!shouldContinue) {
+            return; // Stop signup process, let user try again
+          }
         }
       }
 

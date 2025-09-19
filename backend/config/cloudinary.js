@@ -102,7 +102,7 @@ const uploadToFolder = (folder) => {
           {
             width: 400,
             height: 400,
-            crop: "fill",
+            crop: "limit", // Changed from "fill" to "limit" to preserve aspect ratio
             gravity: "center",
             quality: "auto:good",
           },

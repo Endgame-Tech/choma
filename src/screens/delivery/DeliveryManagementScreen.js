@@ -217,7 +217,7 @@ const DeliveryManagementScreen = ({ navigation }) => {
           onPress={() => navigation.goBack()}
           style={styles(colors).backButton}
         >
-          <Ionicons name="chevron-back" size={24} color="white" />
+          <Ionicons name="chevron-back" size={20} color="white" />
         </TouchableOpacity>
 
         <View style={styles(colors).headerContent}>

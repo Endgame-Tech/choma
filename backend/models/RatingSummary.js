@@ -450,7 +450,69 @@ ratingSummarySchema.statics.updateEntitySummary = async function(entityId, entit
     }
   );
   
+  // Update the source entity's rating fields
+  try {
+    await this.updateSourceEntityRating(entityId, entityType, averageRating, totalRatings);
+  } catch (error) {
+    console.error('Error updating source entity rating:', error);
+    // Don't throw - summary update succeeded even if source update failed
+  }
+  
   return summary;
+};
+
+// Static method to update source entity rating fields
+ratingSummarySchema.statics.updateSourceEntityRating = async function(entityId, entityType, averageRating, totalRatings) {
+  try {
+    switch (entityType) {
+      case 'meal_plan':
+        const MealPlan = mongoose.model('MealPlan');
+        await MealPlan.findByIdAndUpdate(entityId, {
+          avgRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
+          totalReviews: totalRatings,
+          lastModified: new Date()
+        });
+        console.log(`✅ Updated meal plan ${entityId} rating: ${averageRating.toFixed(1)} (${totalRatings} reviews)`);
+        break;
+        
+      case 'chef':
+        // Add chef rating update logic here when chef model is available
+        try {
+          const Chef = mongoose.model('Chef');
+          await Chef.findByIdAndUpdate(entityId, {
+            avgRating: Math.round(averageRating * 10) / 10,
+            totalReviews: totalRatings,
+            lastModified: new Date()
+          });
+          console.log(`✅ Updated chef ${entityId} rating: ${averageRating.toFixed(1)} (${totalRatings} reviews)`);
+        } catch (error) {
+          console.log(`⚠️  Chef model not found or update failed for ${entityId}`);
+        }
+        break;
+        
+      case 'driver':
+        // Add driver rating update logic here when driver model is available
+        try {
+          const Driver = mongoose.model('Driver');
+          await Driver.findByIdAndUpdate(entityId, {
+            avgRating: Math.round(averageRating * 10) / 10,
+            totalReviews: totalRatings,
+            lastModified: new Date()
+          });
+          console.log(`✅ Updated driver ${entityId} rating: ${averageRating.toFixed(1)} (${totalRatings} reviews)`);
+        } catch (error) {
+          console.log(`⚠️  Driver model not found or update failed for ${entityId}`);
+        }
+        break;
+        
+      default:
+        console.log(`⚠️  No rating update handler for entity type: ${entityType}`);
+        break;
+    }
+  } catch (error) {
+    console.error(`❌ Error updating ${entityType} rating for ${entityId}:`, error);
+    throw error;
+  }
 };
 
 // Static method to get top rated entities

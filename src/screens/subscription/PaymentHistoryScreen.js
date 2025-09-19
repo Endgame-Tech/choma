@@ -79,7 +79,9 @@ const PaymentHistoryScreen = ({ navigation }) => {
   const handleRefundRequest = async (payment) => {
     Alert.alert(
       "Request Refund",
-      `Are you sure you want to request a refund for ${paymentService.formatCurrency(payment.totalAmount)}?`,
+      `Are you sure you want to request a refund for ${paymentService.formatCurrency(
+        payment.totalAmount
+      )}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -227,7 +229,7 @@ const PaymentHistoryScreen = ({ navigation }) => {
             style={styles(colors).backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
+            <Ionicons name="chevron-back" size={20} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles(colors).headerTitle}>Payment History</Text>
         </View>
@@ -248,7 +250,7 @@ const PaymentHistoryScreen = ({ navigation }) => {
           style={styles(colors).backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles(colors).headerTitle}>Payment History</Text>
       </View>
