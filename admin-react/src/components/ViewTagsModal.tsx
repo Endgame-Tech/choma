@@ -70,7 +70,7 @@ const ViewTagsModal: React.FC<ViewTagsModalProps> = ({
 
   const handleEditTag = async (tagData: UpdateTagData) => {
     if (!selectedTag) return;
-    
+
     try {
       setIsUpdating(true);
       await tagsApi.updateTag(selectedTag._id, tagData);
@@ -95,8 +95,51 @@ const ViewTagsModal: React.FC<ViewTagsModalProps> = ({
   };
 
   const handleDeleteTag = async (tag: Tag) => {
-    if (!confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
-      return;
+    // Check if tag has meal plans associated with it
+    if (tag.mealPlanCount && tag.mealPlanCount > 0) {
+      const shouldRemoveFromMealPlans = confirm(
+        `This tag "${tag.name}" is currently used by ${tag.mealPlanCount} meal plan(s).\n\n` +
+        `Click OK to remove the tag from all meal plans and then delete it.\n` +
+        `Click Cancel to abort the deletion.`
+      );
+
+      if (!shouldRemoveFromMealPlans) {
+        return;
+      }
+
+      try {
+        // First remove the tag from all meal plans
+        const removeResult = await tagsApi.removeTagFromAllMealPlans(tag._id);
+
+        if (removeResult.success) {
+          // Show notification about removal
+          const removeEvent = new CustomEvent('show-notification', {
+            detail: {
+              type: 'info',
+              message: `Tag removed from ${removeResult.updatedCount} meal plan(s). Now deleting the tag...`
+            }
+          });
+          window.dispatchEvent(removeEvent);
+
+          // Small delay to show the notification
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to remove tag from meal plans';
+        const errorEvent = new CustomEvent('show-notification', {
+          detail: {
+            type: 'error',
+            message: `Failed to remove tag from meal plans: ${errorMessage}`
+          }
+        });
+        window.dispatchEvent(errorEvent);
+        return;
+      }
+    } else {
+      // Tag has no meal plans, just confirm deletion
+      if (!confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
+        return;
+      }
     }
 
     try {
@@ -232,7 +275,7 @@ const ViewTagsModal: React.FC<ViewTagsModalProps> = ({
                           </p>
                         </div>
                       </div>
-                      
+
                       {/* Actions */}
                       <div className="flex items-center space-x-1">
                         <button
@@ -270,13 +313,12 @@ const ViewTagsModal: React.FC<ViewTagsModalProps> = ({
                           {tag.mealPlanCount || 0} meal plans
                         </span>
                       </div>
-                      
+
                       {/* Status Badge */}
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        tag.isActive
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${tag.isActive
                           ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                           : 'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
-                      }`}>
+                        }`}>
                         {tag.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>

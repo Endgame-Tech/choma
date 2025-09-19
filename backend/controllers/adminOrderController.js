@@ -351,7 +351,24 @@ exports.updateOrderStatus = async (req, res) => {
       id,
       updateData,
       { new: true, runValidators: true }
-    ).populate('customer', 'fullName email');
+    ).populate('customer', 'fullName email').populate('subscriptionId');
+
+    // Handle subscription activation for first delivery
+    if (status === 'Delivered' && updatedOrder.subscriptionId) {
+      const Subscription = require('../models/Subscription');
+      const subscription = await Subscription.findById(updatedOrder.subscriptionId);
+
+      if (
+        subscription &&
+        !subscription.recurringDelivery?.isActivated
+      ) {
+        // Activate subscription using the model method (recalculates end date)
+        await subscription.activate();
+        console.log(
+          `🎯 Subscription ${subscription._id} activated by admin-marked delivery completion`
+        );
+      }
+    }
 
     // Handle payment status for cancelled orders
     if (status === 'Cancelled' && order.paymentStatus === 'Paid') {

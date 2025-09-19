@@ -92,6 +92,12 @@ class TagApi {
     });
     return response.data as MealPlansWithTagResponse;
   }
+
+  // Remove tag from all meal plans
+  async removeTagFromAllMealPlans(tagId: string): Promise<{ success: boolean; message: string; updatedCount: number }> {
+    const response = await api.post(`${this.baseUrl}/${tagId}/remove-from-meal-plans`);
+    return response.data as { success: boolean; message: string; updatedCount: number };
+  }
 }
 
 export const tagsApi = new TagApi();

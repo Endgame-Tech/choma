@@ -42,6 +42,11 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`
   }
   
+  // Add X-API-Key header for production environment
+  if (import.meta.env.PROD && config.headers) {
+    config.headers['X-API-Key'] = 'choma_admin_ab6908eeaa1744255f7aeb34e69a45ed'
+  }
+  
   return config
 })
 

@@ -7,11 +7,11 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
 import { THEME } from "../../utils/colors";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import CustomIcon from "./CustomIcon";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -37,31 +37,31 @@ const CustomAlert = ({
     switch (type) {
       case "success":
         return {
-          icon: "checkmark-circle",
+          icon: "star-filled", // Using star-filled as success icon
           backgroundColor: "#10B981" + "20",
           iconColor: "#10B981",
         };
       case "error":
         return {
-          icon: "close-circle",
+          icon: "shield", // Using shield as error/danger icon
           backgroundColor: "#EF4444" + "20",
           iconColor: "#EF4444",
         };
       case "warning":
         return {
-          icon: "warning",
+          icon: "notification-filled", // Using notification-filled as warning icon
           backgroundColor: "#F59E0B" + "20",
           iconColor: "#F59E0B",
         };
       case "confirm":
         return {
-          icon: "help-circle",
+          icon: "details", // Using details as help/question icon
           backgroundColor: "#3B82F6" + "20",
           iconColor: "#3B82F6",
         };
       default:
         return {
-          icon: "information-circle",
+          icon: "details", // Using details as info icon
           backgroundColor: "#3B82F6" + "20",
           iconColor: "#3B82F6",
         };
@@ -95,13 +95,13 @@ const CustomAlert = ({
             style={styles(colors).closeButton}
             onPress={onDismiss}
           >
-            <Ionicons name="close" size={24} color={colors.textSecondary} />
+            <CustomIcon name="close" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <View style={styles(colors).content}>
             {/* Icon */}
             <View style={[styles(colors).iconContainer, { backgroundColor }]}>
-              <Ionicons name={iconName} size={32} color={iconColor} />
+              <CustomIcon name={iconName} size={32} color={iconColor} />
             </View>
 
             {/* Title */}
@@ -143,8 +143,8 @@ const CustomAlert = ({
                     }}
                   >
                     {isDestructive && (
-                      <Ionicons
-                        name="trash"
+                      <CustomIcon
+                        name="remove"
                         size={18}
                         color="#FFFFFF"
                         style={styles(colors).buttonIcon}

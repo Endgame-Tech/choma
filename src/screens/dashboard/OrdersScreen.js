@@ -41,6 +41,9 @@ const OrdersScreen = ({ navigation }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orders, setOrders] = useState([]);
 
+  // Ensure orders is always an array to prevent iterator errors
+  const safeOrders = Array.isArray(orders) ? orders : [];
+
   // Ensure orders is always an array
   useEffect(() => {
     if (!Array.isArray(orders)) {
@@ -56,9 +59,9 @@ const OrdersScreen = ({ navigation }) => {
   const [realTimeUpdateInterval, setRealTimeUpdateInterval] = useState(null);
 
   // Silent update function that only updates status without refreshing UI
-  const silentOrderUpdate = async () => {
+  const silentOrderUpdate = async (forceRefresh = false) => {
     try {
-      const response = await apiService.getUserOrders();
+      const response = await apiService.getUserOrders(forceRefresh);
 
       // Enhanced error checking
       if (!response) {
@@ -102,7 +105,9 @@ const OrdersScreen = ({ navigation }) => {
       }
 
       setOrders((prevOrders) => {
-        const newOrders = [...prevOrders];
+        // Ensure prevOrders is always an array to prevent iterator errors
+        const safeOrders = Array.isArray(prevOrders) ? prevOrders : [];
+        const newOrders = [...safeOrders];
         let hasChanges = false;
 
         // Update status for existing orders without triggering refresh
@@ -186,9 +191,8 @@ const OrdersScreen = ({ navigation }) => {
 
     // Only set up real-time updates if we have active orders and user is on active tab
     const hasActiveOrders =
-      orders &&
-      Array.isArray(orders) &&
-      orders.some((order) => {
+      safeOrders.length > 0 &&
+      safeOrders.some((order) => {
         const status = (
           order.delegationStatus ||
           order.status ||
@@ -200,8 +204,7 @@ const OrdersScreen = ({ navigation }) => {
 
     if (
       hasActiveOrders &&
-      orders &&
-      orders.length > 0 &&
+      safeOrders.length > 0 &&
       selectedTab === "active"
     ) {
       console.log("🔄 Starting optimized order status updates...");
@@ -219,7 +222,7 @@ const OrdersScreen = ({ navigation }) => {
         }
 
         console.log("🔄 Checking for order status updates...");
-        await silentOrderUpdate(); // New function for status-only updates
+        await silentOrderUpdate(true); // Force refresh to bypass cache
       }, 60000); // Reduced frequency to every 60 seconds (from 30s)
 
       setRealTimeUpdateInterval(interval);
@@ -230,14 +233,14 @@ const OrdersScreen = ({ navigation }) => {
         clearInterval(realTimeUpdateInterval);
       }
     };
-  }, [orders.length, selectedTab]); // Add selectedTab to dependencies
+  }, [safeOrders.length, selectedTab]); // Add selectedTab to dependencies
 
   // Reduced focus refresh - only for major updates
   useFocusEffect(
     React.useCallback(() => {
       // Only refresh after significant time away or if orders are empty
       const lastUpdate = Date.now() - (global.lastOrderUpdate || 0);
-      const shouldRefresh = orders.length === 0 || lastUpdate > 300000; // 5 minutes
+      const shouldRefresh = safeOrders.length === 0 || lastUpdate > 300000; // 5 minutes
 
       if (shouldRefresh) {
         console.log(
@@ -245,10 +248,10 @@ const OrdersScreen = ({ navigation }) => {
         );
         loadOrders();
       } else {
-        console.log("🔄 Screen focused - using silent update");
-        silentOrderUpdate();
+        console.log("🔄 Screen focused - using silent update with force refresh");
+        silentOrderUpdate(true); // Force refresh to get latest order status
       }
-    }, [orders.length])
+    }, [safeOrders.length])
   );
 
   // Cleanup intervals on unmount
@@ -290,7 +293,7 @@ const OrdersScreen = ({ navigation }) => {
       const [ordersResult, assignedOrdersResult, subscriptionsResult] =
         await Promise.all([
           apiService
-            .getUserOrders()
+            .getUserOrders(forceRefresh)
             .catch((err) => ({ success: false, error: err })),
           apiService
             .get("/orders/assigned")
@@ -311,6 +314,8 @@ const OrdersScreen = ({ navigation }) => {
           [];
         if (Array.isArray(orders)) {
           allOrders = [...orders];
+        } else {
+          allOrders = [];
         }
       }
 
@@ -323,7 +328,10 @@ const OrdersScreen = ({ navigation }) => {
           [];
         if (Array.isArray(assignedOrders)) {
           // Add assigned orders to the list
-          allOrders = [...allOrders, ...assignedOrders];
+          allOrders = [
+            ...(Array.isArray(allOrders) ? allOrders : []),
+            ...assignedOrders
+          ];
         }
       }
 
@@ -371,7 +379,11 @@ const OrdersScreen = ({ navigation }) => {
           isSubscriptionOrder: true,
         }));
 
-        allOrders = [...allOrders, ...subscriptionOrders];
+        // Ensure both arrays are valid before spreading
+        allOrders = [
+          ...(Array.isArray(allOrders) ? allOrders : []),
+          ...(Array.isArray(subscriptionOrders) ? subscriptionOrders : [])
+        ];
       }
 
       // Deduplicate orders by _id to prevent duplicate cards with same keys
@@ -380,7 +392,9 @@ const OrdersScreen = ({ navigation }) => {
       const seenIds = new Set();
 
       // Process orders in reverse to keep later entries (which might have more recent status)
-      [...allOrders].reverse().forEach((order) => {
+      // Ensure allOrders is an array before spreading
+      const safeAllOrders = Array.isArray(allOrders) ? allOrders : [];
+      [...safeAllOrders].reverse().forEach((order) => {
         const orderId = order._id || order.id;
 
         if (!seenIds.has(orderId)) {
@@ -487,7 +501,13 @@ const OrdersScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadOrders();
+    // Clear cache and force refresh when user manually refreshes
+    const userId = user?._id || user?.id;
+    if (userId) {
+      await cacheService.clear("userOrders", userId);
+      console.log("🗑️ Manual refresh: orders cache cleared");
+    }
+    await loadOrders(true); // Force refresh on manual pull-to-refresh
     setRefreshing(false);
   };
 
@@ -666,7 +686,7 @@ const OrdersScreen = ({ navigation }) => {
           }
         }}
         onCancelOrder={(orderId) => {
-          const orderToCancel = orders.find((o) => (o._id || o.id) === orderId);
+          const orderToCancel = safeOrders.find((o) => (o._id || o.id) === orderId);
           if (orderToCancel) {
             handleCancelOrder(orderToCancel);
           }
@@ -730,7 +750,7 @@ const OrdersScreen = ({ navigation }) => {
           }
         }}
         onCancelOrder={(orderId) => {
-          const orderToCancel = orders.find((o) => (o._id || o.id) === orderId);
+          const orderToCancel = safeOrders.find((o) => (o._id || o.id) === orderId);
           if (orderToCancel) {
             handleCancelOrder(orderToCancel);
           }
@@ -780,8 +800,8 @@ const OrdersScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const filteredOrders = Array.isArray(orders)
-    ? orders.filter((order) => {
+  const filteredOrders = Array.isArray(safeOrders)
+    ? safeOrders.filter((order) => {
         if (!order) return false; // Skip null/undefined orders
         // Check delegationStatus first (chef status), then fallback to order status
         const status = (
@@ -865,7 +885,7 @@ const OrdersScreen = ({ navigation }) => {
       >
         {loading ? (
           <View style={styles(colors).ordersContainer}>
-            {[...Array(3)].map((_, index) => (
+            {Array.from({ length: 3 }, (_, index) => (
               <OrderCardSkeleton key={index} />
             ))}
           </View>

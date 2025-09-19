@@ -368,6 +368,8 @@ class ApiService {
       headers: {
         "Content-Type": "application/json",
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        // Add X-API-Key header for production environment
+        ...(!__DEV__ && { "X-API-Key": APP_CONFIG.PRODUCTION_API_KEY }),
         ...options.headers,
       },
       ...options,
@@ -954,9 +956,33 @@ class ApiService {
     });
   }
 
-  async getUserOrders() {
+  async getUserOrders(forceRefresh = false) {
     await this.getStoredToken();
-    const result = await this.cachedRequest("/orders", "userOrders");
+    const result = await this.cachedRequest("/orders", "userOrders", {
+      forceRefresh,
+    });
+
+    return result;
+  }
+
+  // Clear orders cache when order status changes
+  async clearOrdersCache() {
+    await this.clearCache("userOrders");
+    console.log("🗑️ Orders cache cleared due to status change");
+  }
+
+  // Update order status and clear cache
+  async updateOrderStatus(orderId, status) {
+    await this.getStoredToken();
+    const result = await this.request(`/orders/${orderId}/status`, {
+      method: "PUT",
+      body: { status },
+    });
+
+    // Clear cache to ensure fresh data on next fetch
+    if (result.success) {
+      await this.clearOrdersCache();
+    }
 
     return result;
   }
@@ -1122,16 +1148,39 @@ class ApiService {
     // Use the auth/dashboard endpoint instead of dashboard/user since it's working
     await this.getStoredToken();
     console.log("🔄 Fetching user dashboard data...");
-    const result = await this.request("/auth/dashboard");
+
+    // Add cache-busting parameter if force refresh
+    const endpoint = forceRefresh
+      ? `/auth/dashboard?_t=${Date.now()}`
+      : "/auth/dashboard";
+    const result = await this.request(endpoint, {
+      headers: forceRefresh ? { "Cache-Control": "no-cache" } : {},
+    });
 
     if (result.success) {
       console.log("✅ User dashboard data loaded successfully");
+
+      // Handle both single subscription object and subscriptions array
+      const orders = result.data?.recentOrders || result.data?.orders || [];
+      let subscriptions = result.data?.subscriptions || [];
+
+      // If there's a single subscription object, convert to array
+      if (result.data?.subscription && !subscriptions.length) {
+        subscriptions = [result.data.subscription];
+        console.log("📋 Converted single subscription to array:", {
+          subscriptionId: result.data.subscription.id,
+          planName: result.data.subscription.planName,
+          status: result.data.subscription.status,
+        });
+      }
+
       // Transform the response to match expected format
       return {
         success: true,
         data: {
-          orders: result.data?.orders || [],
-          subscriptions: result.data?.subscriptions || [],
+          orders: orders,
+          subscriptions: subscriptions,
+          subscription: result.data?.subscription, // Also include the original single object
           timestamp: new Date().toISOString(),
         },
       };

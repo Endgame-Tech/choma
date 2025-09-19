@@ -1,11 +1,11 @@
-const Tag = require('../models/Tag');
-const MealPlan = require('../models/MealPlan');
+const Tag = require("../models/Tag");
+const MealPlan = require("../models/MealPlan");
 
 // Get all active tags with meal plan counts
 exports.getAllTags = async (req, res) => {
   try {
     const tags = await Tag.findActive();
-    
+
     // Add meal plan count to each tag
     const tagsWithCounts = await Promise.all(
       tags.map(async (tag) => {
@@ -23,11 +23,11 @@ exports.getAllTags = async (req, res) => {
       count: tagsWithCounts.length,
     });
   } catch (err) {
-    console.error('Get all tags error:', err);
+    console.error("Get all tags error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch tags',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      message: "Failed to fetch tags",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -41,7 +41,7 @@ exports.getTagById = async (req, res) => {
     if (!tag) {
       return res.status(404).json({
         success: false,
-        message: 'Tag not found',
+        message: "Tag not found",
       });
     }
 
@@ -55,11 +55,11 @@ exports.getTagById = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Get tag by ID error:', err);
+    console.error("Get tag by ID error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch tag',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      message: "Failed to fetch tag",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -73,27 +73,27 @@ exports.createTag = async (req, res) => {
     if (!name || !image) {
       return res.status(400).json({
         success: false,
-        message: 'Tag name and image are required',
+        message: "Tag name and image are required",
       });
     }
 
     // Check if tag name already exists
-    const existingTag = await Tag.findOne({ 
-      name: { $regex: new RegExp(`^${name}$`, 'i') },
-      isActive: true 
+    const existingTag = await Tag.findOne({
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+      isActive: true,
     });
 
     if (existingTag) {
       return res.status(400).json({
         success: false,
-        message: 'Tag with this name already exists',
+        message: "Tag with this name already exists",
       });
     }
 
     const tag = await Tag.create({
       name,
       image,
-      description: description || '',
+      description: description || "",
       sortOrder: sortOrder || 0,
     });
 
@@ -101,15 +101,15 @@ exports.createTag = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Tag created successfully',
+      message: "Tag created successfully",
       data: tag,
     });
   } catch (err) {
-    console.error('Create tag error:', err);
+    console.error("Create tag error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to create tag',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      message: "Failed to create tag",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -127,14 +127,14 @@ exports.updateTag = async (req, res) => {
     if (updates.name) {
       const existingTag = await Tag.findOne({
         _id: { $ne: id },
-        name: { $regex: new RegExp(`^${updates.name}$`, 'i') },
+        name: { $regex: new RegExp(`^${updates.name}$`, "i") },
         isActive: true,
       });
 
       if (existingTag) {
         return res.status(400).json({
           success: false,
-          message: 'Tag with this name already exists',
+          message: "Tag with this name already exists",
         });
       }
     }
@@ -147,7 +147,7 @@ exports.updateTag = async (req, res) => {
     if (!tag) {
       return res.status(404).json({
         success: false,
-        message: 'Tag not found',
+        message: "Tag not found",
       });
     }
 
@@ -155,15 +155,15 @@ exports.updateTag = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Tag updated successfully',
+      message: "Tag updated successfully",
       data: tag,
     });
   } catch (err) {
-    console.error('Update tag error:', err);
+    console.error("Update tag error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to update tag',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      message: "Failed to update tag",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -195,7 +195,7 @@ exports.deleteTag = async (req, res) => {
     if (!tag) {
       return res.status(404).json({
         success: false,
-        message: 'Tag not found',
+        message: "Tag not found",
       });
     }
 
@@ -203,14 +203,14 @@ exports.deleteTag = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Tag deleted successfully',
+      message: "Tag deleted successfully",
     });
   } catch (err) {
-    console.error('Delete tag error:', err);
+    console.error("Delete tag error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete tag',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      message: "Failed to delete tag",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -226,22 +226,22 @@ exports.getMealPlansByTag = async (req, res) => {
     if (!tag) {
       return res.status(404).json({
         success: false,
-        message: 'Tag not found',
+        message: "Tag not found",
       });
     }
 
     // Get meal plans with this tag (only published for mobile)
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
+
     const mealPlans = await MealPlan.find({
       tagId: id,
       isActive: true,
       isPublished: true,
     })
-    .populate('tagId', 'name image')
-    .sort({ sortOrder: 1, createdDate: -1 })
-    .skip(skip)
-    .limit(parseInt(limit));
+      .populate("tagId", "name image")
+      .sort({ sortOrder: 1, createdDate: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
 
     const totalCount = await MealPlan.countDocuments({
       tagId: id,
@@ -250,7 +250,7 @@ exports.getMealPlansByTag = async (req, res) => {
     });
 
     // Format meal plans for frontend
-    const formattedMealPlans = mealPlans.map(plan => ({
+    const formattedMealPlans = mealPlans.map((plan) => ({
       ...plan.toObject(),
       id: plan._id,
       name: plan.planName,
@@ -272,11 +272,50 @@ exports.getMealPlansByTag = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Get meal plans by tag error:', err);
+    console.error("Get meal plans by tag error:", err);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch meal plans by tag',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      message: "Failed to fetch meal plans by tag",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+};
+
+// Remove tag from all meal plans
+exports.removeTagFromAllMealPlans = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verify tag exists
+    const tag = await Tag.findById(id);
+    if (!tag) {
+      return res.status(404).json({
+        success: false,
+        message: "Tag not found",
+      });
+    }
+
+    // Update all meal plans that use this tag to remove the tag reference
+    const updateResult = await MealPlan.updateMany(
+      { tagId: id, isActive: true },
+      { $unset: { tagId: "" }, updatedAt: new Date() }
+    );
+
+    console.log(
+      `🏷️ Removed tag ${tag.name} from ${updateResult.modifiedCount} meal plans`
+    );
+
+    res.json({
+      success: true,
+      message: `Tag removed from ${updateResult.modifiedCount} meal plan(s)`,
+      updatedCount: updateResult.modifiedCount,
+    });
+  } catch (err) {
+    console.error("Remove tag from meal plans error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to remove tag from meal plans",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };

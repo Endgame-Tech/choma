@@ -462,7 +462,9 @@ const styles = (colors) =>
     fullWidthMealCard: {
       borderRadius: 16,
       overflow: 'hidden',
-      height: 180,
+      height: 180,      
+      borderWidth: 1,
+      borderColor: colors.black,
     },
     mealsScroll: {
       paddingBottom: 16,
@@ -473,6 +475,8 @@ const styles = (colors) =>
       marginRight: 15,
       borderRadius: 16,
       overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.black,
     },
     todayMealImageContainer: {
       width: '100%',
@@ -495,7 +499,7 @@ const styles = (colors) =>
     mealTimeContainer: {
       position: 'absolute',
       top: 12,
-      right: 12,
+      left: 12,
       backgroundColor: 'rgba(255, 255, 255, 0.9)',
       paddingHorizontal: 8,
       paddingVertical: 4,

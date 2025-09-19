@@ -22,7 +22,7 @@ const api = axios.create({
   },
 })
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and API key
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('chefToken')
   if (token) {
@@ -31,6 +31,15 @@ api.interceptors.request.use((config) => {
     }
     config.headers.Authorization = `Bearer ${token}`
   }
+  
+  // Add X-API-Key header for production environment
+  if ((import.meta as ImportMeta & { env: { PROD: boolean } }).env.PROD) {
+    if (!config.headers) {
+      config.headers = {}
+    }
+    config.headers['X-API-Key'] = 'choma_chef_43268044cff028cbf31fef391e51f4c2'
+  }
+  
   console.log(`🌐 Chef API Request: ${config.method?.toUpperCase()} ${config.url}`)
   return config
 })

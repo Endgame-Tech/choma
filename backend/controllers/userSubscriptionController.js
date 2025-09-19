@@ -14,12 +14,48 @@ const getUserDashboard = async (req, res) => {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    // Check for active subscription
+    // Check for active subscription - with debugging
+    console.log(`🔍 Looking for subscriptions for user: ${userId}`);
+    
+    // First, get all subscriptions for this user to debug
+    const allUserSubscriptions = await Subscription.find({ userId: userId });
+    console.log(`📋 Found ${allUserSubscriptions.length} total subscriptions for user:`, 
+      allUserSubscriptions.map(sub => ({
+        id: sub._id,
+        status: sub.status,
+        startDate: sub.startDate,
+        endDate: sub.endDate,
+        isEndDateValid: sub.endDate >= new Date()
+      }))
+    );
+    
+    // Find active subscription - include both activated and pending activation
     const activeSubscription = await Subscription.findOne({
       userId: userId,
-      status: 'active',
-      endDate: { $gte: new Date() }
+      status: { $in: ['active', 'paid'] }, // Allow both 'active' and 'paid' status
+      $or: [
+        // For activated subscriptions, check end date
+        { 
+          'recurringDelivery.isActivated': true,
+          endDate: { $gte: new Date() } 
+        },
+        // For non-activated subscriptions, they're still "active" but pending first delivery
+        { 'recurringDelivery.isActivated': false },
+        // Fallback for subscriptions without proper recurringDelivery structure
+        { 
+          'recurringDelivery.isActivated': { $exists: false },
+          endDate: { $gte: new Date() }
+        }
+      ]
     }).populate('mealPlanId');
+    
+    console.log(`🎯 Active subscription found:`, activeSubscription ? {
+      id: activeSubscription._id,
+      status: activeSubscription.status,
+      planName: activeSubscription.mealPlanId?.name || activeSubscription.mealPlanId?.planName,
+      startDate: activeSubscription.startDate,
+      endDate: activeSubscription.endDate
+    } : 'None');
 
     // If no active subscription, return discovery mode
     if (!activeSubscription) {
@@ -35,15 +71,28 @@ const getUserDashboard = async (req, res) => {
     // Get current meal plan details
     const mealPlan = activeSubscription.mealPlanId;
     
-    // Calculate days remaining
+    // Calculate days remaining and progress based on activation status
     const today = new Date();
-    const endDate = new Date(activeSubscription.endDate);
-    const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-
-    // Calculate progress percentage
-    const totalDays = Math.ceil((endDate - new Date(activeSubscription.startDate)) / (1000 * 60 * 60 * 24));
-    const daysCompleted = totalDays - daysRemaining;
-    const progressPercentage = Math.round((daysCompleted / totalDays) * 100);
+    const isActivated = activeSubscription.recurringDelivery?.isActivated || false;
+    
+    let daysRemaining, progressPercentage, actualEndDate;
+    
+    if (isActivated) {
+      // Subscription is activated - calculate normally
+      actualEndDate = new Date(activeSubscription.endDate);
+      daysRemaining = Math.ceil((actualEndDate - today) / (1000 * 60 * 60 * 24));
+      const totalDays = Math.ceil((actualEndDate - new Date(activeSubscription.startDate)) / (1000 * 60 * 60 * 24));
+      const daysCompleted = totalDays - daysRemaining;
+      progressPercentage = Math.round((daysCompleted / totalDays) * 100);
+    } else {
+      // Subscription not activated yet - show as "pending first delivery"
+      const originalDuration = activeSubscription.durationWeeks || 1;
+      daysRemaining = originalDuration * 7; // Full duration remaining
+      progressPercentage = 0; // No progress until activated
+      actualEndDate = null; // TBD until activation
+      
+      console.log(`📋 Subscription pending activation - ${originalDuration} weeks (${daysRemaining} days) pending first delivery`);
+    }
 
     // Get recent orders and delivery info
     const recentOrders = await Order.find({
@@ -92,14 +141,18 @@ const getUserDashboard = async (req, res) => {
         },
         subscription: {
           id: activeSubscription._id,
-          planName: mealPlan.name,
-          planImage: mealPlan.planImageUrl,
+          planName: mealPlan.planName || mealPlan.name,
+          planImage: mealPlan.planImageUrl || mealPlan.coverImage,
           startDate: activeSubscription.startDate,
-          endDate: activeSubscription.endDate,
+          endDate: actualEndDate || activeSubscription.endDate,
           daysRemaining: daysRemaining,
           progressPercentage: progressPercentage,
           status: activeSubscription.status,
-          price: activeSubscription.price
+          price: activeSubscription.price,
+          isActivated: isActivated,
+          activationStatus: isActivated ? 'active' : 'pending_first_delivery',
+          activatedAt: activeSubscription.recurringDelivery?.activatedAt,
+          durationWeeks: activeSubscription.durationWeeks
         },
         nextDelivery: nextDelivery ? {
           orderId: nextDelivery._id,

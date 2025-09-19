@@ -28,13 +28,20 @@ class DriverApiService {
       },
     });
 
-    // Add token to requests
+    // Add token and API key to requests
     this.api.interceptors.request.use((config: any) => {
       const token = localStorage.getItem('driverToken');
       if (token) {
         config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
       }
+      
+      // Add X-API-Key header for production environment
+      if ((import.meta as any).env?.PROD) {
+        config.headers = config.headers || {};
+        config.headers['X-API-Key'] = 'choma_driver_a8a6c930483ff53fa7dc5bd3cefaa15c';
+      }
+      
       return config;
     });
 

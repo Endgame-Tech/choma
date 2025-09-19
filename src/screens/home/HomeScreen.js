@@ -50,6 +50,7 @@ import tagService from "../../services/tagService";
 import PopularPlanCard from "../../components/meal-plans/PopularPlanCard";
 import { usePopularMealPlans } from "../../hooks/usePopularMealPlans";
 import MealPlanCard from "../../components/meal-plans/MealPlanCard";
+import TagMealPlanCard from "../../components/meal-plans/TagMealPlanCard";
 import SubscriptionHomeView from "../../components/home/SubscriptionHomeView";
 
 const { width } = Dimensions.get("window");
@@ -96,6 +97,10 @@ const HomeScreen = ({ navigation }) => {
   const [banners, setBanners] = useState([]);
   const [bannersLoading, setBannersLoading] = useState(true);
   const [activeSubscriptions, setActiveSubscriptions] = useState([]);
+
+  // Tag-based meal plan cards state
+  const [randomTagData, setRandomTagData] = useState(null);
+  const [randomTagMealPlans, setRandomTagMealPlans] = useState([]);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [showSubscriptionMenu, setShowSubscriptionMenu] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
@@ -430,6 +435,58 @@ const HomeScreen = ({ navigation }) => {
     fetchDiscountData();
   }, [user, mealPlans]);
 
+  // Fetch random tag data for TagMealPlanCard
+  useEffect(() => {
+    const fetchRandomTagMealPlans = async () => {
+      try {
+        console.log(
+          "🏷️ HomeScreen: Fetching random tag data for TagMealPlanCard"
+        );
+
+        // Get all tags first
+        const tags = await tagService.getAllTags();
+        if (!tags || tags.length === 0) {
+          console.log("🏷️ No tags available");
+          return;
+        }
+
+        // Select a random tag
+        const randomTag = tags[Math.floor(Math.random() * tags.length)];
+        console.log("🎲 Selected random tag:", randomTag.name);
+
+        // Fetch meal plans for the random tag
+        const tagMealPlansResponse = await tagService.getMealPlansByTag(
+          randomTag._id,
+          1,
+          10
+        );
+
+        if (
+          tagMealPlansResponse &&
+          tagMealPlansResponse.data &&
+          tagMealPlansResponse.data.length > 0
+        ) {
+          setRandomTagData(randomTag);
+          setRandomTagMealPlans(tagMealPlansResponse.data);
+          console.log(
+            `🏷️ Loaded ${tagMealPlansResponse.data.length} meal plans for tag: ${randomTag.name}`
+          );
+        } else {
+          console.log("🏷️ No meal plans found for random tag");
+        }
+      } catch (error) {
+        console.error("❌ Error fetching random tag meal plans:", error);
+        setRandomTagData(null);
+        setRandomTagMealPlans([]);
+      }
+    };
+
+    // Only fetch if we don't already have tag data
+    if (!randomTagData && !randomTagMealPlans.length) {
+      fetchRandomTagMealPlans();
+    }
+  }, [randomTagData, randomTagMealPlans]);
+
   // Progressive loading with cached data shown immediately
   const loadDashboardData = async (forceRefresh = false) => {
     // Don't load data if user is not authenticated
@@ -621,24 +678,28 @@ const HomeScreen = ({ navigation }) => {
       setSubscriptionLoading(true);
       setOrdersLoading(true);
 
-      const result = await apiService.getUserDashboardData(forceRefresh);
+      const result = await apiService.getUserDashboardData(true); // Force refresh to bypass cache
 
       if (result.success && result.data) {
         // Handle double nesting in response structure
         const actualData = result.data.data || result.data;
-        const { orders, subscriptions } = actualData;
+        const { orders, subscriptions, subscription } = actualData;
 
-        // Update subscriptions
-        if (subscriptions) {
-          setActiveSubscriptions(
-            Array.isArray(subscriptions) ? subscriptions : []
-          );
-          console.log(
-            `🔄 User dashboard subscriptions loaded: ${subscriptions.length} ${
-              result.fromCache ? "(cached)" : "(fresh)"
-            }`
-          );
+        // Update subscriptions - handle both array and single object
+        let subscriptionArray = [];
+        if (subscriptions && Array.isArray(subscriptions)) {
+          subscriptionArray = subscriptions;
+        } else if (subscription) {
+          // Convert single subscription object to array
+          subscriptionArray = [subscription];
         }
+
+        setActiveSubscriptions(subscriptionArray);
+        console.log(
+          `🔄 User dashboard subscriptions loaded: ${
+            subscriptionArray.length
+          } ${result.fromCache ? "(cached)" : "(fresh)"}`
+        );
 
         // Update orders
         if (orders) {
@@ -2094,6 +2155,59 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
+  const renderMixedMealPlanFeed = (mealPlans) => {
+    console.log("🎯 renderMixedMealPlanFeed called with:", {
+      mealPlansLength: mealPlans.length,
+      showBrowseMode,
+      firstPlan: mealPlans[0]?.planName,
+    });
+
+    const mixedContent = [];
+    const tagCardInterval = Math.floor(Math.random() * 2) + 3; // Random interval between 3-4 meal plans
+
+    // console.log("🎲 Tag card interval:", tagCardInterval);
+
+    mealPlans.forEach((plan, index) => {
+      // Add regular meal plan card
+      mixedContent.push(renderMealplanCard(plan, index));
+
+      // Add tag card after every 3-4 regular cards
+      const shouldAddTagCard =
+        (index + 1) % tagCardInterval === 0 && index < mealPlans.length - 1;
+      console.log(
+        `📋 Plan ${index + 1}/${mealPlans.length}: ${
+          plan.planName
+        }, shouldAddTagCard: ${shouldAddTagCard}`
+      );
+
+      if (shouldAddTagCard) {
+        console.log("✅ Adding tag card after plan", index + 1);
+        mixedContent.push(
+          <TagMealPlanCard
+            key={`tag-card-${index}`}
+            tagData={randomTagData}
+            mealPlans={randomTagMealPlans}
+            onMealPlanPress={(plan) =>
+              navigation.navigate("MealPlanDetail", { bundle: plan })
+            }
+            onBookmarkPress={toggleBookmark}
+            isBookmarked={isBookmarked}
+            discountData={discountData}
+            getPlanDescription={getPlanDescription}
+            onRefresh={() => {
+              // Reset tag data to force re-fetch
+              setRandomTagData(null);
+              setRandomTagMealPlans([]);
+            }}
+          />
+        );
+      }
+    });
+
+    console.log("🎨 Mixed content length:", mixedContent.length);
+    return mixedContent;
+  };
+
   const renderPromoBanners = () => {
     console.log("🎯 renderPromoBanners called:", {
       bannersLoading,
@@ -2450,9 +2564,7 @@ const HomeScreen = ({ navigation }) => {
 
                   {!loading && !error && (
                     <View style={styles(colors).mealplansGrid}>
-                      {filteredMealPlans.map((plan, index) =>
-                        renderMealplanCard(plan, index)
-                      )}
+                      {renderMixedMealPlanFeed(filteredMealPlans)}
                     </View>
                   )}
                 </View>
@@ -2620,10 +2732,8 @@ const HomeScreen = ({ navigation }) => {
                   </Text>
 
                   {!loading && !error && (
-                    <View style={styles(colors).mealplansGrid}>
-                      {filteredMealPlans.map((plan, index) =>
-                        renderMealplanCard(plan, index)
-                      )}
+                    <View style={styles(colors).n}>
+                      {renderMixedMealPlanFeed(filteredMealPlans)}
                     </View>
                   )}
                 </View>
@@ -3388,14 +3498,14 @@ const styles = (colors) =>
       alignItems: "center",
       alignSelf: "flex-start",
       paddingHorizontal: 15,
-      paddingVertical: 8,
-      borderRadius: 20,
-      backgroundColor: "rgba(255, 193, 7, 0.1)",
+      paddingVertical: 12,
+      borderRadius: 30,
+      backgroundColor: colors.black,
       borderWidth: 1,
-      borderColor: colors.primary,
+      // borderColor: colors.primary,
     },
     backToPlanText: {
-      color: colors.primary,
+      color: colors.white,
       fontSize: 14,
       fontWeight: "600",
       marginLeft: 6,

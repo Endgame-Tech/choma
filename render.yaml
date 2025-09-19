@@ -32,3 +32,4 @@ services:
     name: choma-redis
     plan: starter # Redis for caching and sessions
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []

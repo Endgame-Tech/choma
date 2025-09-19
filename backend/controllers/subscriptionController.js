@@ -136,16 +136,18 @@ exports.createSubscription = async (req, res) => {
     const nextDelivery = new Date(subscriptionStartDate);
     nextDelivery.setDate(nextDelivery.getDate() + 1); // Next day delivery
 
-    // Calculate end date based on selected duration
-    const endDate = new Date(subscriptionStartDate);
+    // Calculate tentative end date, but don't start countdown until first delivery
+    // This will be recalculated when subscription is activated after first delivery
     const weeksToAdd = durationWeeks || (duration === "Monthly" ? 4 : 1);
-    endDate.setDate(endDate.getDate() + weeksToAdd * 7);
+    const tentativeEndDate = new Date(subscriptionStartDate);
+    tentativeEndDate.setDate(tentativeEndDate.getDate() + weeksToAdd * 7);
 
     console.log("📅 Date calculations:", {
       startDate: subscriptionStartDate,
       nextDelivery,
-      endDate,
+      tentativeEndDate,
       weeksToAdd,
+      note: "End date will be recalculated after first delivery"
     });
 
     const subscriptionData = {
@@ -161,7 +163,7 @@ exports.createSubscription = async (req, res) => {
       durationWeeks: weeksToAdd,
       startDate: subscriptionStartDate,
       nextDelivery,
-      endDate,
+      endDate: tentativeEndDate, // Placeholder - will be updated after first delivery
       totalPrice: finalPrice,
       price: finalPrice, // Required field for compatibility
       basePlanPrice: basePlanPrice || mealPlanDoc.totalPrice || 0,
@@ -174,6 +176,21 @@ exports.createSubscription = async (req, res) => {
       transactionId:
         transactionId ||
         `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      
+      // Initialize recurring delivery settings - subscription NOT activated yet
+      recurringDelivery: {
+        isActivated: false, // Key: subscription not active until first delivery
+        activationDeliveryCompleted: false,
+        currentMealProgression: {
+          weekNumber: 1,
+          dayOfWeek: 1,
+          mealTime: selectedMealTypes?.[0] || 'lunch'
+        },
+        deliverySchedule: {
+          daysOfWeek: [1, 2, 3, 4, 5], // Weekdays by default
+          timeSlot: 'afternoon'
+        }
+      }
     };
 
     console.log(

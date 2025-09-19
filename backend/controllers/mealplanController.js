@@ -7,7 +7,7 @@ exports.getAllMealPlans = async (req, res) => {
   try {
     // Debug: Log all meal plans with their publication status
     const allPlans = await MealPlan.find({ isActive: true });
-    console.log("📊 All active meal plans for getAllMealPlans:");
+    // console.log("📊 All active meal plans for getAllMealPlans:");
     allPlans.forEach((plan) => {
       console.log(
         `  - ${plan.planName}: isPublished=${plan.isPublished}, createdDate=${plan.createdDate}`
@@ -100,7 +100,7 @@ exports.getPopularMealPlans = async (req, res) => {
   try {
     // Debug: Log all meal plans with their publication status
     const allPlans = await MealPlan.find({ isActive: true });
-    console.log("📊 All active meal plans:");
+    // console.log("📊 All active meal plans:");
     allPlans.forEach((plan) => {
       console.log(
         `  - ${plan.planName}: isPublished=${plan.isPublished}, createdDate=${plan.createdDate}`

@@ -11,7 +11,7 @@ class CacheService {
       mealPlanDetails: 20 * 60 * 1000, // 20 minutes for individual meal plan details
       tags: 60 * 60 * 1000,         // 1 hour
       userSubscriptions: 10 * 60 * 1000, // 10 minutes
-      userOrders: 2 * 60 * 1000,    // 2 minutes (more frequently updated)
+      userOrders: 30 * 1000,        // 30 seconds (order statuses change frequently)
       banners: 15 * 60 * 1000,      // 15 minutes
       userProfile: 30 * 60 * 1000,  // 30 minutes
       notifications: 5 * 60 * 1000, // 5 minutes

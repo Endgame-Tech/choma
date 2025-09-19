@@ -211,15 +211,41 @@ SubscriptionSchema.methods.pause = function(reason) {
   this.status = 'paused';
   this.pausedAt = new Date();
   this.pauseReason = reason;
+  
+  console.log(`⏸️ Subscription ${this._id} paused:`, {
+    pausedAt: this.pausedAt,
+    reason: reason,
+    currentEndDate: this.endDate
+  });
+  
   return this.save();
 };
 
 // Method to resume subscription
 SubscriptionSchema.methods.resume = function() {
+  const resumeDate = new Date();
+  const pauseDuration = this.pausedAt ? resumeDate - this.pausedAt : 0;
+  const pauseDays = Math.ceil(pauseDuration / (1000 * 60 * 60 * 24));
+  
+  // Extend end date by the pause duration
+  if (this.endDate && pauseDays > 0) {
+    const newEndDate = new Date(this.endDate);
+    newEndDate.setDate(newEndDate.getDate() + pauseDays);
+    this.endDate = newEndDate;
+    
+    console.log(`▶️ Subscription ${this._id} resumed:`, {
+      resumedAt: resumeDate,
+      pauseDuration: `${pauseDays} days`,
+      oldEndDate: this.endDate,
+      newEndDate: newEndDate
+    });
+  }
+  
   this.status = 'active';
-  this.resumedAt = new Date();
+  this.resumedAt = resumeDate;
   this.pausedAt = undefined;
   this.pauseReason = undefined;
+  
   return this.save();
 };
 
@@ -297,9 +323,27 @@ SubscriptionSchema.methods.advanceToNextMeal = async function() {
 
 // Method to activate subscription after first delivery
 SubscriptionSchema.methods.activate = function() {
+  const activationDate = new Date();
+  
+  // Mark as activated
   this.recurringDelivery.isActivated = true;
-  this.recurringDelivery.activatedAt = new Date();
+  this.recurringDelivery.activatedAt = activationDate;
+  this.recurringDelivery.activationDeliveryCompleted = true;
   this.status = 'active';
+  
+  // Recalculate end date from activation date (not original start date)
+  const durationWeeks = this.durationWeeks || 1;
+  const newEndDate = new Date(activationDate);
+  newEndDate.setDate(newEndDate.getDate() + (durationWeeks * 7));
+  this.endDate = newEndDate;
+  
+  console.log(`🎯 Subscription ${this._id} activated:`, {
+    activatedAt: activationDate,
+    originalEndDate: this.endDate,
+    newEndDate: newEndDate,
+    durationWeeks: durationWeeks
+  });
+  
   return this.save();
 };
 

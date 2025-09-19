@@ -189,6 +189,17 @@ const iconMap = {
   nutrition: FoodIcon,
   "close-circle": CloseIcon,
   "help-circle": DetailsIcon,
+
+  // Alert-specific icon mappings
+  "checkmark-circle": StarFilledIcon, // Success icon
+  warning: notificationIcon, // Warning icon
+  "alert-circle": notificationFilledIcon, // Alert icon
+  error: CloseIcon, // Error icon
+  info: DetailsIcon, // Info icon
+  question: DetailsIcon, // Question icon
+  success: StarFilledIcon, // Success icon alternative
+  alert: ShieldIcon, // Alert icon alternative
+  help: DetailsIcon, // Help icon
 };
 
 const CustomIcon = ({

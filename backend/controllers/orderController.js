@@ -365,20 +365,12 @@ exports.updateOrderStatus = async (req, res) => {
 
       if (
         subscription &&
-        !subscription.recurringDelivery.activationDeliveryCompleted
+        !subscription.recurringDelivery?.isActivated
       ) {
-        // Mark first delivery as completed and activate subscription
-        subscription.recurringDelivery.activationDeliveryCompleted = true;
-        subscription.recurringDelivery.isActivated = true;
-        subscription.recurringDelivery.activatedAt = new Date();
-
-        if (subscription.status === "pending") {
-          subscription.status = "active";
-        }
-
-        await subscription.save();
+        // Activate subscription using the model method (recalculates end date)
+        await subscription.activate();
         console.log(
-          `Subscription ${subscription._id} activated by order delivery completion`
+          `🎯 Subscription ${subscription._id} activated by first delivery completion`
         );
       }
     }
