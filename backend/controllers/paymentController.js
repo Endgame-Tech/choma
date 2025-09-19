@@ -43,6 +43,13 @@ class PaymentController {
       };
 
       // Initialize payment with Paystack
+      console.log("🔄 Initializing payment with Paystack:", {
+        email,
+        amount: paystackData.amount,
+        currency: paystackData.currency,
+        metadata: paystackData.metadata,
+      });
+
       try {
         const response = await axios.post(
           "https://api.paystack.co/transaction/initialize",
@@ -55,6 +62,12 @@ class PaymentController {
           }
         );
 
+        console.log("✅ Paystack response received:", {
+          status: response.data.status,
+          reference: response.data.data?.reference,
+          access_code: response.data.data?.access_code,
+        });
+
         if (response.data.status) {
           res.json({
             success: true,
@@ -65,6 +78,7 @@ class PaymentController {
             },
           });
         } else {
+          console.error("❌ Paystack initialization failed:", response.data);
           res.status(400).json({
             success: false,
             message: "Payment initialization failed",
@@ -72,10 +86,11 @@ class PaymentController {
           });
         }
       } catch (error) {
-        console.error(
-          "Paystack API Error:",
-          error.response?.data || error.message
-        );
+        console.error("❌ Payment initialization error:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
 
         // Handle common Paystack API errors
         if (error.response) {
