@@ -1,82 +1,123 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# dependencies
-node_modules
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
-hint-report/
+# Logs
+logs
+*.log
 
+# Environment variables
 .env
-# Expo Prebuild Native folders
-/android
-/ios
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Native
-.kotlin/
-*.orig.*
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+*.tgz
+
+# Temporary files
+tmp/
+temp/
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Package manager lock files (keep only one type)
+# package-lock.json
+# yarn.lock
+
+# Mobile app specific
+*.keystore
+*.jks
+
+# React Native / Expo
+.expo/
+.expo-shared/
 
 # Metro
 .metro-health-check*
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+# Android
+*.apk
+*.ap_
+*.dex
+*.class
+local.properties
+.gradle/
+build/
+/captures
+.externalNativeBuild
+.cxx
 
-# macOS
-.DS_Store
-*.pem
+# iOS
+ios/build/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
 
-# issues.txt
+# Xcode
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.pbxuser
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace
 
-# local env files
-.env*.local
-.env
+# CocoaPods
+Pods/
+*.podspec
 
-# typescript
-*.tsbuildinfo
-
-/claude
-
-# Sensitive files and secrets
-*.key
-*.pem
-*.crt
-*.cert
-*.pfx
-*.jks
+# Certificates
 *.p8
 *.p12
+*.key
 *.mobileprovision
-*.keystore
-*.bak
-*.backup
-*.log
+*.cer
 
-# Ignore private keys, credentials, and secrets
-secrets/
-private/
-certs/
-keys/
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
 
-# Ignore OS and editor files
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
+# Bundle artifacts
+*.jsbundle
 
-claude/
-
-# Firebase configuration files (security)
-google-services.json
-GoogleService-Info.plist
-firebase-service-account.json
-getchoma-bca76-firebase-adminsdk-fbsvc-*.json
-*-firebase-adminsdk-*.json
-
-#Ignore vscode AI rules
-.github\copilot-instructions.md
+# Ruby
+.bundle/
+vendor/

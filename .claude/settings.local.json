@@ -10,7 +10,9 @@
       "WebFetch(domain:localhost)",
       "Bash(grep:*)",
       "Bash(rm:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(cp:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

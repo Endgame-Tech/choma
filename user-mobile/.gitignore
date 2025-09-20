@@ -1,0 +1,82 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+hint-report/
+
+.env
+# Expo Prebuild Native folders
+/android
+/ios
+
+# Native
+.kotlin/
+*.orig.*
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# issues.txt
+
+# local env files
+.env*.local
+.env
+
+# typescript
+*.tsbuildinfo
+
+/claude
+
+# Sensitive files and secrets
+*.key
+*.pem
+*.crt
+*.cert
+*.pfx
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+*.keystore
+*.bak
+*.backup
+*.log
+
+# Ignore private keys, credentials, and secrets
+secrets/
+private/
+certs/
+keys/
+
+# Ignore OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+claude/
+
+# Firebase configuration files (security)
+google-services.json
+GoogleService-Info.plist
+firebase-service-account.json
+getchoma-bca76-firebase-adminsdk-fbsvc-*.json
+*-firebase-adminsdk-*.json
+
+#Ignore vscode AI rules
+.github\copilot-instructions.md

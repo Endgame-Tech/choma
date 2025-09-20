@@ -1,0 +1,148 @@
+// src/utils/constants.js - Driver Mobile App Configuration
+import { Platform } from "react-native";
+
+// App Constants for Driver Mobile App
+export const APP_CONFIG = {
+  // App Info
+  APP_NAME: "Choma Driver",
+  VERSION: "1.0.0",
+
+  // Driver API endpoints
+  API_BASE_URL: __DEV__
+    ? Platform.OS === "android"
+      ? "http://192.168.100.9/api/driver" // Driver endpoints
+      : "http://localhost:5001/api/driver"
+    : "https://choma.onrender.com/api/driver",
+
+  WS_BASE_URL: __DEV__
+    ? Platform.OS === "android"
+      ? "ws://192.168.100.9:5001" // Your local development IP
+      : "ws://localhost:5001" // Your local development IP
+    : "wss://choma.onrender.com", // Production WebSocket URL
+
+  PRODUCTION_API_KEY: "choma_driver_a8a6c930483ff53fa7dc5bd3cefaa15c",
+
+  // Payment Configuration
+  PAYSTACK_PUBLIC_KEY: __DEV__
+    ? "pk_test_25b2bfca460a812de68482316a633735382854e9" // Test key
+    : "pk_test_25b2bfca460a812de68482316a633735382854e9", // Live key for production
+
+  // Google Maps Configuration
+  GOOGLE_MAPS_API_KEY: "AIzaSyBBxkH4OxFvVDJ242aIOl7auZ2F4Lcf9fg", // Add your actual API key
+
+  // App Settings
+  CURRENCY: "NGN",
+  CURRENCY_SYMBOL: "₦",
+  TAX_RATE: 0, // Tax removed as per user request
+  FREE_DELIVERY_THRESHOLD: 10000, // Free delivery above ₦10,000
+
+  // Demo Mode Settings (for MVP testing)
+  DEMO_MODE: false,
+  USE_MOCK_DATA: false,
+};
+
+// Order Statuses
+export const ORDER_STATUSES = {
+  PENDING: "pending",
+  CONFIRMED: "confirmed",
+  PREPARING: "preparing",
+  READY: "ready",
+  DELIVERING: "delivering",
+  DELIVERED: "delivered",
+  CANCELLED: "cancelled",
+};
+
+// Subscription Frequencies
+export const SUBSCRIPTION_FREQUENCIES = {
+  DAILY: { value: "daily", label: "Daily (1x/day)", multiplier: 1 },
+  TWICE_DAILY: {
+    value: "twice_daily",
+    label: "Twice Daily (2x/day)",
+    multiplier: 2,
+  },
+  THRICE_DAILY: {
+    value: "thrice_daily",
+    label: "Thrice Daily (3x/day)",
+    multiplier: 3,
+  },
+};
+
+// Subscription Durations
+export const SUBSCRIPTION_DURATIONS = {
+  WEEKLY: { value: "weekly", label: "Weekly", multiplier: 1 },
+  MONTHLY: {
+    value: "monthly",
+    label: "Monthly",
+    multiplier: 4,
+    savings: "15% off",
+  },
+};
+
+// Payment Methods
+export const PAYMENT_METHODS = {
+  CARD: "card",
+  BANK_TRANSFER: "bank_transfer",
+  CASH_ON_DELIVERY: "cash_on_delivery",
+  USSD: "ussd",
+};
+
+// Delivery Time Slots
+export const DELIVERY_SLOTS = [
+  { label: "Morning (8AM - 12PM)", value: "morning" },
+  { label: "Afternoon (12PM - 4PM)", value: "afternoon" },
+  { label: "Evening (4PM - 8PM)", value: "evening" },
+];
+
+// App theme colors
+export const COLORS = {
+  primary: "#4ECDC4",
+  secondary: "#45B7AF",
+  accent: "#96CEB4",
+  background: "#FFFFFF",
+  surface: "#F8F9FA",
+  text: "#333333",
+  textSecondary: "#666666",
+  error: "#e17055",
+  success: "#00b894",
+  warning: "#fdcb6e",
+  info: "#74b9ff",
+};
+
+// Driver-specific constants
+export const DRIVER_STATUSES = {
+  ONLINE: "online",
+  OFFLINE: "offline", 
+  BUSY: "busy",
+  ON_BREAK: "on_break",
+  DELIVERING: "delivering",
+};
+
+export const DELIVERY_STATUSES = {
+  ASSIGNED: "assigned",
+  ACCEPTED: "accepted", 
+  PICKED_UP: "picked_up",
+  IN_TRANSIT: "in_transit",
+  DELIVERED: "delivered",
+  CANCELLED: "cancelled",
+  FAILED: "failed",
+};
+
+export const VEHICLE_TYPES = {
+  MOTORCYCLE: "motorcycle",
+  BICYCLE: "bicycle", 
+  CAR: "car",
+  VAN: "van",
+};
+
+export default {
+  APP_CONFIG,
+  ORDER_STATUSES,
+  SUBSCRIPTION_FREQUENCIES,
+  SUBSCRIPTION_DURATIONS,
+  PAYMENT_METHODS,
+  DELIVERY_SLOTS,
+  COLORS,
+  DRIVER_STATUSES,
+  DELIVERY_STATUSES,
+  VEHICLE_TYPES,
+};

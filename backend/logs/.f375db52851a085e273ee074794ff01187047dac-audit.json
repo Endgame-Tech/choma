@@ -64,6 +64,11 @@
             "date": 1758238459794,
             "name": "C:\\dev\\choma\\backend\\logs\\error-2025-09-19.log",
             "hash": "603f14097f1c41ca807b5a5b046f318c47b911bd12217de2685eaeb01f16a8ef"
+        },
+        {
+            "date": 1758329068740,
+            "name": "C:\\dev\\choma\\backend\\logs\\error-2025-09-20.log",
+            "hash": "239a71f79469ab1c6248644178c2e19b40f8bc7a9166b0f25544bb95fd713746"
         }
     ],
     "hashType": "sha256"
