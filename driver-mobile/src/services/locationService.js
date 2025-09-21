@@ -143,7 +143,8 @@ class LocationService {
             const { locations } = data;
             if (locations && locations.length > 0) {
               const location = locations[locations.length - 1];
-              this.handleBackgroundLocationUpdate(location);
+              // Call static method since 'this' context is lost in background
+              LocationService.handleBackgroundLocationUpdate(location);
             }
           }
         });
@@ -192,17 +193,34 @@ class LocationService {
     this.notifyLocationUpdate(locationData);
   }
 
-  // Handle background location updates
-  handleBackgroundLocationUpdate(location) {
+  // Handle background location updates (static method for background context)
+  static async handleBackgroundLocationUpdate(location) {
+    try {
+      const locationData = LocationService.formatLocationData(location);
+      
+      // Send to backend (background updates)
+      await LocationService.sendLocationToBackend(locationData, true);
+      
+      console.log('📍 Background location update sent');
+    } catch (error) {
+      console.error('❌ Background location update failed:', error);
+    }
+  }
+
+  // Instance method for foreground updates
+  handleLocationUpdate(location) {
     const locationData = this.formatLocationData(location);
     this.lastKnownLocation = locationData;
     
-    // Send to backend (background updates)
-    this.sendLocationToBackend(locationData, true);
+    // Send to backend
+    this.sendLocationToBackend(locationData);
+    
+    // Trigger location update callbacks
+    this.notifyLocationUpdate(locationData);
   }
 
-  // Format location data
-  formatLocationData(location) {
+  // Format location data (static method for background context)
+  static formatLocationData(location) {
     return {
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
@@ -215,8 +233,13 @@ class LocationService {
     };
   }
 
-  // Send location to backend
-  async sendLocationToBackend(locationData, isBackground = false) {
+  // Instance method wrapper
+  formatLocationData(location) {
+    return LocationService.formatLocationData(location);
+  }
+
+  // Send location to backend (static method for background context)
+  static async sendLocationToBackend(locationData, isBackground = false) {
     try {
       await driverApiService.updateLocation({
         ...locationData,
@@ -226,6 +249,11 @@ class LocationService {
     } catch (error) {
       console.error('Failed to send location to backend:', error);
     }
+  }
+
+  // Instance method for foreground updates
+  async sendLocationToBackend(locationData, isBackground = false) {
+    return LocationService.sendLocationToBackend(locationData, isBackground);
   }
 
   // Calculate distance between two points (Haversine formula)

@@ -133,16 +133,16 @@ class DriverApiService {
 
   // Delivery methods
   async getAvailableDeliveries() {
-    return this.request('/deliveries/available');
+    return this.request('/assignments'); // Use existing assignments endpoint
   }
 
   async getActiveDeliveries() {
-    return this.request('/deliveries/active');
+    return this.request('/assignments'); // Use same endpoint, filter client-side
   }
 
   async getDeliveryHistory(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request(`/deliveries/history?${queryString}`);
+    return this.request(`/history?${queryString}`); // Use existing history endpoint
   }
 
   async acceptDelivery(deliveryId) {
@@ -178,14 +178,14 @@ class DriverApiService {
     });
   }
 
-  // Earnings methods
+  // Earnings methods - Use existing stats endpoint which provides earnings data
   async getEarnings(period = 'today') {
-    return this.request(`/earnings?period=${period}`);
+    return this.request(`/stats/daily?period=${period}`);
   }
 
   async getEarningsHistory(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request(`/earnings/history?${queryString}`);
+    return this.request(`/history?${queryString}`);
   }
 
   async requestPayout(amount) {
@@ -239,9 +239,9 @@ class DriverApiService {
     });
   }
 
-  // Performance metrics
+  // Performance metrics - Use existing stats endpoint which provides performance data  
   async getPerformanceMetrics(period = 'week') {
-    return this.request(`/performance?period=${period}`);
+    return this.request(`/stats/daily?period=${period}`);
   }
 
   // Support methods

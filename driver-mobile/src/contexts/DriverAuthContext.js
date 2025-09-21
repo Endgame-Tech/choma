@@ -114,15 +114,28 @@ export const DriverAuthProvider = ({ children }) => {
   // Save auth data to storage
   const saveAuthData = async (authData) => {
     try {
-      await Promise.all([
+      if (!authData || !authData.driver || !authData.token) {
+        console.error('Cannot save auth data - missing required fields:', authData);
+        return;
+      }
+
+      const savePromises = [
         AsyncStorage.setItem(STORAGE_KEYS.DRIVER, JSON.stringify(authData.driver)),
         AsyncStorage.setItem(STORAGE_KEYS.TOKEN, authData.token),
-        authData.refreshToken && AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, authData.refreshToken),
         AsyncStorage.setItem(STORAGE_KEYS.STATUS, authData.driver?.status || DRIVER_STATUSES.OFFLINE),
         AsyncStorage.setItem(STORAGE_KEYS.LAST_LOGIN, new Date().toISOString()),
-      ]);
+      ];
+
+      // Only save refresh token if it exists
+      if (authData.refreshToken) {
+        savePromises.push(AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, authData.refreshToken));
+      }
+
+      await Promise.all(savePromises);
+      console.log('✅ Auth data saved successfully');
     } catch (error) {
-      console.error('Failed to save auth data:', error);
+      console.error('❌ Failed to save auth data:', error);
+      throw error;
     }
   };
 
@@ -175,29 +188,95 @@ export const DriverAuthProvider = ({ children }) => {
   };
 
   // Login
-  const login = async (authData) => {
+  const login = async (credentials) => {
     try {
-      dispatch({
-        type: ActionTypes.LOGIN_SUCCESS,
-        payload: authData,
-      });
+      // Import the driver API service
+      const driverApiService = require('../services/driverApi').default;
       
-      await saveAuthData(authData);
-      return { success: true };
+      // Call the login API
+      const response = await driverApiService.login(credentials);
+      
+      // Check if login was successful
+      if (response && (response.success !== false)) {
+        // Extract driver and token from response
+        const driver = response.driver || response.data?.driver || response.user;
+        const token = response.token || response.data?.token || response.accessToken;
+        const refreshToken = response.refreshToken || response.data?.refreshToken;
+        
+        if (!driver || !token) {
+          console.error('Invalid login response - missing driver or token:', response);
+          return { 
+            success: false, 
+            error: 'Invalid login response from server',
+            message: 'Authentication failed - please try again' 
+          };
+        }
+
+        // Prepare auth data
+        const authData = {
+          driver,
+          token,
+          refreshToken,
+        };
+
+        // Update state
+        dispatch({
+          type: ActionTypes.LOGIN_SUCCESS,
+          payload: authData,
+        });
+        
+        // Save to storage
+        await saveAuthData(authData);
+        
+        // Set token in API service
+        driverApiService.setAuthToken(token);
+        
+        console.log('✅ Driver login successful');
+        return { success: true, driver, token };
+      } else {
+        console.error('❌ Login failed:', response);
+        return { 
+          success: false, 
+          error: response.error || response.message || 'Login failed',
+          message: response.message || 'Invalid credentials'
+        };
+      }
     } catch (error) {
-      console.error('Login failed:', error);
-      return { success: false, error: error.message };
+      console.error('❌ Login error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Network error',
+        message: error.message || 'Unable to connect to server'
+      };
     }
   };
 
   // Logout
   const logout = async () => {
     try {
+      // Import the driver API service
+      const driverApiService = require('../services/driverApi').default;
+      
+      // Try to logout from server (don't fail if this fails)
+      try {
+        await driverApiService.logout();
+      } catch (apiError) {
+        console.warn('Server logout failed, continuing with local logout:', apiError);
+      }
+      
+      // Clear token from API service
+      driverApiService.clearAuthToken();
+      
+      // Update state
       dispatch({ type: ActionTypes.LOGOUT });
+      
+      // Clear storage
       await clearAuthData();
+      
+      console.log('✅ Driver logout successful');
       return { success: true };
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('❌ Logout failed:', error);
       return { success: false, error: error.message };
     }
   };

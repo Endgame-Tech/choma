@@ -65,6 +65,8 @@ export interface MealPlan {
   targetAudience?: string
   category?: string
   tags?: string[]
+  // Tag reference - can be ObjectId string or populated tag object
+  tagId?: string | { _id: string; name: string; image?: string }
   // backend-provided stats and nutrition summaries
   stats?: {
     avgMealsPerDay?: number

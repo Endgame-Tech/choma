@@ -1,5 +1,6 @@
 import React from "react";
 import { View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 // Import all your SVG icons
 import ActivityIcon from "../../../assets/images/icons/ui/activity.svg";
@@ -202,6 +203,52 @@ const iconMap = {
   help: DetailsIcon, // Help icon
 };
 
+// Ionicons fallback mapping for when SVGs don't work
+const ioniconsMap = {
+  close: "close",
+  "star-filled": "star",
+  star: "star-outline", 
+  home: "home-outline",
+  "home-filled": "home",
+  profile: "person-outline",
+  "profile-filled": "person",
+  settings: "settings-outline",
+  "settings-filled": "settings",
+  search: "search-outline",
+  notification: "notifications-outline",
+  "notification-filled": "notifications",
+  heart: "heart-outline",
+  "heart-filled": "heart",
+  location: "location-outline",
+  "location-filled": "location",
+  calendar: "calendar-outline",
+  "calendar-filled": "calendar",
+  time: "time-outline",
+  clock: "time-outline",
+  email: "mail-outline",
+  "email-filled": "mail",
+  food: "restaurant-outline",
+  "food-filled": "restaurant",
+  cart: "cart-outline",
+  "cart-filled": "cart",
+  wallet: "wallet-outline",
+  "wallet-filled": "wallet",
+  add: "add",
+  remove: "remove",
+  edit: "create-outline",
+  "edit-filled": "create",
+  filter: "filter-outline",
+  "filter-filled": "filter",
+  share: "share-outline",
+  "share-filled": "share",
+  download: "download-outline",
+  "download-filled": "download",
+  send: "send-outline",
+  "send-filled": "send",
+  gift: "gift-outline",
+  "gift-filled": "gift",
+};
+
 const CustomIcon = ({
   name,
   size = 24,
@@ -210,6 +257,12 @@ const CustomIcon = ({
   style,
   ...props
 }) => {
+  // Ensure name is a string and handle invalid inputs
+  if (!name || typeof name !== 'string') {
+    console.warn('CustomIcon: Invalid name prop:', name, typeof name);
+    return null;
+  }
+
   // Determine which icon to use
   let iconName = name;
 
@@ -221,8 +274,32 @@ const CustomIcon = ({
   // Get the icon component
   const IconComponent = iconMap[iconName] || iconMap[name];
 
-  if (!IconComponent) {
-    return null;
+  // If SVG icon doesn't work or is invalid, use Ionicons fallback
+  if (!IconComponent || typeof IconComponent === 'number' || (typeof IconComponent !== 'function' && typeof IconComponent !== 'object')) {
+    const ioniconsName = ioniconsMap[iconName] || ioniconsMap[name];
+    
+    if (ioniconsName) {
+      return (
+        <Ionicons 
+          name={ioniconsName} 
+          size={size} 
+          color={color} 
+          style={style}
+          {...props}
+        />
+      );
+    }
+    
+    // Default fallback icon
+    return (
+      <Ionicons 
+        name="help-outline" 
+        size={size} 
+        color={color} 
+        style={style}
+        {...props}
+      />
+    );
   }
 
   return (

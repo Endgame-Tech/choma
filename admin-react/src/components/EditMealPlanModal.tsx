@@ -5,6 +5,7 @@ import type { MealPlan as UiMealPlan } from '../types'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import ImageUpload from './ImageUpload'
 import TagSelector from './TagSelector'
+import { mealPlansApi } from '../services/mealApi'
 
 interface EditMealPlanModalProps {
   isOpen: boolean
@@ -38,33 +39,89 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
   })
 
   const [submitting, setSubmitting] = useState(false)
+  const [detailedMealPlan, setDetailedMealPlan] = useState<UiMealPlan | null>(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
 
   // Narrow the incoming mealPlan (UI type) to a record for safe runtime checks
   const mealPlanRec = mealPlan as unknown as Record<string, unknown>
 
+  // Fetch detailed meal plan data when modal opens
+  useEffect(() => {
+    if (isOpen && mealPlan?._id) {
+      fetchMealPlanDetails()
+    }
+  }, [isOpen, mealPlan?._id])
+
+  const fetchMealPlanDetails = async () => {
+    if (!mealPlan?._id) return
+
+    try {
+      setLoadingDetails(true)
+      const response = await mealPlansApi.getMealPlanDetails(mealPlan._id)
+      if (response.success && response.data) {
+        setDetailedMealPlan(response.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch meal plan details:', error)
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
   // Update form data when meal plan changes
   useEffect(() => {
-    if (mealPlan) {
+    // Use detailed meal plan data if available, otherwise fall back to the passed mealPlan
+    // Note: detailedMealPlan comes from API response with nested structure
+    const mealPlanData = detailedMealPlan?.mealPlan || mealPlan
+    if (mealPlanData) {
+
+      // Handle tagId extraction more carefully
+      let extractedTagId = '';
+      const mealPlanAny = mealPlanData as Record<string, unknown>;
+
+      if (mealPlanAny.tagId) {
+        if (typeof mealPlanAny.tagId === 'string') {
+          extractedTagId = mealPlanAny.tagId;
+        } else if (typeof mealPlanAny.tagId === 'object' && mealPlanAny.tagId !== null) {
+          // Handle populated tag object from backend
+          const tagObject = mealPlanAny.tagId as { _id: string; name: string; image?: string };
+          extractedTagId = tagObject._id;
+        }
+      } else {
+        // Check alternative field names for backwards compatibility
+        if (mealPlanAny.tag) {
+          if (typeof mealPlanAny.tag === 'string') {
+            extractedTagId = mealPlanAny.tag;
+          } else if (typeof mealPlanAny.tag === 'object' && mealPlanAny.tag !== null && '_id' in mealPlanAny.tag) {
+            extractedTagId = String((mealPlanAny.tag as { _id: string })._id);
+          }
+        } else if (Array.isArray(mealPlanAny.tags) && mealPlanAny.tags.length > 0) {
+          // Handle tags array (legacy)
+          const firstTag = mealPlanAny.tags[0];
+          if (typeof firstTag === 'string') {
+            extractedTagId = firstTag;
+          } else if (typeof firstTag === 'object' && firstTag !== null && '_id' in firstTag) {
+            extractedTagId = String((firstTag as { _id: string })._id);
+          }
+        }
+      }
+
       setFormData({
-        planName: typeof mealPlanRec.planName === 'string' ? mealPlanRec.planName as string : '',
-        description: typeof mealPlanRec.description === 'string' ? mealPlanRec.description as string : '',
-        coverImage: typeof mealPlanRec.coverImage === 'string' ? mealPlanRec.coverImage as string : '',
-        durationWeeks: typeof mealPlanRec.durationWeeks === 'number' ? String(mealPlanRec.durationWeeks as number) : (typeof mealPlanRec.durationWeeks === 'string' ? mealPlanRec.durationWeeks as string : '4'),
-        targetAudience: typeof mealPlanRec.targetAudience === 'string' ? mealPlanRec.targetAudience as string : 'Family',
-        mealTypes: Array.isArray(mealPlanRec.mealTypes) && mealPlanRec.mealTypes.length > 0
-          ? (mealPlanRec.mealTypes as string[])
-          : ['breakfast', 'lunch', 'dinner'], // Only default if no meal types or empty array
-        planFeatures: Array.isArray(mealPlanRec.planFeatures) ? (mealPlanRec.planFeatures as string[]).join(', ') : (typeof mealPlanRec.planFeatures === 'string' ? mealPlanRec.planFeatures as string : ''),
-        adminNotes: typeof mealPlanRec.adminNotes === 'string' ? mealPlanRec.adminNotes as string : '',
-        tagId: mealPlanRec.tagId
-          ? (typeof mealPlanRec.tagId === 'object' && mealPlanRec.tagId !== null && '_id' in mealPlanRec.tagId)
-            ? String((mealPlanRec.tagId as { _id: string })._id)
-            : String(mealPlanRec.tagId)
-          : ''
+        planName: typeof mealPlanAny.planName === 'string' ? mealPlanAny.planName as string : '',
+        description: typeof mealPlanAny.description === 'string' ? mealPlanAny.description as string : '',
+        coverImage: typeof mealPlanAny.coverImage === 'string' ? mealPlanAny.coverImage as string : '',
+        durationWeeks: typeof mealPlanAny.durationWeeks === 'number' ? String(mealPlanAny.durationWeeks as number) : (typeof mealPlanAny.durationWeeks === 'string' ? mealPlanAny.durationWeeks as string : '4'),
+        targetAudience: typeof mealPlanAny.targetAudience === 'string' ? mealPlanAny.targetAudience as string : 'Family',
+        mealTypes: Array.isArray(mealPlanAny.mealTypes) && mealPlanAny.mealTypes.length > 0
+          ? (mealPlanAny.mealTypes as string[])
+          : ['breakfast', 'lunch', 'dinner'],
+        planFeatures: Array.isArray(mealPlanAny.planFeatures) ? (mealPlanAny.planFeatures as string[]).join(', ') : (typeof mealPlanAny.planFeatures === 'string' ? mealPlanAny.planFeatures as string : ''),
+        adminNotes: typeof mealPlanAny.adminNotes === 'string' ? mealPlanAny.adminNotes as string : '',
+        tagId: extractedTagId
       })
 
     }
-  }, [mealPlan])
+  }, [mealPlan, detailedMealPlan])
 
   // Fetch tags when modal opens
 
@@ -151,6 +208,16 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
           </div>
         </div>
 
+        {/* Loading indicator for detailed data */}
+        {loadingDetails && (
+          <div className="px-6 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-700">
+            <div className="flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-300">
+              <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+              <span>Loading tag information...</span>
+            </div>
+          </div>
+        )}
+
         {/* Content */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto max-h-[70vh]">
           <div className="p-6 space-y-6">
@@ -210,26 +277,45 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                 <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                   Cover Image
                 </label>
+
+                {/* Current Image Preview */}
+                {formData.coverImage && (
+                  <div className="mb-4">
+                    <div className="text-sm text-gray-600 dark:text-neutral-300 mb-2">Current Cover Image:</div>
+                    <div className="relative w-full max-w-md mx-auto">
+                      <img
+                        src={formData.coverImage}
+                        alt="Meal plan cover"
+                        className="w-full h-auto object-cover rounded-lg shadow-md border border-gray-200 dark:border-neutral-600"
+                        style={{ aspectRatio: '1080/1350' }}
+                        onError={(e) => {
+                          console.error('Failed to load image:', formData.coverImage);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Image Upload */}
                 <ImageUpload
                   currentImageUrl={formData.coverImage}
                   onImageUpload={(imageUrl) => setFormData(prev => ({ ...prev, coverImage: imageUrl }))}
                   uploadEndpoint="/upload/meal-plan-image"
-                  label="Upload Cover Image"
+                  label={formData.coverImage ? "Change Cover Image" : "Upload Cover Image"}
                   className="w-full"
                   enableCropping={true}
                   cropAspectRatio={1080 / 1350}
                 />
-                {mealPlan.coverImage && formData.coverImage !== mealPlan.coverImage && (
-                  <div className="mt-2">
-                    <div className="text-xs text-gray-500 mb-1">Original Image</div>
-                    <img
-                      src={mealPlan.coverImage}
-                      alt="Original plan cover"
-                      className="h-20 w-28 object-cover rounded-lg opacity-60"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                      }}
-                    />
+
+                {!formData.coverImage && (
+                  <div className="mt-2 p-4 bg-gray-50 dark:bg-neutral-700 rounded-lg border-2 border-dashed border-gray-300 dark:border-neutral-600 text-center">
+                    <div className="text-gray-400 dark:text-neutral-400 text-sm">
+                      📸 No cover image selected
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-neutral-500 mt-1">
+                      Upload an image to see it displayed here
+                    </div>
                   </div>
                 )}
               </div>

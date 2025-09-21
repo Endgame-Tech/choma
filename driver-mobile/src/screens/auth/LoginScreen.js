@@ -148,10 +148,9 @@ const LoginScreen = ({ navigation }) => {
       const result = await login({ email: email.trim(), password });
 
       if (result.success) {
-        // Store credentials for biometric login
-        await storeBiometricCredentials({ email: email.trim(), password });
         setErrors({});
         setLoginAttempts(0);
+        showSuccess("Login successful!");
       } else {
         // Set specific error based on response
         const errorMessage = result.message || result.error || "Login failed";
@@ -411,7 +410,6 @@ const LoginScreen = ({ navigation }) => {
               </View>
             </View>
 
-            <BiometricLogin />
 
             {/* Add some bottom padding for better scrolling */}
             <View style={styles.bottomPadding} />

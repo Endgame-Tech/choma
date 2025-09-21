@@ -56,6 +56,7 @@ exports.getAllMealPlans = async (req, res) => {
     sortObj[sortBy] = sortOrder;
 
     // Execute query with aggregation for additional stats
+    console.log('🔍 Debug: Executing meal plans aggregation query with tagId lookup');
     const mealPlans = await MealPlan.aggregate([
       { $match: query },
       {
@@ -80,6 +81,14 @@ exports.getAllMealPlans = async (req, res) => {
           localField: '_id',
           foreignField: 'mealPlanId',
           as: 'assignments'
+        }
+      },
+      {
+        $lookup: {
+          from: 'tags',
+          localField: 'tagId',
+          foreignField: '_id',
+          as: 'tagData'
         }
       },
       {
@@ -110,13 +119,16 @@ exports.getAllMealPlans = async (req, res) => {
                 in: '$$paidSub.amount'
               }
             }
-          }
+          },
+          // Populate tagId with tag data (first element from tagData array)
+          tagId: { $arrayElemAt: ['$tagData', 0] }
         }
       },
       {
         $project: {
           subscriptions: 0,
-          dailyMeals: 0
+          dailyMeals: 0,
+          tagData: 0
           // Keep assignments for frontend processing
         }
       },
@@ -124,6 +136,16 @@ exports.getAllMealPlans = async (req, res) => {
       { $skip: skip },
       { $limit: limit }
     ]);
+
+    // Debug: Log the first meal plan to see if tagId is populated
+    if (mealPlans.length > 0) {
+      console.log('🔍 Debug: First meal plan result:', {
+        _id: mealPlans[0]._id,
+        planName: mealPlans[0].planName,
+        tagId: mealPlans[0].tagId,
+        hasTagId: !!mealPlans[0].tagId
+      });
+    }
 
 
     const total = await MealPlan.countDocuments(query);
@@ -195,7 +217,9 @@ exports.getMealPlanDetails = async (req, res) => {
       });
     }
 
-    const mealPlan = await MealPlan.findById(id).lean();
+    const mealPlan = await MealPlan.findById(id)
+      .populate('tagId', 'name image')
+      .lean();
     
     if (!mealPlan) {
       return res.status(404).json({
@@ -218,7 +242,7 @@ exports.getMealPlanDetails = async (req, res) => {
 
     // Calculate analytics
     const analytics = await Subscription.aggregate([
-      { $match: { mealPlanId: mongoose.Types.ObjectId(id) } },
+      { $match: { mealPlanId: new mongoose.Types.ObjectId(id) } },
       {
         $group: {
           _id: null,
@@ -486,6 +510,16 @@ exports.updateMealPlan = async (req, res) => {
     await updatedPlan.updateCalculatedFields();
     console.log("🔄 Final meal plan recalculation completed");
 
+    // Clear cache to ensure fresh data on next request
+    const { cacheService } = require('../config/redis');
+    try {
+      // Clear meal plans cache pattern
+      await cacheService.clearPattern('mealplans:*');
+      await cacheService.clearPattern('admin:*meal-plans*');
+      console.log("🗑️ Cache cleared for meal plans");
+    } catch (cacheError) {
+      console.log("⚠️ Cache clear failed (non-critical):", cacheError.message);
+    }
 
     res.json({
       success: true,

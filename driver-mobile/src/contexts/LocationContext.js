@@ -3,6 +3,7 @@ import * as Location from 'expo-location';
 import { Platform, Alert, AppState } from 'react-native';
 import { useDriverAuth } from './DriverAuthContext';
 import { DRIVER_STATUSES } from '../utils/constants';
+import driverApiService from '../services/driverApi';
 
 // Initial state
 const initialState = {
@@ -267,11 +268,21 @@ export const LocationProvider = ({ children }) => {
   // Send location to backend
   const sendLocationToBackend = async (locationData) => {
     try {
-      // This would integrate with your driver API service
-      // Example: await driverAPI.updateLocation(locationData);
-      console.log('📍 Sending location to backend:', locationData);
+      // Send location update to backend via driver API
+      await driverApiService.updateLocation({
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        accuracy: locationData.accuracy,
+        speed: locationData.speed,
+        heading: locationData.heading,
+        timestamp: new Date(locationData.timestamp).toISOString(),
+      });
+      
+      console.log('📍 Location sent to backend successfully');
     } catch (error) {
       console.error('Failed to send location to backend:', error);
+      // Don't dispatch error to state as this shouldn't interrupt tracking
+      // Backend location updates are non-critical
     }
   };
 

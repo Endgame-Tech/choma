@@ -33,5 +33,14 @@ allprojects {
   }
 }
 
+// Define ext properties for SDK versions
+ext {
+    compileSdkVersion = 36
+    targetSdkVersion = 34
+    minSdkVersion = 24
+    buildToolsVersion = "35.0.0"
+    ndkVersion = "26.1.10909125"
+}
+
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"

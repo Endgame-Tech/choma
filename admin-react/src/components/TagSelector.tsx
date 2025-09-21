@@ -43,6 +43,11 @@ const TagSelector: React.FC<TagSelectorProps> = ({
 
   const selectedTag = tags.find(tag => tag._id === selectedTagId);
 
+  // Debug logging
+  console.log('🔧 TagSelector: selectedTagId:', selectedTagId);
+  console.log('🔧 TagSelector: tags:', tags);
+  console.log('🔧 TagSelector: selectedTag:', selectedTag);
+
   if (loading) {
     return (
       <div className={`space-y-3 ${className}`}>

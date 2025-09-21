@@ -133,10 +133,11 @@ Convert the existing driver-react web app to a React Native mobile application u
 
 ### 6.2 Delivery Screens
 
-- [ ] Create `AvailableDeliveriesScreen.js` - List of available deliveries
-- [ ] Create `ActiveDeliveryScreen.js` - Current delivery details with map
-- [ ] Create `DeliveryHistoryScreen.js` - Past deliveries
-- [ ] Create `DeliveryDetailScreen.js` - Individual delivery details
+- [x] Create `AvailableDeliveriesScreen.js` - List of available deliveries
+- [x] Create `AvailableDeliveryCard.js` - Available delivery component (adapted from user-mobile CompactOrderCard)
+- [x] Create `ActiveDeliveryScreen.js` - Current delivery details with map (adapted from user-mobile TrackingScreen)
+- [x] Create `DeliveryHistoryScreen.js` - Past deliveries (adapted from user-mobile PaymentHistoryScreen)
+- [x] Create `DeliveryDetailScreen.js` - Individual delivery details (adapted from user-mobile patterns)
 
 ### 6.3 Navigation Screens
 

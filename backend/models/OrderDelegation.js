@@ -256,7 +256,7 @@ orderDelegationSchema.statics.getChefWorkload = function(chefId) {
     return this.aggregate([
         {
             $match: {
-                chef: mongoose.Types.ObjectId(chefId),
+                chef: new mongoose.Types.ObjectId(chefId),
                 status: { $in: ['Pending', 'Accepted', 'In Progress'] }
             }
         },

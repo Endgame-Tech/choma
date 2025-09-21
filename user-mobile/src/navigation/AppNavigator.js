@@ -11,6 +11,7 @@ import { BlurView } from "expo-blur";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CustomNavigationIcon from "../components/ui/CustomNavigationIcon";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../styles/theme";
@@ -230,6 +231,7 @@ const AnimatedScreenWrapper = ({ children }) => {
 // Main Tab Navigator with Modern Design - Always Dark Mode
 const TabNavigator = () => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   // Fixed dark mode colors for tab bar
   const darkTabColors = {
@@ -270,7 +272,7 @@ const TabNavigator = () => {
           paddingTop: 17,
           height: 80,
           marginHorizontal: 20,
-          bottom: 70,
+          bottom: insets.bottom + 20, // Dynamic safe area + spacing
           borderRadius: 50,
           position: "absolute",
           borderWidth: 1,

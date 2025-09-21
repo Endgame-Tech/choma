@@ -82,16 +82,16 @@ def enableProguardInReleaseBuilds = (findProperty('android.enableProguardInRelea
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
-    ndkVersion project.findProperty('android.ndkVersion') ?: "26.1.10909125"
+    ndkVersion rootProject.ext.ndkVersion
 
-    buildToolsVersion project.findProperty('android.buildToolsVersion') ?: "34.0.0"
-    compileSdk project.findProperty('android.compileSdkVersion')?.toInteger() ?: 36
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.chomadriver"
+    namespace "com.choma.driver"
     defaultConfig {
-        applicationId "com.chomadriver"
-        minSdkVersion project.findProperty('android.minSdkVersion')?.toInteger() ?: 24
-        targetSdkVersion project.findProperty('android.targetSdkVersion')?.toInteger() ?: 34
+        applicationId "com.choma.driver"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
     }
@@ -153,11 +153,6 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation 'androidx.core:core-ktx:1.17.0'
-    
-    // Room database dependencies for async-storage
-    implementation 'androidx.room:room-runtime:2.6.1'
-    implementation 'androidx.room:room-ktx:2.6.1'
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";

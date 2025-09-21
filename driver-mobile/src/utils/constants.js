@@ -10,7 +10,7 @@ export const APP_CONFIG = {
   // Driver API endpoints
   API_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "http://192.168.100.9/api/driver" // Driver endpoints
+      ? "http://192.168.100.9:5001/api/driver" // Driver endpoints with port
       : "http://localhost:5001/api/driver"
     : "https://choma.onrender.com/api/driver",
 
