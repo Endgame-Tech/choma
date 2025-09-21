@@ -2230,7 +2230,7 @@ Your meal plan has been updated with fresh options.`;
               );
             }}
             onLoad={() => {
-              console.log("✅ Background image loaded successfully");
+              // console.log("✅ Background image loaded successfully");
             }}
           />
         ) : (

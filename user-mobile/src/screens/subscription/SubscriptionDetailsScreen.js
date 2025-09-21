@@ -424,7 +424,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                           );
                         }}
                         onLoad={() => {
-                          console.log("✅ Meal plan image loaded successfully");
+                          // console.log("✅ Meal plan image loaded successfully");
                         }}
                       />
                     );

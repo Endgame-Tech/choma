@@ -50,7 +50,6 @@ const api = axios.create({
 
 // Request interceptor for authentication
 api.interceptors.request.use((config) => {
-  console.log(`🔔 Notification API Request: ${config.method?.toUpperCase()} ${config.url}`);
   
   // Add authentication token if available
   const token = localStorage.getItem('choma-admin-token');

@@ -131,7 +131,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         fetchUnreadCount()
       ]);
 
-      console.log('✅ Notifications initialized successfully');
+      // console.log('✅ Notifications initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize notifications:', error);
       setError('Failed to load notifications');

@@ -249,7 +249,7 @@ export const NotificationProvider = ({ children, showToastNotification }) => {
         }
       }
 
-      console.log("✅ Push notifications initialized successfully");
+      // console.log("✅ Push notifications initialized successfully");
     } catch (error) {
       console.error("❌ Error initializing push notifications:", error);
       setError("Failed to initialize push notifications");
