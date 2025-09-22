@@ -2,7 +2,7 @@
 
 export const lightColors = {
   // Primary Colors
-  primary: "#F7AE1A",
+  primary: "#652815",
   primary2: "#652815",
   primaryDark: "#D96800",
   primaryDark2: "#F3E9DF",
@@ -45,14 +45,14 @@ export const darkColors = {
   // Primary Colors
   primary: "#F7AE1A", // Orange accent color from the image
   primary2: "#652815",
-  primaryDark: "#b6c530ff",
+  primaryDark: "#D96800",
   primaryDark2: "#1b1b1b",
-  primaryLight: "#f0fb8ee0",
+  primaryLight: "#FF9A3F",
 
   // Background Colors
-  background: "#111111ff", // Dark background
-  surface: "#2A2A2A", // Added for tab navigation
-  cardBackground: "#2A2A2A", // Card background
+  background: "#121212", // True dark background
+  surface: "#2C2C2C", // Elevated surfaces - improved contrast
+  cardBackground: "#383838", // Card background - improved contrast
   modalBackground: "#333333",
 
   // Text Colors
@@ -62,9 +62,9 @@ export const darkColors = {
   textMuted: "#808080", // Muted text
 
   // UI Colors
-  border: "#3A3A3A",
+  border: "#4A4A4A", // Improved contrast for borders
   border2: "#F3E9DF",
-  separator: "#404040",
+  separator: "#505050", // Improved contrast for separators
   overlay: "rgba(0, 0, 0, 0.8)",
 
   // Status Colors
@@ -75,11 +75,11 @@ export const darkColors = {
 
   // Rating/Accent
   rating: "#FFD700",
-  accent: "#FF6B35", 
+  accent: "#FF6B35",
 
   // Common
   white: "#FFFFFF",
-  black: "#FFFFFF",
+  black: "#000000",
 };
 
 // Default COLORS export (using lightColors for backward compatibility)

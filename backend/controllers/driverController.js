@@ -198,38 +198,14 @@ const updateDriverLocation = async (req, res) => {
     // Update driver location in database
     await driver.updateLocation([longitude, latitude]);
 
-    // Broadcast location to active tracking sessions
-    const driverTrackingService = require('../services/driverTrackingWebSocketService');
-    
-    // Find all orders being delivered by this driver
-    const DriverAssignment = require('../models/DriverAssignment');
-    const activeAssignments = await DriverAssignment.find({
-      driverId: driver._id,
-      status: { $in: ['assigned', 'picked_up', 'in_transit'] }
-    }).populate('orderId');
-
-    // Broadcast location to each active order's tracking session
-    for (const assignment of activeAssignments) {
-      const orderId = assignment.orderId._id.toString();
-      const locationData = {
-        latitude,
-        longitude,
-        bearing: req.body.bearing || 0,
-        speed: req.body.speed || 0,
-        accuracy: req.body.accuracy || 10,
-        timestamp: new Date().toISOString(),
-        driverId: driver._id.toString(),
-        driverName: driver.fullName
-      };
-
-      console.log(`📍 Broadcasting location for order ${orderId}:`, locationData);
-      driverTrackingService.sendTrackingUpdate(orderId, 'driver_location', locationData);
-    }
+    // TODO: Implement WebSocket broadcasting for real-time tracking
+    // Currently disabled until driverTrackingWebSocketService is implemented
+    console.log('📍 Location updated successfully for driver:', driver._id);
 
     res.json({
       success: true,
       message: "Location updated successfully",
-      activeDeliveries: activeAssignments.length
+      activeDeliveries: 0 // TODO: Count active deliveries when WebSocket service is implemented
     });
   } catch (error) {
     console.error("Update location error:", error);

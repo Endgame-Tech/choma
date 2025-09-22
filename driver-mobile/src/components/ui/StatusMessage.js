@@ -2,7 +2,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { createStylesWithDMSans } from "../utils/fontUtils";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const StatusMessage = ({ type, message, visible = true }) => {
   if (!visible) return null;

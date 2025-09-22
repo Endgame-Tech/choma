@@ -145,6 +145,10 @@ class DriverApiService {
     return this.request(`/history?${queryString}`); // Use existing history endpoint
   }
 
+  async getDeliveryDetails(assignmentId) {
+    return this.request(`/assignments/${assignmentId}`); // Get specific assignment details
+  }
+
   async acceptDelivery(deliveryId) {
     return this.request(`/deliveries/${deliveryId}/accept`, {
       method: 'POST',

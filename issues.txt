@@ -1,647 +1,478 @@
- Opening on Android...
-› Opening exp+choma://expo-development-client/?url=http%3A%2F%2F192.168.100.9%3A8081 on 23021RAAEG
-› Press ? │ show all commands
- LOG  Deep link received: exp+choma://expo-development-client/?url=http%3A%2F%2F192.168.100.9%3A8081
- LOG  Parsed deep link: {"hostname": "expo-development-client", "path": "", "queryParams": {"url": "http://192.168.100.9:8081"}}
- WARN  Unknown deep link hostname: expo-development-client
-Android Bundled 179ms index.js (1 module)
- WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
- LOG  📱 Initializing Choma app...
- LOG  🔤 Loading DM Sans fonts...
- LOG  ✅ DM Sans fonts loaded successfully!
- LOG  ✅ Font overrides applied - using DM Sans
- LOG  🔥 Setting up push notifications...
- LOG  🔗 Deep linking initialized
- LOG  ✅ App initialization complete
- LOG  App opened with deep link: exp+choma://expo-development-client/?url=http%3A%2F%2F192.168.100.9%3A8081
- LOG  Parsed deep link: {"hostname": "expo-development-client", "path": "", "queryParams": {"url": "http://192.168.100.9:8081"}}
- WARN  Navigation ref not available
- LOG  🔥 Initializing Firebase app...
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
- of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApps()` instead.
- LOG  ✅ Firebase app already initialized: [DEFAULT]
- LOG  🔥 Initializing Firebase messaging
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
- of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApps()` instead.
- LOG  📱 Environment: {"appOwnership": null, "appsCount": 1, "executionEnvironment": "bare", "firebaseAvailable": true, "isDev": true}
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
- of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
- of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `getToken`. Please use `getToken()` instead.
- LOG  ℹ️ Loading notifications from backend... 
- LOG  🔍 Checking authentication status...
- LOG  🚀 Initializing API service...
- LOG  ✅ API service initialized with stored token
- LOG  📱 Token found, verifying with backend...
- LOG  🔍 API Service Auth Debug:
- LOG    - Has token: true
- LOG    - Token preview: eyJhbGciOiJIUzI1NiIs...
- LOG    - User ID: 68c99bbcdace921f3460f79a
- LOG  🔥 Firebase FCM Token obtained: dBExOTj4ROamUsyBokWax7:APA91bERBSLu9nGQqdhH5nX8cS-...
- LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/notifications?_t=1758243794710
- LOG  📋 Cache HIT (storage): authUser
- LOG  🚀 Optimistic loading: returning cached user data
- LOG  ⏱️ Rate limiting: waiting 149ms before next request
- LOG  ✅ User authenticated (cached): legendetestimony@gmail.com
- LOG  ✅ Using Firebase FCM for push notifications
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
- of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part
- of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `onMessage`. Please use `onMessage()` instead.
- LOG  📱 Registering FCM push token: {"deviceId": "Redmi Note 12", "platform": "android", "token": "dBExOTj4ROamUsyBokWa...", "tokenType": "fcm"}
- LOG  ⏱️ Rate limiting: waiting 137ms before next request
- LOG  📱 Biometric auth initialized
- LOG  Available biometric types: [1]
- LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
- LOG  🏷️ TagFilterBar component mounted/rendered
- LOG  🏷️ TagFilterBar render state: {"loading": true, "tags": [], "tagsLength": 0}
- LOG  ℹ️ Loading notifications from backend... 
- LOG  🔄 TagFilterBar fetchTags called
- LOG  🌐 Fetching fresh tags from API...
- LOG  🌐 TagService fetching from: http://192.168.100.9:5001/api/tags?_t=1758243795588
- LOG  🍽️ Fetching all meal plans from backend...
- LOG  🔄 Fetching meal plans from backend...
- LOG  🌐 API URL: http://192.168.100.9:5001/api/mealplans
- LOG  ⭐ Fetching popular meal plans from backend...
- LOG  🔄 Fetching popular meal plans from backend...
- LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
- LOG  🏷️ TagFilterBar component mounted/rendered
- LOG  🏷️ TagFilterBar render state: {"loading": true, "tags": [], "tagsLength": 0}
- LOG  🔄 Force refresh requested for publicDashboard
- LOG  🔄 Fetching user dashboard data...
- LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/mealplans/popular
- LOG  ⏱️ Rate limiting: waiting 193ms before next request
- LOG  ⏱️ Rate limiting: waiting 190ms before next request
- LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://192.168.100.9:5001/api/auth/push-token"}
- LOG  API Request (Attempt 1): POST http://192.168.100.9:5001/api/auth/push-token
- LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://192.168.100.9:5001/api/auth/profile"}
- LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/auth/profile
- LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/notifications?_t=1758243796320
- LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://192.168.100.9:5001/api/auth/dashboard"}
- LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/auth/dashboard
- LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/dashboard/public?_t=1758243795631
- LOG  🏥 Backend health check: PASS
- LOG  📋 Cache HIT (storage): mealPlans
- LOG  🔄 Background refresh for stale mealPlans
- LOG  ✅ Successfully loaded 7 meal plans
- LOG  📋 Meal plan names: Testing, Testing (Copy), Testing (Copy) (Copy), FitFam Fuel, FitFam Fuel (Copy), FitFam Fuel (Copy) (Copy), hh
- LOG  ⏱️ Rate limiting: waiting 120ms before next request
- LOG  📦 Received 7 meal plans, starting progressive rendering...
- LOG  ✅ Started progressive loading of 7 meal plans
- LOG  ℹ️ Raw API response structure: {
-  "success": true,
-  "data": {
-    "success": true,
-    "data": {
-      "notifications": [
-        {
-          "_id": "68cae799c1292299a51f43a8",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "Payment Successful! 💳",
-          "message": "Your payment of ₦5226 has been processed successfully.",
-          "type": "payment_success",
-          "isRead": true,
-          "data": {
-            "amount": 5226,
-            "reference": "choma-1758128025974-46845",
-            "subscriptionId": "68cae78dc1292299a51f436a"
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-10-17T16:53:45.763Z",
-          "createdAt": "2025-09-17T16:53:45.764Z",
-          "updatedAt": "2025-09-17T17:13:42.499Z",
-          "__v": 0,
-          "pushSentAt": "2025-09-17T16:53:46.150Z"
-        },
-        {
-          "_id": "68cae798c1292299a51f4399",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "Subscription Activated! ✅",
-          "message": "Your hh subscription is now active. Your meals start on Thu Sep 18 2025 17:53:32 GMT+0100 (West Africa Standard Time).",
-          "type": "subscription_created",
-          "isRead": true,
-          "data": {
-            "planName": "hh",
-            "startDate": "2025-09-18T16:53:32.705Z",
-            "frequency": "all",
-            "duration": null
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-10-17T16:53:44.943Z",
-          "createdAt": "2025-09-17T16:53:44.944Z",
-          "updatedAt": "2025-09-17T17:13:48.100Z",
-          "__v": 0,
-          "pushSentAt": "2025-09-17T16:53:45.359Z"
-        },
-        {
-          "_id": "68cae797c1292299a51f4390",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "Order Confirmed! 📦",
-          "message": "Order #ORD-1758128023639-V5KMC3HE7 has been confirmed and is being prepared by our chef.",
-          "type": "order_confirmed",
-          "isRead": false,
-          "data": {
-            "orderNumber": "ORD-1758128023639-V5KMC3HE7",
-            "planName": "hh",
-            "deliveryDate": "2025-09-18T16:53:32.705Z",
-            "totalAmount": 5226
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-10-17T16:53:43.919Z",
-          "createdAt": "2025-09-17T16:53:43.920Z",
-          "updatedAt": "2025-09-17T16:53:44.674Z",
-          "__v": 0,
-          "pushSentAt": "2025-09-17T16:53:44.673Z"
-        },
-        {
-          "_id": "68cad641e5caf1a0830f1ac2",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:39:45.787Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:39:45.787Z",
-          "expiresAt": "2025-10-17T15:39:45.787Z",
-          "updatedAt": "2025-09-17T15:39:45.787Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad601e5caf1a0830f1a68",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:38:41.130Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:38:41.130Z",
-          "expiresAt": "2025-10-17T15:38:41.130Z",
-          "updatedAt": "2025-09-17T15:38:41.130Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad39ce5caf1a0830f19f1",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:28:28.023Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:28:28.023Z",
-          "expiresAt": "2025-10-17T15:28:28.023Z",
-          "updatedAt": "2025-09-17T15:28:28.023Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad386e5caf1a0830f19bb",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:28:06.550Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:28:06.550Z",
-          "expiresAt": "2025-10-17T15:28:06.551Z",
-          "updatedAt": "2025-09-17T15:28:06.550Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad359e5caf1a0830f19a3",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:27:21.936Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:27:21.937Z",
-          "expiresAt": "2025-10-17T15:27:21.937Z",
-          "updatedAt": "2025-09-17T15:27:21.937Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad236e5caf1a0830f192e",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:22:30.383Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:22:30.383Z",
-          "expiresAt": "2025-10-17T15:22:30.384Z",
-          "updatedAt": "2025-09-17T15:22:30.383Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad22ee5caf1a0830f1920",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:22:22.269Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:22:22.269Z",
-          "expiresAt": "2025-10-17T15:22:22.269Z",
-          "updatedAt": "2025-09-17T15:22:22.269Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad1d5e5caf1a0830f18f6",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:20:53.463Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:20:53.463Z",
-          "expiresAt": "2025-10-17T15:20:53.464Z",
-          "updatedAt": "2025-09-17T15:20:53.463Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cacfbae5caf1a0830f18a5",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:11:54.208Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:11:54.208Z",
-          "expiresAt": "2025-10-17T15:11:54.208Z",
-          "updatedAt": "2025-09-17T15:11:54.208Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cacfa3e5caf1a0830f1880",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:11:31.070Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:11:31.070Z",
-          "expiresAt": "2025-10-17T15:11:31.071Z",
-          "updatedAt": "2025-09-17T15:11:31.070Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cacf92e5caf1a0830f1876",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": true,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:11:14.567Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:11:14.567Z",
-          "expiresAt": "2025-10-17T15:11:14.581Z",
-          "updatedAt": "2025-09-17T15:28:14.589Z",
-          "__v": 0
-        },
-        {
-          "_id": "68c99bbcdace921f3460f79e",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "Welcome to Choma! 🎉",
-          "message": "Hi Testimony Ebere! Welcome to our delicious food family. Browse our meal plans and start your healthy eating journey today!",
-          "type": "welcome",
-          "isRead": true,
-          "data": {
-            "isWelcome": true,
-            "action": "explore_meal_plans"
-          },
-          "priority": "high",
-          "pushSent": false,
-          "expiresAt": "2025-10-16T17:17:48.830Z",
-          "createdAt": "2025-09-16T17:17:48.832Z",
-          "updatedAt": "2025-09-17T09:21:03.142Z",
-          "__v": 0
-        }
-      ],
-      "pagination": {
-        "currentPage": 1,
-        "totalPages": 1,
-        "totalNotifications": 15,
-        "hasNext": false,
-        "hasPrev": false,
-        "unreadCount": 11
-      }
-    }
-  }
-}
- LOG  ℹ️ Notification API response: {"actualDataExists": true, "dataExists": true, "notificationsCount": 15, "notificationsExists": true, "responseDataType": "object", "success": true, "unreadCount": 11}
- LOG  📋 Processing notifications: {"firstNotification": {"isRead": true, "title": "Payment Successful! 💳", "type": "payment_success"}, "notificationArray": true, "notificationCount": 15}
- LOG  ✅ Notifications loaded successfully: 15 Unread count (API/Local/Final): 11 11 11
- LOG  📦 TagService API response: {"count": 2, "data": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "createdAt": "2025-09-17T11:16:19.730Z
-", "description": "", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1758107789/choma/tags/sawopfmqbsq4t9xkfzye.jpg", "isActiv
-e": true, "mealPlanCount": 1, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-17T11:16:19.922Z"}, {"__v": 0, "_id": "
-68cc91fa44aa0b7e6c86b0dc", "createdAt": "2025-09-18T23:12:58.763Z", "description": "nnn", "image": "https://res.cloudinary.com/dql0tbyes/ima
-ge/upload/v1758237168/choma/tags/cshuyesey0dcwtecu4ez.jpg", "isActive": true, "mealPlanCount": 1, "name": "Mama's Kitchen", "sortOrder": 1, "tagId": "TAG002", "updatedAt": "2025-09-18T23:12:58.897Z"}], "success": true}
- LOG  ✅ Loaded 2 tags for filtering
- LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
- LOG  🏷️ TagFilterBar component mounted/rendered
- LOG  🏷️ TagFilterBar render state: {"loading": false, "tags": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "createdAt": "2025-09-17T11:1
-6                                                                                                                                          6
-:19.730Z", "description": "", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1758107789/choma/tags/sawopfmqbsq4t9xkfzye.jpg", 
-"isActive": true, "mealPlanCount": 1, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-17T11:16:19.922Z"}, {"__v": 0, 
-"_id": "68cc91fa44aa0b7e6c86b0dc", "createdAt": "2025-09-18T23:12:58.763Z", "description": "nnn", "image": "https://res.cloudinary.com/dql0t
-byes/image/upload/v1758237168/choma/tags/cshuyesey0dcwtecu4ez.jpg", "isActive": true, "mealPlanCount": 1, "name": "Mama's Kitchen", "sortOrder": 1, "tagId": "TAG002", "updatedAt": "2025-09-18T23:12:58.897Z"}], "tagsLength": 2}
- LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/mealplans
- LOG  💰 HomeScreen: Fetching discount data for meal plans
- LOG  💰 Fetching meal plan discount rules for: 68caa44b34aac7e3fcf1ae3b
- LOG  ⏱️ Rate limiting: waiting 178ms before next request
- LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
- LOG  🏷️ TagFilterBar component mounted/rendered
- LOG  🏷️ TagFilterBar render state: {"loading": false, "tags": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "createdAt": "2025-09-17T11:1
-6                                                                                                                                          6
-:19.730Z", "description": "", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1758107789/choma/tags/sawopfmqbsq4t9xkfzye.jpg", 
-"isActive": true, "mealPlanCount": 1, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-17T11:16:19.922Z"}, {"__v": 0, 
-"_id": "68cc91fa44aa0b7e6c86b0dc", "createdAt": "2025-09-18T23:12:58.763Z", "description": "nnn", "image": "https://res.cloudinary.com/dql0t
-byes/image/upload/v1758237168/choma/tags/cshuyesey0dcwtecu4ez.jpg", "isActive": true, "mealPlanCount": 1, "name": "Mama's Kitchen", "sortOrder": 1, "tagId": "TAG002", "updatedAt": "2025-09-18T23:12:58.897Z"}], "tagsLength": 2}
- LOG  API Request (Attempt 1): GET http://192.168.100.9:5001/api/meal-plans/68caa44b34aac7e3fcf1ae3b/discount-rules
- LOG  ✅ Successfully loaded 7 popular meal plans
- LOG  ✅ Successfully loaded 7 popular meal plans
- LOG  🔄 Background: updated cached user data
- LOG  🎯 renderPromoBanners called: {"banners": [], "bannersLength": 0, "bannersLoading": true}
- LOG  🏷️ TagFilterBar component mounted/rendered
- LOG  🏷️ TagFilterBar render state: {"loading": false, "tags": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "createdAt": "2025-09-17T11:1
-6                                                                                                                                          6
-:19.730Z", "description": "", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1758107789/choma/tags/sawopfmqbsq4t9xkfzye.jpg", 
-"isActive": true, "mealPlanCount": 1, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-17T11:16:19.922Z"}, {"__v": 0, 
-"_id": "68cc91fa44aa0b7e6c86b0dc", "createdAt": "2025-09-18T23:12:58.763Z", "description": "nnn", "image": "https://res.cloudinary.com/dql0t
-byes/image/upload/v1758237168/choma/tags/cshuyesey0dcwtecu4ez.jpg", "isActive": true, "mealPlanCount": 1, "name": "Mama's Kitchen", "sortOrder": 1, "tagId": "TAG002", "updatedAt": "2025-09-18T23:12:58.897Z"}], "tagsLength": 2}
- LOG  📋 Cache SET: authUser (520 bytes)
- LOG  ✅ FCM push token registered with backend: {"data": {"message": "Push token registered successfully", "success": true}, "success": truue}
- LOG  ✅ Push notifications initialized successfully
- LOG  ℹ️ Raw API response structure: {
-  "success": true,
-  "data": {
-    "success": true,
-    "data": {
-      "notifications": [
-        {
-          "_id": "68cae799c1292299a51f43a8",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "Payment Successful! 💳",
-          "message": "Your payment of ₦5226 has been processed successfully.",
-          "type": "payment_success",
-          "isRead": true,
-          "data": {
-            "amount": 5226,
-            "reference": "choma-1758128025974-46845",
-            "subscriptionId": "68cae78dc1292299a51f436a"
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-10-17T16:53:45.763Z",
-          "createdAt": "2025-09-17T16:53:45.764Z",
-          "updatedAt": "2025-09-17T17:13:42.499Z",
-          "__v": 0,
-          "pushSentAt": "2025-09-17T16:53:46.150Z"
-        },
-        {
-          "_id": "68cae798c1292299a51f4399",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "Subscription Activated! ✅",
-          "message": "Your hh subscription is now active. Your meals start on Thu Sep 18 2025 17:53:32 GMT+0100 (West Africa Standard Time).",
-          "type": "subscription_created",
-          "isRead": true,
-          "data": {
-            "planName": "hh",
-            "startDate": "2025-09-18T16:53:32.705Z",
-            "frequency": "all",
-            "duration": null
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-10-17T16:53:44.943Z",
-          "createdAt": "2025-09-17T16:53:44.944Z",
-          "updatedAt": "2025-09-17T17:13:48.100Z",
-          "__v": 0,
-          "pushSentAt": "2025-09-17T16:53:45.359Z"
-        },
-        {
-          "_id": "68cae797c1292299a51f4390",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "Order Confirmed! 📦",
-          "message": "Order #ORD-1758128023639-V5KMC3HE7 has been confirmed and is being prepared by our chef.",
-          "type": "order_confirmed",
-          "isRead": false,
-          "data": {
-            "orderNumber": "ORD-1758128023639-V5KMC3HE7",
-            "planName": "hh",
-            "deliveryDate": "2025-09-18T16:53:32.705Z",
-            "totalAmount": 5226
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-10-17T16:53:43.919Z",
-          "createdAt": "2025-09-17T16:53:43.920Z",
-          "updatedAt": "2025-09-17T16:53:44.674Z",
-          "__v": 0,
-          "pushSentAt": "2025-09-17T16:53:44.673Z"
-        },
-        {
-          "_id": "68cad641e5caf1a0830f1ac2",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:39:45.787Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:39:45.787Z",
-          "expiresAt": "2025-10-17T15:39:45.787Z",
-          "updatedAt": "2025-09-17T15:39:45.787Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad601e5caf1a0830f1a68",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:38:41.130Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:38:41.130Z",
-          "expiresAt": "2025-10-17T15:38:41.130Z",
-          "updatedAt": "2025-09-17T15:38:41.130Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad39ce5caf1a0830f19f1",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:28:28.023Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:28:28.023Z",
-          "expiresAt": "2025-10-17T15:28:28.023Z",
-          "updatedAt": "2025-09-17T15:28:28.023Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad386e5caf1a0830f19bb",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:28:06.550Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:28:06.550Z",
-          "expiresAt": "2025-10-17T15:28:06.551Z",
-          "updatedAt": "2025-09-17T15:28:06.550Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad359e5caf1a0830f19a3",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:27:21.936Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:27:21.937Z",
-          "expiresAt": "2025-10-17T15:27:21.937Z",
-          "updatedAt": "2025-09-17T15:27:21.937Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad236e5caf1a0830f192e",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:22:30.383Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:22:30.383Z",
-          "expiresAt": "2025-10-17T15:22:30.384Z",
-          "updatedAt": "2025-09-17T15:22:30.383Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad22ee5caf1a0830f1920",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:22:22.269Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:22:22.269Z",
-          "expiresAt": "2025-10-17T15:22:22.269Z",
-          "updatedAt": "2025-09-17T15:22:22.269Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cad1d5e5caf1a0830f18f6",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-          "message": "This is a test push notification from development mode!",
-          "type": "test",
-          "isRead": false,
-          "data": {
-            "environment": "development",
-            "timestamp": "2025-09-17T15:20:53.463Z"
-          },
-          "priority": "medium",
-          "pushSent": false,
-          "createdAt": "2025-09-17T15:20:53.463Z",
-          "expiresAt": "2025-10-17T15:20:53.464Z",
-          "updatedAt": "2025-09-17T15:20:53.463Z",
-          "__v": 0
-        },
-        {
-          "_id": "68cacfbae5caf1a0830f18a5",
-          "userId": "68c99bbcdace921f3460f79a",
-          "title": "🧪 Test Push Notification",
-   
+oRootProject] Using the following versions:
+  - buildTools:  35.0.0
+  - minSdk:      24
+  - compileSdk:  35
+  - targetSdk:   35
+  - ndk:         27.1.12297006
+  - kotlin:      2.0.21
+  - ksp:         2.0.21-1.0.28
+
+> Configure project :app
+ ℹ️  Applying gradle plugin 'expo-dev-launcher-gradle-plugin'
+
+> Configure project :expo
+
+Using expo modules
+  - expo-constants (17.1.7)
+  - expo-dev-client (5.2.4)
+  - expo-dev-launcher (5.1.16)
+  - expo-dev-menu (6.1.14)
+  - expo-dev-menu-interface (1.10.0)
+  - expo-image-loader (5.1.0)
+  - expo-json-utils (0.15.0)
+  - expo-manifests (0.16.6)
+  - expo-modules-core (2.5.0)
+  - expo-updates-interface (1.1.0)
+  - [📦] expo-application (6.1.5)
+  - [📦] expo-asset (11.1.7)
+  - [📦] expo-blur (14.1.5)
+  - [📦] expo-clipboard (7.1.5)
+  - [📦] expo-crypto (14.1.5)
+  - [📦] expo-device (7.1.4)
+  - [📦] expo-file-system (18.1.11)
+  - [📦] expo-font (13.3.2)
+  - [📦] expo-haptics (14.1.4)
+  - [📦] expo-image-picker (16.1.4)
+  - [📦] expo-keep-awake (14.1.4)
+  - [📦] expo-linear-gradient (14.1.5)
+  - [📦] expo-linking (7.1.7)
+  - [📦] expo-local-authentication (16.0.5)
+  - [📦] expo-location (18.1.6)
+  - [📦] expo-notifications (0.31.4)
+  - [📦] expo-system-ui (5.0.10)
+  - [📦] expo-web-browser (14.2.0)
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine the dependencies of task ':app:compileDebugJavaWithJavac'.
+> Could not resolve all dependencies for configuration ':app:debugCompileClasspath'.
+   > Could not resolve project :react-native-async-storage_async-storage.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-async-storage_async-storage was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-community_datetimepicker.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-community_datetimepicker was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-community_netinfo.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-community_netinfo was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-firebase_app.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-firebase_app was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-firebase_messaging.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-firebase_messaging was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-picker_picker.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-picker_picker was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-gesture-handler.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-gesture-handler was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-get-random-values.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-get-random-values was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-maps.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-maps was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-safe-area-context.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-safe-area-context was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-screens.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-screens was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-svg.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-svg was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-webview.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-webview was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+   > Could not resolve project :react-native-edge-to-edge.
+     Required by:
+         project :app
+      > No matching variant of project :react-native-edge-to-edge was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - No variants exist.
+
+* Try:
+> Creating consumable variants is explained in more detail at https://docs.gradle.org/8.10.2/userguide/declaring_dependencies.html#sec:resolvable-consumable-configs.
+> Review the variant matching algorithm at https://docs.gradle.org/8.10.2/userguide/variant_attributes.html#sec:abm_algorithm.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.internal.tasks.TaskDependencyResolveException: Could not determine the dependencies of task ':app:compileDebugJavaWithJavac'.
+	at org.gradle.api.internal.tasks.CachingTaskDependencyResolveContext.getDependencies(CachingTaskDependencyResolveContext.java:70)
+	at org.gradle.execution.plan.TaskDependencyResolver.resolveDependenciesFor(TaskDependencyResolver.java:49)
+	at org.gradle.execution.plan.LocalTaskNode.getDependencies(LocalTaskNode.java:148)
+	at org.gradle.execution.plan.LocalTaskNode.resolveDependencies(LocalTaskNode.java:122)
+	at org.gradle.execution.plan.DefaultExecutionPlan.discoverNodeRelationships(DefaultExecutionPlan.java:182)
+	at org.gradle.execution.plan.DefaultExecutionPlan.doAddEntryNodes(DefaultExecutionPlan.java:154)
+	at org.gradle.execution.plan.DefaultExecutionPlan.addEntryTasks(DefaultExecutionPlan.java:129)
+	at org.gradle.execution.plan.DefaultExecutionPlan.addEntryTasks(DefaultExecutionPlan.java:121)
+	at org.gradle.execution.TaskNameResolvingBuildTaskScheduler.scheduleRequestedTasks(TaskNameResolvingBuildTaskScheduler.java:54)
+	at org.gradle.execution.DefaultTasksBuildTaskScheduler.scheduleRequestedTasks(DefaultTasksBuildTaskScheduler.java:72)
+	at org.gradle.initialization.DefaultTaskExecutionPreparer.lambda$scheduleRequestedTasks$0(DefaultTaskExecutionPreparer.java:46)
+	at org.gradle.internal.Factories$1.create(Factories.java:31)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withReplacedLocks(DefaultWorkerLeaseService.java:359)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$DefaultBuildProjectRegistry.withMutableStateOfAllProjects(DefaultProjectStateRegistry.java:238)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$DefaultBuildProjectRegistry.withMutableStateOfAllProjects(DefaultProjectStateRegistry.java:231)
+	at org.gradle.initialization.DefaultTaskExecutionPreparer.scheduleRequestedTasks(DefaultTaskExecutionPreparer.java:45)
+	at org.gradle.initialization.VintageBuildModelController.lambda$scheduleRequestedTasks$0(VintageBuildModelController.java:76)
+	at org.gradle.internal.model.StateTransitionController.lambda$inState$1(StateTransitionController.java:99)
+	at org.gradle.internal.model.StateTransitionController.lambda$inState$2(StateTransitionController.java:114)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.inState(StateTransitionController.java:110)
+	at org.gradle.internal.model.StateTransitionController.inState(StateTransitionController.java:98)
+	at org.gradle.initialization.VintageBuildModelController.scheduleRequestedTasks(VintageBuildModelController.java:76)
+	at org.gradle.internal.build.DefaultBuildLifecycleController$DefaultWorkGraphBuilder.addRequestedTasks(DefaultBuildLifecycleController.java:404)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.lambda$scheduleRequestedTasks$0(DefaultBuildTreeWorkPreparer.java:41)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$populateWorkGraph$7(DefaultBuildLifecycleController.java:189)
+	at org.gradle.internal.build.DefaultBuildWorkPreparer.populateWorkGraph(DefaultBuildWorkPreparer.java:42)
+	at org.gradle.internal.build.BuildOperationFiringBuildWorkPreparer$PopulateWorkGraph.populateTaskGraph(BuildOperationFiringBuildWorkPreparer.java:106)
+	at org.gradle.internal.build.BuildOperationFiringBuildWorkPreparer$PopulateWorkGraph.run(BuildOperationFiringBuildWorkPreparer.java:92)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.internal.build.BuildOperationFiringBuildWorkPreparer.populateWorkGraph(BuildOperationFiringBuildWorkPreparer.java:67)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$populateWorkGraph$8(DefaultBuildLifecycleController.java:189)
+	at org.gradle.internal.model.StateTransitionController.lambda$inState$1(StateTransitionController.java:99)
+	at org.gradle.internal.model.StateTransitionController.lambda$inState$2(StateTransitionController.java:114)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.inState(StateTransitionController.java:110)
+	at org.gradle.internal.model.StateTransitionController.inState(StateTransitionController.java:98)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.populateWorkGraph(DefaultBuildLifecycleController.java:189)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.populateWorkGraph(DefaultBuildWorkGraphController.java:169)
+	at org.gradle.composite.internal.DefaultBuildController.populateWorkGraph(DefaultBuildController.java:76)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph$DefaultBuildTreeWorkGraphBuilder.withWorkGraph(DefaultIncludedBuildTaskGraph.java:153)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.lambda$scheduleRequestedTasks$1(DefaultBuildTreeWorkPreparer.java:41)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph$DefaultBuildTreeWorkGraph$1.run(DefaultIncludedBuildTaskGraph.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph$DefaultBuildTreeWorkGraph.scheduleWork(DefaultIncludedBuildTaskGraph.java:204)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.scheduleRequestedTasks(DefaultBuildTreeWorkPreparer.java:37)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph.withNewWorkGraph(DefaultIncludedBuildTaskGraph.java:112)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController.scheduleAndRunRequestedTasks(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$scheduleAndRunTasks$1(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$runBuild$4(DefaultBuildTreeLifecycleController.java:120)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$6(StateTransitionController.java:169)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$7(StateTransitionController.java:169)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.transition(StateTransitionController.java:169)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.runBuild(DefaultBuildTreeLifecycleController.java:117)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:72)
+	at org.gradle.tooling.internal.provider.runner.BuildModelActionRunner.run(BuildModelActionRunner.java:53)
+	at org.gradle.launcher.exec.ChainingBuildActionRunner.run(ChainingBuildActionRunner.java:35)
+	at org.gradle.internal.buildtree.ProblemReportingBuildActionRunner.run(ProblemReportingBuildActionRunner.java:49)
+	at org.gradle.launcher.exec.BuildOutcomeReportingBuildActionRunner.run(BuildOutcomeReportingBuildActionRunner.java:65)
+	at org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner.run(FileSystemWatchingBuildActionRunner.java:140)
+	at org.gradle.launcher.exec.BuildCompletionNotifyingBuildActionRunner.run(BuildCompletionNotifyingBuildActionRunner.java:41)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.lambda$execute$0(RootBuildLifecycleBuildActionExecutor.java:54)
+	at org.gradle.composite.internal.DefaultRootBuildState.run(DefaultRootBuildState.java:130)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.execute(RootBuildLifecycleBuildActionExecutor.java:54)
+	at org.gradle.internal.buildtree.InitDeprecationLoggingActionExecutor.execute(InitDeprecationLoggingActionExecutor.java:62)
+	at org.gradle.internal.buildtree.InitProblems.execute(InitProblems.java:36)
+	at org.gradle.internal.buildtree.DefaultBuildTreeContext.execute(DefaultBuildTreeContext.java:40)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.lambda$execute$0(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.internal.buildtree.BuildTreeState.run(BuildTreeState.java:60)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.execute(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$3.call(RunAsBuildOperationBuildActionExecutor.java:61)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$3.call(RunAsBuildOperationBuildActionExecutor.java:57)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor.execute(RunAsBuildOperationBuildActionExecutor.java:57)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.lambda$execute$0(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:263)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.execute(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.tooling.internal.provider.continuous.ContinuousBuildActionExecutor.execute(ContinuousBuildActionExecutor.java:110)
+	at org.gradle.tooling.internal.provider.SubscribableBuildActionExecutor.execute(SubscribableBuildActionExecutor.java:64)
+	at org.gradle.internal.session.DefaultBuildSessionContext.execute(DefaultBuildSessionContext.java:46)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:92)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:80)
+	at org.gradle.internal.session.BuildSessionState.run(BuildSessionState.java:71)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:62)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:41)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:64)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:32)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:51)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:39)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:47)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:31)
+	at org.gradle.launcher.daemon.server.exec.ExecuteBuild.doBuild(ExecuteBuild.java:70)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.WatchForDisconnection.execute(WatchForDisconnection.java:39)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ResetDeprecationLogger.execute(ResetDeprecationLogger.java:29)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon.execute(RequestStopIfSingleUsedDaemon.java:35)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.lambda$execute$0(ForwardClientInput.java:40)
+	at org.gradle.internal.daemon.clientinput.ClientInputForwarder.forwardInput(ClientInputForwarder.java:80)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.execute(ForwardClientInput.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogAndCheckHealth.execute(LogAndCheckHealth.java:64)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogToClient.doBuild(LogToClient.java:63)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment.doBuild(EstablishBuildEnvironment.java:84)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy$1.run(StartBuildOrRespondWithBusy.java:52)
+	at org.gradle.launcher.daemon.server.DaemonStateCoordinator.lambda$runCommand$0(DaemonStateCoordinator.java:321)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+Caused by: org.gradle.api.internal.artifacts.ivyservice.TypedResolveException: Could not resolve all dependencies for configuration ':app:debugCompileClasspath'.
+	at org.gradle.api.internal.artifacts.ResolveExceptionMapper.mapFailures(ResolveExceptionMapper.java:56)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$DefaultResolutionHost.mapFailure(DefaultConfiguration.java:1984)
+	at org.gradle.api.internal.artifacts.configurations.ResolutionBackedFileCollection.visitDependencies(ResolutionBackedFileCollection.java:61)
+	at org.gradle.api.internal.tasks.CachingTaskDependencyResolveContext$TaskGraphImpl.getNodeValues(CachingTaskDependencyResolveContext.java:108)
+	at org.gradle.internal.graph.CachingDirectedGraphWalker$GraphWithEmptyEdges.getNodeValues(CachingDirectedGraphWalker.java:213)
+	at org.gradle.internal.graph.CachingDirectedGraphWalker.doSearch(CachingDirectedGraphWalker.java:121)
+	at org.gradle.internal.graph.CachingDirectedGraphWalker.findValues(CachingDirectedGraphWalker.java:73)
+	at org.gradle.api.internal.tasks.CachingTaskDependencyResolveContext.getDependencies(CachingTaskDependencyResolveContext.java:67)
+	... 139 more
+Caused by: org.gradle.internal.resolve.ModuleVersionResolveException: Could not resolve project :react-native-async-storage_async-storage.
+Required by:
+    project :app
+Caused by: org.gradle.internal.component.resolution.failure.exception.VariantSelectionByAttributesException: No matching variant of project :react-native-async-storage_async-storage was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '8.8.2', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+  - No variants exist.
+	at org.gradle.internal.component.resolution.failure.describer.NoCompatibleVariantsFailureDescriber.describeFailure(NoCompatibleVariantsFailureDescriber.java:49)
+	at org.gradle.internal.component.resolution.failure.describer.NoCompatibleVariantsFailureDescriber.describeFailure(NoCompatibleVariantsFailureDescriber.java:37)
+	at org.gradle.internal.component.resolution.failure.ResolutionFailureHandler.lambda$describeFailure$2(ResolutionFailureHandler.java:232)
+	at org.gradle.internal.component.resolution.failure.ResolutionFailureHandler.describeFailure(ResolutionFailureHandler.java:232)
+	at org.gradle.internal.component.resolution.failure.ResolutionFailureHandler.describeFailure(ResolutionFailureHandler.java:225)
+	at org.gradle.internal.component.resolution.failure.ResolutionFailureHandler.noVariantsFailure(ResolutionFailureHandler.java:143)
+	at org.gradle.internal.component.model.GraphVariantSelector.selectLegacyVariant(GraphVariantSelector.java:161)
+	at org.gradle.internal.component.model.LocalComponentDependencyMetadata.selectVariants(LocalComponentDependencyMetadata.java:120)
+	at org.gradle.internal.component.model.DelegatingDependencyMetadata.selectVariants(DelegatingDependencyMetadata.java:46)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.EdgeState.calculateTargetConfigurations(EdgeState.java:263)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.EdgeState.attachToTargetConfigurations(EdgeState.java:148)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.attachToTargetRevisionsSerially(DependencyGraphBuilder.java:362)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.resolveEdges(DependencyGraphBuilder.java:254)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.traverseGraph(DependencyGraphBuilder.java:189)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder.DependencyGraphBuilder.resolve(DependencyGraphBuilder.java:159)
+	at org.gradle.api.internal.artifacts.ivyservice.resolveengine.DependencyGraphResolver.resolve(DependencyGraphResolver.java:121)
+	at org.gradle.api.internal.artifacts.ivyservice.DefaultConfigurationResolver.doResolve(DefaultConfigurationResolver.java:386)
+	at org.gradle.api.internal.artifacts.ivyservice.DefaultConfigurationResolver.resolveGraph(DefaultConfigurationResolver.java:279)
+	at org.gradle.api.internal.artifacts.ivyservice.ShortCircuitEmptyConfigurationResolver.resolveGraph(ShortCircuitEmptyConfigurationResolver.java:82)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$1.call(DefaultConfiguration.java:785)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$1.call(DefaultConfiguration.java:777)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.resolveGraphInBuildOperation(DefaultConfiguration.java:777)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.lambda$resolveExclusivelyIfRequired$5(DefaultConfiguration.java:769)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$CalculatedModelValueImpl.update(DefaultProjectStateRegistry.java:509)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.resolveExclusivelyIfRequired(DefaultConfiguration.java:764)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.resolveGraphIfRequired(DefaultConfiguration.java:757)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration.access$1200(DefaultConfiguration.java:159)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$ResolverResultsResolutionResultProvider.getValue(DefaultConfiguration.java:731)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$ResolverResultsResolutionResultProvider.getTaskDependencyValue(DefaultConfiguration.java:713)
+	at org.gradle.api.internal.artifacts.configurations.DefaultConfiguration$ResolverResultsResolutionResultProvider.getTaskDependencyValue(DefaultConfiguration.java:692)
+	at org.gradle.api.internal.artifacts.configurations.ResolutionResultProvider$1.getTaskDependencyValue(ResolutionResultProvider.java:48)
+	at org.gradle.api.internal.artifacts.configurations.ResolutionBackedFileCollection.visitDependencies(ResolutionBackedFileCollection.java:57)
+	at org.gradle.api.internal.tasks.CachingTaskDependencyResolveContext$TaskGraphImpl.getNodeValues(CachingTaskDependencyResolveContext.java:108)
+	at org.gradle.internal.graph.CachingDirectedGraphWalker$GraphWithEmptyEdges.getNodeValues(CachingDirectedGraphWalker.java:213)
+	at org.gradle.internal.graph.CachingDirectedGraphWalker.doSearch(CachingDirectedGraphWalker.java:121)
+	at org.gradle.internal.graph.CachingDirectedGraphWalker.findValues(CachingDirectedGraphWalker.java:73)
+	at org.gradle.api.internal.tasks.CachingTaskDependencyResolveContext.getDependencies(CachingTaskDependencyResolveContext.java:67)
+	at org.gradle.execution.plan.TaskDependencyResolver.resolveDependenciesFor(TaskDependencyResolver.java:49)
+	at org.gradle.execution.plan.LocalTaskNode.getDependencies(LocalTaskNode.java:148)
+	at org.gradle.execution.plan.LocalTaskNode.resolveDependencies(LocalTaskNode.java:122)
+	at org.gradle.execution.plan.DefaultExecutionPlan.discoverNodeRelationships(DefaultExecutionPlan.java:182)
+	at org.gradle.execution.plan.DefaultExecutionPlan.doAddEntryNodes(DefaultExecutionPlan.java:154)
+	at org.gradle.execution.plan.DefaultExecutionPlan.addEntryTasks(DefaultExecutionPlan.java:129)
+	at org.gradle.execution.plan.DefaultExecutionPlan.addEntryTasks(DefaultExecutionPlan.java:121)
+	at org.gradle.execution.TaskNameResolvingBuildTaskScheduler.scheduleRequestedTasks(TaskNameResolvingBuildTaskScheduler.java:54)
+	at org.gradle.execution.DefaultTasksBuildTaskScheduler.scheduleRequestedTasks(DefaultTasksBuildTaskScheduler.java:72)
+	at org.gradle.initialization.DefaultTaskExecutionPreparer.lambda$scheduleRequestedTasks$0(DefaultTaskExecutionPreparer.java:46)
+	at org.gradle.internal.Factories$1.create(Factories.java:31)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withReplacedLocks(DefaultWorkerLeaseService.java:359)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$DefaultBuildProjectRegistry.withMutableStateOfAllProjects(DefaultProjectStateRegistry.java:238)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$DefaultBuildProjectRegistry.withMutableStateOfAllProjects(DefaultProjectStateRegistry.java:231)
+	at org.gradle.initialization.DefaultTaskExecutionPreparer.scheduleRequestedTasks(DefaultTaskExecutionPreparer.java:45)
+	at org.gradle.initialization.VintageBuildModelController.lambda$scheduleRequestedTasks$0(VintageBuildModelController.java:76)
+	at org.gradle.internal.model.StateTransitionController.lambda$inState$1(StateTransitionController.java:99)
+	at org.gradle.internal.model.StateTransitionController.lambda$inState$2(StateTransitionController.java:114)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.inState(StateTransitionController.java:110)
+	at org.gradle.internal.model.StateTransitionController.inState(StateTransitionController.java:98)
+	at org.gradle.initialization.VintageBuildModelController.scheduleRequestedTasks(VintageBuildModelController.java:76)
+	at org.gradle.internal.build.DefaultBuildLifecycleController$DefaultWorkGraphBuilder.addRequestedTasks(DefaultBuildLifecycleController.java:404)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.lambda$scheduleRequestedTasks$0(DefaultBuildTreeWorkPreparer.java:41)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$populateWorkGraph$7(DefaultBuildLifecycleController.java:189)
+	at org.gradle.internal.build.DefaultBuildWorkPreparer.populateWorkGraph(DefaultBuildWorkPreparer.java:42)
+	at org.gradle.internal.build.BuildOperationFiringBuildWorkPreparer$PopulateWorkGraph.populateTaskGraph(BuildOperationFiringBuildWorkPreparer.java:106)
+	at org.gradle.internal.build.BuildOperationFiringBuildWorkPreparer$PopulateWorkGraph.run(BuildOperationFiringBuildWorkPreparer.java:92)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.internal.build.BuildOperationFiringBuildWorkPreparer.populateWorkGraph(BuildOperationFiringBuildWorkPreparer.java:67)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$populateWorkGraph$8(DefaultBuildLifecycleController.java:189)
+	at org.gradle.internal.model.StateTransitionController.lambda$inState$1(StateTransitionController.java:99)
+	at org.gradle.internal.model.StateTransitionController.lambda$inState$2(StateTransitionController.java:114)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.inState(StateTransitionController.java:110)
+	at org.gradle.internal.model.StateTransitionController.inState(StateTransitionController.java:98)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.populateWorkGraph(DefaultBuildLifecycleController.java:189)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.populateWorkGraph(DefaultBuildWorkGraphController.java:169)
+	at org.gradle.composite.internal.DefaultBuildController.populateWorkGraph(DefaultBuildController.java:76)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph$DefaultBuildTreeWorkGraphBuilder.withWorkGraph(DefaultIncludedBuildTaskGraph.java:153)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.lambda$scheduleRequestedTasks$1(DefaultBuildTreeWorkPreparer.java:41)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph$DefaultBuildTreeWorkGraph$1.run(DefaultIncludedBuildTaskGraph.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph$DefaultBuildTreeWorkGraph.scheduleWork(DefaultIncludedBuildTaskGraph.java:204)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.scheduleRequestedTasks(DefaultBuildTreeWorkPreparer.java:37)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph.withNewWorkGraph(DefaultIncludedBuildTaskGraph.java:112)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController.scheduleAndRunRequestedTasks(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$scheduleAndRunTasks$1(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$runBuild$4(DefaultBuildTreeLifecycleController.java:120)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$6(StateTransitionController.java:169)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$7(StateTransitionController.java:169)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.transition(StateTransitionController.java:169)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.runBuild(DefaultBuildTreeLifecycleController.java:117)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:72)
+	at org.gradle.tooling.internal.provider.runner.BuildModelActionRunner.run(BuildModelActionRunner.java:53)
+	at org.gradle.launcher.exec.ChainingBuildActionRunner.run(ChainingBuildActionRunner.java:35)
+	at org.gradle.internal.buildtree.ProblemReportingBuildActionRunner.run(ProblemReportingBuildActionRunner.java:49)
+	at org.gradle.launcher.exec.BuildOutcomeReportingBuildActionRunner.run(BuildOutcomeReportingBuildActionRunner.java:65)
+	at org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner.run(FileSystemWatchingBuildActionRunner.java:140)
+	at org.gradle.launcher.exec.BuildCompletionNotifyingBuildActionRunner.run(BuildCompletionNotifyingBuildActionRunner.java:41)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.lambda$execute$0(RootBuildLifecycleBuildActionExecutor.java:54)
+	at org.gradle.composite.internal.DefaultRootBuildState.run(DefaultRootBuildState.java:130)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.execute(RootBuildLifecycleBuildActionExecutor.java:54)
+	at org.gradle.internal.buildtree.InitDeprecationLoggingActionExecutor.execute(InitDeprecationLoggingActionExecutor.java:62)
+	at org.gradle.internal.buildtree.InitProblems.execute(InitProblems.java:36)
+	at org.gradle.internal.buildtree.DefaultBuildTreeContext.execute(DefaultBuildTreeContext.java:40)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.lambda$execute$0(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.internal.buildtree.BuildTreeState.run(BuildTreeState.java:60)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.execute(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$3.call(RunAsBuildOperationBuildActionExecutor.java:61)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$3.call(RunAsBuildOperationBuildActionExecutor.java:57)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor.execute(RunAsBuildOperationBuildActionExecutor.java:57)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.lambda$execute$0(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:263)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.execute(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.tooling.internal.provider.continuous.ContinuousBuildActionExecutor.execute(ContinuousBuildActionExecutor.java:110)
+	at org.gradle.tooling.internal.provider.SubscribableBuildActionExecutor.execute(SubscribableBuildActionExecutor.java:64)
+	at org.gradle.internal.session.DefaultBuildSessionContext.execute(DefaultBuildSessionContext.java:46)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:92)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:80)
+	at org.gradle.internal.session.BuildSessionState.run(BuildSessionState.java:71)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:62)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:41)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:64)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:32)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:51)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:39)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:47)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:31)
+	at org.gradle.launcher.daemon.server.exec.ExecuteBuild.doBuild(ExecuteBuild.java:70)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.WatchForDisconnection.execute(WatchForDisconnection.java:39)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ResetDeprecationLogger.execute(ResetDeprecationLogger.java:29)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon.execute(RequestStopIfSingleUsedDaemon.java:35)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.lambda$execute$0(ForwardClientInput.java:40)
+	at org.gradle.internal.daemon.clientinput.ClientInputForwarder.forwardInput(ClientInputForwarder.java:80)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.execute(ForwardClientInput.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogAndCheckHealth.execute(LogAndCheckHealth.java:64)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogToClient.doBuild(LogToClient.java:63)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment.doBuild(EstablishBuildEnvironment.java:84)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy$1.run(StartBuildOrRespondWithBusy.java:52)
+	at org.gradle.launcher.daemon.server.DaemonStateCoordinator.lambda$runCommand$0(DaemonStateCoordinator.java:321)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 6m 5s
+33 actionable tasks: 33 executed

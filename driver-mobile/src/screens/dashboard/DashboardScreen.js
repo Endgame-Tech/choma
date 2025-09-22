@@ -55,22 +55,29 @@ const DashboardScreen = ({ navigation }) => {
     try {
       setIsLoading(true);
       console.log("📊 Loading real dashboard data...");
-      
+
       // Fetch real data from your existing API endpoints
-      const [todayStatsResult, assignmentsResult, weekStatsResult, profileResult] =
-        await Promise.allSettled([
-          driverApiService.getEarnings("today"),
-          driverApiService.getAvailableDeliveries(),
-          driverApiService.getEarnings("week"), 
-          driverApiService.getProfile(),
-        ]);
+      const [
+        todayStatsResult,
+        assignmentsResult,
+        weekStatsResult,
+        profileResult,
+      ] = await Promise.allSettled([
+        driverApiService.getEarnings("today"),
+        driverApiService.getAvailableDeliveries(),
+        driverApiService.getEarnings("week"),
+        driverApiService.getProfile(),
+      ]);
 
       // Process today's stats
-      if (todayStatsResult.status === 'fulfilled' && todayStatsResult.value?.success) {
+      if (
+        todayStatsResult.status === "fulfilled" &&
+        todayStatsResult.value?.success
+      ) {
         const todayData = todayStatsResult.value.data;
         console.log("📈 Today's stats:", todayData);
-        
-        setDashboardData(prev => ({
+
+        setDashboardData((prev) => ({
           ...prev,
           todayEarnings: todayData.earnings || 0,
           todayTrips: todayData.totalDeliveries || 0,
@@ -80,22 +87,28 @@ const DashboardScreen = ({ navigation }) => {
       }
 
       // Process available assignments
-      if (assignmentsResult.status === 'fulfilled' && assignmentsResult.value?.success) {
+      if (
+        assignmentsResult.status === "fulfilled" &&
+        assignmentsResult.value?.success
+      ) {
         const assignmentsData = assignmentsResult.value.data;
         console.log("🚚 Available assignments:", assignmentsData);
-        
-        setDashboardData(prev => ({
+
+        setDashboardData((prev) => ({
           ...prev,
           availableAssignments: assignmentsData || [],
         }));
       }
 
       // Process week stats
-      if (weekStatsResult.status === 'fulfilled' && weekStatsResult.value?.success) {
+      if (
+        weekStatsResult.status === "fulfilled" &&
+        weekStatsResult.value?.success
+      ) {
         const weekData = weekStatsResult.value.data;
         console.log("📅 Week stats:", weekData);
-        
-        setDashboardData(prev => ({
+
+        setDashboardData((prev) => ({
           ...prev,
           weeklyEarnings: weekData.earnings || 0,
           totalTrips: weekData.totalDeliveries || 0,
@@ -103,11 +116,14 @@ const DashboardScreen = ({ navigation }) => {
       }
 
       // Process driver profile for rating
-      if (profileResult.status === 'fulfilled' && profileResult.value?.success) {
+      if (
+        profileResult.status === "fulfilled" &&
+        profileResult.value?.success
+      ) {
         const profileData = profileResult.value.data;
         console.log("👤 Driver profile:", profileData);
-        
-        setDashboardData(prev => ({
+
+        setDashboardData((prev) => ({
           ...prev,
           rating: profileData.rating?.average || 5.0,
         }));
@@ -155,55 +171,65 @@ const DashboardScreen = ({ navigation }) => {
   // Render driver profile header
   const renderDriverHeader = () => (
     <View style={styles(colors).headerContainer}>
-      {/* Menu and Status */}
-      <View style={styles(colors).topBar}>
-        <TouchableOpacity style={styles(colors).menuButton}>
-          <CustomIcon name="reorder" size={24} color={colors.text} />
+      {/* Status Bar */}
+      <View style={styles(colors).statusBar}>
+        <TouchableOpacity
+          style={[
+            styles(colors).statusToggle,
+            {
+              backgroundColor: isDriverOnline()
+                ? colors.success
+                : colors.textSecondary,
+            },
+          ]}
+          onPress={toggleDriverStatus}
+        >
+          <View style={styles(colors).statusIndicator} />
+          <CustomText style={styles(colors).statusLabel}>
+            {isDriverOnline() ? "Online" : "Offline"}
+          </CustomText>
         </TouchableOpacity>
 
-        <View style={styles(colors).statusContainer}>
-          <LocationStatusIndicator compact style={styles(colors).locationStatus} />
-          
-          <TouchableOpacity
-            style={[
-              styles(colors).statusBadge,
-              {
-                backgroundColor: isDriverOnline() ? colors.success : colors.error,
-              },
-            ]}
-            onPress={toggleDriverStatus}
-          >
-            <CustomText style={styles(colors).statusText}>
-              {isDriverOnline() ? "Online" : "Offline"}
-            </CustomText>
+        <View style={styles(colors).headerActions}>
+          <TouchableOpacity style={styles(colors).actionButton}>
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles(colors).actionButton}>
+            <Ionicons name="menu-outline" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Driver Profile */}
-      <View style={styles(colors).driverProfile}>
+      <View style={styles(colors).profileSection}>
         <View style={styles(colors).avatarContainer}>
           <Image
             source={{
-              uri: driver?.profileImage || "https://via.placeholder.com/80",
+              uri: driver?.profileImage || "https://via.placeholder.com/60",
             }}
             style={styles(colors).avatar}
           />
-          <View style={styles(colors).ratingBadge}>
-            <CustomIcon name="star-filled" size={14} color="#fff" />
-            <CustomText style={styles(colors).ratingText}>
-              {dashboardData.rating}
-            </CustomText>
-          </View>
         </View>
 
-        <View style={styles(colors).driverInfo}>
+        <View style={styles(colors).profileInfo}>
+          <CustomText style={styles(colors).welcomeText}>
+            Good morning,
+          </CustomText>
           <CustomText style={styles(colors).driverName}>
-            {driver?.fullName || `${driver?.firstName} ${driver?.lastName}` || "Driver"}
+            {driver?.fullName ||
+              `${driver?.firstName} ${driver?.lastName}` ||
+              "Driver"}
           </CustomText>
-          <CustomText style={styles(colors).driverId}>
-            ID: #{driver?.driverId || driver?._id?.slice(-8) || "--------"}
-          </CustomText>
+          <View style={styles(colors).ratingContainer}>
+            <Ionicons name="star" size={16} color="#FFD700" />
+            <CustomText style={styles(colors).ratingText}>
+              {dashboardData.rating} rating
+            </CustomText>
+          </View>
         </View>
       </View>
     </View>
@@ -211,84 +237,110 @@ const DashboardScreen = ({ navigation }) => {
 
   // Render today's stats
   const renderTodayStats = () => (
-    <View style={styles(colors).statsContainer}>
-      <View style={styles(colors).statCard}>
-        <CustomText style={styles(colors).statLabel}>
-          Today's Earning
-        </CustomText>
-        <CustomText style={styles(colors).statValue}>
-          ₦{dashboardData.todayEarnings.toLocaleString()}
-        </CustomText>
-      </View>
+    <View style={styles(colors).statsSection}>
+      <CustomText style={styles(colors).sectionTitle}>
+        Today's Performance
+      </CustomText>
 
-      <View style={styles(colors).statCard}>
-        <CustomText style={styles(colors).statLabel}>Today's Trips</CustomText>
-        <CustomText style={styles(colors).statValue}>
-          {dashboardData.todayTrips}
-        </CustomText>
-      </View>
+      <View style={styles(colors).statsGrid}>
+        <View style={styles(colors).primaryStatCard}>
+          <View style={styles(colors).statIconContainer}>
+            <Ionicons name="wallet" size={24} color={colors.primary} />
+          </View>
+          <View style={styles(colors).statContent}>
+            <CustomText style={styles(colors).statValue}>
+              ₦{dashboardData.todayEarnings.toLocaleString()}
+            </CustomText>
+            <CustomText style={styles(colors).statLabel}>Earnings</CustomText>
+          </View>
+        </View>
 
-      <View style={styles(colors).statCard}>
-        <CustomText style={styles(colors).statLabel}>
-          Today's Login Hrs
-        </CustomText>
-        <CustomText style={styles(colors).statValue}>
-          {dashboardData.todayHours} Hrs
-        </CustomText>
+        <View style={styles(colors).statCard}>
+          <CustomText style={styles(colors).statNumber}>
+            {dashboardData.todayTrips}
+          </CustomText>
+          <CustomText style={styles(colors).statLabel}>Trips</CustomText>
+        </View>
+
+        <View style={styles(colors).statCard}>
+          <CustomText style={styles(colors).statNumber}>
+            {dashboardData.todayHours}h
+          </CustomText>
+          <CustomText style={styles(colors).statLabel}>Online</CustomText>
+        </View>
       </View>
     </View>
   );
 
-  // Render delivery types
-  const renderDeliveryTypes = () => (
-    <View style={styles(colors).section}>
-      <CustomText style={styles(colors).sectionTitle}>
-        Delivery Types
-      </CustomText>
+  // Render quick actions
+  const renderQuickActions = () => (
+    <View style={styles(colors).quickActionsSection}>
+      <CustomText style={styles(colors).sectionTitle}>Quick Actions</CustomText>
 
-      <View style={styles(colors).deliveryTypesGrid}>
-        <TouchableOpacity style={styles(colors).deliveryTypeCard}>
-          <CustomIcon
-            name="calendar-filled"
-            size={24}
-            color={colors.primary}
-          />
-          <CustomText style={styles(colors).deliveryTypeText}>
-            Current Deliveries
-          </CustomText>
+      <View style={styles(colors).actionsRow}>
+        <TouchableOpacity
+          style={styles(colors).actionCard}
+          onPress={() => navigation.navigate("Deliveries")}
+        >
+          <View
+            style={[
+              styles(colors).actionIcon,
+              { backgroundColor: colors.primary + "15" },
+            ]}
+          >
+            <Ionicons name="car-outline" size={20} color={colors.primary} />
+          </View>
+          <CustomText style={styles(colors).actionText}>Deliveries</CustomText>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles(colors).deliveryTypeCard}>
-          <CustomIcon
-            name="list-filled"
-            size={24}
-            color={colors.info}
-          />
-          <CustomText style={styles(colors).deliveryTypeText}>
-            Subscription
-          </CustomText>
+        <TouchableOpacity
+          style={styles(colors).actionCard}
+          onPress={() => navigation.navigate("Earnings")}
+        >
+          <View
+            style={[
+              styles(colors).actionIcon,
+              { backgroundColor: colors.success + "15" },
+            ]}
+          >
+            <Ionicons
+              name="analytics-outline"
+              size={20}
+              color={colors.success}
+            />
+          </View>
+          <CustomText style={styles(colors).actionText}>Earnings</CustomText>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles(colors).deliveryTypeCard}>
-          <CustomIcon
-            name="delivery-man-filled"
-            size={24}
-            color={colors.warning}
-          />
-          <CustomText style={styles(colors).deliveryTypeText}>
-            Express
-          </CustomText>
+        <TouchableOpacity style={styles(colors).actionCard}>
+          <View
+            style={[
+              styles(colors).actionIcon,
+              { backgroundColor: colors.warning + "15" },
+            ]}
+          >
+            <Ionicons name="map-outline" size={20} color={colors.warning} />
+          </View>
+          <CustomText style={styles(colors).actionText}>Navigate</CustomText>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles(colors).deliveryTypeCard}>
-          <CustomIcon
-            name="calendar"
-            size={24}
-            color={colors.success}
-          />
-          <CustomText style={styles(colors).deliveryTypeText}>
-            Scheduled
-          </CustomText>
+        <TouchableOpacity
+          style={styles(colors).actionCard}
+          onPress={() => navigation.navigate("Profile")}
+        >
+          <View
+            style={[
+              styles(colors).actionIcon,
+              { backgroundColor: colors.textSecondary + "15" },
+            ]}
+          >
+            <Ionicons
+              name="person-outline"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </View>
+          <CustomText style={styles(colors).actionText}>Profile</CustomText>
         </TouchableOpacity>
       </View>
     </View>
@@ -298,23 +350,25 @@ const DashboardScreen = ({ navigation }) => {
   const renderActiveAssignments = () => {
     // Show first 2 available assignments
     const assignments = dashboardData.availableAssignments.slice(0, 2);
-    
+
     if (!assignments.length) {
       return (
         <View style={styles(colors).section}>
-          <View style={styles(colors).sectionHeader}>
-            <CustomText style={styles(colors).sectionTitle}>
-              Available Assignments
-            </CustomText>
-          </View>
+          <CustomText style={styles(colors).sectionTitle}>
+            Available Assignments
+          </CustomText>
           <View style={styles(colors).emptyState}>
-            <CustomIcon name="delivery-man" size={48} color={colors.textSecondary} />
+            <Ionicons
+              name="car-outline"
+              size={48}
+              color={colors.textSecondary}
+            />
             <CustomText style={styles(colors).emptyStateTitle}>
               No assignments available
             </CustomText>
             <CustomText style={styles(colors).emptyStateText}>
-              {isDriverOnline() 
-                ? "New assignments will appear here when available" 
+              {isDriverOnline()
+                ? "New assignments will appear here when available"
                 : "Go online to receive assignment requests"}
             </CustomText>
           </View>
@@ -328,48 +382,69 @@ const DashboardScreen = ({ navigation }) => {
           <CustomText style={styles(colors).sectionTitle}>
             Available Assignments ({assignments.length})
           </CustomText>
-          <TouchableOpacity onPress={() => navigation.navigate("AvailableDeliveries")}>
-            <CustomText style={styles(colors).viewAllText}>View All ▶</CustomText>
+          <TouchableOpacity onPress={() => navigation.navigate("Deliveries")}>
+            <CustomText style={styles(colors).viewAllText}>View All</CustomText>
           </TouchableOpacity>
         </View>
 
         {assignments.map((assignment, index) => (
-          <TouchableOpacity 
+          <TouchableOpacity
             key={assignment._id || index}
             style={styles(colors).assignmentCard}
-            onPress={() => navigation.navigate("DeliveryDetail", { assignmentId: assignment._id })}
+            onPress={() =>
+              navigation.navigate("DeliveryDetail", {
+                assignmentId: assignment._id,
+                assignment: assignment,
+              })
+            }
           >
             <View style={styles(colors).assignmentIcon}>
               <CustomIcon
-                name={assignment.subscriptionInfo?.subscriptionId ? "list-filled" : "delivery-man-filled"}
+                name={
+                  assignment.subscriptionInfo?.subscriptionId
+                    ? "list-filled"
+                    : "delivery-man-filled"
+                }
                 size={20}
-                color={assignment.priority === 'urgent' ? colors.error : colors.primary}
+                color={
+                  assignment.priority === "urgent"
+                    ? colors.error
+                    : colors.primary
+                }
               />
             </View>
             <View style={styles(colors).assignmentInfo}>
               <CustomText style={styles(colors).assignmentTitle}>
-                {assignment.subscriptionInfo?.subscriptionId ? "Subscription Delivery" : "One-time Delivery"}
+                {assignment.subscriptionInfo?.subscriptionId
+                  ? "Subscription Delivery"
+                  : "One-time Delivery"}
               </CustomText>
               <CustomText style={styles(colors).assignmentTime}>
-                {assignment.timeToPickup > 0 
+                {assignment.timeToPickup > 0
                   ? `Pickup in: ${assignment.timeToPickup} mins`
                   : "Ready for pickup"}
               </CustomText>
               <CustomText style={styles(colors).assignmentSubtitle}>
-                ₦{assignment.totalEarning} • {assignment.totalDistance?.toFixed(1)}km
+                ₦{assignment.totalEarning} •{" "}
+                {assignment.totalDistance?.toFixed(1)}km
               </CustomText>
             </View>
             <View style={styles(colors).assignmentMeta}>
               <CustomText style={styles(colors).assignmentDateTime}>
-                {new Date(assignment.estimatedPickupTime).toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: true
-                })}
+                {new Date(assignment.estimatedPickupTime).toLocaleTimeString(
+                  "en-US",
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  }
+                )}
               </CustomText>
-              {assignment.priority === 'urgent' && (
+              {assignment.priority === "urgent" && (
                 <View style={styles(colors).urgentBadge}>
-                  <CustomText style={styles(colors).urgentText}>URGENT</CustomText>
+                  <CustomText style={styles(colors).urgentText}>
+                    URGENT
+                  </CustomText>
                 </View>
               )}
             </View>
@@ -378,80 +453,6 @@ const DashboardScreen = ({ navigation }) => {
       </View>
     );
   };
-
-  // Render recommended assignments
-  const renderRecommendedAssignments = () => (
-    <View style={styles(colors).section}>
-      <View style={styles(colors).sectionHeader}>
-        <CustomText style={styles(colors).sectionTitle}>
-          Recommended Assignments
-        </CustomText>
-        <TouchableOpacity>
-          <CustomText style={styles(colors).viewAllText}>View All ▶</CustomText>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles(colors).recommendedCard}>
-        <View style={styles(colors).recommendedHeader}>
-          <View style={styles(colors).assignmentIcon}>
-            <CustomIcon
-              name="location-filled"
-              size={20}
-              color={colors.primary}
-            />
-          </View>
-          <View style={styles(colors).recommendedInfo}>
-            <CustomText style={styles(colors).recommendedTitle}>
-              Round Trip
-            </CustomText>
-            <CustomText style={styles(colors).recommendedDetails}>
-              Estimate Usage: 5 Hrs Total Dist.: 85 km
-            </CustomText>
-          </View>
-          <View style={styles(colors).recommendedBadge}>
-            <CustomText style={styles(colors).recommendedBadgeText}>
-              28 Sep, 10:10 AM
-            </CustomText>
-          </View>
-        </View>
-
-        <View style={styles(colors).routeInfo}>
-          <View style={styles(colors).routePoint}>
-            <View
-              style={[
-                styles(colors).routeDot,
-                { backgroundColor: colors.primary },
-              ]}
-            />
-            <CustomText style={styles(colors).routeText}>
-              108, Auchandi Bawana Rd, Bawana Village, Ba...
-            </CustomText>
-          </View>
-
-          <View style={styles(colors).routePoint}>
-            <View
-              style={[
-                styles(colors).routeDot,
-                { backgroundColor: colors.error },
-              ]}
-            />
-            <CustomText style={styles(colors).routeText}>
-              E-15, Block E, East of Kailash, New Delhi, Delh...
-            </CustomText>
-          </View>
-        </View>
-
-        <View style={styles(colors).priceContainer}>
-          <CustomIcon
-            name="wallet-filled"
-            size={18}
-            color={colors.primary}
-          />
-          <CustomText style={styles(colors).priceText}>₦1,500</CustomText>
-        </View>
-      </View>
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles(colors).container}>
@@ -464,9 +465,8 @@ const DashboardScreen = ({ navigation }) => {
       >
         {renderDriverHeader()}
         {renderTodayStats()}
-        {renderDeliveryTypes()}
+        {renderQuickActions()}
         {renderActiveAssignments()}
-        {renderRecommendedAssignments()}
 
         <View style={styles(colors).bottomSpacing} />
       </ScrollView>
@@ -479,7 +479,7 @@ const styles = (colors) =>
   createStylesWithDMSans({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.background, // Fixed: was hardcoded '#FAFAFA'
     },
     scrollView: {
       flex: 1,
@@ -487,119 +487,150 @@ const styles = (colors) =>
 
     // Header Styles
     headerContainer: {
-      backgroundColor: colors.cardBackground,
+      backgroundColor: colors.surface,
       paddingHorizontal: 20,
-      paddingTop: 10,
-      paddingBottom: 20,
-      borderBottomLeftRadius: 24,
-      borderBottomRightRadius: 24,
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 2 },
+      paddingTop: 16,
+      paddingBottom: 24,
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
       shadowOpacity: 0.1,
-      shadowRadius: 8,
+      shadowRadius: 3.84,
       elevation: 5,
+      marginBottom: 24,
     },
-    topBar: {
+    statusBar: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 20,
+      marginBottom: 24,
     },
-    menuButton: {
-      padding: 8,
-    },
-    statusContainer: {
+    statusToggle: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-    },
-    locationStatus: {
-      // Additional styling if needed
-    },
-    statusBadge: {
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 20,
+      gap: 8,
     },
-    statusText: {
-      color: colors.white,
+    statusIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: "white",
+    },
+    statusLabel: {
+      color: "white",
       fontSize: 14,
       fontWeight: "600",
     },
+    headerActions: {
+      flexDirection: "row",
+      gap: 12,
+    },
+    actionButton: {
+      padding: 8,
+    },
 
-    // Driver Profile
-    driverProfile: {
+    // Profile Section
+    profileSection: {
       flexDirection: "row",
       alignItems: "center",
     },
     avatarContainer: {
-      position: "relative",
       marginRight: 16,
     },
     avatar: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      borderWidth: 3,
-      borderColor: colors.primaryLight,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
     },
-    ratingBadge: {
-      position: "absolute",
-      bottom: -2,
-      right: -2,
-      backgroundColor: colors.accent,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 12,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 2,
-    },
-    ratingText: {
-      color: colors.white,
-      fontSize: 12,
-      fontWeight: "600",
-    },
-    driverInfo: {
+    profileInfo: {
       flex: 1,
     },
+    welcomeText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 2,
+    },
     driverName: {
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: "700",
-      color: "#1A1A1A",
+      color: colors.text,
       marginBottom: 4,
     },
-    driverId: {
-      fontSize: 14,
-      color: "#666",
+    ratingContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    ratingText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: "500",
     },
 
-    // Stats Container
-    statsContainer: {
-      flexDirection: "row",
+    // Stats Section
+    statsSection: {
       paddingHorizontal: 20,
-      paddingVertical: 20,
+      marginBottom: 24,
+    },
+    statsGrid: {
+      flexDirection: "row",
       gap: 12,
+    },
+    primaryStatCard: {
+      flex: 2,
+      backgroundColor: colors.surface,
+      padding: 20,
+      borderRadius: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statIconContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.primary + "15",
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 16,
+    },
+    statContent: {
+      flex: 1,
+    },
+    statValue: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 2,
     },
     statCard: {
       flex: 1,
-      backgroundColor: "#fff",
+      backgroundColor: colors.surface,
       padding: 16,
       borderRadius: 16,
       alignItems: "center",
+      justifyContent: "center",
       borderWidth: 1,
-      borderColor: "#E0E0E0",
+      borderColor: colors.border,
+    },
+    statNumber: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 4,
     },
     statLabel: {
       fontSize: 12,
-      color: "#666",
-      marginBottom: 8,
+      color: colors.textSecondary,
       textAlign: "center",
-    },
-    statValue: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: "#1A1A1A",
     },
 
     // Section Styles
@@ -614,51 +645,75 @@ const styles = (colors) =>
       marginBottom: 16,
     },
     sectionTitle: {
-      fontSize: 20,
+      fontSize: 18,
+      fontWeight: "400",
+      color: colors.text,
+      marginBottom: 16,
+      opacity: 0.7,
+    },
+    sectionHeaderTitle: {
+      fontSize: 18,
       fontWeight: "700",
       color: colors.text,
     },
     viewAllText: {
       fontSize: 14,
       color: colors.primary,
-      fontWeight: "500",
+      fontWeight: "600",
     },
 
-    // Delivery Types Grid
-    deliveryTypesGrid: {
+    // Quick Actions
+    quickActionsSection: {
+      paddingHorizontal: 20,
+      marginBottom: 24,
+    },
+    actionsRow: {
       flexDirection: "row",
-      flexWrap: "wrap",
+      justifyContent: "space-between",
       gap: 12,
     },
-    deliveryTypeCard: {
-      width: (width - 56) / 2,
-      backgroundColor: colors.cardBackground,
-      padding: 20,
-      borderRadius: 16,
+    actionCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      padding: 16,
+      borderRadius: 12,
       alignItems: "center",
+      minHeight: 80,
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
     },
-    deliveryTypeText: {
-      fontSize: 14,
+    actionIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 8,
+    },
+    actionText: {
+      fontSize: 12,
       fontWeight: "600",
       color: colors.text,
-      marginTop: 8,
       textAlign: "center",
     },
 
     // Assignment Cards
     assignmentCard: {
-      backgroundColor: "#fff",
+      backgroundColor: colors.surface,
       padding: 16,
-      borderRadius: 16,
+      borderRadius: 12,
       marginBottom: 12,
       flexDirection: "row",
       alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     assignmentIcon: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "#F0F7FF",
+      backgroundColor: colors.primary + "15",
       alignItems: "center",
       justifyContent: "center",
       marginRight: 12,
@@ -669,131 +724,59 @@ const styles = (colors) =>
     assignmentTitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: "#1A1A1A",
+      color: colors.text,
       marginBottom: 4,
     },
     assignmentTime: {
       fontSize: 14,
-      color: "#666",
+      color: colors.textSecondary,
+      marginBottom: 2,
     },
-    assignmentDateTime: {
-      fontSize: 12,
-      color: "#999",
-      fontWeight: "500",
-    },
-
-    // Recommended Card
-    recommendedCard: {
-      backgroundColor: "#fff",
-      padding: 16,
-      borderRadius: 16,
-    },
-    recommendedHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 16,
-    },
-    recommendedInfo: {
-      flex: 1,
-      marginLeft: 12,
-    },
-    recommendedTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: "#1A1A1A",
-      marginBottom: 4,
-    },
-    recommendedDetails: {
-      fontSize: 12,
-      color: "#666",
-    },
-    recommendedBadge: {
-      backgroundColor: "#FFF4E6",
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 8,
-    },
-    recommendedBadgeText: {
-      fontSize: 10,
-      color: "#D97706",
-      fontWeight: "500",
-    },
-
-    // Route Info
-    routeInfo: {
-      marginBottom: 16,
-    },
-    routePoint: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      marginBottom: 8,
-    },
-    routeDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      marginTop: 6,
-      marginRight: 12,
-    },
-    routeText: {
-      flex: 1,
-      fontSize: 14,
-      color: "#666",
-      lineHeight: 20,
-    },
-
-    // Price Container
-    priceContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#F0F7FF",
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      alignSelf: "flex-start",
-    },
-    priceText: {
-      fontSize: 16,
-      fontWeight: "700",
-      color: "#4A90E2",
-      marginLeft: 4,
-    },
-
-    // Assignment Card Updates
     assignmentSubtitle: {
       fontSize: 12,
-      color: "#999",
+      color: colors.textSecondary,
       fontWeight: "500",
     },
     assignmentMeta: {
       alignItems: "flex-end",
     },
+    assignmentDateTime: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: "500",
+    },
+
     urgentBadge: {
-      backgroundColor: "#FF6B35",
+      backgroundColor: colors.error,
       paddingHorizontal: 6,
       paddingVertical: 2,
-      borderRadius: 8,
+      borderRadius: 6,
+      marginTop: 4,
     },
     urgentText: {
       fontSize: 10,
-      color: "#fff",
+      color: colors.white, // Fixed: was hardcoded "#fff"
       fontWeight: "700",
     },
     emptyState: {
       alignItems: "center",
       paddingVertical: 40,
       paddingHorizontal: 20,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     emptyStateTitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: "#1A1A1A",
+      color: colors.text,
       marginTop: 16,
       marginBottom: 8,
     },
     emptyStateText: {
       fontSize: 14,
-      color: "#666",
+      color: colors.textSecondary,
       textAlign: "center",
       lineHeight: 20,
     },

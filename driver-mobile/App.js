@@ -1,7 +1,11 @@
 // App.js - Choma Driver Mobile App (Production Version)
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+} from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,6 +35,10 @@ import DocumentUploadScreen from "./src/screens/auth/DocumentUploadScreen";
 
 // Main Screens
 import DashboardScreen from "./src/screens/dashboard/DashboardScreen";
+import DeliveryDetailScreen from "./src/screens/deliveries/DeliveryDetailScreen";
+import DeliveriesScreen from "./src/screens/deliveries/DeliveriesScreen";
+import EarningsScreen from "./src/screens/earnings/EarningsScreen";
+import ProfileScreen from "./src/screens/profile/ProfileScreen";
 
 // Theme
 import { useTheme } from "./src/styles/theme";
@@ -83,17 +91,17 @@ function MainTabNavigator() {
       />
       <Tab.Screen
         name="Deliveries"
-        component={PlaceholderScreen}
+        component={DeliveriesScreen}
         options={{ tabBarLabel: "Deliveries" }}
       />
       <Tab.Screen
         name="Earnings"
-        component={PlaceholderScreen}
+        component={EarningsScreen}
         options={{ tabBarLabel: "Earnings" }}
       />
       <Tab.Screen
         name="Profile"
-        component={PlaceholderScreen}
+        component={ProfileScreen}
         options={{ tabBarLabel: "Profile" }}
       />
     </Tab.Navigator>
@@ -140,6 +148,32 @@ function PlaceholderScreen({ route }) {
   );
 }
 
+// Auth-aware Navigation Component with Theme Support
+function ThemedAppNavigator() {
+  const { colors, isDark } = useTheme();
+
+  // Create custom navigation theme
+  const navigationTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      notification: colors.primary,
+    },
+  };
+
+  return (
+    <NavigationContainer theme={navigationTheme}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <AppNavigator />
+    </NavigationContainer>
+  );
+}
+
 // Auth-aware Navigation Component
 function AppNavigator() {
   const { isAuthenticated, isLoading } = useDriverAuth();
@@ -169,6 +203,14 @@ function AppNavigator() {
         // User is logged in, show main app
         <>
           <Stack.Screen name="Main" component={MainTabNavigator} />
+          <Stack.Screen
+            name="DeliveryDetail"
+            component={DeliveryDetailScreen}
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
         </>
       ) : (
         // User is not logged in, show auth flow
@@ -197,18 +239,18 @@ export default function App() {
   useEffect(() => {
     async function initializeApp() {
       try {
-        console.log('🔄 Initializing Driver Mobile App...');
-        
+        console.log("🔄 Initializing Driver Mobile App...");
+
         // Load DM Sans fonts
         await loadFonts();
-        
+
         // Apply font overrides
         applyDefaultFont();
-        
-        console.log('✅ Driver Mobile App initialized successfully');
+
+        console.log("✅ Driver Mobile App initialized successfully");
         setFontsReady(true);
       } catch (error) {
-        console.error('❌ Error initializing app:', error);
+        console.error("❌ Error initializing app:", error);
         // Continue anyway with system fonts
         setFontsReady(true);
       }
@@ -219,7 +261,7 @@ export default function App() {
 
   if (!fontsReady) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text>Loading Choma Driver...</Text>
       </View>
     );
@@ -231,10 +273,7 @@ export default function App() {
         <LocationProvider>
           <AlertProvider>
             <ToastProvider>
-              <NavigationContainer>
-                <StatusBar style="auto" />
-                <AppNavigator />
-              </NavigationContainer>
+              <ThemedAppNavigator />
             </ToastProvider>
           </AlertProvider>
         </LocationProvider>
