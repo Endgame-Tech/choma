@@ -1492,3 +1492,231 @@ exports.logPrivacyAction = async (req, res) => {
     });
   }
 };
+
+
+// ============= SOCIAL LOGIN CONTROLLERS =============
+
+// Google OAuth login
+exports.googleLogin = async (req, res) => {
+  try {
+    const { idToken, accessToken } = req.body;
+
+    if (!idToken && !accessToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Google ID token or access token is required",
+      });
+    }
+
+    let googleUser;
+
+    if (idToken) {
+      // Verify Google ID token
+      const { OAuth2Client } = require("google-auth-library");
+      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+      
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      
+      googleUser = ticket.getPayload();
+    } else if (accessToken) {
+      // Verify Google access token by calling Google API
+      const fetch = require("node-fetch");
+      const response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`);
+      
+      if (!response.ok) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid Google access token",
+        });
+      }
+      
+      googleUser = await response.json();
+    }
+
+    if (!googleUser || !googleUser.email) {
+      return res.status(401).json({
+        success: false,
+        message: "Failed to get user information from Google",
+      });
+    }
+
+    // Check if user exists with this email
+    let customer = await Customer.findOne({ email: googleUser.email }).select("+password");
+
+    if (customer) {
+      // User exists - link Google account if not already linked
+      const existingGoogle = customer.socialProviders.find(p => p.provider === "google");
+      
+      if (!existingGoogle) {
+        customer.socialProviders.push({
+          provider: "google",
+          providerId: googleUser.sub || googleUser.id,
+          email: googleUser.email,
+          name: googleUser.name,
+          profilePicture: googleUser.picture,
+        });
+        
+        customer.accountType = customer.password ? "hybrid" : "social";
+        await customer.save();
+      }
+    } else {
+      // Create new user
+      customer = await Customer.create({
+        fullName: googleUser.name,
+        firstName: googleUser.given_name,
+        lastName: googleUser.family_name,
+        email: googleUser.email,
+        profileImage: googleUser.picture,
+        accountType: "social",
+        socialProviders: [{
+          provider: "google",
+          providerId: googleUser.sub || googleUser.id,
+          email: googleUser.email,
+          name: googleUser.name,
+          profilePicture: googleUser.picture,
+        }],
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        id: customer._id,
+        email: customer.email,
+        customerId: customer.customerId,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      customer: {
+        id: customer._id,
+        customerId: customer.customerId,
+        fullName: customer.fullName,
+        email: customer.email,
+        profileImage: customer.profileImage,
+        accountType: customer.accountType,
+      },
+    });
+
+  } catch (error) {
+    console.error("Google login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Google authentication failed",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+// Facebook OAuth login
+exports.facebookLogin = async (req, res) => {
+  try {
+    const { accessToken } = req.body;
+
+    if (!accessToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Facebook access token is required",
+      });
+    }
+
+    // Verify Facebook access token
+    const fetch = require("node-fetch");
+    const response = await fetch(`https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,first_name,last_name,picture`);
+    
+    if (!response.ok) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Facebook access token",
+      });
+    }
+    
+    const facebookUser = await response.json();
+
+    if (!facebookUser || !facebookUser.email) {
+      return res.status(401).json({
+        success: false,
+        message: "Failed to get user information from Facebook or email not provided",
+      });
+    }
+
+    // Check if user exists with this email
+    let customer = await Customer.findOne({ email: facebookUser.email }).select("+password");
+
+    if (customer) {
+      // User exists - link Facebook account if not already linked
+      const existingFacebook = customer.socialProviders.find(p => p.provider === "facebook");
+      
+      if (!existingFacebook) {
+        customer.socialProviders.push({
+          provider: "facebook",
+          providerId: facebookUser.id,
+          email: facebookUser.email,
+          name: facebookUser.name,
+          profilePicture: facebookUser.picture?.data?.url,
+        });
+        
+        customer.accountType = customer.password ? "hybrid" : "social";
+        await customer.save();
+      }
+    } else {
+      // Create new user
+      customer = await Customer.create({
+        fullName: facebookUser.name,
+        firstName: facebookUser.first_name,
+        lastName: facebookUser.last_name,
+        email: facebookUser.email,
+        profileImage: facebookUser.picture?.data?.url,
+        accountType: "social",
+        socialProviders: [{
+          provider: "facebook",
+          providerId: facebookUser.id,
+          email: facebookUser.email,
+          name: facebookUser.name,
+          profilePicture: facebookUser.picture?.data?.url,
+        }],
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        id: customer._id,
+        email: customer.email,
+        customerId: customer.customerId,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      customer: {
+        id: customer._id,
+        customerId: customer.customerId,
+        fullName: customer.fullName,
+        email: customer.email,
+        profileImage: customer.profileImage,
+        accountType: customer.accountType,
+      },
+    });
+
+  } catch (error) {
+    console.error("Facebook login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Facebook authentication failed",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};

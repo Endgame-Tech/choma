@@ -1,15 +1,15 @@
-const { getDefaultConfig } = require("expo/metro-config");
+const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
 // Configure SVG transformer
 config.transformer.babelTransformerPath = require.resolve(
-  "react-native-svg-transformer"
+  'react-native-svg-transformer'
 );
 config.resolver.assetExts = config.resolver.assetExts.filter(
-  (ext) => ext !== "svg"
+  (ext) => ext !== 'svg'
 );
-config.resolver.sourceExts = [...config.resolver.sourceExts, "svg"];
+config.resolver.sourceExts = [...config.resolver.sourceExts, 'svg'];
 
 // Exclude subdirectory node_modules from being watched
 config.watchFolders = [];
@@ -18,6 +18,8 @@ config.resolver.blockList = [
   /admin-react\/node_modules\/.*/,
   /chef-react\/node_modules\/.*/,
   /driver-react\/node_modules\/.*/,
+  // /user-mobile\/node_modules\/.*/,
+  /driver-mobile\/node_modules\/.*/, 
   /landing-page\/node_modules\/.*/,
 ];
 

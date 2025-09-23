@@ -39,7 +39,8 @@
           "autolinking": true
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -101,8 +102,9 @@
     "scheme": "choma",
     "extra": {
       "eas": {
-        "projectId": "1081ad82-e406-4654-b45c-58ae77d5eb2c"
+        "projectId": "aaa62329-cbac-4b68-93b1-ec10a2ef1be2"
       }
-    }
+    },
+    "owner": "getchoma"
   }
 }

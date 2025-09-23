@@ -613,6 +613,45 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Social Login function
+  const socialLogin = async (provider, tokens) => {
+    try {
+      setIsLoading(true);
+      console.log(`🔐 Attempting ${provider} login...`);
+
+      const endpoint = provider === 'google' ? 'auth/social/google' : 'auth/social/facebook';
+      
+      const response = await apiService.post(endpoint, tokens);
+
+      if (response.success) {
+        setUser(response.customer);
+        setIsAuthenticated(true);
+        setIsOffline(false);
+
+        console.log(`✅ ${provider} login successful for:`, response.customer.email);
+        
+        return {
+          success: true,
+          message: response.message || "Login successful!",
+        };
+      } else {
+        console.log(`❌ ${provider} login failed:`, response.message);
+        return {
+          success: false,
+          message: response.message || `${provider} authentication failed`,
+        };
+      }
+    } catch (error) {
+      console.error(`❌ ${provider} login error:`, error);
+      return {
+        success: false,
+        message: `${provider} authentication failed. Please try again.`,
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -623,6 +662,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     updateUserProfile,
+    socialLogin,
     // demoLogin,
     checkConnection,
     syncData,

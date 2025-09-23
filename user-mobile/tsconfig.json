@@ -28,6 +28,7 @@
     "admin-react",
     "chef-react",
     "driver-react",
+    "driver-mobile",
     "backend"
   ],
   "extends": "expo/tsconfig.base"

@@ -25,11 +25,13 @@
       },
       "package": "com.choma.driver",
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -44,6 +46,12 @@
           "photosPermission": "The app accesses your photos to upload driver documents."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3dc4225a-0955-48fd-b607-869a580b4ec0"
+      }
+    },
+    "owner": "getchoma"
   }
 }

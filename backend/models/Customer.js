@@ -45,10 +45,20 @@ const CustomerSchema = new mongoose.Schema({
     isActive: { type: Boolean, default: true },
     lastUsed: { type: Date, default: Date.now }
   }],
-  password: { type: String, required: true, select: false },
+  password: { type: String, required: false, select: false },
   profileImage: { type: String }, // URL to profile image
   resetPasswordCode: String,
-  resetPasswordExpires: Date
+  resetPasswordExpires: Date,
+  // Social login fields
+  socialProviders: [{
+    provider: { type: String, enum: ['google', 'facebook', 'apple'] },
+    providerId: String,
+    email: String,
+    name: String,
+    profilePicture: String,
+    connectedAt: { type: Date, default: Date.now }
+  }],
+  accountType: { type: String, enum: ['email', 'social', 'hybrid'], default: 'email' }
 });
 
 // Auto-generate customerId before saving

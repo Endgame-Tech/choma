@@ -158,4 +158,12 @@ router.post('/cleanup-verifications', emailVerificationController.cleanupExpired
 // POST /api/auth/verify-bank-account - Verify bank account details
 router.post('/verify-bank-account', authController.verifyBankAccount);
 
+// ============= SOCIAL LOGIN ROUTES =============
+
+// POST /api/auth/social/google - Google OAuth login
+router.post('/social/google', authController.googleLogin);
+
+// POST /api/auth/social/facebook - Facebook OAuth login
+router.post('/social/facebook', authController.facebookLogin);
+
 module.exports = router;

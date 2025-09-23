@@ -10,13 +10,13 @@ export const APP_CONFIG = {
   // Driver API endpoints
   API_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "http://192.168.100.9:5001/api/driver" // Driver endpoints with port
+      ? "http://192.168.100.3:5001/api/driver" // Driver endpoints with port
       : "http://localhost:5001/api/driver"
     : "https://choma.onrender.com/api/driver",
 
   WS_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "ws://192.168.100.9:5001" // Your local development IP
+      ? "ws://192.168.100.3:5001" // Your local development IP
       : "ws://localhost:5001" // Your local development IP
     : "wss://choma.onrender.com", // Production WebSocket URL
 
