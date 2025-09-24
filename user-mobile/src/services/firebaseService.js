@@ -23,11 +23,8 @@ class FirebaseService {
 
   async initializeFirebase() {
     try {
-      // Skip Firebase messaging only in Expo Go (expo client), but allow in dev builds
-      if (__DEV__ && !Constants.appOwnership && Constants.executionEnvironment === 'storeClient') {
-        console.log("🚫 Skipping Firebase messaging in Expo Go client");
-        return null; // Only skip messaging in Expo Go, not in dev builds
-      }
+      // Firebase messaging is enabled in all environments
+      console.log("🔥 Firebase messaging enabled for all environments");
 
       if (!this.isAvailable) {
         console.warn("⚠️ Firebase not available, skipping FCM initialization");

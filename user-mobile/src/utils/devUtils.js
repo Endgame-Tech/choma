@@ -5,11 +5,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * Development configuration
  */
 export const DEV_CONFIG = {
-  // Skip Firebase in development to avoid initialization errors
-  SKIP_FIREBASE: __DEV__,
+  // Firebase is enabled in all environments
+  SKIP_FIREBASE: false,
   
-  // Skip API calls that require authentication when not logged in
-  SKIP_AUTH_APIS: __DEV__,
+  // API calls work in all environments
+  SKIP_AUTH_APIS: false,
   
   // Enable verbose logging in development
   ENABLE_VERBOSE_LOGGING: __DEV__,

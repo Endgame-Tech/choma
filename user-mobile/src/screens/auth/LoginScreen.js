@@ -24,7 +24,7 @@ import { useAuth } from "../../context/AuthContext";
 // import { COLORS, THEME } from "../../utils/colors";
 import { useTheme } from "../../styles/theme";
 import BiometricLogin from "../../components/auth/BiometricLogin";
-// import SocialLogin from "../../components/auth/SocialLogin";
+import SocialLogin from "../../components/auth/SocialLogin";
 import ChomaLogo from "../../components/ui/ChomaLogo";
 import { useAlert } from "../../contexts/AlertContext";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
@@ -414,8 +414,8 @@ const LoginScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* Social Login - Temporarily disabled due to Metro issue */}
-            {/* <SocialLogin /> */}
+            {/* Social Login */}
+            <SocialLogin />
 
             <BiometricLogin />
 

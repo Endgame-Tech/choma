@@ -34,6 +34,12 @@
       ],
       "@react-native-firebase/app",
       [
+        "@react-native-firebase/auth",
+        {
+          "autolinking": true
+        }
+      ],
+      [
         "@react-native-firebase/messaging",
         {
           "autolinking": true
