@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 
 class DeepLinkingService {
   constructor() {
-    this.prefix = "choma://";
+    this.prefixes = ["choma://", "com.choma.app://"];
     this.initialized = false;
     this.navigationRef = null;
   }
@@ -59,10 +59,28 @@ class DeepLinkingService {
 
       console.log("Parsed deep link:", { hostname, path, queryParams });
 
+      // Handle OAuth redirect for both schemes
+      if (hostname === "oauthredirect" || url.includes("oauthredirect")) {
+        this.handleOAuthRedirect(path, queryParams, this.navigationRef.current);
+        return;
+      }
+
+      // Handle expo-development-client links
+      if (hostname === "expo-development-client") {
+        console.log("🔄 Expo development client link handled");
+        return;
+      }
+
       this.navigateToScreen(hostname, path, queryParams);
     } catch (error) {
       console.error("Error parsing deep link:", error);
-      Alert.alert("Error", "Invalid link format");
+      // Don't show alert for OAuth redirects - they're handled automatically
+      if (
+        !url.includes("oauthredirect") &&
+        !url.includes("expo-development-client")
+      ) {
+        Alert.alert("Error", "Invalid link format");
+      }
     }
   }
 
@@ -93,14 +111,15 @@ class DeepLinkingService {
         case "referral":
           this.handleReferralLink(path, queryParams, navigation);
           break;
+        case "oauthredirect":
+          this.handleOAuthRedirect(path, queryParams, navigation);
+          break;
         default:
           console.warn("Unknown deep link hostname:", hostname);
           navigation.navigate("Main", { screen: "Home" });
       }
     } catch (error) {
       console.error("Error navigating to screen:", error);
-      // Navigate to home as fallback
-      navigation.navigate("Main", { screen: "Home" });
     }
   }
 
@@ -183,33 +202,52 @@ class DeepLinkingService {
     }
   }
 
+  handleOAuthRedirect(path, queryParams, navigation) {
+    console.log("🔍 OAuth redirect received:", { path, queryParams });
+
+    // Check if this has OAuth parameters
+    if (queryParams && (queryParams.code || queryParams.error)) {
+      console.log("✅ OAuth parameters found:", {
+        hasCode: !!queryParams.code,
+        hasError: !!queryParams.error,
+        state: queryParams.state,
+      });
+
+      // expo-auth-session will automatically handle this redirect
+      // We just need to make sure the deep link doesn't interfere
+      console.log("🔄 Letting expo-auth-session handle OAuth response");
+    } else {
+      console.log("⚠️ OAuth redirect without expected parameters");
+    }
+  }
+
   // Generate deep links
   generateMealPlanLink(mealPlanId) {
-    return `${this.prefix}meal-plan/${mealPlanId}`;
+    return `${this.prefixes[0]}meal-plan/${mealPlanId}`;
   }
 
   generateOrderLink(orderId) {
-    return `${this.prefix}order/${orderId}`;
+    return `${this.prefixes[0]}order/${orderId}`;
   }
 
   generateSubscriptionLink(subscriptionId) {
-    return `${this.prefix}subscription/${subscriptionId}`;
+    return `${this.prefixes[0]}subscription/${subscriptionId}`;
   }
 
   generateReferralLink(referralCode) {
-    return `${this.prefix}referral?code=${referralCode}`;
+    return `${this.prefixes[0]}referral?code=${referralCode}`;
   }
 
   generateNotificationLink(notificationId) {
-    return `${this.prefix}notification/${notificationId}`;
+    return `${this.prefixes[0]}notification/${notificationId}`;
   }
 
   generateProfileLink() {
-    return `${this.prefix}profile`;
+    return `${this.prefixes[0]}profile`;
   }
 
   generateSettingsLink() {
-    return `${this.prefix}profile/settings`;
+    return `${this.prefixes[0]}profile/settings`;
   }
 
   // Share functionality
@@ -251,13 +289,13 @@ class DeepLinkingService {
   }
 
   // URL validation
-  isValidchomaLink(url) {
-    return url.startsWith(this.prefix);
+  isValidChomaLink(url) {
+    return this.prefixes.some((prefix) => url.startsWith(prefix));
   }
 
   // Get current URL scheme
   getURLScheme() {
-    return this.prefix.replace("://", "");
+    return this.prefixes[0].replace("://", "");
   }
 }
 

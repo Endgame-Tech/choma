@@ -36,8 +36,11 @@ import { OfflineProvider } from "./src/context/OfflineContext";
 import { ThemeProvider } from "./src/styles/theme";
 import { AlertProvider } from "./src/contexts/AlertContext";
 import { ToastProvider } from "./src/contexts/ToastContext";
+import { GoogleAuthProvider } from "./src/context/GoogleAuthContext";
 import { loadFonts } from "./src/utils/fontLoader";
 import { applyDefaultFont } from "./src/utils/fontUtils";
+
+
 
 // Navigation
 import AppNavigator from "./src/navigation/AppNavigator";
@@ -70,7 +73,7 @@ export default function App() {
   useEffect(() => {
     initializeApp();
   }, []);
-
+    
   const initializeApp = async () => {
     try {
       // Load fonts first
@@ -234,8 +237,9 @@ export default function App() {
         <SafeAreaProvider>
           <ErrorBoundary>
             <OfflineProvider>
-              <AuthProvider>
-                <CartProvider>
+              <GoogleAuthProvider>
+                <AuthProvider>
+                  <CartProvider>
                   <ToastProvider>
                     {({ showNotificationToast }) => (
                       <NotificationProvider
@@ -259,8 +263,9 @@ export default function App() {
                       </NotificationProvider>
                     )}
                   </ToastProvider>
-                </CartProvider>
-              </AuthProvider>
+                  </CartProvider>
+                </AuthProvider>
+              </GoogleAuthProvider>
             </OfflineProvider>
           </ErrorBoundary>
         </SafeAreaProvider>

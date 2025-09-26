@@ -221,7 +221,8 @@ const CustomIcon = ({
   // Get the icon component
   const IconComponent = iconMap[iconName] || iconMap[name];
 
-  if (!IconComponent) {
+  if (!IconComponent || typeof IconComponent !== 'function') {
+    console.warn(`CustomIcon: Invalid icon component for "${iconName}" or "${name}"`);
     return null;
   }
 

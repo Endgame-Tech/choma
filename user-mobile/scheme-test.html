@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Choma App Scheme Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        text-align: center;
+        background: #f5f5f5;
+      }
+      .test-button {
+        display: block;
+        width: 100%;
+        max-width: 300px;
+        margin: 20px auto;
+        padding: 15px;
+        background: #652815;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 16px;
+        border: none;
+      }
+      .test-button:hover {
+        background: #543210;
+      }
+      h1 {
+        color: #652815;
+      }
+      p {
+        color: #666;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🍽️ Choma App Scheme Test</h1>
+    <p>Click the buttons below to test if your app's custom schemes work:</p>
+
+    <a href="com.choma.app://test" class="test-button">
+      Test com.choma.app:// scheme
+    </a>
+
+    <a href="choma://test" class="test-button"> Test choma:// scheme </a>
+
+    <a
+      href="com.choma.app://oauthredirect?code=test123&state=teststate"
+      class="test-button"
+    >
+      Test OAuth Redirect (com.choma.app://)
+    </a>
+
+    <a
+      href="choma://oauthredirect?code=test123&state=teststate"
+      class="test-button"
+    >
+      Test OAuth Redirect (choma://)
+    </a>
+
+    <div
+      style="
+        margin-top: 40px;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+      "
+    >
+      <h3>📋 Instructions:</h3>
+      <p style="text-align: left">
+        1. <strong>Start your Choma app</strong> on your phone first<br />
+        2. <strong>Open this HTML file</strong> in your phone's browser<br />
+        3. <strong>Tap each button</strong> to test the schemes<br />
+        4. <strong>If working correctly:</strong> App should open/come to
+        foreground<br />
+        5. <strong>If not working:</strong> Browser will show "can't open link"
+        error
+      </p>
+    </div>
+
+    <div
+      style="
+        margin-top: 20px;
+        padding: 15px;
+        background: #e8f5e8;
+        border-radius: 8px;
+      "
+    >
+      <p><strong>✅ Success:</strong> App opens and comes to foreground</p>
+      <p><strong>❌ Failed:</strong> Browser shows error or nothing happens</p>
+    </div>
+  </body>
+</html>

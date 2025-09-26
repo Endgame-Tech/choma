@@ -1,51 +1,18 @@
 {
   "cli": {
-    "version": ">= 12.0.0",
-    "appVersionSource": "remote"
+    "version": ">= 5.2.0"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "resourceClass": "m-medium"
-      },
-      "android": {
-        "resourceClass": "medium"
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk",
-        "resourceClass": "medium"
-      },
-      "ios": {
-        "resourceClass": "m-medium"
-      }
+      "distribution": "internal"
     },
-    "production": {
-      "autoIncrement": true,
-      "android": {
-        "buildType": "app-bundle",
-        "resourceClass": "large"
-      },
-      "ios": {
-        "resourceClass": "m-large"
-      }
-    }
+    "production": {}
   },
   "submit": {
-    "production": {
-      "android": {
-        "serviceAccountKeyPath": "./google-play-service-account.json",
-        "track": "internal"
-      },
-      "ios": {
-        "appleId": "your-apple-id@email.com",
-        "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-apple-team-id"
-      }
-    }
+    "production": {}
   }
 }

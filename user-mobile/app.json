@@ -8,21 +8,10 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "privacy": "public",
-    "platforms": [
-      "ios",
-      "android"
-    ],
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "platforms": ["ios", "android"],
+    "assetBundlePatterns": ["**/*"],
     "description": "Discover and order delicious meals from local chefs with convenient meal planning",
-    "keywords": [
-      "food",
-      "delivery",
-      "meals",
-      "recipes",
-      "dining"
-    ],
+    "keywords": ["food", "delivery", "meals", "recipes", "dining"],
     "plugins": [
       [
         "expo-notifications",
@@ -58,9 +47,7 @@
       "bundleIdentifier": "com.choma.app",
       "buildNumber": "1",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "associatedDomains": [
-        "applinks:choma.com"
-      ],
+      "associatedDomains": ["applinks:choma.com"],
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app uses location to show nearby restaurants and estimate delivery times.",
         "ITSAppUsesNonExemptEncryption": false,
@@ -77,35 +64,12 @@
       "edgeToEdgeEnabled": true,
       "package": "com.choma.app",
       "versionCode": 4,
-      "googleServicesFile": "./google-services.json",
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
-      ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "choma.com"
-            },
-            {
-              "scheme": "choma"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        }
-      ]
+      "googleServicesFile": "./android/app/google-services.json",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "scheme": "choma",
     "extra": {
       "eas": {
         "projectId": "aaa62329-cbac-4b68-93b1-ec10a2ef1be2"

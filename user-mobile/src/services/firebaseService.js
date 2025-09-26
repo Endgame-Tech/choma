@@ -35,27 +35,8 @@ class FirebaseService {
       if (!this.isInitialized) {
         console.log("🔥 Initializing Firebase app...");
         
-        // Check if Firebase app is already initialized
-        const apps = this.firebaseApp.apps;
-        if (apps.length === 0) {
-          console.log("📱 No Firebase apps found, initializing default app...");
-          
-          // Firebase config for Android (from google-services.json)
-          const firebaseConfig = {
-            apiKey: "AIzaSyDMo8iLHZX3OxztiP8OCowGNaUPl4l-mlY",
-            projectId: "getchoma-bca76",
-            storageBucket: "getchoma-bca76.firebasestorage.app",
-            messagingSenderId: "947042824831",
-            appId: "1:947042824831:android:6a5f3dfb24c26114cd054a",
-            databaseURL: `https://getchoma-bca76-default-rtdb.firebaseio.com/`,
-          };
-          
-          // Initialize the default Firebase app with config
-          await this.firebaseApp.initializeApp(firebaseConfig);
-          console.log("✅ Firebase default app initialized with config");
-        } else {
-          console.log("✅ Firebase app already initialized:", apps[0].name);
-        }
+        // Firebase app is already initialized via google-services.json and app.json
+        console.log("✅ Using Firebase app from configuration files");
         
         this.isInitialized = true;
       }
@@ -66,7 +47,7 @@ class FirebaseService {
         appOwnership: Constants.appOwnership,
         executionEnvironment: Constants.executionEnvironment,
         firebaseAvailable: this.isAvailable,
-        appsCount: this.firebaseApp.apps.length
+        firebaseInitialized: this.isInitialized
       });
 
       // Request permission for iOS
