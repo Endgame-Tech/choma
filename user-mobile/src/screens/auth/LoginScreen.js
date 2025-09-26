@@ -12,6 +12,7 @@ import {
   Platform,
   StatusBar,
   ImageBackground,
+  Image,
   Dimensions,
   Animated,
   Easing,
@@ -26,8 +27,10 @@ import { useTheme } from "../../styles/theme";
 import BiometricLogin from "../../components/auth/BiometricLogin";
 import SocialLogin from "../../components/auth/SocialLogin";
 import ChomaLogo from "../../components/ui/ChomaLogo";
+import LoginCurve from "../../components/ui/LoginCurve";
 import { useAlert } from "../../contexts/AlertContext";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import { useGoogleAuth } from "../../hooks/useGoogleAuth";
 
 const { width, height } = Dimensions.get("window");
 
@@ -47,6 +50,7 @@ const LoginScreen = ({ navigation }) => {
   const [topSectionOffset] = useState(new Animated.Value(0));
 
   const { login, storeBiometricCredentials } = useAuth();
+  const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
 
   // Rotation animation for the food image (slow spin)
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -232,6 +236,26 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      console.log("🔘 Starting Google Sign-In...");
+      const result = await signInWithGoogle();
+
+      if (result?.success) {
+        console.log("✅ Google Sign-In successful");
+        // Navigation will be handled by the auth context
+      } else if (result?.cancelled) {
+        console.log("🚫 Google Sign-In cancelled by user");
+      } else {
+        console.error("❌ Google Sign-In failed:", result?.error);
+        showError("Google Sign-In Failed", result?.error || "Unable to sign in with Google");
+      }
+    } catch (error) {
+      console.error("❌ Google Sign-In Error:", error);
+      showError("Google Sign-In Error", "Something went wrong with Google sign-in");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#652815" />
@@ -269,6 +293,13 @@ const LoginScreen = ({ navigation }) => {
           </View>
         </Animated.View>
 
+        {/* Curved transition */}
+        <Animated.View
+          style={[{ transform: [{ translateY: keyboardOffset }] }]}
+        >
+          <LoginCurve />
+        </Animated.View>
+
         {/* Bottom white section with form */}
         <Animated.View
           style={[
@@ -289,6 +320,32 @@ const LoginScreen = ({ navigation }) => {
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Welcome Back</Text>
               <Text style={styles.welcomeSubtitle}>It's been a minute!</Text>
+            </View>
+
+            {/* Continue With Google Button */}
+            <TouchableOpacity
+              style={[styles.googleButton, googleLoading && styles.googleButtonDisabled]}
+              onPress={handleGoogleSignIn}
+              disabled={googleLoading}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color="#333" size="small" />
+              ) : (
+                <>
+                  <Image
+                    source={require("../../../assets/Google Icon.png")}
+                    style={styles.googleIcon}
+                  />
+                  <Text style={styles.googleButtonText}>Continue With Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* OR Divider */}
+            <View style={styles.orContainer}>
+              <View style={styles.orLine} />
+              <Text style={styles.orText}>OR</Text>
+              <View style={styles.orLine} />
             </View>
 
             {/* Form inputs */}
@@ -414,9 +471,6 @@ const LoginScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* Social Login */}
-            <SocialLogin />
-
             <BiometricLogin />
 
             {/* Add some bottom padding for better scrolling */}
@@ -475,11 +529,10 @@ const styles = createStylesWithDMSans({
   bottomSection: {
     flex: 0.75,
     backgroundColor: "#fff",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    paddingTop: 30, // More space for overlapping food image
+    // paddingTop: 30, // More space for overlapping food image
     minHeight: height * 0.1,
-    zIndex: 3,
+    zIndex: 5, // Increased zIndex to be above the curve
+    position: "relative", // Ensure positioning context
   },
   formContainer: {
     flex: 1,
@@ -504,6 +557,56 @@ const styles = createStylesWithDMSans({
     fontSize: 14,
     color: "#666",
     textAlign: "center",
+  },
+  googleButton: {
+    backgroundColor: "#fff",
+    borderRadius: 25,
+    height: 50,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    marginHorizontal: 30,
+    borderWidth: 1,
+    borderColor: "#e8e8e8",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 12,
+  },
+  googleButtonDisabled: {
+    opacity: 0.7,
+  },
+  googleButtonText: {
+    color: "#333",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  orContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+    marginHorizontal: 30,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#e8e8e8",
+  },
+  orText: {
+    color: "#999",
+    fontSize: 14,
+    fontWeight: "500",
+    marginHorizontal: 16,
   },
   form: {
     width: "100%",

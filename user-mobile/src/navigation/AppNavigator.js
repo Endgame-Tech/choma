@@ -324,6 +324,7 @@ const TabNavigator = () => {
         component={HomeScreen}
         options={{
           title: "Home",
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tab.Screen

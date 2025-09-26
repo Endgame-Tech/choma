@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 
 class DeepLinkingService {
   constructor() {
-    this.prefixes = ["choma://", "com.choma.app://"];
+    this.prefix = "choma://";
     this.initialized = false;
     this.navigationRef = null;
   }
@@ -59,28 +59,10 @@ class DeepLinkingService {
 
       console.log("Parsed deep link:", { hostname, path, queryParams });
 
-      // Handle OAuth redirect for both schemes
-      if (hostname === "oauthredirect" || url.includes("oauthredirect")) {
-        this.handleOAuthRedirect(path, queryParams, this.navigationRef.current);
-        return;
-      }
-
-      // Handle expo-development-client links
-      if (hostname === "expo-development-client") {
-        console.log("🔄 Expo development client link handled");
-        return;
-      }
-
       this.navigateToScreen(hostname, path, queryParams);
     } catch (error) {
       console.error("Error parsing deep link:", error);
-      // Don't show alert for OAuth redirects - they're handled automatically
-      if (
-        !url.includes("oauthredirect") &&
-        !url.includes("expo-development-client")
-      ) {
-        Alert.alert("Error", "Invalid link format");
-      }
+      Alert.alert("Error", "Invalid link format");
     }
   }
 
@@ -92,6 +74,7 @@ class DeepLinkingService {
     }
 
     try {
+
       switch (hostname) {
         case "meal-plan":
           this.handleMealPlanLink(path, queryParams, navigation);
@@ -204,50 +187,38 @@ class DeepLinkingService {
 
   handleOAuthRedirect(path, queryParams, navigation) {
     console.log("🔍 OAuth redirect received:", { path, queryParams });
-
-    // Check if this has OAuth parameters
-    if (queryParams && (queryParams.code || queryParams.error)) {
-      console.log("✅ OAuth parameters found:", {
-        hasCode: !!queryParams.code,
-        hasError: !!queryParams.error,
-        state: queryParams.state,
-      });
-
-      // expo-auth-session will automatically handle this redirect
-      // We just need to make sure the deep link doesn't interfere
-      console.log("🔄 Letting expo-auth-session handle OAuth response");
-    } else {
-      console.log("⚠️ OAuth redirect without expected parameters");
-    }
+    // Google OAuth redirect handled by expo-auth-session automatically
+    // Just log for debugging - expo-auth-session will handle the response
+    console.log("✅ OAuth redirect handled by expo-auth-session");
   }
 
   // Generate deep links
   generateMealPlanLink(mealPlanId) {
-    return `${this.prefixes[0]}meal-plan/${mealPlanId}`;
+    return `${this.prefix}meal-plan/${mealPlanId}`;
   }
 
   generateOrderLink(orderId) {
-    return `${this.prefixes[0]}order/${orderId}`;
+    return `${this.prefix}order/${orderId}`;
   }
 
   generateSubscriptionLink(subscriptionId) {
-    return `${this.prefixes[0]}subscription/${subscriptionId}`;
+    return `${this.prefix}subscription/${subscriptionId}`;
   }
 
   generateReferralLink(referralCode) {
-    return `${this.prefixes[0]}referral?code=${referralCode}`;
+    return `${this.prefix}referral?code=${referralCode}`;
   }
 
   generateNotificationLink(notificationId) {
-    return `${this.prefixes[0]}notification/${notificationId}`;
+    return `${this.prefix}notification/${notificationId}`;
   }
 
   generateProfileLink() {
-    return `${this.prefixes[0]}profile`;
+    return `${this.prefix}profile`;
   }
 
   generateSettingsLink() {
-    return `${this.prefixes[0]}profile/settings`;
+    return `${this.prefix}profile/settings`;
   }
 
   // Share functionality
@@ -289,13 +260,13 @@ class DeepLinkingService {
   }
 
   // URL validation
-  isValidChomaLink(url) {
-    return this.prefixes.some((prefix) => url.startsWith(prefix));
+  isValidchomaLink(url) {
+    return url.startsWith(this.prefix);
   }
 
   // Get current URL scheme
   getURLScheme() {
-    return this.prefixes[0].replace("://", "");
+    return this.prefix.replace("://", "");
   }
 }
 

@@ -1,50 +1,115 @@
-// src/screens/search/SearchScreen.js - Search functionality with filtering
-import React, { useState, useEffect } from "react";
+// src/screens/search/SearchScreen.js - Enhanced search with HomeScreen layout (excluding subscriptions)
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
-  StatusBar,
+  TouchableOpacity,
   Image,
+  TextInput,
+  Dimensions,
+  StatusBar,
+  RefreshControl,
   ActivityIndicator,
+  Modal,
+  LayoutAnimation,
+  UIManager,
+  Platform,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import CustomIcon from "../../components/ui/CustomIcon";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useTheme } from "../../styles/theme";
-import { THEME } from "../../utils/colors";
-import StandardHeader from "../../components/layout/Header";
-import { useMealPlans } from "../../hooks/useMealPlans";
+import { useNotification } from "../../context/NotificationContext";
 import { useBookmarks } from "../../context/BookmarkContext";
-import { useAuth } from "../../hooks/useAuth";
-import FilterModal from "../../components/meal-plans/FilterModal";
+import NotificationIcon from "../../components/ui/NotificationIcon";
+import { useMealPlans } from "../../hooks/useMealPlans";
+import { useTheme } from "../../styles/theme";
+import { COLORS, THEME } from "../../utils/colors";
 import apiService from "../../services/api";
 import discountService from "../../services/discountService";
+import { useAuth } from "../../hooks/useAuth";
+import MealCardSkeleton from "../../components/meal-plans/MealCardSkeleton";
+import Tutorial from "../../components/tutorial/Tutorial";
+import { homeScreenTutorialSteps } from "../../utils/tutorialSteps";
+import ErrorBoundary from "../../components/ErrorBoundary";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NotificationService from "../../services/notificationService";
+import NotificationTestService from "../../services/notificationTestService";
+import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
+import { useAlert } from "../../contexts/AlertContext";
+import CustomText from "../../components/ui/CustomText";
+import { DMSansFonts } from "../../constants/fonts";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 import TagFilterBar from "../../components/home/TagFilterBar";
 import tagService from "../../services/tagService";
-import CustomIcon from "../../components/ui/CustomIcon";
+import PopularPlanCard from "../../components/meal-plans/PopularPlanCard";
+import { usePopularMealPlans } from "../../hooks/usePopularMealPlans";
 import MealPlanCard from "../../components/meal-plans/MealPlanCard";
+import TagMealPlanCard from "../../components/meal-plans/TagMealPlanCard";
+import FilterModal from "../../components/meal-plans/FilterModal";
+
+const { width } = Dimensions.get("window");
+
+// Enable LayoutAnimation on Android
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const SearchScreen = ({ navigation }) => {
   const { isDark, colors } = useTheme();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const {
+    showSuccess,
+    showError,
+    showDeleteConfirm,
+    showPaymentSuccess,
+    showUpdateReminder,
+    showRetryError,
+  } = useAlert();
+  const [selectedCategory, setSelectedCategory] = useState("All Plans");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Discount state
   const [discountData, setDiscountData] = useState({});
   const [discountLoading, setDiscountLoading] = useState(true);
+  const [currentPopularIndex, setCurrentPopularIndex] = useState(0);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const popularScrollRef = useRef(null);
+  const bannerScrollRef = useRef(null);
+
+  // Search-specific state
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
   const [popularSearches, setPopularSearches] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
-  const { mealPlans } = useMealPlans();
+
+  const { mealPlans, loading, error, refreshing, refreshMealPlans } = useMealPlans();
+  const {
+    popularPlans,
+    loading: popularLoading,
+    error: popularError,
+    refreshing: popularRefreshing,
+    refreshPopularPlans,
+  } = usePopularMealPlans();
   const { toggleBookmark, isBookmarked } = useBookmarks();
+  const [banners, setBanners] = useState([]);
+  const [bannersLoading, setBannersLoading] = useState(true);
+
+  // HomeScreen state variables (excluding subscription-related)
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
+  const [trackedImpressions, setTrackedImpressions] = useState(new Set());
+  const [selectedWeek, setSelectedWeek] = useState(null);
+  const [filteredMealPlans, setFilteredMealPlans] = useState([]);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const bannerIntervalRef = useRef(null);
 
   // Filter state management
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -54,6 +119,11 @@ const SearchScreen = ({ navigation }) => {
   // Tag filtering state
   const [selectedTagId, setSelectedTagId] = useState(null);
   const [selectedTag, setSelectedTag] = useState(null);
+
+  // Scroll to top state
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const scrollViewRef = useRef(null);
+  const scrollToTopOpacity = useRef(new Animated.Value(0)).current;
 
   const hasActiveFilters = Object.keys(activeFilters).some((key) => {
     const value = activeFilters[key];
@@ -431,6 +501,273 @@ const SearchScreen = ({ navigation }) => {
     return count;
   };
 
+  // HomeScreen functions (excluding subscription-related ones)
+  useEffect(() => {
+    loadPublicDashboardData();
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDiscountLoading(false);
+    }, 5000);
+    return () => clearTimeout(timeoutId);
+  }, [user]);
+
+  // Fetch discount data for meal plans
+  useEffect(() => {
+    const fetchDiscountData = async () => {
+      if (!user || !mealPlans || mealPlans.length === 0) {
+        setDiscountLoading(false);
+        return;
+      }
+
+      try {
+        setDiscountLoading(true);
+        console.log("💰 Fetching discount data for meal plans");
+
+        const discounts = {};
+        for (const plan of mealPlans) {
+          try {
+            const discount = await discountService.calculateDiscount(user, plan);
+            discounts[plan._id || plan.id] = discount;
+          } catch (error) {
+            console.error(
+              `Error calculating discount for plan ${plan._id || plan.id}:`,
+              error
+            );
+            discounts[plan._id || plan.id] = {
+              discountPercent: 0,
+              discountAmount: 0,
+              reason: "No discount available",
+            };
+          }
+        }
+
+        console.log("💰 Discount data fetched:", discounts);
+        setDiscountData(discounts);
+      } catch (error) {
+        console.error("Error fetching discount data:", error);
+        setDiscountData({});
+      } finally {
+        setDiscountLoading(false);
+      }
+    };
+
+    fetchDiscountData();
+  }, [user, mealPlans]);
+
+  // Load public dashboard data (banners, etc.)
+  const loadPublicDashboardData = async (forceRefresh = false) => {
+    try {
+      console.log("🔄 Loading public dashboard data...");
+      setBannersLoading(true);
+
+      const bannersResult = await apiService.getActiveBanners();
+      console.log("🎯 Banner API response:", bannersResult);
+      if (bannersResult && bannersResult.success && bannersResult.data && bannersResult.data.data) {
+        console.log("🎯 Banner data:", bannersResult.data.data);
+        setBanners(bannersResult.data.data);
+        console.log("🎯 Banners loaded:", bannersResult.data.data.length);
+      } else {
+        console.log("🎯 No banners received, setting empty array");
+        setBanners([]);
+      }
+    } catch (error) {
+      console.error("❌ Error loading public dashboard data:", error);
+    } finally {
+      setBannersLoading(false);
+    }
+  };
+
+  const handleAddressChange = async (newAddress) => {
+    try {
+      setShowAddressModal(false);
+      // Handle address change logic here
+      console.log("Address changed to:", newAddress);
+    } catch (error) {
+      console.error("Error updating address:", error);
+    }
+  };
+
+  // Helper functions
+
+  const renderPopularPlanCard = (plan, index) => {
+    return (
+      <PopularPlanCard
+        key={plan.id || plan._id}
+        plan={plan}
+        onPress={() => navigation.navigate("MealPlanDetail", { bundle: plan })}
+        onBookmarkPress={() => toggleBookmark(plan.id || plan._id)}
+        isBookmarked={isBookmarked(plan.id || plan._id)}
+        discountData={discountData}
+        getPlanDescription={getPlanDescription}
+      />
+    );
+  };
+
+  const renderMealPlanCard = (plan) => {
+    return (
+      <MealPlanCard
+        key={plan.id || plan._id}
+        plan={plan}
+        onPress={() => navigation.navigate("MealPlanDetail", { bundle: plan })}
+        onBookmarkPress={() => toggleBookmark(plan.id || plan._id)}
+        isBookmarked={isBookmarked(plan.id || plan._id)}
+        discountData={discountData}
+        getPlanDescription={getPlanDescription}
+      />
+    );
+  };
+
+  const renderTagMealPlanCard = (plan) => {
+    return (
+      <TagMealPlanCard
+        key={plan.id || plan._id}
+        plan={plan}
+        onPress={() => navigation.navigate("MealPlanDetail", { bundle: plan })}
+        onBookmarkPress={() => toggleBookmark(plan.id || plan._id)}
+        isBookmarked={isBookmarked(plan.id || plan._id)}
+        discountData={discountData}
+        getPlanDescription={getPlanDescription}
+      />
+    );
+  };
+
+  const renderMixedMealPlanFeed = (plans) => {
+    if (!plans || plans.length === 0) return null;
+
+    if (selectedTagId) {
+      return plans.map((plan) => renderTagMealPlanCard(plan));
+    }
+
+    return plans.map((plan) => renderMealPlanCard(plan));
+  };
+
+  // Tag handling functions
+
+
+  const handleWeekSelect = (week) => {
+    setSelectedWeek(week);
+    console.log("Week selected:", week);
+  };
+
+  // Scroll to top functionality
+  const handleScroll = (event) => {
+    const scrollY = event.nativeEvent.contentOffset.y;
+    const shouldShow = scrollY > 300; // Show button after scrolling 300px
+
+    if (shouldShow !== showScrollToTop) {
+      setShowScrollToTop(shouldShow);
+      Animated.timing(scrollToTopOpacity, {
+        toValue: shouldShow ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
+  const scrollToTop = () => {
+    scrollViewRef.current?.scrollTo({
+      y: 0,
+      animated: true,
+    });
+  };
+
+  // Banner rendering functions
+  const renderPromoBanners = () => {
+
+    if (bannersLoading) {
+      return (
+        <View style={styles(colors).heroBannerContainer}>
+          <View
+            style={[
+              styles(colors).heroBanner,
+              { justifyContent: "center", alignItems: "center" },
+            ]}
+          >
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text
+              style={[
+                styles(colors).loadingText,
+                { color: colors.white, marginTop: 10 },
+              ]}
+            >
+              Loading banners...
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (!banners || banners.length === 0) {
+      return null;
+    }
+
+    return (
+      <View style={styles(colors).heroBannerContainer}>
+        <ScrollView
+          ref={bannerScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(event) => {
+            const slideIndex = Math.round(
+              event.nativeEvent.contentOffset.x / width
+            );
+            setCurrentBannerIndex(slideIndex);
+          }}
+          onScrollBeginDrag={() => setIsUserInteracting(true)}
+          onScrollEndDrag={() => setIsUserInteracting(false)}
+        >
+          {(banners || []).map((banner, index) => (
+            <TouchableOpacity
+              key={banner._id || index}
+              style={styles(colors).bannerSlide}
+              onPress={() => {
+                if (banner.actionUrl) {
+                  navigation.navigate(banner.actionUrl);
+                }
+              }}
+            >
+              <View style={styles(colors).promoBannerContainer}>
+                {/* Full-size banner image */}
+                <Image
+                  source={{
+                    uri: banner.imageUrl,
+                    cache: "default",
+                  }}
+                  style={styles(colors).promoBannerImage}
+                  resizeMode="cover"
+                  onLoad={() => {
+                    if (!trackedImpressions.has(banner._id || index)) {
+                      setTrackedImpressions(
+                        (prev) => new Set([...prev, banner._id || index])
+                      );
+                    }
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        {(banners || []).length > 1 && (
+          <View style={styles(colors).bannerIndicators}>
+            {(banners || []).map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles(colors).bannerIndicator,
+                  currentBannerIndex === index &&
+                    styles(colors).bannerIndicatorActive,
+                ]}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles(colors).container}>
       <StatusBar
@@ -438,199 +775,396 @@ const SearchScreen = ({ navigation }) => {
         backgroundColor={colors.background}
       />
 
-      <StandardHeader
-        title="Search"
-        onBackPress={() => navigation.goBack()}
-        showRightIcon={false}
-        navigation={null}
-      />
-
-      {/* Search Input */}
-      <View style={styles(colors).searchContainer}>
-        <View style={styles(colors).searchInputContainer}>
+      {/* Header */}
+      <View style={styles(colors).header}>
+        <TouchableOpacity
+          style={styles(colors).locationContainer}
+          onPress={() => setShowAddressModal(true)}
+          activeOpacity={0.9}
+        >
+          <CustomIcon name="location-filled" size={16} color={colors.primary} />
+          <Text style={styles(colors).locationText} numberOfLines={1}>
+            {user?.address || "Set delivery address"}
+          </Text>
           <CustomIcon
-            name="search-filled"
-            size={20}
+            name="chevron-down"
+            size={14}
             color={colors.textMuted}
-            style={styles(colors).searchIcon}
+            style={styles(colors).chevronIcon}
           />
-          <TextInput
-            style={styles(colors).searchInput}
-            placeholder="Search for meals, restaurants..."
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={handleSearch}
-            autoFocus
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={clearSearch}
-              style={styles(colors).clearButton}
-            >
-              <CustomIcon
-                name="close-circle"
-                size={20}
-                color={colors.textMuted}
-              />
-            </TouchableOpacity>
+        </TouchableOpacity>
+
+        <View style={styles(colors).notificationContainer}>
+          <NotificationIcon navigation={navigation} />
+          {__DEV__ && (
+            <>
+              <TouchableOpacity
+                style={styles(colors).testButton}
+                onPress={() => NotificationTestService.sendOrderNotification()}
+              >
+                <Text style={styles(colors).testButtonText}>Local</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles(colors).testButton,
+                  { backgroundColor: colors.warning },
+                ]}
+                onPress={() =>
+                  NotificationTestService.forceRegisterPushTokens()
+                }
+              >
+                <Text style={styles(colors).testButtonText}>Reg</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles(colors).testButton,
+                  { backgroundColor: colors.success },
+                ]}
+                onPress={() =>
+                  NotificationTestService.sendTestPushNotification()
+                }
+              >
+                <Text style={styles(colors).testButtonText}>Push</Text>
+              </TouchableOpacity>
+            </>
           )}
-          <TouchableOpacity
-            style={[
-              styles(colors).filterButton,
-              hasActiveFilters && styles(colors).filterButtonActive,
-            ]}
-            onPress={() => setShowFilterModal(true)}
-          >
-            <CustomIcon
-              name="filter"
-              size={20}
-              color={hasActiveFilters ? colors.primary : colors.textMuted}
-            />
-            {hasActiveFilters && (
-              <View style={styles(colors).filterBadge}>
-                <Text style={styles(colors).filterBadgeText}>
-                  {getActiveFiltersCount()}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Tag Filter Bar */}
-      <TagFilterBar
-        onTagSelect={handleTagSelect}
-        selectedTagId={selectedTagId}
-      />
-
-      {/* Active Filters Display */}
-      {hasActiveFilters && (
-        <View style={styles(colors).activeFiltersContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles(colors).filtersRow}>
-              {activeFilters.audiences &&
-                activeFilters.audiences.length > 0 && (
-                  <View style={styles(colors).activeFilterChip}>
-                    <Text style={styles(colors).activeFilterText}>
-                      {activeFilters.audiences.length} Audience
-                      {activeFilters.audiences.length > 1 ? "s" : ""}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        const newFilters = { ...activeFilters };
-                        delete newFilters.audiences;
-                        handleApplyFilters(newFilters);
-                      }}
-                    >
-                      <CustomIcon
-                        name="close"
-                        size={16}
-                        color={colors.primary}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              {activeFilters.priceRange &&
-                (activeFilters.priceRange[0] > 0 ||
-                  activeFilters.priceRange[1] < 50000) && (
-                  <View style={styles(colors).activeFilterChip}>
-                    <Text style={styles(colors).activeFilterText}>
-                      ₦{activeFilters.priceRange[0].toLocaleString()} - ₦
-                      {activeFilters.priceRange[1].toLocaleString()}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        const newFilters = { ...activeFilters };
-                        delete newFilters.priceRange;
-                        handleApplyFilters(newFilters);
-                      }}
-                    >
-                      <CustomIcon
-                        name="close"
-                        size={16}
-                        color={colors.primary}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              <TouchableOpacity
-                style={styles(colors).clearAllFiltersButton}
-                onPress={clearAllFilters}
-              >
-                <Text style={styles(colors).clearAllFiltersText}>
-                  Clear All
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Search Results */}
       <ScrollView
-        style={styles(colors).resultsContainer}
-        contentContainerStyle={styles(colors).scrollContent}
+        ref={scrollViewRef}
+        stickyHeaderIndices={[1]} // Make the search bar sticky (index 1 after banners)
+        style={styles(colors).scrollView}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing || discountLoading}
+            onRefresh={() => {
+              refreshMealPlans();
+              loadPublicDashboardData(true);
+            }}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
+        {/* Promo Banners - Always present to maintain consistent sticky index */}
+        <View>
+          {renderPromoBanners()}
+        </View>
+
+        {/* Enhanced Search Input - This will be sticky */}
+        <View style={styles(colors).searchContainer}>
+          <View style={styles(colors).searchInputContainer}>
+            <CustomIcon
+              name="search-filled"
+              size={20}
+              color={colors.textMuted}
+              style={styles(colors).searchIcon}
+            />
+            <TextInput
+              style={styles(colors).searchInput}
+              placeholder="Search for meals, restaurants..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={clearSearch}
+                style={styles(colors).clearButton}
+              >
+                <CustomIcon
+                  name="close-circle"
+                  size={20}
+                  color={colors.textMuted}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+        {/* Search Results Section - Prominent when searching */}
         {searchQuery.length > 0 ? (
-          isSearching ? (
-            <View style={styles(colors).loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles(colors).loadingText}>Searching...</Text>
-            </View>
-          ) : searchResults.length > 0 ? (
-            <View>
-              <Text style={styles(colors).resultsHeader}>
-                {searchResults.length} result
-                {searchResults.length !== 1 ? "s" : ""} found
-                {searchQuery.trim() && ` for "${searchQuery.trim()}"`}
-              </Text>
-              <View style={styles(colors).resultsGrid}>
-                {searchResults.map((plan) => (
-                  <MealPlanCard
-                    key={plan.id || plan._id}
-                    plan={plan}
-                    onPress={() =>
-                      navigation.navigate("MealPlanDetail", { bundle: plan })
-                    }
-                    onBookmarkPress={() => toggleBookmark(plan.id || plan._id)}
-                    isBookmarked={isBookmarked(plan.id || plan._id)}
-                    discountData={discountData}
-                    getPlanDescription={getPlanDescription}
-                  />
-                ))}
+          <>
+            {/* Tag Filter Bar */}
+            <TagFilterBar
+              onTagSelect={handleTagSelect}
+              selectedTagId={selectedTagId}
+            />
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <View style={styles(colors).activeFiltersContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles(colors).filtersRow}>
+                    {activeFilters.audiences &&
+                      activeFilters.audiences.length > 0 && (
+                        <View style={styles(colors).activeFilterChip}>
+                          <Text style={styles(colors).activeFilterText}>
+                            {activeFilters.audiences.length} Audience
+                            {activeFilters.audiences.length > 1 ? "s" : ""}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => {
+                              const newFilters = { ...activeFilters };
+                              delete newFilters.audiences;
+                              handleApplyFilters(newFilters);
+                            }}
+                          >
+                            <CustomIcon
+                              name="close"
+                              size={16}
+                              color={colors.primary}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    {activeFilters.priceRange &&
+                      (activeFilters.priceRange[0] > 0 ||
+                        activeFilters.priceRange[1] < 50000) && (
+                        <View style={styles(colors).activeFilterChip}>
+                          <Text style={styles(colors).activeFilterText}>
+                            ₦{activeFilters.priceRange[0].toLocaleString()} - ₦
+                            {activeFilters.priceRange[1].toLocaleString()}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => {
+                              const newFilters = { ...activeFilters };
+                              delete newFilters.priceRange;
+                              handleApplyFilters(newFilters);
+                            }}
+                          >
+                            <CustomIcon
+                              name="close"
+                              size={16}
+                              color={colors.primary}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    <TouchableOpacity
+                      style={styles(colors).clearAllFiltersButton}
+                      onPress={clearAllFilters}
+                    >
+                      <Text style={styles(colors).clearAllFiltersText}>
+                        Clear All
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
               </View>
-            </View>
-          ) : (
-            <View style={styles(colors).emptyResults}>
-              <CustomIcon
-                name="search-filled"
-                size={64}
-                color={colors.textMuted}
-              />
-              <Text style={styles(colors).emptyTitle}>
-                {hasActiveFilters
-                  ? "No plans match your filters"
-                  : "No results found"}
+            )}
+
+            {/* Search Results */}
+            {isSearching ? (
+              <View style={styles(colors).loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={styles(colors).loadingText}>Searching...</Text>
+              </View>
+            ) : searchResults.length > 0 ? (
+              <View style={styles(colors).section}>
+                <Text style={styles(colors).resultsHeader}>
+                  {searchResults.length} result
+                  {searchResults.length !== 1 ? "s" : ""} found
+                  {searchQuery.trim() && ` for "${searchQuery.trim()}"`}
+                </Text>
+                <View style={styles(colors).mealplansGrid}>
+                  {searchResults.map((plan) => (
+                    <MealPlanCard
+                      key={plan.id || plan._id}
+                      plan={plan}
+                      onPress={() =>
+                        navigation.navigate("MealPlanDetail", { bundle: plan })
+                      }
+                      onBookmarkPress={() => toggleBookmark(plan.id || plan._id)}
+                      isBookmarked={isBookmarked(plan.id || plan._id)}
+                      discountData={discountData}
+                      getPlanDescription={getPlanDescription}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <View style={styles(colors).emptyResults}>
+                <CustomIcon
+                  name="search-filled"
+                  size={64}
+                  color={colors.textMuted}
+                />
+                <Text style={styles(colors).emptyTitle}>
+                  {hasActiveFilters
+                    ? "No plans match your filters"
+                    : "No results found"}
+                </Text>
+                <Text style={styles(colors).emptyText}>
+                  {hasActiveFilters
+                    ? "Try adjusting your filters or search terms"
+                    : "Try searching with different keywords"}
+                </Text>
+                {hasActiveFilters && (
+                  <TouchableOpacity
+                    style={styles(colors).clearFiltersButton}
+                    onPress={clearAllFilters}
+                  >
+                    <Text style={styles(colors).clearFiltersButtonText}>
+                      Clear Filters
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            {/* No Search Query - Show HomeScreen Content */}
+
+
+            {/* Tag Filter Bar */}
+            <TagFilterBar
+              onTagSelect={handleTagSelect}
+              selectedTagId={selectedTagId}
+            />
+
+            {/* Popular Food Section - Conditional visibility */}
+            {!selectedTagId && (
+              <View style={styles(colors).section}>
+                {/* Loading State */}
+                {loading && !refreshing && (
+                  <View style={styles(colors).loadingContainer}>
+                    <ActivityIndicator
+                      size="large"
+                      color={colors.primary}
+                    />
+                    <Text style={styles(colors).loadingText}>
+                      Loading meal plans...
+                    </Text>
+                  </View>
+                )}
+
+                {/* Error State */}
+                {error && !loading && (
+                  <View style={styles(colors).errorContainer}>
+                    <CustomIcon
+                      name="alert-circle"
+                      size={48}
+                      color={colors.error}
+                    />
+                    <Text style={styles(colors).errorTitle}>
+                      Oops! Something went wrong
+                    </Text>
+                    <Text style={styles(colors).errorText}>{error}</Text>
+                    <TouchableOpacity
+                      style={styles(colors).retryButton}
+                      onPress={refreshMealPlans}
+                    >
+                      <Text style={styles(colors).retryButtonText}>
+                        Try Again
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* Most Popular This Week Section */}
+                {!loading && !error && (
+                  <View style={styles(colors).sectionpopular}>
+                    <Text style={styles(colors).sectionTitle}>
+                      Most Popular This Week
+                    </Text>
+
+                    {popularLoading && (
+                      <View style={styles(colors).loadingContainer}>
+                        <ActivityIndicator
+                          size="large"
+                          color={colors.primary}
+                        />
+                        <Text style={styles(colors).loadingText}>
+                          Loading popular plans...
+                        </Text>
+                      </View>
+                    )}
+
+                    {popularError && !popularLoading && (
+                      <View style={styles(colors).errorContainer}>
+                        <CustomIcon
+                          name="alert-circle"
+                          size={48}
+                          color={colors.error}
+                        />
+                        <Text style={styles(colors).errorTitle}>
+                          Could not load popular plans
+                        </Text>
+                        <Text style={styles(colors).errorText}>
+                          {popularError}
+                        </Text>
+                        <TouchableOpacity
+                          style={styles(colors).retryButton}
+                          onPress={refreshPopularPlans}
+                        >
+                          <Text style={styles(colors).retryButtonText}>
+                            Try Again
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {!popularLoading && !popularError && (
+                      <View style={styles(colors).popularFoodContainer}>
+                        {popularPlans.length > 0 ? (
+                          <ScrollView
+                            ref={popularScrollRef}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={
+                              styles(colors).popularFoodScrollContent
+                            }
+                            scrollEventThrottle={16}
+                            decelerationRate="fast"
+                            snapToInterval={300 + 20} // Card width + margin
+                            snapToAlignment="center"
+                            disableIntervalMomentum={true}
+                          >
+                            {popularPlans.map((plan, index) =>
+                              renderPopularPlanCard(plan, index)
+                            )}
+                          </ScrollView>
+                        ) : (
+                          <View style={styles(colors).emptyContainer}>
+                            <CustomIcon
+                              name="trending-up"
+                              size={48}
+                              color={colors.textMuted}
+                            />
+                            <Text style={styles(colors).emptyTitle}>
+                              No popular plans yet
+                            </Text>
+                            <Text style={styles(colors).emptyText}>
+                              Check back soon for trending meal plans!
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Our Meal Plans Section */}
+            <View style={styles(colors).section}>
+              <Text style={styles(colors).sectionTitle}>
+                Our Meal Plans
               </Text>
-              <Text style={styles(colors).emptyText}>
-                {hasActiveFilters
-                  ? "Try adjusting your filters or search terms"
-                  : "Try searching with different keywords"}
-              </Text>
-              {hasActiveFilters && (
-                <TouchableOpacity
-                  style={styles(colors).clearFiltersButton}
-                  onPress={clearAllFilters}
-                >
-                  <Text style={styles(colors).clearFiltersButtonText}>
-                    Clear Filters
-                  </Text>
-                </TouchableOpacity>
+
+              {!loading && !error && (
+                <View style={styles(colors).mealplansGrid}>
+                  {renderMixedMealPlanFeed(filteredMealPlans.length > 0 ? filteredMealPlans : mealPlans)}
+                </View>
               )}
             </View>
-          )
-        ) : (
-          <View style={styles(colors).suggestionsContainer}>
+
+            {/* Search History and Popular Searches for Empty Search */}
             {historyLoading ? (
               <View style={styles(colors).loadingContainer}>
                 <ActivityIndicator size="small" color={colors.primary} />
@@ -639,66 +1173,39 @@ const SearchScreen = ({ navigation }) => {
                 </Text>
               </View>
             ) : (
-              <>
-                {/* Popular Searches */}
-                {popularSearches.length > 0 && (
-                  <View style={styles(colors).historySection}>
-                    <Text style={styles(colors).suggestionsTitle}>
-                      Popular Searches
-                    </Text>
-                    {popularSearches.slice(0, 3).map((searchTerm, index) => (
-                      <TouchableOpacity
-                        key={`popular-search-${index}`}
-                        style={styles(colors).suggestionItem}
-                        onPress={() => handleSearch(searchTerm)}
-                      >
-                        <CustomIcon
-                          name="search"
-                          size={16}
-                          color={colors.textSecondary}
-                        />
-                        <Text style={styles(colors).suggestionText}>
-                          {searchTerm}
-                        </Text>
-                        <CustomIcon
-                          name="chevron-up"
-                          size={16}
-                          color={colors.textSecondary}
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-
-                {/* Popular Meal Plans */}
-                <View style={styles(colors).popularSection}>
-                  <Text style={styles(colors).suggestionsTitle}>
-                    Popular Meal Plans
+              popularSearches.length > 0 && (
+                <View style={styles(colors).section}>
+                  <Text style={styles(colors).sectionTitle}>
+                    Popular Searches
                   </Text>
-                  <View style={styles(colors).resultsGrid}>
-                    {mealPlans.slice(0, 3).map((plan, index) => (
-                      <MealPlanCard
-                        key={plan._id || plan.id || `popular-${index}`}
-                        plan={plan}
-                        onPress={() =>
-                          navigation.navigate("MealPlanDetail", {
-                            bundle: plan,
-                          })
-                        }
-                        onBookmarkPress={() =>
-                          toggleBookmark(plan._id || plan.id)
-                        }
-                        isBookmarked={isBookmarked(plan._id || plan.id)}
-                        discountData={discountData}
-                        getPlanDescription={getPlanDescription}
+                  {popularSearches.slice(0, 3).map((searchTerm, index) => (
+                    <TouchableOpacity
+                      key={`popular-search-${index}`}
+                      style={styles(colors).suggestionItem}
+                      onPress={() => handleSearch(searchTerm)}
+                    >
+                      <CustomIcon
+                        name="search"
+                        size={16}
+                        color={colors.textSecondary}
                       />
-                    ))}
-                  </View>
+                      <Text style={styles(colors).suggestionText}>
+                        {searchTerm}
+                      </Text>
+                      <CustomIcon
+                        name="chevron-up"
+                        size={16}
+                        color={colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              </>
+              )
             )}
-          </View>
+          </>
         )}
+
+        <View style={styles(colors).bottomPadding} />
       </ScrollView>
 
       {/* Filter Modal */}
@@ -708,6 +1215,84 @@ const SearchScreen = ({ navigation }) => {
         onApplyFilters={handleApplyFilters}
         initialFilters={activeFilters}
       />
+
+      <Tutorial
+        steps={homeScreenTutorialSteps}
+        isVisible={showTutorial}
+        onDismiss={() => setShowTutorial(false)}
+      />
+
+      {/* Address Change Modal */}
+      <Modal
+        visible={showAddressModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddressModal(false)}
+      >
+        <TouchableOpacity
+          style={styles(colors).modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowAddressModal(false)}
+        >
+          <TouchableOpacity
+            style={styles(colors).modalContent}
+            activeOpacity={1}
+            onPress={() => {}} // Prevent close when tapping inside modal
+          >
+            <View style={styles(colors).modalHeader}>
+              <Text style={styles(colors).modalTitle}>
+                Change Delivery Address
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowAddressModal(false)}
+                style={styles(colors).modalCloseButton}
+              >
+                <CustomIcon name="close" size={20} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles(colors).modalBody}>
+              <AddressAutocomplete
+                placeholder="Search for new delivery address"
+                onAddressSelect={handleAddressChange}
+                defaultValue={user?.address || ""}
+              />
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Scroll to Top Button */}
+      <Animated.View
+        style={[
+          styles(colors).scrollToTopButton,
+          {
+            opacity: scrollToTopOpacity,
+            bottom: navigation.getParent()?.getId() === 'TabNavigator' ? 100 : 110 + insets.bottom,
+            transform: [
+              {
+                scale: scrollToTopOpacity.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.8, 1],
+                }),
+              },
+            ],
+          },
+        ]}
+        pointerEvents={showScrollToTop ? "auto" : "none"}
+      >
+        <TouchableOpacity
+          style={styles(colors).scrollToTopButtonInner}
+          onPress={scrollToTop}
+          activeOpacity={0.8}
+        >
+          <CustomIcon
+            name="chevron-up"
+            size={20}
+            color={colors.white}
+          />
+        </TouchableOpacity>
+      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -721,6 +1306,7 @@ const styles = (colors) =>
     searchContainer: {
       paddingHorizontal: 20,
       paddingVertical: 15,
+      backgroundColor: colors.background, // Background for sticky header
     },
     searchInputContainer: {
       flexDirection: "row",
@@ -901,6 +1487,304 @@ const styles = (colors) =>
       marginBottom: 15,
       paddingTop: 10,
     },
+    // Additional HomeScreen styles
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      backgroundColor: colors.background,
+    },
+    locationContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+    },
+    locationText: {
+      fontSize: 14,
+      fontFamily: DMSansFonts.medium,
+      color: colors.textSecondary,
+      marginLeft: 4,
+      fontWeight: "500",
+      flex: 1,
+    },
+    chevronIcon: {
+      marginLeft: 4,
+    },
+    notificationContainer: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: 8,
+    },
+    testButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    testButtonText: {
+      color: "#FFFFFF",
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    scrollView: {
+      flex: 1,
+    },
+    heroBannerContainer: {
+      marginBottom: 20,
+    },
+    heroBanner: {
+      backgroundColor: colors.primary,
+      borderRadius: THEME.borderRadius.large,
+      overflow: "hidden",
+      width: "100%",
+      minHeight: 120,
+      maxHeight: 130,
+    },
+    section: {
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+    },
+    sectionpopular: {
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      fontFamily: DMSansFonts.semiBold,
+      marginBottom: 15,
+      opacity: 0.7,
+      color: colors.text,
+    },
+    popularFoodContainer: {
+      // paddingHorizontal: 20,
+    },
+    popularFoodScrollContent: {
+      paddingLeft: (width * 0.125) / 10,
+      paddingRight: (width * 0.125) / 2 + 20,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingVertical: 40,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginTop: 10,
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingVertical: 40,
+      paddingHorizontal: 20,
+    },
+    errorTitle: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.text,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    errorText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: 20,
+    },
+    retryButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: THEME.borderRadius.medium,
+    },
+    retryButtonText: {
+      color: colors.white,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingVertical: 40,
+      paddingHorizontal: 20,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.text,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    emptyText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    bottomPadding: {
+      height: 120,
+    },
+    mealplansGrid: {
+      flexDirection: "column",
+      paddingHorizontal: 0,
+      gap: 20,
+    },
+    bannerSlide: {
+      width: width,
+      paddingHorizontal: 20,
+    },
+    promoBannerContainer: {
+      position: "relative",
+      borderRadius: THEME.borderRadius.large,
+      overflow: "hidden",
+      minHeight: 110,
+      maxHeight: 120,
+    },
+    promoBannerImage: {
+      width: "100%",
+      height: "100%",
+      position: "absolute",
+      top: 0,
+      left: 0,
+    },
+    bannerIndicators: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: 15,
+      gap: 8,
+    },
+    bannerIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.textMuted,
+      opacity: 0.5,
+    },
+    bannerIndicatorActive: {
+      backgroundColor: colors.primary,
+      opacity: 1,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
+    },
+    modalContent: {
+      backgroundColor: colors.cardBackground,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      minHeight: 400,
+      maxHeight: "80%",
+      overflow: "visible",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      flex: 1,
+    },
+    modalCloseButton: {
+      padding: 4,
+    },
+    modalBody: {
+      flex: 1,
+      padding: 20,
+      minHeight: 250,
+    },
+    scrollToTopButton: {
+      position: "absolute",
+      right: 20,
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: "center",
+      alignItems: "center",
+      elevation: 8,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+    },
+    scrollToTopButtonInner: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
   });
 
-export default SearchScreen;
+const WrappedSearchScreen = (props) => (
+  <ErrorBoundary
+    fallback={({ onRetry }) => (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
+      >
+        <CustomIcon name="alert-circle" size={60} color="#ef4444" />
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "bold",
+            color: "#1f2937",
+            marginTop: 16,
+            marginBottom: 8,
+          }}
+        >
+          Search Screen Error
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            color: "#6b7280",
+            textAlign: "center",
+            marginBottom: 24,
+          }}
+        >
+          Something went wrong loading your search screen. Please try again.
+        </Text>
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#f97316",
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            borderRadius: 8,
+          }}
+          onPress={onRetry}
+        >
+          <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>
+            Retry
+          </Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    )}
+  >
+    <SearchScreen {...props} />
+  </ErrorBoundary>
+);
+
+export default WrappedSearchScreen;
