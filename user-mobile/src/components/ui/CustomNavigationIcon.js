@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated } from "react-native";
-import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 // Import your custom SVG icons directly using react-native-svg-transformer
 import HomeFilled from "../../../assets/images/icons/navigation/home-filled.svg";
@@ -13,44 +12,21 @@ import ProfileFilled from "../../../assets/images/icons/navigation/profile-fille
 import ProfileOutline from "../../../assets/images/icons/navigation/profile-outline.svg";
 
 const CustomNavigationIcon = ({ route, focused, color, size = 24, colors }) => {
-  // Animation values
-  const scaleValue = useRef(new Animated.Value(focused ? 1 : 0.85)).current;
-  const opacityValue = useRef(new Animated.Value(focused ? 1 : 0.7)).current;
+  // Simple animation values
   const backgroundOpacity = useRef(new Animated.Value(focused ? 1 : 0)).current;
-  const backgroundScale = useRef(new Animated.Value(focused ? 1 : 0.3)).current;
 
-  // Animate on focus change
+  // Simple fade animation
   useEffect(() => {
-    // Smooth scale animation for the icon
-    Animated.spring(scaleValue, {
-      toValue: focused ? 1 : 0.85,
-      useNativeDriver: true,
-      tension: 100,
-      friction: 8,
-    }).start();
+    console.log('Animation triggered:', { focused, route: route.name });
 
-    // Smooth opacity animation
-    Animated.timing(opacityValue, {
-      toValue: focused ? 1 : 0.7,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-
-    // Background animations
-    Animated.parallel([
-      Animated.spring(backgroundScale, {
-        toValue: focused ? 1 : 0.3,
-        useNativeDriver: false,
-        tension: 120,
-        friction: 7,
-      }),
-      Animated.timing(backgroundOpacity, {
-        toValue: focused ? 1 : 0,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [focused, scaleValue, opacityValue, backgroundOpacity, backgroundScale]);
+    Animated.timing(backgroundOpacity, {
+      toValue: focused ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start((finished) => {
+      console.log('Animation finished:', { finished, focused, route: route.name });
+    });
+  }, [focused, backgroundOpacity, route.name]);
 
   const getIconComponent = () => {
     const iconProps = {
@@ -90,22 +66,7 @@ const CustomNavigationIcon = ({ route, focused, color, size = 24, colors }) => {
   };
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          transform: [{ scale: scaleValue }],
-          opacity: opacityValue,
-          ...(focused && {
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.15,
-            shadowRadius: 6,
-            elevation: 6,
-          }),
-        },
-      ]}
-    >
+    <View style={styles.container}>
       {/* Background circle for focused state */}
       <Animated.View
         style={[
@@ -114,14 +75,13 @@ const CustomNavigationIcon = ({ route, focused, color, size = 24, colors }) => {
           {
             backgroundColor: colors?.white || "#ffffff",
             opacity: backgroundOpacity,
-            transform: [{ scale: backgroundScale }],
           },
         ]}
       />
 
       {/* Icon */}
       {getIconComponent()}
-    </Animated.View>
+    </View>
   );
 };
 

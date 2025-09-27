@@ -489,7 +489,7 @@ const TagFilterBar = memo(
 const styles = (colors) =>
   StyleSheet.create({
     container: {
-      marginVertical: 15,
+      marginTop: 6,
     },
     scrollContainer: {
       paddingHorizontal: 20,

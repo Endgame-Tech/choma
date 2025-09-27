@@ -25,7 +25,7 @@ import { useAuth } from "../../context/AuthContext";
 // import { COLORS, THEME } from "../../utils/colors";
 import { useTheme } from "../../styles/theme";
 import BiometricLogin from "../../components/auth/BiometricLogin";
-import SocialLogin from "../../components/auth/SocialLogin";
+
 import ChomaLogo from "../../components/ui/ChomaLogo";
 import LoginCurve from "../../components/ui/LoginCurve";
 import { useAlert } from "../../contexts/AlertContext";

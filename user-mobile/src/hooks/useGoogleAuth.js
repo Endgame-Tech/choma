@@ -1,16 +1,29 @@
 import { useState, useEffect } from "react";
 import * as Google from "expo-auth-session/providers/google";
+import { makeRedirectUri } from "expo-auth-session";
 import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { firebaseAuth } from "../../firebase.config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
 export const useGoogleAuth = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Use Firebase redirect URI for all platforms
+  const redirectUri = "https://getchoma-bca76.firebaseapp.com/__/auth/handler";
+
+  console.log("🔍 Platform:", Platform.OS);
+  console.log("🔍 Using redirectUri:", redirectUri);
+
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    androidClientId:
-      "947042824831-16c0m28m40bf5kafcpam3lefe92270mv.apps.googleusercontent.com", // Only Android client for development builds
+    clientId: Platform.select({
+      ios: "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com", // TODO: Replace with your iOS client ID
+      android:
+        "947042824831-16c0m28m40bf5kafcpam3lefe92270mv.apps.googleusercontent.com",
+      web: "947042824831-3losbgjvcqitipahf9p4ap1f27sipa0b.apps.googleusercontent.com",
+    }),
+    redirectUri,
   });
 
   useEffect(() => {

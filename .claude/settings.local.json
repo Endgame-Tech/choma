@@ -14,7 +14,9 @@
       "Bash(cp:*)",
       "Bash(true)",
       "Bash(npx eas credentials:*)",
-      "WebFetch(domain:www.youtube.com)"
+      "WebFetch(domain:www.youtube.com)",
+      "WebSearch",
+      "WebFetch(domain:docs.expo.dev)"
     ],
     "deny": []
   }

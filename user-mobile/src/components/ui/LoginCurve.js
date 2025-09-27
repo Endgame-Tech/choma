@@ -1,6 +1,6 @@
 import React from "react";
 import { Dimensions, View } from "react-native";
-import LoginCurveSvg from "../../../assets/login-curve.svg";
+import { Svg, Path } from 'react-native-svg';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -31,7 +31,7 @@ const LoginCurve = ({ style }) => {
         style,
       ]}
     >
-      <LoginCurveSvg
+      <Svg
         width={curveWidth}
         height={curveHeight}
         preserveAspectRatio="none"
@@ -39,7 +39,12 @@ const LoginCurve = ({ style }) => {
         style={{
           backgroundColor: "transparent",
         }}
-      />
+      >
+        <Path
+          d="M492.26,0V646.44H0V224.2c24.56,20.73,73.76,56.29,144.04,68.73,102.89,18.21,227.41-17.33,296.86-114.99C490.33,108.44,493.25,33.65,492.26,0Z"
+          fill="#fff"
+        />
+      </Svg>
     </View>
   );
 };

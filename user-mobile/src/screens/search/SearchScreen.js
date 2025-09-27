@@ -90,7 +90,8 @@ const SearchScreen = ({ navigation }) => {
   const [popularSearches, setPopularSearches] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
 
-  const { mealPlans, loading, error, refreshing, refreshMealPlans } = useMealPlans();
+  const { mealPlans, loading, error, refreshing, refreshMealPlans } =
+    useMealPlans();
   const {
     popularPlans,
     loading: popularLoading,
@@ -528,7 +529,10 @@ const SearchScreen = ({ navigation }) => {
         const discounts = {};
         for (const plan of mealPlans) {
           try {
-            const discount = await discountService.calculateDiscount(user, plan);
+            const discount = await discountService.calculateDiscount(
+              user,
+              plan
+            );
             discounts[plan._id || plan.id] = discount;
           } catch (error) {
             console.error(
@@ -564,7 +568,12 @@ const SearchScreen = ({ navigation }) => {
 
       const bannersResult = await apiService.getActiveBanners();
       console.log("🎯 Banner API response:", bannersResult);
-      if (bannersResult && bannersResult.success && bannersResult.data && bannersResult.data.data) {
+      if (
+        bannersResult &&
+        bannersResult.success &&
+        bannersResult.data &&
+        bannersResult.data.data
+      ) {
         console.log("🎯 Banner data:", bannersResult.data.data);
         setBanners(bannersResult.data.data);
         console.log("🎯 Banners loaded:", bannersResult.data.data.length);
@@ -645,7 +654,6 @@ const SearchScreen = ({ navigation }) => {
 
   // Tag handling functions
 
-
   const handleWeekSelect = (week) => {
     setSelectedWeek(week);
     console.log("Week selected:", week);
@@ -675,7 +683,6 @@ const SearchScreen = ({ navigation }) => {
 
   // Banner rendering functions
   const renderPromoBanners = () => {
-
     if (bannersLoading) {
       return (
         <View style={styles(colors).heroBannerContainer}>
@@ -851,9 +858,7 @@ const SearchScreen = ({ navigation }) => {
         }
       >
         {/* Promo Banners - Always present to maintain consistent sticky index */}
-        <View>
-          {renderPromoBanners()}
-        </View>
+        <View>{renderPromoBanners()}</View>
 
         {/* Enhanced Search Input - This will be sticky */}
         <View style={styles(colors).searchContainer}>
@@ -866,7 +871,7 @@ const SearchScreen = ({ navigation }) => {
             />
             <TextInput
               style={styles(colors).searchInput}
-              placeholder="Search for meals, restaurants..."
+              placeholder="Search for meal plans..."
               placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={handleSearch}
@@ -978,7 +983,9 @@ const SearchScreen = ({ navigation }) => {
                       onPress={() =>
                         navigation.navigate("MealPlanDetail", { bundle: plan })
                       }
-                      onBookmarkPress={() => toggleBookmark(plan.id || plan._id)}
+                      onBookmarkPress={() =>
+                        toggleBookmark(plan.id || plan._id)
+                      }
                       isBookmarked={isBookmarked(plan.id || plan._id)}
                       discountData={discountData}
                       getPlanDescription={getPlanDescription}
@@ -1020,7 +1027,6 @@ const SearchScreen = ({ navigation }) => {
           <>
             {/* No Search Query - Show HomeScreen Content */}
 
-
             {/* Tag Filter Bar */}
             <TagFilterBar
               onTagSelect={handleTagSelect}
@@ -1033,10 +1039,7 @@ const SearchScreen = ({ navigation }) => {
                 {/* Loading State */}
                 {loading && !refreshing && (
                   <View style={styles(colors).loadingContainer}>
-                    <ActivityIndicator
-                      size="large"
-                      color={colors.primary}
-                    />
+                    <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={styles(colors).loadingText}>
                       Loading meal plans...
                     </Text>
@@ -1153,13 +1156,13 @@ const SearchScreen = ({ navigation }) => {
 
             {/* Our Meal Plans Section */}
             <View style={styles(colors).section}>
-              <Text style={styles(colors).sectionTitle}>
-                Our Meal Plans
-              </Text>
+              <Text style={styles(colors).sectionTitle}>Our Meal Plans</Text>
 
               {!loading && !error && (
                 <View style={styles(colors).mealplansGrid}>
-                  {renderMixedMealPlanFeed(filteredMealPlans.length > 0 ? filteredMealPlans : mealPlans)}
+                  {renderMixedMealPlanFeed(
+                    filteredMealPlans.length > 0 ? filteredMealPlans : mealPlans
+                  )}
                 </View>
               )}
             </View>
@@ -1268,7 +1271,10 @@ const SearchScreen = ({ navigation }) => {
           styles(colors).scrollToTopButton,
           {
             opacity: scrollToTopOpacity,
-            bottom: navigation.getParent()?.getId() === 'TabNavigator' ? 100 : 110 + insets.bottom,
+            bottom:
+              navigation.getParent()?.getId() === "TabNavigator"
+                ? 100
+                : 110 + insets.bottom,
             transform: [
               {
                 scale: scrollToTopOpacity.interpolate({
@@ -1286,11 +1292,7 @@ const SearchScreen = ({ navigation }) => {
           onPress={scrollToTop}
           activeOpacity={0.8}
         >
-          <CustomIcon
-            name="chevron-up"
-            size={20}
-            color={colors.white}
-          />
+          <CustomIcon name="chevron-up" size={20} color={colors.white} />
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>
@@ -1306,7 +1308,7 @@ const styles = (colors) =>
     searchContainer: {
       paddingHorizontal: 20,
       paddingVertical: 15,
-      backgroundColor: colors.background, // Background for sticky header
+      // backgroundColor: colors.background, // Background for sticky header
     },
     searchInputContainer: {
       flexDirection: "row",
@@ -1314,9 +1316,14 @@ const styles = (colors) =>
       backgroundColor: colors.cardBackground,
       borderRadius: THEME.borderRadius.xxl,
       paddingHorizontal: 15,
-      paddingVertical: 12,
+      paddingVertical: 6,
       borderWidth: 1,
       borderColor: colors.border,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.9,
+      shadowRadius: 4,
+      elevation: 3,
     },
     searchIcon: {
       marginRight: 10,
@@ -1534,7 +1541,7 @@ const styles = (colors) =>
       flex: 1,
     },
     heroBannerContainer: {
-      marginBottom: 20,
+      marginBottom: 10,
     },
     heroBanner: {
       backgroundColor: colors.primary,

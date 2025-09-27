@@ -1,8 +1,7 @@
 // src/navigation/AppNavigator.js - Modern Dark Theme Update
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import {
   View,
-  Animated,
   StyleSheet,
   Platform,
   TouchableOpacity,
@@ -10,13 +9,10 @@ import {
 import { BlurView } from "expo-blur";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CustomNavigationIcon from "../components/ui/CustomNavigationIcon";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../styles/theme";
-// import { THEME } from '../utils/colors';
-import { createStylesWithDMSans } from "../utils/fontUtils";
 
 // Import all screen components
 import HomeScreen from "../screens/home/HomeScreen";
@@ -77,93 +73,6 @@ import HelpCenterScreen from "../screens/help/HelpCenterScreen";
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Animated Tab Icon Component with smooth transitions
-const TabIcon = ({ focused, route, color, size, colors }) => {
-  const scaleValue = useRef(new Animated.Value(focused ? 1 : 0.85)).current;
-  const opacityValue = useRef(new Animated.Value(focused ? 1 : 0.7)).current;
-  const backgroundOpacity = useRef(new Animated.Value(focused ? 1 : 0)).current;
-  const backgroundScale = useRef(new Animated.Value(focused ? 1 : 0.3)).current;
-
-  let iconName;
-
-  if (route.name === "Home") {
-    iconName = focused ? "home" : "home-outline";
-  } else if (route.name === "Search") {
-    iconName = focused ? "search" : "search-outline";
-  } else if (route.name === "Orders") {
-    iconName = focused ? "bag" : "bag-outline";
-  } else if (route.name === "Profile") {
-    iconName = focused ? "person-circle" : "person-circle-outline";
-  }
-
-  useEffect(() => {
-    // Smooth scale animation for the icon
-    Animated.spring(scaleValue, {
-      toValue: focused ? 1 : 0.85,
-      useNativeDriver: true,
-      tension: 100,
-      friction: 8,
-    }).start();
-
-    // Smooth opacity animation
-    Animated.timing(opacityValue, {
-      toValue: focused ? 1 : 0.7,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-
-    // Background animations (JS driver to avoid conflicts)
-    Animated.parallel([
-      Animated.spring(backgroundScale, {
-        toValue: focused ? 1 : 0.3,
-        useNativeDriver: false, // Use JS driver to match opacity animation
-        tension: 120,
-        friction: 7,
-      }),
-      Animated.timing(backgroundOpacity, {
-        toValue: focused ? 1 : 0,
-        duration: 200,
-        useNativeDriver: false, // backgroundColor doesn't support native driver
-      }),
-    ]).start();
-  }, [focused, scaleValue, opacityValue, backgroundOpacity, backgroundScale]);
-
-  return (
-    <Animated.View
-      style={{
-        width: 55,
-        height: 55,
-        borderRadius: 50,
-        justifyContent: "center",
-        alignItems: "center",
-        transform: [{ scale: scaleValue }],
-        opacity: opacityValue,
-        ...(focused && {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.15,
-          shadowRadius: 6,
-          elevation: 6,
-        }),
-      }}
-    >
-      <Animated.View
-        style={{
-          ...StyleSheet.absoluteFillObject,
-          borderRadius: 50,
-          backgroundColor: colors.white,
-          opacity: backgroundOpacity,
-          transform: [{ scale: backgroundScale }],
-        }}
-      />
-      <Ionicons
-        name={iconName}
-        size={size}
-        color={focused ? colors.background : color}
-      />
-    </Animated.View>
-  );
-};
 
 // Auth Stack Navigator
 const AuthStack = () => {
@@ -190,43 +99,6 @@ const AuthStack = () => {
   );
 };
 
-// Animated Screen Wrapper for subtle screen transitions
-const AnimatedScreenWrapper = ({ children }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    return () => {
-      fadeAnim.setValue(0);
-      slideAnim.setValue(20);
-    };
-  }, [fadeAnim, slideAnim]);
-
-  return (
-    <Animated.View
-      style={{
-        flex: 1,
-        opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }],
-      }}
-    >
-      {children}
-    </Animated.View>
-  );
-};
 
 // Main Tab Navigator with Modern Design - Always Dark Mode
 const TabNavigator = () => {
@@ -259,8 +131,9 @@ const TabNavigator = () => {
           <CustomNavigationIcon
             route={route}
             focused={focused}
-            color={focused ? colors.background : color}
+            color={color}
             size={size}
+            colors={darkTabColors}
           />
         ),
         tabBarActiveTintColor: darkTabColors.primary,
