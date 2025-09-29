@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { chefSubscriptionsApi } from '../services/api';
+import styles from '../styles/BatchPreparationPanel.module.css';
 import {
   Clock,
   ChefHat,
@@ -72,7 +73,7 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (timerActive && preparationTimer > 0) {
       interval = setInterval(() => {
         setPreparationTimer(prev => {
@@ -285,10 +286,10 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
           {/* Progress Bar */}
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-4">
             <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-1000"
+              className={styles.progressBar}
               style={{
-                width: `${Math.round(((selectedBatch.totalPreparationTime * 60 - preparationTimer) / (selectedBatch.totalPreparationTime * 60)) * 100)}%`
-              }}
+                '--progress-width': `${Math.round(((selectedBatch.totalPreparationTime * 60 - preparationTimer) / (selectedBatch.totalPreparationTime * 60)) * 100)}%`
+              } as React.CSSProperties}
             ></div>
           </div>
 

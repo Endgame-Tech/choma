@@ -15,10 +15,14 @@ const TagSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  bigPreviewImage: {
+    type: String,
+    required: true,
+  },
   description: {
     type: String,
+    required: true,
     maxlength: 200,
-    default: '',
   },
   isActive: {
     type: Boolean,

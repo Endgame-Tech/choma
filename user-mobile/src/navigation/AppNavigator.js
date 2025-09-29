@@ -60,6 +60,9 @@ import EnhancedTrackingScreen from "../screens/tracking/EnhancedTrackingScreen";
 // Search screens
 import SearchScreen from "../screens/search/SearchScreen";
 
+// Tag screens
+import TagScreen from "../screens/tag/TagScreen";
+
 // Notification screens
 import NotificationScreen from "../screens/notifications/NotificationScreen";
 import NotificationDetailScreen from "../screens/notifications/NotificationDetailScreen";
@@ -356,6 +359,13 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             options={{
               headerShown: false,
               gestureEnabled: false, // Disable swipe back to prevent conflicts with horizontal meal scroll
+            }}
+          />
+          <Stack.Screen
+            name="TagScreen"
+            component={TagScreen}
+            options={{
+              headerShown: false,
             }}
           />
           <Stack.Screen

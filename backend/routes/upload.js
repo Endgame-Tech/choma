@@ -280,4 +280,42 @@ router.post(
   }
 );
 
+// Upload tag preview image endpoint (admin only)
+router.post(
+  "/tag-preview",
+  adminAuth.authenticateAdmin,
+  uploadToFolder("tag-previews").single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No tag preview image file provided",
+        });
+      }
+
+      // The file is already uploaded to Cloudinary by multer
+      const imageUrl = req.file.path;
+      const publicId = req.file.filename;
+
+      console.log("✅ Tag preview image uploaded successfully to:", imageUrl);
+
+      res.json({
+        success: true,
+        message: "Tag preview image uploaded successfully",
+        imageUrl: imageUrl,
+        publicId: publicId,
+      });
+    } catch (error) {
+      console.error("Tag preview image upload error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to upload tag preview image",
+        error:
+          process.env.NODE_ENV === "development" ? error.message : undefined,
+      });
+    }
+  }
+);
+
 module.exports = router;

@@ -199,7 +199,10 @@ router.put("/dailymeals/:id", adminMealController.updateDailyMeal);
 router.delete("/dailymeals/:id", adminMealController.deleteDailyMeal);
 
 // Enhanced meal plan features
-router.post("/mealplans/:id/duplicate", adminMealPlanController.duplicateMealPlan);
+router.post(
+  "/mealplans/:id/duplicate",
+  adminMealPlanController.duplicateMealPlan
+);
 router.get(
   "/mealplans/analytics/overview",
   adminMealController.getMealPlanAnalytics
@@ -209,7 +212,6 @@ router.post(
   "/mealplans/bulk/template",
   adminMealController.createMealPlanFromTemplate
 );
-
 
 // ============= NEW MODULAR MEAL MANAGEMENT SYSTEM =============
 // Individual Meals Management
@@ -232,8 +234,14 @@ router.post("/meal-plans", adminMealPlanController.createMealPlan);
 router.put("/meal-plans/:id", adminMealPlanController.updateMealPlan);
 router.delete("/meal-plans/:id", adminMealPlanController.deleteMealPlan);
 router.put("/meal-plans/:id/publish", adminMealPlanController.publishMealPlan);
-router.put("/meal-plans/:id/unpublish", adminMealPlanController.unpublishMealPlan);
-router.post("/meal-plans/:id/duplicate", adminMealPlanController.duplicateMealPlan);
+router.put(
+  "/meal-plans/:id/unpublish",
+  adminMealPlanController.unpublishMealPlan
+);
+router.post(
+  "/meal-plans/:id/duplicate",
+  adminMealPlanController.duplicateMealPlan
+);
 
 // Meal Assignment System
 router.get(
@@ -368,22 +376,26 @@ router.use("/banners", require("./banners"));
 router.get(
   "/analytics/subscription-metrics",
   cacheMiddleware.medium,
-  require("../controllers/recurringDeliveryAnalyticsController").getSubscriptionMetrics
+  require("../controllers/recurringDeliveryAnalyticsController")
+    .getSubscriptionMetrics
 );
 router.get(
-  "/analytics/meal-plan-popularity", 
+  "/analytics/meal-plan-popularity",
   cacheMiddleware.medium,
-  require("../controllers/recurringDeliveryAnalyticsController").getMealPlanPopularity
+  require("../controllers/recurringDeliveryAnalyticsController")
+    .getMealPlanPopularity
 );
 router.get(
   "/analytics/chef-performance",
-  cacheMiddleware.medium, 
-  require("../controllers/recurringDeliveryAnalyticsController").getChefPerformance
+  cacheMiddleware.medium,
+  require("../controllers/recurringDeliveryAnalyticsController")
+    .getChefPerformance
 );
 router.get(
   "/analytics/subscription-trends",
   cacheMiddleware.medium,
-  require("../controllers/recurringDeliveryAnalyticsController").getSubscriptionTrends
+  require("../controllers/recurringDeliveryAnalyticsController")
+    .getSubscriptionTrends
 );
 
 // ============= RECURRING DELIVERY MONITORING ROUTES =============
@@ -391,13 +403,108 @@ router.get(
 router.get(
   "/deliveries/monitor",
   cacheMiddleware.short,
-  require("../controllers/recurringDeliveryMonitoringController").getLiveDeliveries
+  require("../controllers/recurringDeliveryMonitoringController")
+    .getLiveDeliveries
 );
 router.get(
   "/deliveries/stats",
   cacheMiddleware.short,
-  require("../controllers/recurringDeliveryMonitoringController").getDeliveryStats
+  require("../controllers/recurringDeliveryMonitoringController")
+    .getDeliveryStats
 );
 
+// ============= EMAIL SERVICE TESTING ROUTES =============
+// Test email service connectivity and functionality
+router.post("/email/test", async (req, res) => {
+  try {
+    const { testEmail } = req.body;
+
+    if (!testEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Test email address is required",
+      });
+    }
+
+    // Import email service
+    const emailService = require("../services/emailService");
+
+    // Test email service functionality
+    const testResults = await emailService.testEmailService(testEmail);
+
+    res.json({
+      success: true,
+      message: "Email service test completed",
+      results: testResults,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("❌ Email service test failed:", error);
+    res.status(500).json({
+      success: false,
+      message: "Email service test failed",
+      error: error.message,
+    });
+  }
+});
+
+// Test specific email template
+router.post("/email/test-template", async (req, res) => {
+  try {
+    const {
+      testEmail,
+      templateType = "verification",
+      testData = {},
+    } = req.body;
+
+    if (!testEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Test email address is required",
+      });
+    }
+
+    const emailService = require("../services/emailService");
+    let result = false;
+
+    // Test different email templates
+    switch (templateType) {
+      case "verification":
+        result = await emailService.sendVerificationEmail({
+          email: testEmail,
+          verificationCode: "123456",
+          purpose: "chef_registration",
+        });
+        break;
+      case "acceptance":
+        result = await emailService.sendChefAcceptanceEmail({
+          chefName: testData.chefName || "Test Chef",
+          chefEmail: testEmail,
+        });
+        break;
+      case "test":
+      default:
+        result = await emailService.sendTestEmail(testEmail);
+        break;
+    }
+
+    res.json({
+      success: result,
+      message: result
+        ? `${templateType} email sent successfully`
+        : `Failed to send ${templateType} email`,
+      templateType,
+      testEmail,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error(`❌ Email template test failed:`, error);
+    res.status(500).json({
+      success: false,
+      message: "Email template test failed",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;

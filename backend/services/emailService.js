@@ -2,23 +2,246 @@ const nodemailer = require("nodemailer");
 
 class EmailService {
   constructor() {
-    // Initialize Nodemailer with Gmail SMTP
+    // Initialize Nodemailer with Gmail SMTP and production-ready settings
     this.transporter = nodemailer.createTransport({
       service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // true for port 465, false for other ports
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD,
       },
+      // Production timeout and connection settings
+      connectionTimeout: 30000, // 30 seconds
+      greetingTimeout: 10000, // 10 seconds
+      socketTimeout: 60000, // 60 seconds
+      // Connection pooling for better performance
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      // Retry configuration
+      rateDelta: 20000, // 20 second rate delta
+      rateLimit: 5, // max 5 emails per rateDelta
+      // TLS settings for better compatibility
+      tls: {
+        ciphers: "SSLv3",
+        rejectUnauthorized: false,
+      },
+      // Debug mode in development
+      debug: process.env.NODE_ENV === "development",
+      logger: process.env.NODE_ENV === "development",
     });
+
+    // Verify connection configuration on startup
+    this.verifyConnection();
 
     // Logo URL - can be updated to use Cloudinary or other CDN
     this.logoUrl =
       process.env.CHOMA_LOGO_URL ||
       "https://res.cloudinary.com/dql0tbyes/image/upload/v1754582591/Chomalogo_bm0hdu.png";
-    
+
     // Alternative logo formats for better email client compatibility
-    this.logoUrlJpg = this.logoUrl.replace('.png', '.jpg');
-    this.logoBase64Fallback = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQwIiB2aWV3Qm94PSIwIDAgMTIwIDQwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjx0ZXh0IHg9IjEwIiB5PSIyNSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI0Y3QUUxQSI+Q0hPTUE8L3RleHQ+PC9zdmc+';
+    this.logoUrlJpg = this.logoUrl.replace(".png", ".jpg");
+    this.logoBase64Fallback =
+      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQwIiB2aWV3Qm94PSIwIDAgMTIwIDQwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjx0ZXh0IHg9IjEwIiB5PSIyNSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI0Y3QUUxQSI+Q0hPTUE8L3RleHQ+PC9zdmc+";
+
+    // Maximum retry attempts for failed emails
+    this.maxRetryAttempts = 3;
+    this.retryDelay = 5000; // 5 seconds between retries
+
+    // Fallback transporter for critical production emails
+    this.fallbackTransporter = null;
+    this.initializeFallbackTransporter();
+  }
+
+  /**
+   * Initialize fallback SMTP transporter (optional)
+   * For production resilience - can use different SMTP provider
+   */
+  initializeFallbackTransporter() {
+    // Only set up fallback if environment variables are provided
+    if (process.env.FALLBACK_SMTP_HOST && process.env.FALLBACK_SMTP_USER) {
+      try {
+        this.fallbackTransporter = nodemailer.createTransporter({
+          host: process.env.FALLBACK_SMTP_HOST,
+          port: process.env.FALLBACK_SMTP_PORT || 587,
+          secure: process.env.FALLBACK_SMTP_SECURE === "true",
+          auth: {
+            user: process.env.FALLBACK_SMTP_USER,
+            pass: process.env.FALLBACK_SMTP_PASS,
+          },
+          connectionTimeout: 30000,
+          greetingTimeout: 10000,
+          socketTimeout: 60000,
+          tls: {
+            rejectUnauthorized: false,
+          },
+        });
+
+        console.log("📧 Fallback SMTP transporter initialized");
+      } catch (error) {
+        console.error(
+          "❌ Failed to initialize fallback SMTP transporter:",
+          error.message
+        );
+      }
+    }
+  }
+
+  /**
+   * Verify SMTP connection on startup
+   */
+  async verifyConnection() {
+    try {
+      await this.transporter.verify();
+      console.log("✅ SMTP connection verified successfully");
+    } catch (error) {
+      console.error("❌ SMTP connection verification failed:", error.message);
+      // Don't throw error to prevent app crash, just log warning
+      console.warn(
+        "🚧 Email service may not work properly. Check SMTP configuration."
+      );
+    }
+  }
+
+  /**
+   * Send email with retry mechanism and fallback transporter
+   * @param {Object} mailOptions - Nodemailer mail options
+   * @param {number} attempt - Current attempt number
+   * @param {boolean} useFallback - Whether to use fallback transporter
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendEmailWithRetry(mailOptions, attempt = 1, useFallback = false) {
+    try {
+      const transporter =
+        useFallback && this.fallbackTransporter
+          ? this.fallbackTransporter
+          : this.transporter;
+
+      const transporterName = useFallback ? "fallback" : "primary";
+
+      await transporter.sendMail(mailOptions);
+      console.log(
+        `✅ Email sent successfully to ${mailOptions.to} via ${transporterName} (attempt ${attempt})`
+      );
+      return true;
+    } catch (error) {
+      console.error(
+        `❌ Email send attempt ${attempt} failed via ${
+          useFallback ? "fallback" : "primary"
+        }:`,
+        error.message
+      );
+
+      // If primary failed and we have fallback, try fallback immediately
+      if (!useFallback && this.fallbackTransporter && this.shouldRetry(error)) {
+        console.log(`🔄 Trying fallback SMTP transporter...`);
+        return await this.sendEmailWithRetry(mailOptions, attempt, true);
+      }
+
+      // Check if we should retry with same transporter
+      if (attempt < this.maxRetryAttempts && this.shouldRetry(error)) {
+        console.log(
+          `🔄 Retrying email send in ${this.retryDelay}ms... (${attempt}/${this.maxRetryAttempts})`
+        );
+
+        // Wait before retry
+        await new Promise((resolve) => setTimeout(resolve, this.retryDelay));
+
+        // Exponential backoff: increase delay for next retry
+        const nextDelay = this.retryDelay * 1.5;
+
+        return await this.sendEmailWithRetry(
+          mailOptions,
+          attempt + 1,
+          useFallback
+        );
+      }
+
+      console.error(`💥 Email send failed after ${attempt} attempts:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Determine if error is worth retrying
+   * @param {Error} error - The error object
+   * @returns {boolean} - Whether to retry
+   */
+  shouldRetry(error) {
+    const retryableErrors = [
+      "ETIMEDOUT",
+      "ECONNRESET",
+      "ECONNREFUSED",
+      "ENOTFOUND",
+      "EAI_AGAIN",
+      "Connection timeout",
+      "Socket timeout",
+    ];
+
+    return retryableErrors.some(
+      (errorType) =>
+        error.message.includes(errorType) ||
+        error.code === errorType ||
+        error.errno === errorType
+    );
+  }
+
+  /**
+   * Test SMTP connection and send test email
+   * @param {string} testEmail - Email to send test to
+   * @returns {Promise<Object>} - Test results
+   */
+  async testEmailService(testEmail) {
+    const results = {
+      connectionTest: false,
+      primaryTransporter: false,
+      fallbackTransporter: false,
+      testEmailSent: false,
+      errors: [],
+    };
+
+    // Test primary transporter connection
+    try {
+      await this.transporter.verify();
+      results.connectionTest = true;
+      results.primaryTransporter = true;
+      console.log("✅ Primary SMTP connection test passed");
+    } catch (error) {
+      results.errors.push(`Primary SMTP: ${error.message}`);
+      console.error("❌ Primary SMTP connection test failed:", error.message);
+    }
+
+    // Test fallback transporter if available
+    if (this.fallbackTransporter) {
+      try {
+        await this.fallbackTransporter.verify();
+        results.fallbackTransporter = true;
+        console.log("✅ Fallback SMTP connection test passed");
+      } catch (error) {
+        results.errors.push(`Fallback SMTP: ${error.message}`);
+        console.error(
+          "❌ Fallback SMTP connection test failed:",
+          error.message
+        );
+      }
+    }
+
+    // Send test email if we have a working transporter
+    if (results.primaryTransporter || results.fallbackTransporter) {
+      try {
+        if (testEmail) {
+          const testResult = await this.sendTestEmail(testEmail);
+          results.testEmailSent = testResult;
+        }
+      } catch (error) {
+        results.errors.push(`Test email: ${error.message}`);
+        console.error("❌ Test email failed:", error.message);
+      }
+    }
+
+    return results;
   }
 
   /**
@@ -121,7 +344,9 @@ class EmailService {
                 
                 <div class="test-section">
                   <h3>Logo URL Being Used:</h3>
-                  <p><a href="${this.logoUrl}" target="_blank">${this.logoUrl}</a></p>
+                  <p><a href="${this.logoUrl}" target="_blank">${
+          this.logoUrl
+        }</a></p>
                 </div>
                 
                 <div class="test-section">
@@ -144,9 +369,8 @@ class EmailService {
         text: `Choma Email Test - If you can see the CHOMA logo in the HTML version, images are working correctly. Logo URL: ${this.logoUrl}`,
       };
 
-      await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Test email sent successfully to ${testEmail}`);
-      return true;
+      // Use retry mechanism for production reliability
+      return await this.sendEmailWithRetry(mailOptions);
     } catch (error) {
       console.error("❌ Failed to send test email:", error);
       return false;
@@ -178,9 +402,8 @@ class EmailService {
         text: this.generatePlainTextVersion(chefName),
       };
 
-      await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Chef acceptance email sent successfully to ${chefEmail}`);
-      return true;
+      // Use retry mechanism for production reliability
+      return await this.sendEmailWithRetry(mailOptions);
     } catch (error) {
       console.error("❌ Failed to send chef acceptance email:", error);
 
@@ -343,7 +566,9 @@ class EmailService {
           <div class="container">
             <div class="header">
               <div class="logo">
-                <img src="${this.logoUrl}" alt="Choma - Delicious Home Cooked Meals" width="120" height="auto" style="display: block; margin: 0 auto; max-width: 120px;" />
+                <img src="${
+                  this.logoUrl
+                }" alt="Choma - Delicious Home Cooked Meals" width="120" height="auto" style="display: block; margin: 0 auto; max-width: 120px;" />
                 <div class="logo-text">CHOMA</div>
               </div>
               <div class="welcome-badge">Application Approved!</div>
@@ -481,7 +706,9 @@ class EmailService {
           <div class="container">
             <div class="header">
               <div class="logo">
-                <img src="${this.logoUrl}" alt="Choma - Delicious Home Cooked Meals" width="120" height="auto" style="display: block; margin: 0 auto; max-width: 120px;" />
+                <img src="${
+                  this.logoUrl
+                }" alt="Choma - Delicious Home Cooked Meals" width="120" height="auto" style="display: block; margin: 0 auto; max-width: 120px;" />
                 <div class="logo-text">CHOMA</div>
               </div>
             </div>
@@ -579,9 +806,8 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         text: `Your Choma verification code is: ${verificationCode}. This code expires in 5 minutes. If you didn't request this, please ignore this email.`,
       };
 
-      await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Verification email sent successfully to ${email}`);
-      return true;
+      // Use retry mechanism for production reliability
+      return await this.sendEmailWithRetry(mailOptions);
     } catch (error) {
       console.error("❌ Failed to send verification email:", error);
       return false;
@@ -1466,7 +1692,8 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
     try {
       const { email, name } = data;
 
-      const emailTemplate = this.generatePasswordResetConfirmationTemplate(name);
+      const emailTemplate =
+        this.generatePasswordResetConfirmationTemplate(name);
 
       const mailOptions = {
         from: {
@@ -1480,10 +1707,15 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
       };
 
       await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Password reset confirmation email sent successfully to ${email}`);
+      console.log(
+        `✅ Password reset confirmation email sent successfully to ${email}`
+      );
       return true;
     } catch (error) {
-      console.error("❌ Failed to send password reset confirmation email:", error);
+      console.error(
+        "❌ Failed to send password reset confirmation email:",
+        error
+      );
       return false;
     }
   }

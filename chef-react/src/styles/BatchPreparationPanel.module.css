@@ -1,0 +1,26 @@
+/* BatchPreparationPanel CSS Module */
+
+.progressBar {
+  background: linear-gradient(to right, rgb(59, 130, 246), rgb(168, 85, 247));
+  height: 0.75rem;
+  border-radius: 9999px;
+  transition: all 1000ms;
+  width: var(--progress-width, 0%);
+}
+
+.progressContainer {
+  width: 100%;
+  background-color: rgb(229, 231, 235);
+  border-radius: 9999px;
+  height: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Dark mode styles */
+.progressContainer.dark {
+  background-color: rgb(55, 65, 81);
+}
+
+.progressContainer.dark .progressBar {
+  background: linear-gradient(to right, rgb(59, 130, 246), rgb(168, 85, 247));
+}

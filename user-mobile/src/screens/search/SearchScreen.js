@@ -897,6 +897,7 @@ const SearchScreen = ({ navigation }) => {
             <TagFilterBar
               onTagSelect={handleTagSelect}
               selectedTagId={selectedTagId}
+              navigation={navigation}
             />
 
             {/* Active Filters Display */}
@@ -1031,6 +1032,7 @@ const SearchScreen = ({ navigation }) => {
             <TagFilterBar
               onTagSelect={handleTagSelect}
               selectedTagId={selectedTagId}
+              navigation={navigation}
             />
 
             {/* Popular Food Section - Conditional visibility */}

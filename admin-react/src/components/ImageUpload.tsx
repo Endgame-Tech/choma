@@ -206,6 +206,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         type="file"
         accept={accept}
         onChange={handleFileSelect}
+        aria-label={label}
+        title={label}
         className="hidden"
         disabled={disabled || uploading}
       />

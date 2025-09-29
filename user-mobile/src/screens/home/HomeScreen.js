@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import {
   View,
   Text,
@@ -8,30 +14,70 @@ import {
   ScrollView,
   Dimensions,
   StatusBar,
+  TextInput,
+  ActivityIndicator,
 } from "react-native";
+import Animated, {
+  Extrapolate,
+  interpolate,
+  useAnimatedStyle,
+  useAnimatedScrollHandler,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  withSpring,
+  Easing,
+  runOnJS,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../styles/theme";
-import NotificationIcon from "../../components/ui/NotificationIcon";
 import CustomIcon from "../../components/ui/CustomIcon";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 import { useAuth } from "../../hooks/useAuth";
 import { useMealPlans } from "../../hooks/useMealPlans";
+import tagService from "../../services/tagService";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Location from "expo-location";
 
 const { width, height } = Dimensions.get("window");
 
-// Constants for infinite scroll
-const PLAN_CHIP_SIZE = 70;
-const PLAN_CHIP_MARGIN = 6;
-const ITEM_TOTAL_WIDTH = PLAN_CHIP_SIZE + (PLAN_CHIP_MARGIN * 2);
+// Circular carousel constants (from reference implementation)
+const ListItemWidth = width / 4;
+
+// Cache tags globally to avoid re-fetching on every render (same as TagFilterBar)
+let cachedTags = [];
+let tagsLastFetched = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Export function to refresh tags cache (call when new tags are created)
+export const refreshTagsCache = () => {
+  cachedTags = [];
+  tagsLastFetched = 0;
+};
 
 // Placeholder data
 const PLACEHOLDER_PLANS = [
-  { id: 'placeholder-1', name: 'FitFam', description: 'Perfect for gym enthusiasts' },
-  { id: 'placeholder-2', name: 'HealthyChoice', description: 'Balanced nutrition daily' },
-  { id: 'placeholder-3', name: 'PowerPlan', description: 'High protein meals' },
-  { id: 'placeholder-4', name: 'GreenLife', description: 'Fresh vegetables focus' },
-  { id: 'placeholder-5', name: 'ActiveLife', description: 'Energy boosting meals' },
+  {
+    id: "placeholder-1",
+    name: "FitFam",
+    description: "Perfect for gym enthusiasts",
+  },
+  {
+    id: "placeholder-2",
+    name: "HealthyChoice",
+    description: "Balanced nutrition daily",
+  },
+  { id: "placeholder-3", name: "PowerPlan", description: "High protein meals" },
+  {
+    id: "placeholder-4",
+    name: "GreenLife",
+    description: "Fresh vegetables focus",
+  },
+  {
+    id: "placeholder-5",
+    name: "ActiveLife",
+    description: "Energy boosting meals",
+  },
 ];
 
 const HomeScreen = ({ navigation }) => {
@@ -40,152 +86,552 @@ const HomeScreen = ({ navigation }) => {
   const { mealPlans } = useMealPlans();
 
   const flatListRef = useRef(null);
-  const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
-  const [scrollX, setScrollX] = useState(0);
+  const [tags, setTags] = useState(cachedTags || []);
+  const [loading, setLoading] = useState((cachedTags || []).length === 0);
+  const [currentLocation, setCurrentLocation] = useState(
+    user?.address || "My Current Location"
+  );
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-  const hasRealPlans = Boolean(mealPlans?.length);
-  const basePlanData = hasRealPlans ? mealPlans : PLACEHOLDER_PLANS;
+  // Infinite scroll state
+  const [displayedTags, setDisplayedTags] = useState([]);
+  const [currentTagIndex, setCurrentTagIndex] = useState(0);
+  const [hasMoreTags, setHasMoreTags] = useState(true);
 
-  // Create infinite scrolling data by repeating plans multiple times
-  const planData = basePlanData.length > 0
-    ? [...basePlanData, ...basePlanData, ...basePlanData, ...basePlanData, ...basePlanData]
-    : basePlanData;
+  // Shared values for all animations (eliminate state-based race conditions)
+  const contentOffset = useSharedValue(0);
+  const selectedIndex = useSharedValue(0);
+  const spinValue = useSharedValue(0);
+  const textAnimationValue = useSharedValue(0);
 
-  // Initialize to middle of infinite list
+  // Text rotation messages
+  const heroMessages = [
+    "Eat healthy!",
+    "Save Money!",
+    "Stay Fresh!",
+    "Live Better!",
+  ];
+
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  // Carousel physics constants
+  const ITEM_SIZE = ListItemWidth;
+  const PADDING = 1.5 * ITEM_SIZE;
+  const SNAP_THRESHOLD = ITEM_SIZE * 0.6;
+
+  // Physics-based calculations for smooth animations
+
   useEffect(() => {
-    if (basePlanData.length > 0) {
-      const middleIndex = Math.floor(planData.length / 2);
-      setSelectedPlanIndex(middleIndex);
-    }
-  }, [basePlanData.length]);
+    // Start the spinning animation with physics-based timing
+    spinValue.value = withRepeat(
+      withTiming(360, {
+        duration: 20000,
+        easing: Easing.linear,
+      }),
+      -1,
+      false
+    );
 
-  // Get the actual plan from the base data (handle infinite repetition)
-  const getActualPlan = (index) => {
-    if (!basePlanData.length) return null;
-    const actualIndex = index % basePlanData.length;
-    const plan = basePlanData[actualIndex];
-    console.log('getActualPlan - index:', index, 'actualIndex:', actualIndex, 'plan:', plan?.name || plan?.planName);
-    return plan;
+    fetchTags();
+    getCurrentLocation();
+
+    // Cleanup function for shared values
+    return () => {
+      // Cancel all running animations
+      spinValue.value = 0;
+      contentOffset.value = 0;
+      selectedIndex.value = 0;
+      textAnimationValue.value = 0;
+    };
+  }, [getCurrentLocation]); // Add dependency
+
+  // Text rotation animation effect with proper cleanup
+  useEffect(() => {
+    let interval = null;
+    let isActive = true;
+
+    const rotateMessage = () => {
+      if (!isActive) return;
+      // Remove animation completely to reduce load
+      setCurrentMessageIndex((prev) => (prev + 1) % heroMessages.length);
+    };
+
+    // Start the cycle after a delay
+    const timeout = setTimeout(() => {
+      if (isActive) {
+        interval = setInterval(rotateMessage, 4000); // Slightly faster rotation
+      }
+    }, 2000);
+
+    // Comprehensive cleanup
+    return () => {
+      isActive = false;
+      if (timeout) clearTimeout(timeout);
+      if (interval) clearInterval(interval);
+      // Cancel any pending animations
+      textAnimationValue.value = 0;
+    };
+  }, []);
+
+  const getCurrentLocation = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (isLoadingLocation) return;
+
+    try {
+      setIsLoadingLocation(true);
+
+      // Add timeout wrapper to prevent hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Location timeout")), 10000)
+      );
+
+      // Request permission
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setCurrentLocation("Location permission denied");
+        return;
+      }
+
+      // Get current position with race condition timeout
+      const locationPromise = Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 8000,
+      });
+
+      const location = await Promise.race([locationPromise, timeoutPromise]);
+
+      // Reverse geocode with timeout
+      const geocodePromise = Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      const address = await Promise.race([geocodePromise, timeoutPromise]);
+
+      if (address && address.length > 0) {
+        const { city, region, district } = address[0];
+        const locationParts = [district, city, region].filter(Boolean);
+        const locationString =
+          locationParts.length > 0
+            ? locationParts.slice(0, 2).join(", ")
+            : "Current Location";
+        setCurrentLocation(locationString);
+      } else {
+        setCurrentLocation("Location found");
+      }
+    } catch (error) {
+      console.error("Location error:", error.message);
+      setCurrentLocation("Tap to get location");
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  }, [isLoadingLocation]);
+
+  const handleLocationPress = () => {
+    getCurrentLocation();
   };
 
-  const heroPlan = getActualPlan(selectedPlanIndex) || basePlanData[0] || null;
-  const selectedPlan = hasRealPlans ? heroPlan : null;
+  const fetchTags = useCallback(async () => {
+    try {
+      const now = Date.now();
+      if (
+        (cachedTags || []).length > 0 &&
+        now - tagsLastFetched < CACHE_DURATION
+      ) {
+        setTags(cachedTags || []);
+        setLoading(false);
+        return;
+      }
 
-  // Removed automatic scroll to prevent sliding back issue
-  // The scroll position should only be controlled by user interaction
+      setLoading(true);
 
-  const getPlanImage = (plan) => {
-    if (!plan) {
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      try {
+        const tagsData = await tagService.getAllTags(true);
+        clearTimeout(timeoutId);
+
+        // Validate data before using
+        if (Array.isArray(tagsData) && tagsData.length > 0) {
+          cachedTags = tagsData;
+          tagsLastFetched = now;
+          setTags(tagsData);
+
+          // Prefetch images with error handling
+          tagsData.slice(0, 5).forEach((tag) => {
+            // Limit prefetch to first 5
+            if (tag?.image) {
+              Image.prefetch(tag.image).catch(() => {});
+            }
+            if (tag?.bigPreviewImage) {
+              Image.prefetch(tag.bigPreviewImage).catch(() => {});
+            }
+          });
+        } else {
+          throw new Error("Invalid tags data received");
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        throw fetchError;
+      }
+    } catch (error) {
+      console.error("Error fetching tags:", error.message);
+      // Fallback to cached data or placeholder
+      setTags(cachedTags.length > 0 ? cachedTags : PLACEHOLDER_PLANS);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const hasRealTags = Boolean(tags?.length);
+  const baseTagData = hasRealTags ? tags : PLACEHOLDER_PLANS; // Fallback to placeholder for now
+
+  // console.log(
+  //   "🏠 HomeScreen render - hasRealTags:",
+  //   hasRealTags,
+  //   "tags length:",
+  //   tags?.length,
+  //   "baseTagData length:",
+  //   baseTagData.length
+  // );
+
+  // Infinite scroll implementation with proper pagination
+  const ITEMS_PER_BATCH = 10; // Number of items to load per batch
+
+  const tagData = useMemo(() => {
+    if ((baseTagData || []).length === 0) return [];
+
+    // Ultra-minimal circular data for maximum performance
+    const baseLength = (baseTagData || []).length;
+    // Reduced to 2x base data for minimal memory usage
+    const totalItems = Math.min(baseLength * 2, 10); // Max 10 items total
+    const circularData = [];
+
+    for (let i = 0; i < totalItems; i++) {
+      const sourceIndex = i % baseLength;
+      // Shallow copy only essential properties
+      const baseItem = (baseTagData || [])[sourceIndex];
+      circularData.push({
+        _id: baseItem._id,
+        name: baseItem.name,
+        image: baseItem.image,
+        bigPreviewImage: baseItem.bigPreviewImage,
+        description: baseItem.description,
+        infiniteIndex: i,
+        sourceIndex,
+      });
+    }
+
+    return circularData;
+  }, [(baseTagData || []).length]);
+
+  // Performance-optimized carousel rendering
+  const CarouselItem = React.memo(({ tag, index }) => {
+    return <CircularCarouselListItem tag={tag} index={index} />;
+  });
+
+  // Initialize carousel to start position
+  useEffect(() => {
+    if ((baseTagData || []).length > 0 && tagData.length > 0) {
+      // Start from a position that allows smooth infinite scroll
+      const startIndex = Math.floor(tagData.length / 3); // Start at 1/3 position
+
+      selectedIndex.value = startIndex;
+      setCurrentTagIndex(startIndex);
+
+      setTimeout(() => {
+        if (flatListRef.current) {
+          const startOffset = startIndex * ITEM_SIZE;
+
+          flatListRef.current.scrollToOffset({
+            offset: startOffset,
+            animated: false,
+          });
+
+          contentOffset.value = startOffset;
+        }
+      }, 100);
+    }
+  }, [tagData.length]);
+
+  // Get the actual tag from the infinite scroll data
+  const getActualTag = (index) => {
+    if (!tagData || tagData.length === 0) return null;
+    const clampedIndex = Math.max(0, Math.min(index, tagData.length - 1));
+    return tagData[clampedIndex] || null;
+  };
+
+  // Get current hero tag based on scroll position
+  const getCurrentTag = () => {
+    const clampedIndex = Math.max(
+      0,
+      Math.min(currentTagIndex, tagData.length - 1)
+    );
+    return tagData[clampedIndex] || (baseTagData || [])[0] || null;
+  };
+
+  const heroTag = getCurrentTag();
+  const selectedTag = hasRealTags ? heroTag : null;
+
+  const getTagImage = useCallback((tag, useBigPreview = false) => {
+    try {
+      if (!tag) {
+        return require("../../../assets/authImage.png");
+      }
+
+      // Use bigPreviewImage for hero display, regular image for carousel
+      const imageSource = useBigPreview
+        ? tag.bigPreviewImage || tag.image
+        : tag.image;
+
+      if (typeof imageSource === "string" && imageSource.trim()) {
+        return { uri: imageSource };
+      }
+
+      return require("../../../assets/authImage.png");
+    } catch (error) {
+      console.warn("Image loading error:", error.message);
       return require("../../../assets/authImage.png");
     }
+  }, []);
 
-    const imageSource =
-      plan.imageUrl || plan.images?.[0] || plan.image || plan.thumbnail;
+  const getTagName = (tag) => tag?.name || "FitFam";
 
-    if (typeof imageSource === "string") {
-      return { uri: imageSource };
-    }
+  const getTagDescription = (tag) =>
+    tag?.description || "Perfect for healthy eating";
 
-    return imageSource || require("../../../assets/authImage.png");
-  };
-
-  const getPlanName = (plan) =>
-    plan?.planName || plan?.name || plan?.title || "FitFam";
-
-  const getPlanDescription = (plan) =>
-    plan?.mealPlanDetails?.description ||
-    plan?.description ||
-    plan?.summary ||
-    plan?.shortDescription ||
-    "Perfect for healthy eating";
-
-  const onSelectPlan = (index) => {
-    if (!planData[index]) {
+  const onSelectTag = (index) => {
+    if (!(tagData || [])[index]) {
       return;
     }
 
-    setSelectedPlanIndex(index);
+    // Update shared value immediately for synchronization
+    selectedIndex.value = index;
 
-    // Scroll to the selected plan when manually tapped
+    // Calculate proper centered offset with physics-based positioning
+    const targetOffset = index * ITEM_SIZE;
+
     if (flatListRef.current) {
-      flatListRef.current.scrollTo({
-        x: index * ITEM_TOTAL_WIDTH - 150, // Account for padding
-        y: 0,
+      flatListRef.current.scrollToOffset({
+        offset: targetOffset,
         animated: true,
       });
     }
 
-    // Update the hero plan immediately
-    const actualPlan = getActualPlan(index);
-    if (actualPlan) {
-      const actualIndex = index % basePlanData.length;
-      console.log('Manually selected plan:', actualPlan.name || actualPlan.planName, 'at index:', actualIndex);
+    // Smooth animation to target with spring physics
+    contentOffset.value = withSpring(targetOffset, {
+      damping: 15,
+      stiffness: 150,
+      mass: 1,
+    });
+
+    // Log manual selection
+    const actualTag = getActualTag(index);
+    if (actualTag) {
+      const actualIndex = index % (baseTagData || []).length;
+      console.log(
+        "Manually selected tag:",
+        actualTag.name,
+        "at index:",
+        actualIndex
+      );
     }
   };
 
-  const handleScroll = ({ nativeEvent }) => {
-    const offsetX = nativeEvent.contentOffset.x;
-    setScrollX(offsetX);
-  };
+  // Highly optimized scroll handler - minimal calculations
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      "worklet";
+      contentOffset.value = event.contentOffset.x;
 
-  const handleMomentumScrollEnd = ({ nativeEvent }) => {
-    if (!planData.length || !basePlanData.length) {
-      return;
-    }
-
-    const offsetX = nativeEvent.contentOffset.x;
-    snapToClosestPlan(offsetX);
-  };
-
-  const handleScrollEndDrag = ({ nativeEvent }) => {
-    if (!planData.length || !basePlanData.length) {
-      return;
-    }
-
-    const offsetX = nativeEvent.contentOffset.x;
-    snapToClosestPlan(offsetX);
-  };
-
-  const snapToClosestPlan = (currentOffset) => {
-    // Calculate which plan is closest to the center
-    const centerPosition = width / 2;
-    let closestIndex = 0;
-    let minDistance = Infinity;
-
-    for (let i = 0; i < planData.length; i++) {
-      const itemPosition = (i * ITEM_TOTAL_WIDTH) - currentOffset + 150; // Account for padding
-      const distanceFromCenter = Math.abs(itemPosition - centerPosition);
-
-      if (distanceFromCenter < minDistance) {
-        minDistance = distanceFromCenter;
-        closestIndex = i;
+      // Reduce calculations - only update selectedIndex without runOnJS
+      if (tagData.length > 0) {
+        const centerIndex = Math.round(event.contentOffset.x / ITEM_SIZE);
+        selectedIndex.value = Math.max(0, Math.min(centerIndex, tagData.length - 1));
       }
+    },
+    onMomentumEnd: (event) => {
+      "worklet";
+      // Simplified boundary handling - minimal operations
+      if (tagData.length === 0) return;
+
+      const currentIndex = Math.round(event.contentOffset.x / ITEM_SIZE);
+      const threshold = 2; // Simple threshold
+
+      // Only reset if truly at boundaries to reduce operations
+      if (currentIndex < threshold || currentIndex >= tagData.length - threshold) {
+        const newIndex = Math.floor(tagData.length / 2);
+        const newOffset = newIndex * ITEM_SIZE;
+
+        // Single runOnJS call instead of multiple
+        runOnJS(() => {
+          flatListRef.current?.scrollToOffset({
+            offset: newOffset,
+            animated: false,
+          });
+        })();
+      }
+    },
+  });
+
+  // Optimized Circular Carousel with performance improvements
+  const CircularCarouselListItem = React.memo(
+    ({ tag, index }) => {
+      // Safety check
+      if (!tag || index < 0) {
+        return null;
+      }
+
+      const actualTag = getActualTag(index);
+
+      const rStyle = useAnimatedStyle(() => {
+        "worklet";
+        // Ultra-simplified animation for maximum performance
+        const distanceFromCenter = contentOffset.value / ITEM_SIZE - index;
+        const absDistance = Math.abs(distanceFromCenter);
+
+        // Aggressive early exit to reduce calculations
+        if (absDistance > 2) {
+          return {
+            opacity: 0.4,
+            transform: [{ scale: 0.7 }],
+          };
+        }
+
+        // Minimal calculations - removed Math.pow and complex formulas
+        const isCenter = absDistance < 0.5;
+        const scale = isCenter ? 1.1 : 0.8 + (1 - absDistance) * 0.3;
+        const opacity = isCenter ? 1 : 0.6 + (1 - absDistance) * 0.4;
+        const translateY = isCenter ? -20 : 0;
+
+        return {
+          opacity,
+          transform: [{ translateY }, { scale }],
+        };
+      }, []);
+
+      return (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => onSelectTag(index)}
+        >
+          <Animated.View
+            style={[
+              {
+                width: ListItemWidth,
+                aspectRatio: 1,
+                elevation: 5,
+                shadowOpacity: 0.2,
+                shadowOffset: {
+                  width: 0,
+                  height: 0,
+                },
+                shadowRadius: 20,
+              },
+              rStyle,
+            ]}
+          >
+            <Image
+              source={getTagImage(actualTag, false)}
+              style={{
+                height: ListItemWidth,
+                width: ListItemWidth,
+                borderRadius: ListItemWidth / 2, // Perfect circle
+                borderWidth: 3,
+                borderColor: "white",
+              }}
+              resizeMode="cover"
+              fadeDuration={0}
+              loadingIndicatorSource={null}
+              progressiveRenderingEnabled={false} // Disable progressive rendering
+              defaultSource={require("../../../assets/authImage.png")} // Fallback
+            />
+          </Animated.View>
+        </TouchableOpacity>
+      );
+    },
+    (prevProps, nextProps) => {
+      // Custom equality check for better performance
+      return (
+        prevProps.index === nextProps.index &&
+        prevProps.tag?._id === nextProps.tag?._id &&
+        prevProps.tag?.image === nextProps.tag?.image &&
+        prevProps.tag?.name === nextProps.tag?.name
+      );
+    }
+  );
+
+  // Real-time tag information updates
+  const selectedTagName = getTagName(heroTag);
+  const selectedTagDescription = getTagDescription(heroTag);
+
+  // Animated style for spinning dish
+  const spinAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          rotate: `${spinValue.value}deg`,
+        },
+      ],
+    };
+  });
+
+  // Animated style for hero text rotation
+  const heroTextAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      textAnimationValue.value,
+      [0, 0.5, 1],
+      [1, 0.3, 1], // Subtle fade, not complete disappearance
+      Extrapolate.CLAMP
+    );
+
+    const translateY = interpolate(
+      textAnimationValue.value,
+      [0, 0.5, 1],
+      [0, -5, 0], // Subtle upward movement
+      Extrapolate.CLAMP
+    );
+
+    const scale = interpolate(
+      textAnimationValue.value,
+      [0, 0.5, 1],
+      [1, 0.98, 1], // Very subtle scale change
+      Extrapolate.CLAMP
+    );
+
+    return {
+      opacity,
+      transform: [{ translateY }, { scale }],
+    };
+  });
+
+  // Smooth preview image animation synchronized with carousel
+  const previewImageAnimatedStyle = useAnimatedStyle(() => {
+    const previewImageWidth = 334;
+    const baseDataLength = (baseTagData || []).length;
+
+    if (baseDataLength === 0) {
+      return { transform: [{ translateX: 0 }] };
     }
 
-    // Snap to the closest plan
-    const snapOffset = closestIndex * ITEM_TOTAL_WIDTH - 150; // Account for padding
+    // Use the actual source index for preview synchronization
+    const currentScrollIndex = contentOffset.value / ITEM_SIZE;
+    const sourceIndex = currentScrollIndex % baseDataLength;
 
-    if (flatListRef.current) {
-      flatListRef.current.scrollTo({
-        x: snapOffset,
-        y: 0,
-        animated: true,
-      });
-    }
+    // Smooth interpolation for preview image translation
+    const previewTranslateX = interpolate(
+      sourceIndex,
+      [0, baseDataLength],
+      [0, -baseDataLength * previewImageWidth],
+      Extrapolate.CLAMP
+    );
 
-    // Update selected index
-    if (closestIndex !== selectedPlanIndex) {
-      setSelectedPlanIndex(closestIndex);
-
-      // Log the snapped plan
-      const actualPlan = getActualPlan(closestIndex);
-      const actualIndex = closestIndex % basePlanData.length;
-      console.log('Snapped to plan:', actualPlan?.name || actualPlan?.planName, 'at actual index:', actualIndex);
-    }
-  };
-
-  const selectedPlanName = getPlanName(heroPlan);
-  const selectedPlanDescription = getPlanDescription(heroPlan);
+    return {
+      transform: [{ translateX: previewTranslateX }],
+    };
+  });
 
   return (
     <SafeAreaView style={styles(colors).container}>
@@ -201,140 +647,185 @@ const HomeScreen = ({ navigation }) => {
             style={styles(colors).heroBackground}
           >
             <View style={styles(colors).header}>
-              <TouchableOpacity style={styles(colors).locationPill}>
+              <TouchableOpacity
+                style={styles(colors).locationPill}
+                onPress={handleLocationPress}
+                activeOpacity={0.7}
+                disabled={isLoadingLocation}
+              >
                 <CustomIcon
                   name="location-filled"
                   size={14}
                   color={colors.primary || "#F9B87A"}
                 />
                 <Text style={styles(colors).locationText} numberOfLines={1}>
-                  {user?.address || "My Current Location"}
+                  {isLoadingLocation ? "Getting location..." : currentLocation}
                 </Text>
-                <CustomIcon name="chevron-down" size={12} color="#FFFFFF" />
+                {isLoadingLocation ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <CustomIcon name="chevron-down" size={12} color="#FFFFFF" />
+                )}
               </TouchableOpacity>
-
-              <NotificationIcon navigation={navigation} />
             </View>
 
             <View style={styles(colors).heroTextContainer}>
-              <Text style={styles(colors).heroTitle}>Eat healthy!</Text>
+              <Text style={styles(colors).heroTitle}>
+                {heroMessages[currentMessageIndex]}
+              </Text>
               <Text style={styles(colors).heroSubtitle}>getChoma</Text>
             </View>
 
             <View style={styles(colors).heroImageContainer}>
-              <View style={styles(colors).imageShadow} />
-              <Image
-                source={getPlanImage(heroPlan)}
-                style={styles(colors).heroImage}
-                resizeMode="cover"
-              />
+              {/* Static circle border */}
+              <View style={styles(colors).heroImageCircle}>
+                {/* Animated carousel of preview images */}
+                <Animated.View
+                  style={[
+                    styles(colors).previewCarousel,
+                    previewImageAnimatedStyle,
+                  ]}
+                >
+                  {(baseTagData || []).map((tag, index) => {
+                    return (
+                      <Image
+                        key={tag._id || index}
+                        source={getTagImage(tag, true)}
+                        style={styles(colors).previewImageItem}
+                        resizeMode="cover"
+                      />
+                    );
+                  })}
+                </Animated.View>
+              </View>
             </View>
 
-            {heroPlan && (
-              <View style={styles(colors).planBadge}>
+            {heroTag && (
+              <TouchableOpacity
+                style={styles(colors).planBadge}
+                onPress={() =>
+                  selectedTag &&
+                  navigation.navigate("TagScreen", {
+                    tagId: selectedTag._id,
+                    tagName: selectedTag.name,
+                  })
+                }
+                activeOpacity={0.8}
+              >
                 <Text style={styles(colors).planBadgeText}>
-                  {selectedPlanName}
+                  {selectedTagName}
                 </Text>
-              </View>
+              </TouchableOpacity>
             )}
+            <Text style={styles(colors).chooseHeading}>Choose a category</Text>
           </LinearGradient>
 
-          <View style={styles(colors).heroCurve} />
+          <View style={styles(colors).heroCurve}>
+            {/* Spinning Dish Background */}
+            <Animated.Image
+              source={require("../../../assets/spin-dish.png")}
+              style={[styles(colors).spinDishBackground, spinAnimatedStyle]}
+              resizeMode="contain"
+              onLoad={() => console.log("Spin dish image loaded successfully")}
+              onError={(error) => console.log("Spin dish image error:", error)}
+            />
+          </View>
         </View>
 
         <View style={styles(colors).contentSection}>
-          <Text style={styles(colors).chooseHeading}>Choose a plan</Text>
-
-          <View style={styles(colors).planScrollContainer}>
-            {/* Fixed Circle Indicator */}
-            <View style={styles(colors).fixedCircleIndicator} />
-
-            <ScrollView
-              ref={flatListRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles(colors).planScroller}
-              snapToInterval={ITEM_TOTAL_WIDTH}
-              decelerationRate="fast"
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-            >
-              {planData.map((plan, index) => {
-                const actualPlan = getActualPlan(index);
-
-                // Calculate real-time position based on scroll
-                const itemOffset = (index * ITEM_TOTAL_WIDTH) - scrollX;
-                const centerPosition = width / 2;
-                const distanceFromCenter = Math.abs(itemOffset - centerPosition + 150); // Account for padding
-
-                // Scale based on proximity to center (closer = bigger)
-                const maxDistance = 100;
-                const minScale = 0.6;
-                const maxScale = 1.3;
-                const normalizedDistance = Math.min(distanceFromCenter, maxDistance) / maxDistance;
-                const scale = maxScale - (normalizedDistance * (maxScale - minScale));
-
-                // No opacity effect - all meal plans stay fully visible
-                const opacity = 1.0;
-
-                const isInCenter = distanceFromCenter < 50;
-
-                return (
-                  <TouchableOpacity
-                    key={`${actualPlan?._id || actualPlan?.id || 'placeholder'}-${index}`}
-                    style={[
-                      styles(colors).planChip,
-                      {
-                        transform: [{ scale }],
-                        opacity,
-                      },
-                      isInCenter && styles(colors).planChipCentered,
-                    ]}
-                    activeOpacity={0.85}
-                    onPress={() => onSelectPlan(index)}
-                  >
-                    <Image
-                      source={getPlanImage(actualPlan)}
-                      style={styles(colors).planChipImage}
-                      resizeMode="cover"
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
+          <Animated.FlatList
+            ref={flatListRef}
+            data={tagData || []}
+            keyExtractor={(item, index) => {
+              // Safer key extraction with fallbacks
+              if (item?.infiniteIndex !== undefined) {
+                return `infinite-${item.infiniteIndex}`;
+              }
+              if (item?._id) {
+                return `id-${item._id}-${index}`;
+              }
+              if (item?.id) {
+                return `item-${item.id}-${index}`;
+              }
+              return `index-${index}`;
+            }}
+            scrollEventThrottle={32} // Increased to reduce scroll calculations
+            onScroll={scrollHandler}
+            snapToInterval={ITEM_SIZE}
+            decelerationRate="fast"
+            snapToAlignment="center"
+            disableIntervalMomentum={true} // Reduce momentum calculations
+            style={{
+              position: "absolute",
+              bottom: 20, // Lift up slightly from bottom
+              height: 320, // More height for the arc
+            }}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: PADDING,
+            }}
+            horizontal
+            getItemLayout={(data, index) => ({
+              length: ITEM_SIZE,
+              offset: ITEM_SIZE * index,
+              index,
+            })}
+            initialNumToRender={3}
+            maxToRenderPerBatch={1} // Reduced to 1 for very low memory usage
+            windowSize={3}
+            removeClippedSubviews={true}
+            updateCellsBatchingPeriod={200} // Increased to reduce update frequency
+            legacyImplementation={false}
+            maintainVisibleContentPosition={null} // Disable for performance
+            renderItem={({ item, index }) => {
+              return <CarouselItem tag={item} index={index} />;
+            }}
+          />
 
           <View style={styles(colors).planInfoContainer}>
-            <Text style={styles(colors).planTitle}>{selectedPlanName}</Text>
             <Text style={styles(colors).planDescription}>
-              {selectedPlanDescription}
+              {selectedTagDescription}
             </Text>
 
             <TouchableOpacity
               style={[
                 styles(colors).learnMoreButton,
-                !selectedPlan && styles(colors).learnMoreButtonDisabled,
+                !selectedTag && styles(colors).learnMoreButtonDisabled,
               ]}
               onPress={() =>
-                selectedPlan &&
-                navigation.navigate("MealPlanDetail", {
-                  bundle: selectedPlan,
+                selectedTag &&
+                navigation.navigate("TagScreen", {
+                  tagId: selectedTag._id,
+                  tagName: selectedTag.name,
                 })
               }
               activeOpacity={0.7}
-              disabled={!selectedPlan}
+              disabled={!selectedTag}
             >
-              <Text style={styles(colors).learnMoreText}>Learn more</Text>
+              <Text style={styles(colors).learnMoreText}>Explore meals</Text>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles(colors).searchButton}
-            onPress={() => navigation.navigate("Search")}
-            activeOpacity={0.85}
-          >
-            <Text style={styles(colors).searchButtonText}>Search</Text>
-          </TouchableOpacity>
+          {/* Search Bar - Copy from SearchScreen */}
+          <View style={styles(colors).searchContainer}>
+            <TouchableOpacity
+              style={styles(colors).searchInputContainer}
+              onPress={() => navigation.navigate("Search")}
+              activeOpacity={0.85}
+            >
+              <CustomIcon
+                name="search-filled"
+                size={20}
+                color={colors.textMuted}
+                style={styles(colors).searchIcon}
+              />
+              <Text style={styles(colors).searchPlaceholder}>
+                Browse meal plans...
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -353,6 +844,11 @@ const styles = (colors) =>
     scrollContent: {
       paddingBottom: 40,
     },
+    contentSection: {
+      height: 400, // Provide enough space for the arched carousel
+      position: "relative",
+      marginTop: 20,
+    },
     heroWrapper: {
       position: "relative",
       backgroundColor: "#652815",
@@ -361,13 +857,11 @@ const styles = (colors) =>
       paddingHorizontal: 20,
       paddingTop: 20,
       paddingBottom: 140,
-      borderBottomLeftRadius: 40,
-      borderBottomRightRadius: 40,
     },
     header: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
+      justifyContent: "center", // Center the location
     },
     locationPill: {
       flexDirection: "row",
@@ -376,7 +870,8 @@ const styles = (colors) =>
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 20,
-      maxWidth: width * 0.6,
+      maxWidth: width * 0.8, // Allow more width for centered location
+      minWidth: width * 0.4, // Ensure minimum width
     },
     locationText: {
       fontSize: 14,
@@ -404,30 +899,42 @@ const styles = (colors) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    imageShadow: {
-      width: 240,
-      height: 240,
-      borderRadius: 120,
-      backgroundColor: "rgba(255, 255, 255, 0.25)",
-      position: "absolute",
-      top: 20,
-      opacity: 0.7,
-      transform: [{ scale: 1.1 }],
-    },
-    heroImage: {
-      width: 240,
-      height: 240,
-      borderRadius: 120,
-      borderWidth: 6,
+    heroImageCircle: {
+      width: 340,
+      height: 340,
+      borderRadius: 320,
+      borderWidth: 3,
       borderColor: "#FFFFFF",
+      overflow: "hidden",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    previewCarousel: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-start",
+    },
+    previewImageItem: {
+      width: 334, // Slightly smaller than circle (340 - 6px for border)
+      height: 334,
+      borderRadius: 167, // Perfect circle (334/2)
+      marginRight: 0, // No spacing between images
+    },
+    chooseHeading: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: "#652815",
+      textAlign: "center",
+      paddingTop: 16,
     },
     planBadge: {
       position: "absolute",
-      bottom: -24,
+      bottom: 150,
       alignSelf: "center",
       backgroundColor: "#FFFFFF",
-      paddingHorizontal: 26,
-      paddingVertical: 10,
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      marginBottom: 10,
       borderRadius: 22,
       shadowColor: "#000000",
       shadowOffset: { width: 0, height: 4 },
@@ -436,61 +943,29 @@ const styles = (colors) =>
       elevation: 6,
     },
     planBadgeText: {
-      fontSize: 16,
-      fontWeight: "600",
+      fontSize: 20,
+      fontWeight: "700",
       color: "#652815",
     },
-    heroCurve: {
-      height: 60,
-      backgroundColor: "#FFFFFF",
-      borderTopLeftRadius: 40,
-      borderTopRightRadius: 40,
-      marginTop: -40,
-    },
-    contentSection: {
-      marginTop: -40,
-      paddingTop: 56,
-      paddingHorizontal: 24,
-      backgroundColor: "#FFFFFF",
-      borderTopLeftRadius: 40,
-      borderTopRightRadius: 40,
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 12,
-      elevation: 4,
-    },
-    chooseHeading: {
-      fontSize: 22,
-      fontWeight: "600",
-      color: "#652815",
-      textAlign: "center",
-    },
+
     planScrollContainer: {
       position: "relative",
       marginTop: 24,
       height: 150,
       justifyContent: "center",
     },
-    fixedCircleIndicator: {
+    spinDishBackground: {
       position: "absolute",
+      top: -50,
       left: "50%",
-      top: "50%",
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: "#F9B87A",
-      marginLeft: -40,
-      marginTop: -40,
-      zIndex: -20, // Behind the meal plans
-      shadowColor: "#F9B87A",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
-      shadowRadius: 6,
-      elevation: 2, // Lower elevation so it's behind
+      marginLeft: -300, // Half of width to center
+      width: 600, // Extra large to overflow beyond screen
+      height: 600,
+      zIndex: 0, // Behind all content
+      // opacity: 0.2,
     },
     planScroller: {
-      paddingHorizontal: width / 2 - 125, // Center first item: half screen width minus half item width (70/2)
+      paddingHorizontal: 1.5 * ListItemWidth,
       alignItems: "center",
       zIndex: 15, // Ensure ScrollView content is above fixed circle
     },
@@ -498,19 +973,19 @@ const styles = (colors) =>
       width: 70,
       height: 70,
       borderRadius: 35,
-      marginHorizontal: 10,
+      marginHorizontal: 6,
       borderWidth: 2,
       borderColor: "transparent",
       overflow: "hidden",
       justifyContent: "center",
       alignItems: "center",
       backgroundColor: "#F5F1EE",
-      // shadowColor: "#000000",
-      // shadowOffset: { width: 0, height: 2 },
-      // shadowOpacity: 0.08,
-      // shadowRadius: 4,
-      // elevation: 20, // Much higher elevation
-      // zIndex: 20, // Much higher z-index to be on top
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 4,
+      zIndex: 20, // Higher z-index to be on top
     },
     planChipSelected: {
       borderColor: "#F9B87A",
@@ -519,13 +994,13 @@ const styles = (colors) =>
     },
     planChipCentered: {
       borderWidth: 3,
-      // borderColor: "#FFFFFF",
-      // shadowColor: "#F9B87A",
-      // shadowOffset: { width: 0, height: 4 },
-      // shadowOpacity: 0.3,
-      // shadowRadius: 8,
-      // elevation: 25, // Highest elevation for centered plan
-      // zIndex: 25, // Highest z-index for centered plan
+      borderColor: "#FFFFFF",
+      shadowColor: "#1b1b1b",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+      zIndex: 25, // Highest z-index for centered plan
     },
     planChipImage: {
       width: "100%",
@@ -533,9 +1008,10 @@ const styles = (colors) =>
       borderRadius: 35,
     },
     planInfoContainer: {
-      marginTop: 32,
+      marginTop: 16, // Reduce top margin to accommodate carousel
       alignItems: "center",
-      paddingHorizontal: 4,
+      paddingHorizontal: 20,
+      paddingBottom: 20,
     },
     planTitle: {
       fontSize: 20,
@@ -543,7 +1019,7 @@ const styles = (colors) =>
       color: "#652815",
     },
     planDescription: {
-      marginTop: 10,
+      // marginTop: 10,
       fontSize: 14,
       color: "#7C6A64",
       textAlign: "center",
@@ -561,23 +1037,33 @@ const styles = (colors) =>
       fontWeight: "600",
       textDecorationLine: "underline",
     },
-    searchButton: {
-      marginTop: 28,
-      marginBottom: 24,
-      backgroundColor: "#652815",
-      paddingVertical: 16,
-      borderRadius: 28,
-      alignItems: "center",
-      shadowColor: "#652815",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 4,
+    searchContainer: {
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      marginTop: 10,
     },
-    searchButtonText: {
+    searchInputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.cardBackground,
+      borderRadius: 30,
+      paddingHorizontal: 15,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    searchIcon: {
+      marginRight: 10,
+    },
+    searchPlaceholder: {
+      flex: 1,
       fontSize: 16,
-      fontWeight: "600",
-      color: "#FFFFFF",
+      color: colors.textMuted,
     },
   });
 

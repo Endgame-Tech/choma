@@ -6,7 +6,8 @@ export interface Tag {
   tagId: string;
   name: string;
   image: string;
-  description?: string;
+  bigPreviewImage: string;
+  description: string;
   sortOrder: number;
   isActive: boolean;
   mealPlanCount?: number;
@@ -17,7 +18,8 @@ export interface Tag {
 export interface CreateTagData {
   name: string;
   image: string;
-  description?: string;
+  bigPreviewImage: string;
+  description: string;
   sortOrder?: number;
 }
 

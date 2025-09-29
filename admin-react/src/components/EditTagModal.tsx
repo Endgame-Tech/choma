@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ImageUpload from './ImageUpload';
 import { type Tag, type UpdateTagData } from '../services/tagApi';
+import styles from '../styles/EditTagModal.module.css';
 
 interface EditTagModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     image: '',
+    bigPreviewImage: '',
     description: '',
     sortOrder: 0
   });
@@ -32,6 +34,7 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
       setFormData({
         name: tag.name || '',
         image: tag.image || '',
+        bigPreviewImage: tag.bigPreviewImage || '',
         description: tag.description || '',
         sortOrder: tag.sortOrder || 0
       });
@@ -69,6 +72,21 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
     }
   };
 
+  const handleBigPreviewImageUpload = (imageUrl: string) => {
+    setFormData(prev => ({
+      ...prev,
+      bigPreviewImage: imageUrl
+    }));
+
+    // Clear image error
+    if (errors.bigPreviewImage) {
+      setErrors(prev => ({
+        ...prev,
+        bigPreviewImage: ''
+      }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -82,7 +100,13 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
       newErrors.image = 'Tag image is required';
     }
 
-    if (formData.description && formData.description.length > 200) {
+    if (!formData.bigPreviewImage) {
+      newErrors.bigPreviewImage = 'Big preview image is required';
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.length > 200) {
       newErrors.description = 'Description must be 200 characters or less';
     }
 
@@ -112,6 +136,7 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
     setFormData({
       name: '',
       image: '',
+      bigPreviewImage: '',
       description: '',
       sortOrder: 0
     });
@@ -130,7 +155,7 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Tag</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Update tag "{tag.name}" information
+              Update tag &quot;{tag.name}&quot; information
             </p>
           </div>
           <button
@@ -173,35 +198,102 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Tag Image *
             </label>
+
+            {/* Current Image Preview */}
+            {formData.image && (
+              <div className="mb-4">
+                <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">Current Tag Image:</div>
+                <div className="relative w-32 h-32 mx-auto">
+                  <img
+                    src={formData.image}
+                    alt="Current tag image"
+                    className="w-full h-full object-cover rounded-lg shadow-md border border-gray-200 dark:border-gray-600"
+                    onError={(e) => {
+                      console.error('Failed to load image:', formData.image);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                📐 <strong>Design Guidelines:</strong><br/>
-                • Upload any image - it will be cropped to square (1:1 aspect ratio)<br/>
-                • Final size will be optimized to 400x400px<br/>
-                • Perfect for icons, logos, or simple graphics<br/>
-                • Cropping tool will help you select the best square area<br/>
-                • Supports JPG, PNG, and WebP formats
+                📐 <strong>Design Guidelines:</strong><br />
+                • Upload a square image (1:1 aspect ratio recommended)<br />
+                • Recommended size: 400x400px or larger<br />
+                • Perfect for icons, logos, or simple graphics<br />
+                • Image will be displayed at various sizes in the app<br />
+                • Must be PNG format only
               </p>
             </div>
             <ImageUpload
               onImageUpload={handleImageUpload}
               currentImageUrl={formData.image}
-              label="Upload Tag Image"
+              label="Upload Tag Image (PNG only)"
               className="w-full"
-              enableCropping={true}
-              cropAspectRatio={1}
+              enableCropping={false}
               maxSizeMB={5}
               uploadEndpoint="/upload/tag-image"
+              accept="image/png"
             />
             {errors.image && (
               <p className="text-red-500 text-sm mt-1">{errors.image}</p>
             )}
           </div>
 
+          {/* Big Preview Image */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Big Preview Image *
+            </label>
+
+            {/* Current Big Preview Image */}
+            {formData.bigPreviewImage && (
+              <div className="mb-4">
+                <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">Current Big Preview Image:</div>
+                <div className="relative w-full max-w-md mx-auto">
+                  <img
+                    src={formData.bigPreviewImage}
+                    alt="Current big preview image"
+                    className={`w-full h-auto object-cover rounded-lg shadow-md border border-gray-200 dark:border-gray-600 ${styles.bigPreviewImage}`}
+                    onError={(e) => {
+                      console.error('Failed to load big preview image:', formData.bigPreviewImage);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3 mb-3">
+              <p className="text-sm text-purple-700 dark:text-purple-300">
+                🖼️ <strong>Hero Image Guidelines:</strong><br />
+                • Large showcase image for featured displays<br />
+                • Recommended size: 800x600px or larger<br />
+                • Will be used in carousels and hero sections<br />
+                • High quality images work best<br />
+                • Can be any aspect ratio - no cropping applied
+              </p>
+            </div>
+            <ImageUpload
+              onImageUpload={handleBigPreviewImageUpload}
+              currentImageUrl={formData.bigPreviewImage}
+              label="Upload Big Preview Image"
+              className="w-full"
+              enableCropping={false}
+              maxSizeMB={10}
+              uploadEndpoint="/upload/tag-preview"
+            />
+            {errors.bigPreviewImage && (
+              <p className="text-red-500 text-sm mt-1">{errors.bigPreviewImage}</p>
+            )}
+          </div>
+
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Description (Optional)
+              Description *
             </label>
             <textarea
               name="description"

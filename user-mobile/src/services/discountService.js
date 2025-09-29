@@ -79,24 +79,56 @@ class DiscountService {
         return { discountPercent: 0, discountAmount: 0, reason: 'User not eligible for any discounts' };
       }
 
-      // Apply the highest discount if multiple are applicable
-      const bestDiscount = applicableDiscounts.reduce((best, current) => 
-        current.discountPercent > best.discountPercent ? current : best
-      );
+      // Separate ad and promo discounts
+      const adDiscounts = applicableDiscounts.filter(d => d.discountType === 'ad');
+      const promoDiscounts = applicableDiscounts.filter(d => d.discountType === 'promo' || !d.discountType);
 
+      let bestDiscount;
       const basePrice = mealPlan.totalPrice || mealPlan.basePrice || mealPlan.price || 0;
-      const discountAmount = Math.round((basePrice * bestDiscount.discountPercent) / 100);
 
-      return {
-        discountPercent: bestDiscount.discountPercent,
-        discountAmount,
-        discountedPrice: basePrice - discountAmount,
-        originalPrice: basePrice,
-        reason: bestDiscount.name,
-        eligibilityReason: bestDiscount.eligibilityReason,
-        validUntil: bestDiscount.validUntil,
-        isLimitedTime: !!bestDiscount.validUntil
-      };
+      // Prioritize ad discounts (they show higher perceived value)
+      if (adDiscounts.length > 0) {
+        bestDiscount = adDiscounts.reduce((best, current) =>
+          current.discountPercent > best.discountPercent ? current : best
+        );
+
+        // Ad discounts: customer pays original price, but sees fake higher price crossed out
+        return {
+          discountType: 'ad',
+          discountPercent: bestDiscount.discountPercent,
+          discountAmount: 0, // Customer pays original price
+          discountedPrice: basePrice, // Same as original price
+          originalPrice: basePrice,
+          counterValue: bestDiscount.counterValue, // Fake higher price to show
+          reason: bestDiscount.name,
+          eligibilityReason: bestDiscount.eligibilityReason,
+          validUntil: bestDiscount.validUntil,
+          isLimitedTime: !!bestDiscount.validUntil,
+          showAsDiscounted: true // Show strikethrough pricing
+        };
+      }
+
+      // Promo discounts: actual price reduction
+      if (promoDiscounts.length > 0) {
+        bestDiscount = promoDiscounts.reduce((best, current) =>
+          current.discountPercent > best.discountPercent ? current : best
+        );
+
+        const discountAmount = Math.round((basePrice * bestDiscount.discountPercent) / 100);
+
+        return {
+          discountType: 'promo',
+          discountPercent: bestDiscount.discountPercent,
+          discountAmount,
+          discountedPrice: basePrice - discountAmount,
+          originalPrice: basePrice,
+          reason: bestDiscount.name,
+          eligibilityReason: bestDiscount.eligibilityReason,
+          validUntil: bestDiscount.validUntil,
+          isLimitedTime: !!bestDiscount.validUntil,
+          showAsDiscounted: false // Regular discount, reduce actual price
+        };
+      }
 
     } catch (error) {
       console.error('Error calculating discount:', error);
@@ -356,14 +388,31 @@ class DiscountService {
       return { hasDiscount: false };
     }
 
-    return {
+    const baseDisplayData = {
       hasDiscount: true,
       badgeText: `${discount.discountPercent}% OFF`,
       reasonText: discount.reason,
       eligibilityText: discount.eligibilityReason,
-      savingsText: `Save ₦${discount.discountAmount.toLocaleString()}`,
-      limitedTimeText: discount.isLimitedTime ? 
+      limitedTimeText: discount.isLimitedTime ?
         `Valid until ${new Date(discount.validUntil).toLocaleDateString()}` : null
+    };
+
+    // Handle ad discounts differently
+    if (discount.discountType === 'ad') {
+      return {
+        ...baseDisplayData,
+        savingsText: `Was ₦${discount.counterValue?.toLocaleString() || '0'}`,
+        priceDisplayText: `₦${discount.counterValue?.toLocaleString() || '0'}`, // Crossed out price
+        actualPriceText: `₦${discount.originalPrice?.toLocaleString() || '0'}`, // Actual price
+        isAdDiscount: true
+      };
+    }
+
+    // Handle promo discounts (actual savings)
+    return {
+      ...baseDisplayData,
+      savingsText: `Save ₦${discount.discountAmount?.toLocaleString() || '0'}`,
+      isAdDiscount: false
     };
   }
 }

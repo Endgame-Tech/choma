@@ -570,6 +570,7 @@ export type DiscountRule = {
   name: string;
   description?: string;
   discountPercent?: number;
+  discountType?: 'promo' | 'ad'; // Add discount type
   targetSegment?: string;
   isActive?: boolean;
   validFrom?: string | Date;
@@ -587,9 +588,11 @@ export type DiscountRule = {
   applicableCategories?: string[];
   applicableTags?: string[];
   applyToAllMealPlans?: boolean;
-  // Allow extra backend fields without breaking assignment compatibility
-  [key: string]: unknown;
-};
+  // Ad discount specific fields
+  selectedMealPlanId?: string;
+  counterValue?: number;
+  calculatedDiscount?: number;
+} & Record<string, unknown>;
 
 export const discountApi = {
   // Get all discount rules

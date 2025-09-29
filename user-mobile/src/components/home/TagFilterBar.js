@@ -28,7 +28,7 @@ export const refreshTagsCache = () => {
 };
 
 const TagFilterBar = memo(
-  ({ onTagSelect, selectedTagId = null, onApplyFilters, onWeekSelect }) => {
+  ({ onTagSelect, selectedTagId = null, onApplyFilters, onWeekSelect, navigation }) => {
     console.log("🏷️ TagFilterBar component mounted/rendered");
     const { colors } = useTheme();
     const [tags, setTags] = useState(cachedTags);
@@ -111,6 +111,15 @@ const TagFilterBar = memo(
         onTagSelect(newTagId, tag);
         setAnimating(false);
       }, 100);
+    };
+
+    const handleTagLongPress = (tag) => {
+      if (navigation) {
+        navigation.navigate('TagScreen', {
+          tagId: tag._id,
+          tagName: tag.name
+        });
+      }
     };
 
     const fetchWeekOptionsForTag = async (tag) => {
@@ -368,6 +377,8 @@ const TagFilterBar = memo(
                 selectedTagId === tag._id && styles(colors).selectedTagItem,
               ]}
               onPress={() => handleTagPress(tag)}
+              onLongPress={() => handleTagLongPress(tag)}
+              delayLongPress={500}
             >
               <View
                 style={[
