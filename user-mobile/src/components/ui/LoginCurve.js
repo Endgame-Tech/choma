@@ -1,6 +1,6 @@
 import React from "react";
 import { Dimensions, View } from "react-native";
-import { Svg, Path } from 'react-native-svg';
+import { Svg, Path } from "react-native-svg";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -21,7 +21,7 @@ const LoginCurve = ({ style }) => {
       style={[
         {
           position: "absolute",
-          bottom: -250, // Move curve down more
+          bottom: -250, 
           left: 0,
           width: curveWidth,
           height: curveHeight,

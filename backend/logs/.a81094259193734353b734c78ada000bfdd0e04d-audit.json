@@ -6,16 +6,6 @@
     "auditLog": "C:\\dev\\choma\\backend\\logs\\.a81094259193734353b734c78ada000bfdd0e04d-audit.json",
     "files": [
         {
-            "date": 1756584572435,
-            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-08-30.log",
-            "hash": "9381058a37be85133253d46bd92c0ae7a250ec7522d9fd3ad66c67d8f8ec3966"
-        },
-        {
-            "date": 1756809073184,
-            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-09-02.log",
-            "hash": "34382e9500305ce7f617cf9c910afc3110718fe2edd4b923611b9c1dec6d5baf"
-        },
-        {
             "date": 1757326942505,
             "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-09-08.log",
             "hash": "75f103377e7db15591e64973f45d1dd2f23c13db9ae62f8d1e8ef5a6eabcb9aa"
@@ -124,6 +114,36 @@
             "date": 1759100415080,
             "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-09-29.log",
             "hash": "7d4db37a9868b939b49620d885d3c9f55e62ba56f387a8582517dc2bc4fd4528"
+        },
+        {
+            "date": 1759204266731,
+            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-09-30.log",
+            "hash": "e71d981237ef23e34580679238cb58b0c671fbdcc4d776d3102213716fc25fc9"
+        },
+        {
+            "date": 1759440289679,
+            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-10-02.log",
+            "hash": "fac8ec7225893ea175dc9d8ffa0c70c1a069a826584817dcb0324e3bba762f37"
+        },
+        {
+            "date": 1759467644545,
+            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-10-03.log",
+            "hash": "0e52242cb7fe3bf87ee472268c7901aa63369380b017724fad7f6a54aeda534d"
+        },
+        {
+            "date": 1759609323264,
+            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-10-04.log",
+            "hash": "e4aebcd7234587cd5d5633542ec2828d083389745fee41e5f99efc481a40d854"
+        },
+        {
+            "date": 1759620297700,
+            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-10-05.log",
+            "hash": "470c68ffc4c0e8143e3f9a6448c0dba1e9eef0c5a2ca14d84b94e6459a7ac465"
+        },
+        {
+            "date": 1759749536513,
+            "name": "C:\\dev\\choma\\backend\\logs\\combined-2025-10-06.log",
+            "hash": "a6c900fd3970049776ecc017cfbc9175bd6e71a7f6bb0853d5834b3366ed5940"
         }
     ],
     "hashType": "sha256"

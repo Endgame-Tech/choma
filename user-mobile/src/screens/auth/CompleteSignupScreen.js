@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,17 +9,25 @@ import {
   ScrollView,
   Platform,
   StatusBar,
+  ImageBackground,
+  Image,
+  Dimensions,
+  Animated,
+  Easing,
+  Keyboard,
+  SafeAreaView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
-import { THEME } from "../../utils/colors";
 import ChomaLogo from "../../components/ui/ChomaLogo";
+import LoginCurve from "../../components/ui/LoginCurve";
 import { useAuth } from "../../context/AuthContext";
 import { useAlert } from "../../contexts/AlertContext";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+
+const { width, height } = Dimensions.get("window");
 
 const CompleteSignupScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -28,6 +36,75 @@ const CompleteSignupScreen = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { userData } = route.params || {};
+
+  // Animation for smooth keyboard transitions
+  const [keyboardOffset] = useState(new Animated.Value(0));
+  const [topSectionOffset] = useState(new Animated.Value(0));
+
+  // Rotation animation for the food image (slow spin)
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const rotateInterpolate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  useEffect(() => {
+    const spin = Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 20000, // 20 seconds per full rotation
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    spin.start();
+    return () => spin.stop();
+  }, [rotateAnim]);
+
+  // Smooth keyboard animation listeners
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (event) => {
+        // White form section - move up more (original amount)
+        Animated.timing(keyboardOffset, {
+          duration: Platform.OS === "ios" ? 300 : 250,
+          toValue: -event.endCoordinates.height * 0.3, // Keep white form moving up by 30%
+          useNativeDriver: false,
+        }).start();
+
+        // Top section (logo + food image) - move up less
+        Animated.timing(topSectionOffset, {
+          duration: Platform.OS === "ios" ? 300 : 250,
+          toValue: -event.endCoordinates.height * 0.1, // Logo and food image move up only 10%
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        // Reset both animations
+        Animated.timing(keyboardOffset, {
+          duration: Platform.OS === "ios" ? 300 : 250,
+          toValue: 0,
+          useNativeDriver: false,
+        }).start();
+
+        Animated.timing(topSectionOffset, {
+          duration: Platform.OS === "ios" ? 300 : 250,
+          toValue: 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, [keyboardOffset, topSectionOffset]);
 
   const handleCompleteSignup = async () => {
     if (!userData || !userData.emailVerified) {
@@ -73,275 +150,372 @@ const CompleteSignupScreen = ({ navigation, route }) => {
 
   if (!userData) {
     return (
-      <SafeAreaView style={styles(colors).container}>
-        <View style={styles(colors).errorContainer}>
-          <Ionicons name="alert-circle" size={60} color={colors.error} />
-          <Text style={styles(colors).errorTitle}>Something went wrong</Text>
-          <Text style={styles(colors).errorText}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#652815" />
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={60} color="#dc3545" />
+          <Text style={styles.errorTitle}>Something went wrong</Text>
+          <Text style={styles.errorText}>
             Registration data is missing. Please start the registration process
             again.
           </Text>
           <TouchableOpacity
-            style={styles(colors).errorButton}
+            style={styles.errorButton}
             onPress={() => navigation.navigate("Signup")}
           >
-            <Text style={styles(colors).errorButtonText}>Start Over</Text>
+            <Text style={styles.errorButtonText}>Start Over</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles(colors).container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#652815" />
 
-      <KeyboardAvoidingView
-        style={styles(colors).container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ScrollView contentContainerStyle={styles(colors).scrollContainer}>
-          <View style={styles(colors).content}>
-            <View style={styles(colors).logoContainer}>
-              <View style={styles(colors).logoBackground}>
-                <ChomaLogo width={100} height={60} />
-              </View>
-              <Text style={styles(colors).title}>Almost Done!</Text>
-              <Text style={styles(colors).subtitle}>
-                Your email has been verified. Ready to complete your
-                registration?
+      {/* Background with brown color and pattern */}
+      <View style={styles.backgroundContainer}>
+        <ImageBackground
+          source={require("../../../assets/patternchoma.png")}
+          style={styles.backgroundPattern}
+          resizeMode="repeat"
+          imageStyle={styles.backgroundImageStyle}
+        />
+
+        {/* Top section with logo and food image */}
+        <Animated.View
+          style={[
+            styles.topSection,
+            { transform: [{ translateY: topSectionOffset }] },
+          ]}
+        >
+          <View style={styles.logoContainer}>
+            <ChomaLogo width={150} height={82} />
+          </View>
+
+          {/* Food Image (slow rotating) */}
+          <View style={styles.foodImageContainer}>
+            <Animated.Image
+              source={require("../../../assets/authImage.png")}
+              style={[
+                styles.foodImage,
+                { transform: [{ rotate: rotateInterpolate }] },
+              ]}
+              resizeMode="cover"
+            />
+          </View>
+        </Animated.View>
+
+        {/* Curved transition */}
+        <Animated.View
+          style={[{
+            transform: [{ translateY: keyboardOffset }],
+            zIndex: 4
+          }]}
+        >
+          <LoginCurve style={{ zIndex: 4 }} />
+        </Animated.View>
+
+        {/* Bottom white section with form */}
+        <Animated.View
+          style={[
+            styles.bottomSection,
+            { transform: [{ translateY: keyboardOffset }] },
+          ]}
+        >
+          <ScrollView
+            style={styles.formContainer}
+            contentContainerStyle={styles.formContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+            enableOnAndroid={true}
+            keyboardDismissMode="interactive"
+          >
+            {/* Welcome text */}
+            <View style={styles.welcomeContainer}>
+              <Text style={styles.welcomeTitle}>Almost Done!</Text>
+              <Text style={styles.welcomeSubtitle}>
+                Your email has been verified. Ready to complete your registration?
               </Text>
             </View>
 
-            <View style={styles(colors).summaryCard}>
-              <View style={styles(colors).summaryHeader}>
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
                 <Ionicons
                   name="person-circle"
                   size={24}
-                  color={colors.primary}
+                  color="#E6B17A"
                 />
-                <Text style={styles(colors).summaryTitle}>Account Summary</Text>
+                <Text style={styles.summaryTitle}>Account Summary</Text>
               </View>
 
-              <View style={styles(colors).summaryItem}>
-                <Text style={styles(colors).summaryLabel}>Name</Text>
-                <Text style={styles(colors).summaryValue}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Name</Text>
+                <Text style={styles.summaryValue}>
                   {userData.firstName} {userData.lastName}
                 </Text>
               </View>
 
-              <View style={styles(colors).summaryItem}>
-                <Text style={styles(colors).summaryLabel}>Email</Text>
-                <View style={styles(colors).emailContainer}>
-                  <Text style={styles(colors).summaryValue}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Email</Text>
+                <View style={styles.emailContainer}>
+                  <Text style={styles.summaryValue}>
                     {userData.email}
                   </Text>
                   <Ionicons
                     name="checkmark-circle"
                     size={16}
-                    color={colors.success}
+                    color="#4CAF50"
                   />
                 </View>
               </View>
 
-              <View style={styles(colors).summaryItem}>
-                <Text style={styles(colors).summaryLabel}>Phone</Text>
-                <Text style={styles(colors).summaryValue}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Phone</Text>
+                <Text style={styles.summaryValue}>
                   {userData.phone}
                 </Text>
               </View>
 
-              <View style={styles(colors).summaryItem}>
-                <Text style={styles(colors).summaryLabel}>
-                  Delivery Address
-                </Text>
-                <Text style={styles(colors).summaryValue}>
-                  {userData.deliveryAddress}
-                </Text>
-              </View>
+              {userData.deliveryAddress && (
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryLabel}>
+                    Delivery Address
+                  </Text>
+                  <Text style={styles.summaryValue}>
+                    {userData.deliveryAddress}
+                  </Text>
+                </View>
+              )}
             </View>
 
             <TouchableOpacity
               style={[
-                styles(colors).completeButton,
-                isLoading && styles(colors).completeButtonDisabled,
+                styles.completeButton,
+                isLoading && styles.completeButtonDisabled,
               ]}
               onPress={handleCompleteSignup}
               disabled={isLoading}
             >
-              <LinearGradient
-                colors={
-                  isLoading
-                    ? [colors.textMuted, colors.textMuted]
-                    : ["#652815", "#652815"]
-                }
-                style={styles(colors).buttonGradient}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles(colors).completeButtonText}>
-                    Complete Registration
-                  </Text>
-                )}
-              </LinearGradient>
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.completeButtonText}>
+                  Complete Registration
+                </Text>
+              )}
             </TouchableOpacity>
 
-            <View style={styles(colors).footer}>
-              <Text style={styles(colors).footerText}>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
                 By completing registration, you agree to our{" "}
               </Text>
               <TouchableOpacity>
-                <Text style={styles(colors).footerLink}>
+                <Text style={styles.footerLink}>
                   Terms & Conditions
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+            {/* Add some bottom padding for better scrolling */}
+            <View style={styles.bottomPadding} />
+          </ScrollView>
+        </Animated.View>
+      </View>
+    </View>
   );
 };
 
-const styles = (colors) =>
-  createStylesWithDMSans({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
+const styles = createStylesWithDMSans({
+  container: {
+    flex: 1,
+    backgroundColor: "#652815",
+  },
+  backgroundContainer: {
+    flex: 1,
+    position: "relative",
+  },
+  backgroundPattern: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#652815",
+    opacity: 0.8,
+  },
+  backgroundImageStyle: {
+    opacity: 1,
+    transform: [{ scale: 2.5 }],
+  },
+  topSection: {
+    flex: 0.5,
+    paddingTop: Platform.OS === "ios" ? 30 : 70,
+    paddingHorizontal: 20,
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  logoContainer: {
+    marginTop: 15,
+    marginBottom: 20,
+  },
+  foodImageContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  foodImage: {
+    width: 360,
+    height: 350,
+    borderRadius: 130,
+  },
+  bottomSection: {
+    flex: 0.75,
+    backgroundColor: "#fff",
+    minHeight: height * 0.1,
+    zIndex: 5,
+    position: "relative",
+  },
+  formContainer: {
+    flex: 1,
+  },
+  formContent: {
+    flexGrow: 1,
+    paddingHorizontal: 30,
+    paddingBottom: 70,
+    justifyContent: "center",
+  },
+  welcomeContainer: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 8,
+  },
+  welcomeSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 22,
+    paddingHorizontal: 20,
+  },
+  summaryCard: {
+    backgroundColor: "#f8f8f8",
+    borderRadius: 25,
+    padding: 20,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: "#e8e8e8",
+  },
+  summaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginLeft: 12,
+  },
+  summaryItem: {
+    marginBottom: 16,
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  summaryValue: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "500",
+  },
+  emailContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  completeButton: {
+    backgroundColor: "#652815",
+    borderRadius: 25,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 20,
+    shadowColor: "#652815",
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
-    scrollContainer: {
-      flexGrow: 1,
-    },
-    content: {
-      flex: 1,
-      paddingHorizontal: 20,
-      justifyContent: "center",
-    },
-    logoContainer: {
-      alignItems: "center",
-      marginBottom: 40,
-    },
-    logoBackground: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      justifyContent: "center",
-      alignItems: "center",
-      marginBottom: 20,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: "bold",
-      color: colors.text,
-      marginBottom: 8,
-      textAlign: "center",
-    },
-    subtitle: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      textAlign: "center",
-      lineHeight: 22,
-    },
-    summaryCard: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.large,
-      padding: 20,
-      marginBottom: 30,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    summaryHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 20,
-    },
-    summaryTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-      marginLeft: 12,
-    },
-    summaryItem: {
-      marginBottom: 16,
-    },
-    summaryLabel: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginBottom: 4,
-    },
-    summaryValue: {
-      fontSize: 16,
-      color: colors.text,
-      fontWeight: "500",
-    },
-    emailContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    completeButton: {
-      borderRadius: THEME.borderRadius.medium,
-      overflow: "hidden",
-      marginBottom: 20,
-    },
-    buttonGradient: {
-      height: 50,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    completeButtonDisabled: {
-      opacity: 0.6,
-    },
-    completeButtonText: {
-      color: colors.white,
-      fontSize: 16,
-      fontWeight: "600",
-    },
-    footer: {
-      alignItems: "center",
-    },
-    footerText: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      textAlign: "center",
-    },
-    footerLink: {
-      fontSize: 12,
-      color: colors.primary,
-      textDecorationLine: "underline",
-    },
-    errorContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      paddingHorizontal: 40,
-    },
-    errorTitle: {
-      fontSize: 24,
-      fontWeight: "bold",
-      color: colors.text,
-      marginTop: 20,
-      marginBottom: 12,
-    },
-    errorText: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      textAlign: "center",
-      lineHeight: 22,
-      marginBottom: 30,
-    },
-    errorButton: {
-      backgroundColor: colors.primary,
-      paddingVertical: 12,
-      paddingHorizontal: 30,
-      borderRadius: THEME.borderRadius.medium,
-    },
-    errorButtonText: {
-      color: colors.white,
-      fontSize: 16,
-      fontWeight: "600",
-    },
-  });
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  completeButtonDisabled: {
+    opacity: 0.7,
+  },
+  completeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  footer: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+  footerText: {
+    fontSize: 12,
+    color: "#666",
+    textAlign: "center",
+  },
+  footerLink: {
+    fontSize: 12,
+    color: "#E6B17A",
+    textDecorationLine: "underline",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+    backgroundColor: "#652815",
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#fff",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 30,
+    opacity: 0.8,
+  },
+  errorButton: {
+    backgroundColor: "#E6B17A",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+  },
+  errorButtonText: {
+    color: "#333",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  bottomPadding: {
+    height: 30,
+  },
+});
 
 export default CompleteSignupScreen;

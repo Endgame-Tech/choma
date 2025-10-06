@@ -20,6 +20,7 @@ import {
   Keyboard,
 } from "react-native";
 import ChomaLogo from "../../components/ui/ChomaLogo";
+import LoginCurve from "../../components/ui/LoginCurve";
 import CustomDatePicker from "../../components/ui/CustomDatePicker";
 import AddressAutocomplete from "../../components/ui/AddressAutocomplete";
 import { Ionicons } from "@expo/vector-icons";
@@ -57,9 +58,8 @@ const SignupScreen = ({ navigation, route }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
 
-  // Address info
+  // Address info (optional)
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [addressCoordinates, setAddressCoordinates] = useState(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -182,7 +182,6 @@ const SignupScreen = ({ navigation, route }) => {
   // Handle address selection from autocomplete
   const handleAddressSelect = (addressInfo) => {
     setDeliveryAddress(addressInfo.formattedAddress);
-    setCity(addressInfo.locality || addressInfo.adminArea || "");
     setState(addressInfo.adminArea || "Lagos"); // Default to Lagos if not found
     setAddressCoordinates(addressInfo.coordinates);
   };
@@ -250,11 +249,6 @@ const SignupScreen = ({ navigation, route }) => {
   };
 
   const validateStep3 = () => {
-    if (!deliveryAddress.trim() || !city.trim() || !state.trim()) {
-      showError("Error", "Please fill in all address fields");
-      return false;
-    }
-
     if (!acceptedTerms) {
       showError("Error", "Please accept the terms and conditions");
       return false;
@@ -312,7 +306,6 @@ const SignupScreen = ({ navigation, route }) => {
           let streetNumber = "";
           let streetName = "";
           let neighborhood = "";
-          let city = "";
           let state = "";
 
           addressComponents.forEach((component) => {
@@ -326,9 +319,6 @@ const SignupScreen = ({ navigation, route }) => {
               types.includes("neighborhood")
             ) {
               neighborhood = component.long_name;
-            } else if (types.includes("locality")) {
-              // Prioritize locality (actual city name) over administrative areas
-              city = component.long_name;
             } else if (types.includes("administrative_area_level_1")) {
               state = component.long_name;
             }
@@ -344,19 +334,16 @@ const SignupScreen = ({ navigation, route }) => {
             streetNumber,
             streetName,
             neighborhood,
-            city,
             state,
             formattedAddress,
           });
 
           // Set the address fields
           setDeliveryAddress(formattedAddress || result.formatted_address);
-          setCity(city || "Lagos"); // Default to Lagos if not found
           setState(state || "Lagos"); // Default to Lagos state if not found
 
           console.log("✅ Setting address fields:", {
             deliveryAddress: formattedAddress || result.formatted_address,
-            city: city || "Lagos",
             state: state || "Lagos",
           });
 
@@ -383,7 +370,6 @@ const SignupScreen = ({ navigation, route }) => {
               .join(", ");
 
             setDeliveryAddress(formattedAddress);
-            setCity(address.city || address.subregion || "Lagos");
             setState(address.region || address.country || "Lagos");
 
             setAddressCoordinates({
@@ -414,7 +400,6 @@ const SignupScreen = ({ navigation, route }) => {
             .join(", ");
 
           setDeliveryAddress(formattedAddress);
-          setCity(address.city || address.subregion || "Lagos");
           setState(address.region || address.country || "Lagos");
 
           setAddressCoordinates({
@@ -556,9 +541,8 @@ const SignupScreen = ({ navigation, route }) => {
         email: email.trim(),
         password,
         phone: phoneNumber.trim(), // Changed from phoneNumber to phone to match backend
-        deliveryAddress: deliveryAddress.trim(),
-        city: city.trim(),
-        state: state.trim(),
+        deliveryAddress: deliveryAddress.trim() || "", // Optional address
+        state: state.trim() || "Lagos", // Default to Lagos if not provided
         profileImage: cloudImageUrl,
       };
 
@@ -931,7 +915,7 @@ const SignupScreen = ({ navigation, route }) => {
   const renderStep3 = () => (
     <View style={styles.stepContent}>
       {/* <Text style={styles.stepTitle}>Delivery Address</Text> */}
-      <Text style={styles.stepTitle}>Where should we deliver your meals?</Text>
+      <Text style={styles.stepTitle}>Add delivery address (optional)</Text>
 
       <TouchableOpacity
         style={styles.locationButton}
@@ -949,44 +933,26 @@ const SignupScreen = ({ navigation, route }) => {
 
       <View style={styles.autocompleteContainer}>
         <AddressAutocomplete
-          placeholder="Search for delivery address *"
+          placeholder="Search for delivery address (optional)"
           onAddressSelect={handleAddressSelect}
           defaultValue={deliveryAddress}
         />
       </View>
 
-      <View style={styles.addressRow}>
-        <View style={[styles.inputContainer, styles.halfWidth]}>
-          <Ionicons
-            name="business-outline"
-            size={20}
-            color={colors.textMuted}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="City *"
-            placeholderTextColor={colors.textMuted}
-            value={city}
-            onChangeText={setCity}
-          />
-        </View>
-
-        <View style={[styles.inputContainer, styles.halfWidth]}>
-          <Ionicons
-            name="map-outline"
-            size={20}
-            color={colors.textMuted}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="State *"
-            placeholderTextColor={colors.textMuted}
-            value={state}
-            onChangeText={setState}
-          />
-        </View>
+      <View style={styles.inputContainer}>
+        <Ionicons
+          name="map-outline"
+          size={20}
+          color={colors.textMuted}
+          style={styles.inputIcon}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="State (optional)"
+          placeholderTextColor={colors.textMuted}
+          value={state}
+          onChangeText={setState}
+        />
       </View>
 
       {/* Terms and Conditions */}
@@ -1097,6 +1063,16 @@ const SignupScreen = ({ navigation, route }) => {
           </View>
         </Animated.View>
 
+        {/* Curved transition */}
+        <Animated.View
+          style={[{
+            transform: [{ translateY: keyboardOffset }],
+            zIndex: 4
+          }]}
+        >
+          <LoginCurve style={{ zIndex: 4 }} />
+        </Animated.View>
+
         {/* Bottom white section with form */}
         <Animated.View
           style={[
@@ -1128,7 +1104,7 @@ const SignupScreen = ({ navigation, route }) => {
                   ? "Tell us about yourself"
                   : currentStep === 2
                     ? "Create a secure password"
-                    : "Where should we deliver your meals?"}
+                    : "Almost done! Just accept our terms"}
               </Text>
               {renderStepIndicator()}
             </View>
@@ -1219,7 +1195,7 @@ const styles = createStylesWithDMSans({
     transform: [{ scale: 2.5 }], // Makes the pattern 2x bigger
   },
   topSection: {
-    flex: 0.4,
+    flex: 0.5,
     paddingTop: Platform.OS === "ios" ? 30 : 70,
     paddingHorizontal: 20,
     justifyContent: "space-between",
@@ -1240,12 +1216,11 @@ const styles = createStylesWithDMSans({
     borderRadius: 140,
   },
   bottomSection: {
-    flex: 0.8,
+    flex: 0.75,
     backgroundColor: "#fff",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    minHeight: height * 0.5,
-    zIndex: 3,
+    minHeight: height * 0.1,
+    zIndex: 5,
+    position: "relative",
   },
   formContainer: {
     flex: 1,

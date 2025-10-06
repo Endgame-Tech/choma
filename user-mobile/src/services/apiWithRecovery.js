@@ -1,1 +1,452 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';\nimport { API_CONFIG } from '../utils/constants';\n\n/**\n * Enhanced API service with error recovery mechanisms\n */\nclass APIService {\n  constructor() {\n    this.baseURL = API_CONFIG.API_BASE_URL;\n    this.retryAttempts = 3;\n    this.retryDelay = 1000;\n    this.timeout = 30000;\n    this.cache = new Map();\n    this.offlineQueue = [];\n    this.isOnline = true;\n    \n    // Circuit breaker state\n    this.circuitBreaker = {\n      failures: 0,\n      lastFailureTime: null,\n      threshold: 5,\n      resetTimeout: 60000,\n      state: 'CLOSED' // CLOSED, OPEN, HALF_OPEN\n    };\n    \n    this.setupNetworkMonitoring();\n  }\n\n  /**\n   * Setup network monitoring\n   */\n  setupNetworkMonitoring() {\n    // This would be implemented with NetInfo in a real app\n    // For now, we'll simulate it\n    this.checkNetworkStatus();\n    \n    // Check network status periodically\n    setInterval(() => {\n      this.checkNetworkStatus();\n    }, 5000);\n  }\n\n  /**\n   * Check network connectivity\n   */\n  async checkNetworkStatus() {\n    try {\n      // Simple ping to check connectivity\n      const response = await fetch(`${this.baseURL}/health`, {\n        method: 'GET',\n        timeout: 5000\n      });\n      \n      this.isOnline = response.ok;\n      \n      if (this.isOnline && this.offlineQueue.length > 0) {\n        this.processOfflineQueue();\n      }\n    } catch (error) {\n      this.isOnline = false;\n    }\n  }\n\n  /**\n   * Process queued requests when back online\n   */\n  async processOfflineQueue() {\n    console.log(`Processing ${this.offlineQueue.length} queued requests`);\n    \n    const queue = [...this.offlineQueue];\n    this.offlineQueue = [];\n    \n    for (const queuedRequest of queue) {\n      try {\n        const result = await this.executeRequest(queuedRequest.config);\n        queuedRequest.resolve(result);\n      } catch (error) {\n        queuedRequest.reject(error);\n      }\n    }\n  }\n\n  /**\n   * Check circuit breaker state\n   */\n  checkCircuitBreaker() {\n    const { state, failures, threshold, lastFailureTime, resetTimeout } = this.circuitBreaker;\n    \n    if (state === 'OPEN') {\n      if (Date.now() - lastFailureTime > resetTimeout) {\n        this.circuitBreaker.state = 'HALF_OPEN';\n        console.log('Circuit breaker: OPEN -> HALF_OPEN');\n      } else {\n        throw new Error('Circuit breaker is OPEN - service temporarily unavailable');\n      }\n    }\n  }\n\n  /**\n   * Record circuit breaker failure\n   */\n  recordFailure() {\n    this.circuitBreaker.failures++;\n    this.circuitBreaker.lastFailureTime = Date.now();\n    \n    if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {\n      this.circuitBreaker.state = 'OPEN';\n      console.log('Circuit breaker: CLOSED -> OPEN');\n    }\n  }\n\n  /**\n   * Record circuit breaker success\n   */\n  recordSuccess() {\n    if (this.circuitBreaker.state === 'HALF_OPEN') {\n      this.circuitBreaker.state = 'CLOSED';\n      console.log('Circuit breaker: HALF_OPEN -> CLOSED');\n    }\n    this.circuitBreaker.failures = 0;\n  }\n\n  /**\n   * Generate cache key\n   */\n  getCacheKey(url, method, data) {\n    return `${method}:${url}:${JSON.stringify(data || {})}`;\n  }\n\n  /**\n   * Get cached response\n   */\n  getCachedResponse(cacheKey) {\n    const cached = this.cache.get(cacheKey);\n    if (cached && Date.now() - cached.timestamp < cached.ttl) {\n      return cached.data;\n    }\n    this.cache.delete(cacheKey);\n    return null;\n  }\n\n  /**\n   * Set cached response\n   */\n  setCachedResponse(cacheKey, data, ttl = 300000) { // 5 minutes default\n    this.cache.set(cacheKey, {\n      data,\n      timestamp: Date.now(),\n      ttl\n    });\n  }\n\n  /**\n   * Get authentication headers\n   */\n  async getAuthHeaders() {\n    try {\n      const token = await AsyncStorage.getItem('userToken');\n      return token ? { Authorization: `Bearer ${token}` } : {};\n    } catch (error) {\n      console.error('Failed to get auth token:', error);\n      return {};\n    }\n  }\n\n  /**\n   * Retry mechanism with exponential backoff\n   */\n  async retry(fn, attempts = this.retryAttempts, delay = this.retryDelay) {\n    try {\n      return await fn();\n    } catch (error) {\n      if (attempts <= 1 || !this.shouldRetry(error)) {\n        throw error;\n      }\n      \n      console.log(`Retrying request in ${delay}ms (${attempts - 1} attempts remaining)`);\n      await this.delay(delay);\n      return this.retry(fn, attempts - 1, delay * 2);\n    }\n  }\n\n  /**\n   * Determine if request should be retried\n   */\n  shouldRetry(error) {\n    // Don't retry for client errors (except specific cases)\n    if (error.status >= 400 && error.status < 500) {\n      return [408, 429, 502, 503, 504].includes(error.status);\n    }\n    \n    // Retry for network errors and server errors\n    return error.status >= 500 || error.name === 'TypeError' || error.name === 'NetworkError';\n  }\n\n  /**\n   * Delay utility\n   */\n  delay(ms) {\n    return new Promise(resolve => setTimeout(resolve, ms));\n  }\n\n  /**\n   * Execute HTTP request with all recovery mechanisms\n   */\n  async executeRequest({ url, method = 'GET', data = null, headers = {}, cache = false, ttl }) {\n    // Check circuit breaker\n    this.checkCircuitBreaker();\n    \n    // Check cache for GET requests\n    if (method === 'GET' && cache) {\n      const cacheKey = this.getCacheKey(url, method, data);\n      const cachedResponse = this.getCachedResponse(cacheKey);\n      if (cachedResponse) {\n        console.log('Returning cached response for:', url);\n        return cachedResponse;\n      }\n    }\n\n    const authHeaders = await this.getAuthHeaders();\n    const requestHeaders = {\n      'Content-Type': 'application/json',\n      ...authHeaders,\n      ...headers\n    };\n\n    const config = {\n      method,\n      headers: requestHeaders,\n      timeout: this.timeout\n    };\n\n    if (data && method !== 'GET') {\n      config.body = JSON.stringify(data);\n    }\n\n    try {\n      const response = await this.retry(async () => {\n        const res = await fetch(`${this.baseURL}${url}`, config);\n        \n        if (!res.ok) {\n          const error = new Error(`HTTP ${res.status}: ${res.statusText}`);\n          error.status = res.status;\n          error.response = res;\n          throw error;\n        }\n        \n        return res.json();\n      });\n\n      // Record success for circuit breaker\n      this.recordSuccess();\n\n      // Cache successful GET responses\n      if (method === 'GET' && cache) {\n        const cacheKey = this.getCacheKey(url, method, data);\n        this.setCachedResponse(cacheKey, response, ttl);\n      }\n\n      return response;\n    } catch (error) {\n      // Record failure for circuit breaker\n      this.recordFailure();\n      \n      console.error('Request failed:', error);\n      throw this.enhanceError(error, { url, method, data });\n    }\n  }\n\n  /**\n   * Enhance error with additional context\n   */\n  enhanceError(error, context) {\n    const enhancedError = new Error(error.message);\n    enhancedError.originalError = error;\n    enhancedError.context = context;\n    enhancedError.timestamp = new Date().toISOString();\n    enhancedError.isNetworkError = !this.isOnline;\n    enhancedError.circuitBreakerState = this.circuitBreaker.state;\n    return enhancedError;\n  }\n\n  /**\n   * Main request method with offline support\n   */\n  async request(url, options = {}) {\n    const config = {\n      url,\n      method: 'GET',\n      cache: false,\n      ...options\n    };\n\n    // If offline and it's a GET request, try cache first\n    if (!this.isOnline && config.method === 'GET') {\n      const cacheKey = this.getCacheKey(config.url, config.method, config.data);\n      const cachedResponse = this.getCachedResponse(cacheKey);\n      if (cachedResponse) {\n        console.log('Returning cached response (offline):', url);\n        return cachedResponse;\n      }\n    }\n\n    // If offline and not cacheable, queue the request\n    if (!this.isOnline) {\n      return new Promise((resolve, reject) => {\n        this.offlineQueue.push({ config, resolve, reject });\n        console.log('Request queued for when online:', url);\n      });\n    }\n\n    return this.executeRequest(config);\n  }\n\n  // Convenience methods\n  async get(url, options = {}) {\n    return this.request(url, { ...options, method: 'GET' });\n  }\n\n  async post(url, data, options = {}) {\n    return this.request(url, { ...options, method: 'POST', data });\n  }\n\n  async put(url, data, options = {}) {\n    return this.request(url, { ...options, method: 'PUT', data });\n  }\n\n  async delete(url, options = {}) {\n    return this.request(url, { ...options, method: 'DELETE' });\n  }\n\n  /**\n   * Get service status\n   */\n  getStatus() {\n    return {\n      isOnline: this.isOnline,\n      circuitBreaker: this.circuitBreaker,\n      cacheSize: this.cache.size,\n      queueSize: this.offlineQueue.length\n    };\n  }\n\n  /**\n   * Clear cache\n   */\n  clearCache() {\n    this.cache.clear();\n  }\n\n  /**\n   * Reset circuit breaker\n   */\n  resetCircuitBreaker() {\n    this.circuitBreaker = {\n      failures: 0,\n      lastFailureTime: null,\n      threshold: 5,\n      resetTimeout: 60000,\n      state: 'CLOSED'\n    };\n  }\n}\n\n// Create singleton instance\nconst apiService = new APIService();\n\n// Enhanced API methods with specific configurations\nexport const api = {\n  // Authentication\n  auth: {\n    login: (credentials) => apiService.post('/auth/login', credentials),\n    signup: (userData) => apiService.post('/auth/signup', userData),\n    logout: () => apiService.post('/auth/logout'),\n    getProfile: () => apiService.get('/auth/profile', { cache: true, ttl: 300000 }),\n    updateProfile: (data) => apiService.put('/auth/profile', data)\n  },\n\n  // Meal plans\n  mealPlans: {\n    getAll: () => apiService.get('/mealplans', { cache: true, ttl: 600000 }),\n    getById: (id) => apiService.get(`/mealplans/${id}`, { cache: true, ttl: 300000 }),\n    getPopular: () => apiService.get('/mealplans/popular', { cache: true, ttl: 900000 })\n  },\n\n  // Orders\n  orders: {\n    getAll: () => apiService.get('/orders'),\n    getById: (id) => apiService.get(`/orders/${id}`),\n    create: (orderData) => apiService.post('/orders', orderData),\n    cancel: (id) => apiService.put(`/orders/${id}/cancel`)\n  },\n\n  // Subscriptions\n  subscriptions: {\n    getAll: () => apiService.get('/subscriptions'),\n    getById: (id) => apiService.get(`/subscriptions/${id}`),\n    create: (subscriptionData) => apiService.post('/subscriptions', subscriptionData),\n    update: (id, data) => apiService.put(`/subscriptions/${id}`, data)\n  },\n\n  // Payments\n  payments: {\n    initialize: (paymentData) => apiService.post('/payments/initialize', paymentData),\n    verify: (reference) => apiService.get(`/payments/verify/${reference}`),\n    getHistory: () => apiService.get('/payments/history', { cache: true, ttl: 300000 })\n  },\n\n  // Notifications\n  notifications: {\n    getAll: () => apiService.get('/notifications'),\n    markAsRead: (id) => apiService.put(`/notifications/${id}/read`)\n  }\n};\n\n// Export service instance for advanced usage\nexport { apiService };\n\n// Export error types for error handling\nexport const API_ERRORS = {\n  NETWORK_ERROR: 'NETWORK_ERROR',\n  TIMEOUT_ERROR: 'TIMEOUT_ERROR',\n  CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',\n  AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',\n  VALIDATION_ERROR: 'VALIDATION_ERROR',\n  SERVER_ERROR: 'SERVER_ERROR'\n};\n\nexport default api;
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_CONFIG } from "../utils/constants";
+
+/**
+ * Enhanced API service with error recovery mechanisms
+ */
+class APIService {
+  constructor() {
+    this.baseURL = API_CONFIG.API_BASE_URL;
+    this.retryAttempts = 3;
+    this.retryDelay = 1000;
+    this.timeout = 30000;
+    this.cache = new Map();
+    this.offlineQueue = [];
+    this.isOnline = true;
+
+    // Circuit breaker state
+    this.circuitBreaker = {
+      failures: 0,
+      lastFailureTime: null,
+      threshold: 5,
+      resetTimeout: 60000,
+      state: "CLOSED", // CLOSED, OPEN, HALF_OPEN
+    };
+
+    this.setupNetworkMonitoring();
+  }
+
+  /**
+   * Setup network monitoring
+   */
+  setupNetworkMonitoring() {
+    // This would be implemented with NetInfo in a real app
+    // For now, we'll simulate it
+    this.checkNetworkStatus();
+
+    // Check network status periodically
+    setInterval(() => {
+      this.checkNetworkStatus();
+    }, 5000);
+  }
+
+  /**
+   * Check network connectivity
+   */
+  async checkNetworkStatus() {
+    try {
+      // Simple ping to check connectivity
+      const response = await fetch(`${this.baseURL}/health`, {
+        method: "GET",
+        timeout: 5000,
+      });
+
+      this.isOnline = response.ok;
+
+      if (this.isOnline && this.offlineQueue.length > 0) {
+        this.processOfflineQueue();
+      }
+    } catch (error) {
+      this.isOnline = false;
+    }
+  }
+
+  /**
+   * Process queued requests when back online
+   */
+  async processOfflineQueue() {
+    console.log(`Processing ${this.offlineQueue.length} queued requests`);
+
+    const queue = [...this.offlineQueue];
+    this.offlineQueue = [];
+
+    for (const queuedRequest of queue) {
+      try {
+        const result = await this.executeRequest(queuedRequest.config);
+        queuedRequest.resolve(result);
+      } catch (error) {
+        queuedRequest.reject(error);
+      }
+    }
+  }
+
+  /**
+   * Check circuit breaker state
+   */
+  checkCircuitBreaker() {
+    const { state, failures, threshold, lastFailureTime, resetTimeout } =
+      this.circuitBreaker;
+
+    if (state === "OPEN") {
+      if (Date.now() - lastFailureTime > resetTimeout) {
+        this.circuitBreaker.state = "HALF_OPEN";
+        console.log("Circuit breaker: OPEN -> HALF_OPEN");
+      } else {
+        throw new Error(
+          "Circuit breaker is OPEN - service temporarily unavailable"
+        );
+      }
+    }
+  }
+
+  /**
+   * Record circuit breaker failure
+   */
+  recordFailure() {
+    this.circuitBreaker.failures++;
+    this.circuitBreaker.lastFailureTime = Date.now();
+
+    if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
+      this.circuitBreaker.state = "OPEN";
+      console.log("Circuit breaker: CLOSED -> OPEN");
+    }
+  }
+
+  /**
+   * Record circuit breaker success
+   */
+  recordSuccess() {
+    if (this.circuitBreaker.state === "HALF_OPEN") {
+      this.circuitBreaker.state = "CLOSED";
+      console.log("Circuit breaker: HALF_OPEN -> CLOSED");
+    }
+    this.circuitBreaker.failures = 0;
+  }
+
+  /**
+   * Generate cache key
+   */
+  getCacheKey(url, method, data) {
+    return `${method}:${url}:${JSON.stringify(data || {})}`;
+  }
+
+  /**
+   * Get cached response
+   */
+  getCachedResponse(cacheKey) {
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < cached.ttl) {
+      return cached.data;
+    }
+    this.cache.delete(cacheKey);
+    return null;
+  }
+
+  /**
+   * Set cached response
+   */
+  setCachedResponse(cacheKey, data, ttl = 300000) {
+    // 5 minutes default
+    this.cache.set(cacheKey, {
+      data,
+      timestamp: Date.now(),
+      ttl,
+    });
+  }
+
+  /**
+   * Get authentication headers
+   */
+  async getAuthHeaders() {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    } catch (error) {
+      console.error("Failed to get auth token:", error);
+      return {};
+    }
+  }
+
+  /**
+   * Retry mechanism with exponential backoff
+   */
+  async retry(fn, attempts = this.retryAttempts, delay = this.retryDelay) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempts <= 1 || !this.shouldRetry(error)) {
+        throw error;
+      }
+
+      console.log(
+        `Retrying request in ${delay}ms (${attempts - 1} attempts remaining)`
+      );
+      await this.delay(delay);
+      return this.retry(fn, attempts - 1, delay * 2);
+    }
+  }
+
+  /**
+   * Determine if request should be retried
+   */
+  shouldRetry(error) {
+    // Don't retry for client errors (except specific cases)
+    if (error.status >= 400 && error.status < 500) {
+      return [408, 429, 502, 503, 504].includes(error.status);
+    }
+
+    // Retry for network errors and server errors
+    return (
+      error.status >= 500 ||
+      error.name === "TypeError" ||
+      error.name === "NetworkError"
+    );
+  }
+
+  /**
+   * Delay utility
+   */
+  delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Execute HTTP request with all recovery mechanisms
+   */
+  async executeRequest({
+    url,
+    method = "GET",
+    data = null,
+    headers = {},
+    cache = false,
+    ttl,
+  }) {
+    // Check circuit breaker
+    this.checkCircuitBreaker();
+
+    // Check cache for GET requests
+    if (method === "GET" && cache) {
+      const cacheKey = this.getCacheKey(url, method, data);
+      const cachedResponse = this.getCachedResponse(cacheKey);
+      if (cachedResponse) {
+        console.log("Returning cached response for:", url);
+        return cachedResponse;
+      }
+    }
+
+    const authHeaders = await this.getAuthHeaders();
+    const requestHeaders = {
+      "Content-Type": "application/json",
+      ...authHeaders,
+      ...headers,
+    };
+
+    const config = {
+      method,
+      headers: requestHeaders,
+      timeout: this.timeout,
+    };
+
+    if (data && method !== "GET") {
+      config.body = JSON.stringify(data);
+    }
+
+    try {
+      const response = await this.retry(async () => {
+        const res = await fetch(`${this.baseURL}${url}`, config);
+
+        if (!res.ok) {
+          const error = new Error(`HTTP ${res.status}: ${res.statusText}`);
+          error.status = res.status;
+          error.response = res;
+          throw error;
+        }
+
+        return res.json();
+      });
+
+      // Record success for circuit breaker
+      this.recordSuccess();
+
+      // Cache successful GET responses
+      if (method === "GET" && cache) {
+        const cacheKey = this.getCacheKey(url, method, data);
+        this.setCachedResponse(cacheKey, response, ttl);
+      }
+
+      return response;
+    } catch (error) {
+      // Record failure for circuit breaker
+      this.recordFailure();
+
+      console.error("Request failed:", error);
+      throw this.enhanceError(error, { url, method, data });
+    }
+  }
+
+  /**
+   * Enhance error with additional context
+   */
+  enhanceError(error, context) {
+    const enhancedError = new Error(error.message);
+    enhancedError.originalError = error;
+    enhancedError.context = context;
+    enhancedError.timestamp = new Date().toISOString();
+    enhancedError.isNetworkError = !this.isOnline;
+    enhancedError.circuitBreakerState = this.circuitBreaker.state;
+    return enhancedError;
+  }
+
+  /**
+   * Main request method with offline support
+   */
+  async request(url, options = {}) {
+    const config = {
+      url,
+      method: "GET",
+      cache: false,
+      ...options,
+    };
+
+    // If offline and it's a GET request, try cache first
+    if (!this.isOnline && config.method === "GET") {
+      const cacheKey = this.getCacheKey(config.url, config.method, config.data);
+      const cachedResponse = this.getCachedResponse(cacheKey);
+      if (cachedResponse) {
+        console.log("Returning cached response (offline):", url);
+        return cachedResponse;
+      }
+    }
+
+    // If offline and not cacheable, queue the request
+    if (!this.isOnline) {
+      return new Promise((resolve, reject) => {
+        this.offlineQueue.push({ config, resolve, reject });
+        console.log("Request queued for when online:", url);
+      });
+    }
+
+    return this.executeRequest(config);
+  }
+
+  // Convenience methods
+  async get(url, options = {}) {
+    return this.request(url, { ...options, method: "GET" });
+  }
+
+  async post(url, data, options = {}) {
+    return this.request(url, { ...options, method: "POST", data });
+  }
+
+  async put(url, data, options = {}) {
+    return this.request(url, { ...options, method: "PUT", data });
+  }
+
+  async delete(url, options = {}) {
+    return this.request(url, { ...options, method: "DELETE" });
+  }
+
+  /**
+   * Get service status
+   */
+  getStatus() {
+    return {
+      isOnline: this.isOnline,
+      circuitBreaker: this.circuitBreaker,
+      cacheSize: this.cache.size,
+      queueSize: this.offlineQueue.length,
+    };
+  }
+
+  /**
+   * Clear cache
+   */
+  clearCache() {
+    this.cache.clear();
+  }
+
+  /**
+   * Reset circuit breaker
+   */
+  resetCircuitBreaker() {
+    this.circuitBreaker = {
+      failures: 0,
+      lastFailureTime: null,
+      threshold: 5,
+      resetTimeout: 60000,
+      state: "CLOSED",
+    };
+  }
+}
+
+// Create singleton instance
+const apiService = new APIService();
+
+// Enhanced API methods with specific configurations
+export const api = {
+  // Authentication
+  auth: {
+    login: (credentials) => apiService.post("/auth/login", credentials),
+    signup: (userData) => apiService.post("/auth/signup", userData),
+    logout: () => apiService.post("/auth/logout"),
+    getProfile: () =>
+      apiService.get("/auth/profile", { cache: true, ttl: 300000 }),
+    updateProfile: (data) => apiService.put("/auth/profile", data),
+  },
+
+  // Meal plans
+  mealPlans: {
+    getAll: () => apiService.get("/mealplans", { cache: true, ttl: 600000 }),
+    getById: (id) =>
+      apiService.get(`/mealplans/${id}`, { cache: true, ttl: 300000 }),
+    getPopular: () =>
+      apiService.get("/mealplans/popular", { cache: true, ttl: 900000 }),
+  },
+
+  // Orders
+  orders: {
+    getAll: () => apiService.get("/orders"),
+    getById: (id) => apiService.get(`/orders/${id}`),
+    create: (orderData) => apiService.post("/orders", orderData),
+    cancel: (id) => apiService.put(`/orders/${id}/cancel`),
+  },
+
+  // Subscriptions
+  subscriptions: {
+    getAll: () => apiService.get("/subscriptions"),
+    getById: (id) => apiService.get(`/subscriptions/${id}`),
+    create: (subscriptionData) =>
+      apiService.post("/subscriptions", subscriptionData),
+    update: (id, data) => apiService.put(`/subscriptions/${id}`, data),
+  },
+
+  // Payments
+  payments: {
+    initialize: (paymentData) =>
+      apiService.post("/payments/initialize", paymentData),
+    verify: (reference) => apiService.get(`/payments/verify/${reference}`),
+    getHistory: () =>
+      apiService.get("/payments/history", { cache: true, ttl: 300000 }),
+  },
+
+  // Notifications
+  notifications: {
+    getAll: () => apiService.get("/notifications"),
+    markAsRead: (id) => apiService.put(`/notifications/${id}/read`),
+  },
+};
+
+// Export service instance for advanced usage
+export { apiService };
+
+// Export error types for error handling
+export const API_ERRORS = {
+  NETWORK_ERROR: "NETWORK_ERROR",
+  TIMEOUT_ERROR: "TIMEOUT_ERROR",
+  CIRCUIT_BREAKER_OPEN: "CIRCUIT_BREAKER_OPEN",
+  AUTHENTICATION_ERROR: "AUTHENTICATION_ERROR",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  SERVER_ERROR: "SERVER_ERROR",
+};
+
+export default api;

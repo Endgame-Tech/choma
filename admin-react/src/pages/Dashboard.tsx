@@ -53,93 +53,93 @@ const Dashboard: React.FC = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">Dashboard</h1>
-        <p className="text-gray-600 dark:text-neutral-200">Welcome to choma Admin Dashboard</p>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-choma-white">Dashboard</h1>
+        <p className="text-gray-600 dark:text-choma-white/70">Welcome to choma Admin Dashboard</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <div className="bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
+        <div className="bg-white dark:bg-choma-dark-card p-6 rounded-xl shadow-sm border border-gray-200 dark:border-choma-brown/20 hover:shadow-md dark:hover:shadow-choma-orange/10 transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-neutral-200">Total Orders</p>
-              <p className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">
+              <p className="text-sm font-medium text-gray-600 dark:text-choma-white/70">Total Orders</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-choma-white">
                 {stats?.overview?.totalOrders?.toLocaleString() || '0'}
               </p>
             </div>
-            <div className="w-12 h-12 bg-choma-white dark:bg-neutral-800 rounded-xl flex items-center justify-center">
-              <i className="fi fi-sr-clipboard-list text-2xl text-gray-900 dark:text-neutral-100"></i>
+            <div className="w-12 h-12 bg-choma-orange/10 dark:bg-choma-orange/20 rounded-xl flex items-center justify-center">
+              <i className="fi fi-sr-clipboard-list text-2xl text-choma-orange"></i>
             </div>
           </div>
         </div>
 
-        <div className="bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
+        <div className="bg-white dark:bg-choma-dark-card p-6 rounded-xl shadow-sm border border-gray-200 dark:border-choma-brown/20 hover:shadow-md dark:hover:shadow-choma-orange/10 transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-neutral-200">Active Users</p>
-              <p className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">
+              <p className="text-sm font-medium text-gray-600 dark:text-choma-white/70">Active Users</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-choma-white">
                 {stats?.overview?.activeUsers?.toLocaleString() || '0'}
               </p>
             </div>
-            <div className="w-12 h-12 bg-choma-white dark:bg-neutral-800 rounded-xl flex items-center justify-center">
-              <i className="fi fi-sr-users-alt text-2xl text-gray-900 dark:text-neutral-100"></i>
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center">
+              <i className="fi fi-sr-users-alt text-2xl text-blue-600 dark:text-blue-400"></i>
             </div>
           </div>
         </div>
 
-        <div className="bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
+        <div className="bg-white dark:bg-choma-dark-card p-6 rounded-xl shadow-sm border border-gray-200 dark:border-choma-brown/20 hover:shadow-md dark:hover:shadow-choma-orange/10 transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-neutral-200">Total Revenue</p>
-              <p className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">
+              <p className="text-sm font-medium text-gray-600 dark:text-choma-white/70">Total Revenue</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-choma-white">
                 {stats?.overview?.totalRevenue ? formatCurrency(stats.overview.totalRevenue) : '₦0'}
               </p>
             </div>
-            <div className="w-12 h-12 bg-choma-white dark:bg-neutral-800 rounded-xl flex items-center justify-center">
-              <i className="fi fi-sr-usd-circle text-2xl text-gray-900 dark:text-neutral-100"></i>
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-500/20 rounded-xl flex items-center justify-center">
+              <i className="fi fi-sr-usd-circle text-2xl text-green-600 dark:text-green-400"></i>
             </div>
           </div>
         </div>
 
-        <div className="bg-white/90 dark:bg-neutral-800/90 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
+        <div className="bg-white dark:bg-choma-dark-card p-6 rounded-xl shadow-sm border border-gray-200 dark:border-choma-brown/20 hover:shadow-md dark:hover:shadow-choma-orange/10 transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-neutral-200">Total Subscriptions</p>
-              <p className="text-3xl font-semibold text-gray-900 dark:text-neutral-100">
+              <p className="text-sm font-medium text-gray-600 dark:text-choma-white/70">Total Subscriptions</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-choma-white">
                 {stats?.overview?.totalSubscriptions?.toLocaleString() || '0'}
               </p>
             </div>
-            <div className="w-12 h-12 bg-choma-white dark:bg-neutral-800 rounded-xl flex items-center justify-center">
-              <i className="fi fi-sr-calendar text-2xl text-gray-900 dark:text-neutral-100"></i>
+            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-500/20 rounded-xl flex items-center justify-center">
+              <i className="fi fi-sr-calendar text-2xl text-purple-600 dark:text-purple-400"></i>
             </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <div className="bg-white/90 dark:bg-neutral-800/90 p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">Recent Orders</h3>
+        <div className="bg-white dark:bg-choma-dark-card p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-choma-brown/20">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-choma-white mb-4">Recent Orders</h3>
           <div className="space-y-3">
             {stats?.recentOrders && stats.recentOrders.length > 0 ? (
               stats.recentOrders.slice(0, 5).map((order) => (
                 <div key={order._id} className="flex items-center justify-between py-2">
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-neutral-100">{order.orderNumber}</p>
-                    <p className="text-sm text-gray-500 dark:text-neutral-400">
+                    <p className="font-medium text-gray-900 dark:text-choma-white">{order.orderNumber}</p>
+                    <p className="text-sm text-gray-500 dark:text-choma-white/60">
                       {order.customer?.fullName || 'Unknown Customer'} - {order.subscription?.mealPlanId?.planName || 'No Plan'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-gray-900 dark:text-neutral-100">
+                    <p className="font-medium text-gray-900 dark:text-choma-white">
                       {formatCurrency(order.totalAmount)}
                     </p>
                     <span
-                      className={`inline-block px-2 py-1 text-xs rounded ${order.orderStatus === 'Completed' || order.orderStatus === 'Delivered'
-                        ? 'bg-green-100 text-green-800'
+                      className={`inline-block px-2 py-1 text-xs rounded-full font-medium ${order.orderStatus === 'Completed' || order.orderStatus === 'Delivered'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400'
                         : order.orderStatus === 'Confirmed'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400'
                           : order.orderStatus === 'Cancelled'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400'
                         }`}
                     >
                       {order.orderStatus}
@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-4 text-gray-500 dark:text-neutral-400">No recent orders</div>
+              <div className="text-center py-4 text-gray-500 dark:text-choma-white/60">No recent orders</div>
             )}
           </div>
         </div>
@@ -158,24 +158,24 @@ const Dashboard: React.FC = () => {
         <div className="lg:col-span-2">
           <UserActivityDashboard />
         </div>
-        <div className="bg-white/90 dark:bg-neutral-800/90 p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">Quick Actions</h3>
+        <div className="bg-white dark:bg-choma-dark-card p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-choma-brown/20">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-choma-white mb-4">Quick Actions</h3>
           <div className="space-y-3">
-            <button className="w-full text-left px-4 py-3 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors">
-              <span className="font-medium text-blue-700 dark:text-blue-300">View Pending Orders</span>
-              <p className="text-sm text-blue-600 dark:text-blue-400">
+            <button className="w-full text-left px-4 py-3 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-200 dark:border-blue-500/20">
+              <span className="font-medium text-blue-700 dark:text-blue-400">View Pending Orders</span>
+              <p className="text-sm text-blue-600 dark:text-blue-300/80">
                 {stats?.overview?.pendingPayments || 0} orders with pending payments
               </p>
             </button>
-            <button className="w-full text-left px-4 py-3 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 rounded-lg transition-colors">
-              <span className="font-medium text-yellow-700 dark:text-yellow-300">Failed Payments</span>
-              <p className="text-sm text-yellow-600 dark:text-yellow-400">
+            <button className="w-full text-left px-4 py-3 bg-yellow-50 dark:bg-yellow-500/10 hover:bg-yellow-100 dark:hover:bg-yellow-500/20 rounded-lg transition-colors border border-yellow-200 dark:border-yellow-500/20">
+              <span className="font-medium text-yellow-700 dark:text-yellow-400">Failed Payments</span>
+              <p className="text-sm text-yellow-600 dark:text-yellow-300/80">
                 {stats?.overview?.failedPayments || 0} orders with failed payments
               </p>
             </button>
-            <button className="w-full text-left px-4 py-3 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-lg transition-colors">
-              <span className="font-medium text-green-700 dark:text-green-300">Paid Orders</span>
-              <p className="text-sm text-green-600 dark:text-green-400">
+            <button className="w-full text-left px-4 py-3 bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-lg transition-colors border border-green-200 dark:border-green-500/20">
+              <span className="font-medium text-green-700 dark:text-green-400">Paid Orders</span>
+              <p className="text-sm text-green-600 dark:text-green-300/80">
                 {stats?.overview?.paidOrders || 0} successfully paid orders
               </p>
             </button>

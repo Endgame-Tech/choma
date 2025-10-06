@@ -16,7 +16,10 @@
       "Bash(npx eas credentials:*)",
       "WebFetch(domain:www.youtube.com)",
       "WebSearch",
-      "WebFetch(domain:docs.expo.dev)"
+      "WebFetch(domain:docs.expo.dev)",
+      "WebFetch(domain:reactnavigation.org)",
+      "WebFetch(domain:docs.swmansion.com)",
+      "Bash(npx react-native bundle:*)"
     ],
     "deny": []
   }

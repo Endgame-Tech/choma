@@ -45,6 +45,7 @@ import { applyDefaultFont } from "./src/utils/fontUtils";
 // Navigation
 import AppNavigator from "./src/navigation/AppNavigator";
 import OnboardingScreen from "./src/screens/onboarding/OnboardingScreen";
+import { initializePerformanceOptimizations } from "./src/navigation/transitions/PerformanceOptimizations";
 
 // Services
 import deepLinking from "./src/services/deepLinking";
@@ -92,6 +93,9 @@ export default function App() {
 
       // Initialize deep linking
       deepLinking.initialize(navigationRef);
+
+      // Initialize performance optimizations for navigation transitions
+      initializePerformanceOptimizations();
 
       console.log("✅ App initialization complete");
     } catch (error) {

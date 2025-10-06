@@ -10,16 +10,19 @@ import {
   Platform,
   StatusBar,
   ImageBackground,
+  Image,
   Dimensions,
   Animated,
   Easing,
   Keyboard,
+  SafeAreaView,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
-import { THEME } from "../../utils/colors";
 import ChomaLogo from "../../components/ui/ChomaLogo";
+import LoginCurve from "../../components/ui/LoginCurve";
 import { useAlert } from "../../contexts/AlertContext";
 import apiService from "../../services/api";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
@@ -304,6 +307,13 @@ const EmailInputScreen = ({ navigation }) => {
           </View>
         </Animated.View>
 
+        {/* Curved transition */}
+        <Animated.View
+          style={[{ transform: [{ translateY: keyboardOffset }] }]}
+        >
+          <LoginCurve />
+        </Animated.View>
+
         {/* Bottom white section with form */}
         <Animated.View
           style={[
@@ -324,7 +334,7 @@ const EmailInputScreen = ({ navigation }) => {
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Create Your Account</Text>
               <Text style={styles.welcomeSubtitle}>
-                First lets verify your email address to
+                First let's verify your email address to
               </Text>
               <Text style={styles.welcomeSubtitle}>secure your account</Text>
             </View>
@@ -449,11 +459,11 @@ const styles = createStylesWithDMSans({
     right: 0,
     bottom: 0,
     backgroundColor: "#652815",
-    opacity: 0.8, // Subtle pattern overlay
+    opacity: 0.8,
   },
   backgroundImageStyle: {
     opacity: 1,
-    transform: [{ scale: 2.5 }], // Makes the pattern 2x bigger
+    transform: [{ scale: 2.5 }],
   },
   topSection: {
     flex: 0.5,
@@ -479,10 +489,9 @@ const styles = createStylesWithDMSans({
   bottomSection: {
     flex: 0.75,
     backgroundColor: "#fff",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
     minHeight: height * 0.1,
-    zIndex: 3,
+    zIndex: 5,
+    position: "relative",
   },
   formContainer: {
     flex: 1,

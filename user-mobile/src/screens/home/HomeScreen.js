@@ -16,6 +16,8 @@ import {
   StatusBar,
   TextInput,
   ActivityIndicator,
+  Platform,
+  PixelRatio,
 } from "react-native";
 import Animated, {
   Extrapolate,
@@ -29,6 +31,7 @@ import Animated, {
   Easing,
   runOnJS,
 } from "react-native-reanimated";
+import { Animated as RNAnimated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../styles/theme";
 import CustomIcon from "../../components/ui/CustomIcon";
@@ -38,11 +41,84 @@ import { useMealPlans } from "../../hooks/useMealPlans";
 import tagService from "../../services/tagService";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
+import * as Haptics from "expo-haptics";
 
 const { width, height } = Dimensions.get("window");
 
-// Circular carousel constants (from reference implementation)
-const ListItemWidth = width / 4;
+// Responsive scaling utilities
+const scale = (size) => {
+  const pixelRatio = PixelRatio.get();
+  const deviceScale = width / 375; // Base on iPhone X width
+
+  // Android adjustment factor for varied DPI
+  const androidFactor =
+    Platform.OS === "android" ? Math.min(pixelRatio / 2, 1.2) : 1;
+
+  return size * deviceScale * androidFactor;
+};
+
+const verticalScale = (size) => (height / 812) * size; // Base on iPhone X height
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
+
+// Screen size categories
+const isSmallScreen = width < 350;
+const isMediumScreen = width >= 350 && width < 414;
+const isLargeScreen = width >= 414;
+const isTablet = width >= 768;
+const isLandscape = width > height;
+
+// Platform-specific status bar height
+const statusBarHeight =
+  Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
+
+// Responsive breakpoints
+const getResponsiveValue = (small, medium, large, tablet = large) => {
+  if (isTablet) return tablet;
+  if (isLargeScreen) return large;
+  if (isMediumScreen) return medium;
+  return small;
+};
+
+// Android-specific responsive values
+const getAndroidResponsiveValue = (small, medium, large, xlarge) => {
+  if (Platform.OS === "android") {
+    if (width < 360) return small;
+    if (width < 400) return medium;
+    if (width < 500) return large;
+    return xlarge;
+  }
+  return getResponsiveValue(small, medium, large, xlarge);
+};
+
+// Shadow utility for cross-platform compatibility
+const getShadowStyle = (shadowProps) => ({
+  ...shadowProps,
+  ...(Platform.OS === "android" && {
+    elevation: shadowProps.shadowOpacity ? shadowProps.shadowOpacity * 10 : 5,
+  }),
+});
+
+// Responsive dimensions - Increased for better visibility
+const heroImageSize = getResponsiveValue(260, 300, 340, 420);
+const heroImageBorderRadius = heroImageSize / 2;
+const previewImageSize = heroImageSize - 6; // Account for border
+const previewImageBorderRadius = previewImageSize / 2;
+
+// Circular carousel constants (responsive) - Larger items on bigger screens for better visibility
+const ListItemWidth = getResponsiveValue(
+  width / 4.5, // Smaller items on small screens
+  width / 4, // Medium screens
+  width / 3.2, // Large screens - increased size
+  width / 4.5 // Tablets - increased size
+);
+
+// Clean Circular Carousel Implementation:
+// - Based on animate-with-reanimated reference for maximum smoothness
+// - Removed infinite scroll complexity for better performance
+// - Direct data usage without circular array generation
+// - Simple scroll handler matching reference implementation
+// - Optimized preview image sync for simplified data structure
 
 // Cache tags globally to avoid re-fetching on every render (same as TagFilterBar)
 let cachedTags = [];
@@ -81,7 +157,7 @@ const PLACEHOLDER_PLANS = [
 ];
 
 const HomeScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const { mealPlans } = useMealPlans();
 
@@ -93,16 +169,19 @@ const HomeScreen = ({ navigation }) => {
   );
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-  // Infinite scroll state
-  const [displayedTags, setDisplayedTags] = useState([]);
-  const [currentTagIndex, setCurrentTagIndex] = useState(0);
-  const [hasMoreTags, setHasMoreTags] = useState(true);
+  // Pre-fetch duration data for focused tag
+  const [prefetchedDurations, setPrefetchedDurations] = useState({});
+
+  // Carousel state (simplified)
+  const [previousDescription, setPreviousDescription] = useState("");
+
+  // Circular reveal animation state (like reference animation)
+  const circleAnimation = useRef(new RNAnimated.Value(0)).current;
 
   // Shared values for all animations (eliminate state-based race conditions)
   const contentOffset = useSharedValue(0);
-  const selectedIndex = useSharedValue(0);
   const spinValue = useSharedValue(0);
-  const textAnimationValue = useSharedValue(0);
+  const descriptionOpacity = useSharedValue(1);
 
   // Text rotation messages
   const heroMessages = [
@@ -113,13 +192,6 @@ const HomeScreen = ({ navigation }) => {
   ];
 
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-
-  // Carousel physics constants
-  const ITEM_SIZE = ListItemWidth;
-  const PADDING = 1.5 * ITEM_SIZE;
-  const SNAP_THRESHOLD = ITEM_SIZE * 0.6;
-
-  // Physics-based calculations for smooth animations
 
   useEffect(() => {
     // Start the spinning animation with physics-based timing
@@ -140,8 +212,6 @@ const HomeScreen = ({ navigation }) => {
       // Cancel all running animations
       spinValue.value = 0;
       contentOffset.value = 0;
-      selectedIndex.value = 0;
-      textAnimationValue.value = 0;
     };
   }, [getCurrentLocation]); // Add dependency
 
@@ -159,17 +229,15 @@ const HomeScreen = ({ navigation }) => {
     // Start the cycle after a delay
     const timeout = setTimeout(() => {
       if (isActive) {
-        interval = setInterval(rotateMessage, 4000); // Slightly faster rotation
+        interval = setInterval(rotateMessage, 7000); // Slower, less distracting rotation
       }
-    }, 2000);
+    }, 3000);
 
     // Comprehensive cleanup
     return () => {
       isActive = false;
       if (timeout) clearTimeout(timeout);
       if (interval) clearInterval(interval);
-      // Cancel any pending animations
-      textAnimationValue.value = 0;
     };
   }, []);
 
@@ -231,6 +299,27 @@ const HomeScreen = ({ navigation }) => {
     getCurrentLocation();
   };
 
+  const handleSearchPress = () => {
+    // Expand circle to cover screen (like reference animation)
+    RNAnimated.timing(circleAnimation, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      // Navigate when circle fully expands
+      navigation.navigate("SearchScreen");
+
+      // Reverse animation to reveal SearchScreen
+      setTimeout(() => {
+        RNAnimated.timing(circleAnimation, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      }, 100);
+    });
+  };
+
   const fetchTags = useCallback(async () => {
     try {
       const now = Date.now();
@@ -259,9 +348,9 @@ const HomeScreen = ({ navigation }) => {
           tagsLastFetched = now;
           setTags(tagsData);
 
-          // Prefetch images with error handling
-          tagsData.slice(0, 5).forEach((tag) => {
-            // Limit prefetch to first 5
+          // Lazy load: prefetch only first visible item and neighbors
+          const visibleRange = 3; // Current + 1 left + 1 right
+          tagsData.slice(0, visibleRange).forEach((tag) => {
             if (tag?.image) {
               Image.prefetch(tag.image).catch(() => {});
             }
@@ -286,94 +375,156 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   const hasRealTags = Boolean(tags?.length);
-  const baseTagData = hasRealTags ? tags : PLACEHOLDER_PLANS; // Fallback to placeholder for now
+  const tagData = hasRealTags ? tags : PLACEHOLDER_PLANS; // Simple direct data usage
 
-  // console.log(
-  //   "🏠 HomeScreen render - hasRealTags:",
-  //   hasRealTags,
-  //   "tags length:",
-  //   tags?.length,
-  //   "baseTagData length:",
-  //   baseTagData.length
-  // );
+  // Lazy load images for carousel items near current position
+  const prefetchNearbyImages = useCallback((centerIndex) => {
+    const range = 2; // Prefetch 2 items before and after
+    const startIndex = Math.max(0, centerIndex - range);
+    const endIndex = Math.min(tagData.length - 1, centerIndex + range);
 
-  // Infinite scroll implementation with proper pagination
-  const ITEMS_PER_BATCH = 10; // Number of items to load per batch
-
-  const tagData = useMemo(() => {
-    if ((baseTagData || []).length === 0) return [];
-
-    // Ultra-minimal circular data for maximum performance
-    const baseLength = (baseTagData || []).length;
-    // Reduced to 2x base data for minimal memory usage
-    const totalItems = Math.min(baseLength * 2, 10); // Max 10 items total
-    const circularData = [];
-
-    for (let i = 0; i < totalItems; i++) {
-      const sourceIndex = i % baseLength;
-      // Shallow copy only essential properties
-      const baseItem = (baseTagData || [])[sourceIndex];
-      circularData.push({
-        _id: baseItem._id,
-        name: baseItem.name,
-        image: baseItem.image,
-        bigPreviewImage: baseItem.bigPreviewImage,
-        description: baseItem.description,
-        infiniteIndex: i,
-        sourceIndex,
-      });
+    for (let i = startIndex; i <= endIndex; i++) {
+      const tag = tagData[i];
+      if (tag?.image) {
+        Image.prefetch(tag.image).catch(() => {});
+      }
+      if (tag?.bigPreviewImage) {
+        Image.prefetch(tag.bigPreviewImage).catch(() => {});
+      }
     }
+  }, [tagData]);
 
-    return circularData;
-  }, [(baseTagData || []).length]);
+  // Reference circular carousel implementation - clean and simple
+  const CircularCarouselListItem = React.memo(({ tag, index }) => {
+    const rStyle = useAnimatedStyle(() => {
+      const inputRange = [
+        (index - 2) * ListItemWidth,
+        (index - 1) * ListItemWidth,
+        index * ListItemWidth,
+        (index + 1) * ListItemWidth,
+        (index + 2) * ListItemWidth,
+      ];
 
-  // Performance-optimized carousel rendering
-  const CarouselItem = React.memo(({ tag, index }) => {
-    return <CircularCarouselListItem tag={tag} index={index} />;
+      const translateYOutputRange = [
+        0,
+        -ListItemWidth / 3,
+        -ListItemWidth / 2,
+        -ListItemWidth / 3,
+        0,
+      ];
+
+      const opacityOutputRange = [0.7, 0.9, 1, 0.9, 0.7];
+      const scaleOutputRange = [0.7, 0.8, 1, 0.8, 0.7];
+
+      const translateY = interpolate(
+        contentOffset.value,
+        inputRange,
+        translateYOutputRange,
+        Extrapolate.CLAMP
+      );
+
+      const opacity = interpolate(
+        contentOffset.value,
+        inputRange,
+        opacityOutputRange,
+        Extrapolate.CLAMP
+      );
+
+      const scale = interpolate(
+        contentOffset.value,
+        inputRange,
+        scaleOutputRange,
+        Extrapolate.CLAMP
+      );
+
+      return {
+        opacity,
+        transform: [{ translateY }, { scale }],
+      };
+    });
+
+    // Arrow visibility animation - only show on centered item
+    const arrowStyle = useAnimatedStyle(() => {
+      const inputRange = [
+        (index - 1) * ListItemWidth,
+        index * ListItemWidth,
+        (index + 1) * ListItemWidth,
+      ];
+
+      const arrowOpacity = interpolate(
+        contentOffset.value,
+        inputRange,
+        [0, 1, 0],
+        Extrapolate.CLAMP
+      );
+
+      return {
+        opacity: arrowOpacity,
+      };
+    });
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => onSelectTag(index)}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel={`Select ${tag?.name || 'category'} meal plan`}
+        accessibilityHint="Double tap to view this meal plan category"
+      >
+        <Animated.View
+          style={[
+            {
+              width: ListItemWidth,
+              aspectRatio: 1,
+              elevation: 5,
+              shadowOpacity: 0.2,
+              shadowOffset: { width: 0, height: 0 },
+              shadowRadius: 20,
+              minWidth: 44, // Minimum touch target
+              minHeight: 44,
+            },
+            rStyle,
+          ]}
+        >
+          <Image
+            source={getTagImage(tag, false)}
+            style={{
+              margin: 3,
+              height: ListItemWidth,
+              width: ListItemWidth,
+              borderRadius: 200,
+              borderWidth: 2,
+              borderColor: colors.white,
+            }}
+            resizeMode="cover"
+          />
+          {/* Down arrow indicator - only visible on centered item */}
+          <Animated.View
+            style={[
+              {
+                position: 'absolute',
+                bottom: 8,
+                alignSelf: 'center',
+                backgroundColor: colors.primary,
+                borderRadius: 20,
+                padding: 6,
+              },
+              arrowStyle
+            ]}
+            pointerEvents="none"
+          >
+            <CustomIcon name="chevron-down" size={20} color={colors.white} />
+          </Animated.View>
+        </Animated.View>
+      </TouchableOpacity>
+    );
   });
 
-  // Initialize carousel to start position
-  useEffect(() => {
-    if ((baseTagData || []).length > 0 && tagData.length > 0) {
-      // Start from a position that allows smooth infinite scroll
-      const startIndex = Math.floor(tagData.length / 3); // Start at 1/3 position
-
-      selectedIndex.value = startIndex;
-      setCurrentTagIndex(startIndex);
-
-      setTimeout(() => {
-        if (flatListRef.current) {
-          const startOffset = startIndex * ITEM_SIZE;
-
-          flatListRef.current.scrollToOffset({
-            offset: startOffset,
-            animated: false,
-          });
-
-          contentOffset.value = startOffset;
-        }
-      }, 100);
-    }
-  }, [tagData.length]);
-
-  // Get the actual tag from the infinite scroll data
-  const getActualTag = (index) => {
-    if (!tagData || tagData.length === 0) return null;
-    const clampedIndex = Math.max(0, Math.min(index, tagData.length - 1));
-    return tagData[clampedIndex] || null;
-  };
-
-  // Get current hero tag based on scroll position
-  const getCurrentTag = () => {
-    const clampedIndex = Math.max(
-      0,
-      Math.min(currentTagIndex, tagData.length - 1)
-    );
-    return tagData[clampedIndex] || (baseTagData || [])[0] || null;
-  };
-
-  const heroTag = getCurrentTag();
-  const selectedTag = hasRealTags ? heroTag : null;
+  // Track current focused tag for hero image
+  const [focusedTag, setFocusedTag] = useState(tagData[0] || null);
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+  const lastHapticIndex = useRef(0); // Track last index that triggered haptic
 
   const getTagImage = useCallback((tag, useBigPreview = false) => {
     try {
@@ -402,170 +553,146 @@ const HomeScreen = ({ navigation }) => {
   const getTagDescription = (tag) =>
     tag?.description || "Perfect for healthy eating";
 
+  // Pre-fetch duration options for a tag
+  const prefetchDurationsForTag = useCallback(async (tag) => {
+    if (!tag || !tag._id) return;
+
+    // Skip if already prefetched
+    if (prefetchedDurations[tag._id]) return;
+
+    try {
+      const response = await tagService.getMealPlansByTag(tag._id, 1, 100);
+
+      if (response?.success && response?.data) {
+        const plans = response.data || [];
+
+        // Extract unique duration weeks
+        const durations = [
+          ...new Set(
+            plans
+              .map((plan) => plan.durationWeeks)
+              .filter((duration) => duration && duration > 0)
+          ),
+        ].sort((a, b) => a - b);
+
+        // Format duration options
+        const formattedOptions = durations.map((weeks) => ({
+          id: weeks,
+          label: weeks === 1 ? "1 Week" : `${weeks} Weeks`,
+          weeks: weeks,
+          description: `${weeks} week${weeks > 1 ? "s" : ""} meal plan`,
+        }));
+
+        // Cache the result
+        setPrefetchedDurations(prev => ({
+          ...prev,
+          [tag._id]: formattedOptions
+        }));
+      }
+    } catch (error) {
+      console.error("Error prefetching durations:", error);
+    }
+  }, [prefetchedDurations]);
+
   const onSelectTag = (index) => {
-    if (!(tagData || [])[index]) {
-      return;
-    }
+    if (!tagData[index]) return;
 
-    // Update shared value immediately for synchronization
-    selectedIndex.value = index;
+    const targetOffset = index * ListItemWidth;
+    const currentOffset = contentOffset.value;
+    const distanceFromCenter = Math.abs(currentOffset - targetOffset);
+    const isAtCenter = distanceFromCenter < 5; // Within 5 pixels of exact center
 
-    // Calculate proper centered offset with physics-based positioning
-    const targetOffset = index * ITEM_SIZE;
-
-    if (flatListRef.current) {
-      flatListRef.current.scrollToOffset({
-        offset: targetOffset,
-        animated: true,
+    if (isAtCenter) {
+      // Item is already centered - navigate to duration selection
+      navigation.navigate('DurationSelectionScreen', {
+        tag: tagData[index],
+        tagId: tagData[index]._id,
+        tagName: tagData[index].name,
+        currentLocation: currentLocation, // Pass location to avoid refetching
+        prefetchedDurations: prefetchedDurations[tagData[index]._id] || null, // Pass prefetched data
       });
-    }
-
-    // Smooth animation to target with spring physics
-    contentOffset.value = withSpring(targetOffset, {
-      damping: 15,
-      stiffness: 150,
-      mass: 1,
-    });
-
-    // Log manual selection
-    const actualTag = getActualTag(index);
-    if (actualTag) {
-      const actualIndex = index % (baseTagData || []).length;
-      console.log(
-        "Manually selected tag:",
-        actualTag.name,
-        "at index:",
-        actualIndex
-      );
+    } else {
+      // Item is not centered - scroll to it
+      if (flatListRef.current) {
+        flatListRef.current.scrollToOffset({
+          offset: targetOffset,
+          animated: true,
+        });
+      }
     }
   };
 
-  // Highly optimized scroll handler - minimal calculations
+  // Reference scroll handler - simple and clean
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      "worklet";
       contentOffset.value = event.contentOffset.x;
-
-      // Reduce calculations - only update selectedIndex without runOnJS
-      if (tagData.length > 0) {
-        const centerIndex = Math.round(event.contentOffset.x / ITEM_SIZE);
-        selectedIndex.value = Math.max(0, Math.min(centerIndex, tagData.length - 1));
-      }
-    },
-    onMomentumEnd: (event) => {
-      "worklet";
-      // Simplified boundary handling - minimal operations
-      if (tagData.length === 0) return;
-
-      const currentIndex = Math.round(event.contentOffset.x / ITEM_SIZE);
-      const threshold = 2; // Simple threshold
-
-      // Only reset if truly at boundaries to reduce operations
-      if (currentIndex < threshold || currentIndex >= tagData.length - threshold) {
-        const newIndex = Math.floor(tagData.length / 2);
-        const newOffset = newIndex * ITEM_SIZE;
-
-        // Single runOnJS call instead of multiple
-        runOnJS(() => {
-          flatListRef.current?.scrollToOffset({
-            offset: newOffset,
-            animated: false,
-          });
-        })();
-      }
     },
   });
 
-  // Optimized Circular Carousel with performance improvements
-  const CircularCarouselListItem = React.memo(
-    ({ tag, index }) => {
-      // Safety check
-      if (!tag || index < 0) {
-        return null;
-      }
+  // Sync focused tag with scroll position for hero image
+  useEffect(() => {
+    if (!tagData || tagData.length === 0) return;
 
-      const actualTag = getActualTag(index);
+    let lastUpdateTime = 0;
+    const DEBOUNCE_DELAY = 150; // Prevent rapid transitions
 
-      const rStyle = useAnimatedStyle(() => {
-        "worklet";
-        // Ultra-simplified animation for maximum performance
-        const distanceFromCenter = contentOffset.value / ITEM_SIZE - index;
-        const absDistance = Math.abs(distanceFromCenter);
+    const interval = setInterval(() => {
+      try {
+        const now = Date.now();
+        if (now - lastUpdateTime < DEBOUNCE_DELAY) return;
 
-        // Aggressive early exit to reduce calculations
-        if (absDistance > 2) {
-          return {
-            opacity: 0.4,
-            transform: [{ scale: 0.7 }],
-          };
+        const currentIndex = Math.round(contentOffset.value / ListItemWidth);
+        const clampedIndex = Math.max(
+          0,
+          Math.min(currentIndex, tagData.length - 1)
+        );
+
+        const newFocusedTag = tagData[clampedIndex] || null;
+        if (newFocusedTag && newFocusedTag !== focusedTag) {
+          lastUpdateTime = now;
+          // Update carousel index for pagination dots
+          setCurrentCarouselIndex(clampedIndex);
+
+          // Haptic feedback ONLY when item is exactly centered (snapped)
+          // Check if scroll position is very close to exact center
+          const exactCenterOffset = clampedIndex * ListItemWidth;
+          const distanceFromCenter = Math.abs(contentOffset.value - exactCenterOffset);
+          const isAtCenter = distanceFromCenter < 5; // Within 5 pixels of exact center
+
+          // Only trigger haptic if at center AND index changed
+          if (isAtCenter && lastHapticIndex.current !== clampedIndex) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            lastHapticIndex.current = clampedIndex;
+          }
+
+          // Lazy load nearby images
+          prefetchNearbyImages(clampedIndex);
+
+          // Pre-fetch durations for this tag
+          prefetchDurationsForTag(newFocusedTag);
+
+          // Update focused tag directly without fade animation
+          setFocusedTag(newFocusedTag);
         }
+      } catch (error) {
+        console.warn("Error syncing focused tag:", error);
+      }
+    }, 33); // 30fps for better battery life while maintaining smoothness
 
-        // Minimal calculations - removed Math.pow and complex formulas
-        const isCenter = absDistance < 0.5;
-        const scale = isCenter ? 1.1 : 0.8 + (1 - absDistance) * 0.3;
-        const opacity = isCenter ? 1 : 0.6 + (1 - absDistance) * 0.4;
-        const translateY = isCenter ? -20 : 0;
+    return () => clearInterval(interval);
+  }, [tagData, focusedTag, ListItemWidth, prefetchNearbyImages, prefetchDurationsForTag]);
 
-        return {
-          opacity,
-          transform: [{ translateY }, { scale }],
-        };
-      }, []);
+  // Animate description changes
+  useEffect(() => {
+    const selectedTagDescription = getTagDescription(focusedTag);
 
-      return (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => onSelectTag(index)}
-        >
-          <Animated.View
-            style={[
-              {
-                width: ListItemWidth,
-                aspectRatio: 1,
-                elevation: 5,
-                shadowOpacity: 0.2,
-                shadowOffset: {
-                  width: 0,
-                  height: 0,
-                },
-                shadowRadius: 20,
-              },
-              rStyle,
-            ]}
-          >
-            <Image
-              source={getTagImage(actualTag, false)}
-              style={{
-                height: ListItemWidth,
-                width: ListItemWidth,
-                borderRadius: ListItemWidth / 2, // Perfect circle
-                borderWidth: 3,
-                borderColor: "white",
-              }}
-              resizeMode="cover"
-              fadeDuration={0}
-              loadingIndicatorSource={null}
-              progressiveRenderingEnabled={false} // Disable progressive rendering
-              defaultSource={require("../../../assets/authImage.png")} // Fallback
-            />
-          </Animated.View>
-        </TouchableOpacity>
-      );
-    },
-    (prevProps, nextProps) => {
-      // Custom equality check for better performance
-      return (
-        prevProps.index === nextProps.index &&
-        prevProps.tag?._id === nextProps.tag?._id &&
-        prevProps.tag?.image === nextProps.tag?.image &&
-        prevProps.tag?.name === nextProps.tag?.name
-      );
+    if (selectedTagDescription !== previousDescription) {
+      descriptionOpacity.value = withTiming(0, { duration: 150 }, () => {
+        runOnJS(setPreviousDescription)(selectedTagDescription);
+        descriptionOpacity.value = withTiming(1, { duration: 150 });
+      });
     }
-  );
-
-  // Real-time tag information updates
-  const selectedTagName = getTagName(heroTag);
-  const selectedTagDescription = getTagDescription(heroTag);
+  }, [focusedTag, previousDescription]);
 
   // Animated style for spinning dish
   const spinAnimatedStyle = useAnimatedStyle(() => {
@@ -578,72 +705,34 @@ const HomeScreen = ({ navigation }) => {
     };
   });
 
-  // Animated style for hero text rotation
-  const heroTextAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      textAnimationValue.value,
-      [0, 0.5, 1],
-      [1, 0.3, 1], // Subtle fade, not complete disappearance
-      Extrapolate.CLAMP
-    );
-
-    const translateY = interpolate(
-      textAnimationValue.value,
-      [0, 0.5, 1],
-      [0, -5, 0], // Subtle upward movement
-      Extrapolate.CLAMP
-    );
-
-    const scale = interpolate(
-      textAnimationValue.value,
-      [0, 0.5, 1],
-      [1, 0.98, 1], // Very subtle scale change
-      Extrapolate.CLAMP
-    );
-
+  // Animated style for description
+  const descriptionAnimatedStyle = useAnimatedStyle(() => {
     return {
-      opacity,
-      transform: [{ translateY }, { scale }],
+      opacity: descriptionOpacity.value,
     };
   });
 
-  // Smooth preview image animation synchronized with carousel
-  const previewImageAnimatedStyle = useAnimatedStyle(() => {
-    const previewImageWidth = 334;
-    const baseDataLength = (baseTagData || []).length;
-
-    if (baseDataLength === 0) {
-      return { transform: [{ translateX: 0 }] };
-    }
-
-    // Use the actual source index for preview synchronization
-    const currentScrollIndex = contentOffset.value / ITEM_SIZE;
-    const sourceIndex = currentScrollIndex % baseDataLength;
-
-    // Smooth interpolation for preview image translation
-    const previewTranslateX = interpolate(
-      sourceIndex,
-      [0, baseDataLength],
-      [0, -baseDataLength * previewImageWidth],
-      Extrapolate.CLAMP
+  // Error boundary
+  if (!tagData) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <Text>Loading...</Text>
+      </SafeAreaView>
     );
-
-    return {
-      transform: [{ translateX: previewTranslateX }],
-    };
-  });
+  }
 
   return (
     <SafeAreaView style={styles(colors).container}>
-      <StatusBar barStyle="light-content" backgroundColor="#652815" />
-      <ScrollView
-        style={styles(colors).scrollView}
-        contentContainerStyle={styles(colors).scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <StatusBar
+        barStyle={colors.background === "#FFFFFF" ? "dark-content" : "light-content"}
+        backgroundColor={colors.primary2}
+      />
+      <View style={styles(colors).mainContent}>
         <View style={styles(colors).heroWrapper}>
           <LinearGradient
-            colors={["#652815", "#7A2E18"]}
+            colors={[colors.primary2, colors.primary2]}
             style={styles(colors).heroBackground}
           >
             <View style={styles(colors).header}>
@@ -652,24 +741,37 @@ const HomeScreen = ({ navigation }) => {
                 onPress={handleLocationPress}
                 activeOpacity={0.7}
                 disabled={isLoadingLocation}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel={`Current location: ${currentLocation}`}
+                accessibilityHint="Double tap to refresh your location"
               >
                 <CustomIcon
                   name="location-filled"
                   size={14}
-                  color={colors.primary || "#F9B87A"}
+                  color={colors.primary}
                 />
-                <Text style={styles(colors).locationText} numberOfLines={1}>
+                <Text
+                  style={styles(colors).locationText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {isLoadingLocation ? "Getting location..." : currentLocation}
                 </Text>
                 {isLoadingLocation ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.white} />
                 ) : (
-                  <CustomIcon name="chevron-down" size={12} color="#FFFFFF" />
+                  <CustomIcon name="chevron-down" size={12} color={colors.white} />
                 )}
               </TouchableOpacity>
             </View>
 
-            <View style={styles(colors).heroTextContainer}>
+            <View
+              style={styles(colors).heroTextContainer}
+              accessible={true}
+              accessibilityLabel={`${heroMessages[currentMessageIndex]}, getChoma`}
+              accessibilityRole="header"
+            >
               <Text style={styles(colors).heroTitle}>
                 {heroMessages[currentMessageIndex]}
               </Text>
@@ -677,43 +779,34 @@ const HomeScreen = ({ navigation }) => {
             </View>
 
             <View style={styles(colors).heroImageContainer}>
-              {/* Static circle border */}
+              {/* Hero image synced with focused carousel item */}
               <View style={styles(colors).heroImageCircle}>
-                {/* Animated carousel of preview images */}
-                <Animated.View
-                  style={[
-                    styles(colors).previewCarousel,
-                    previewImageAnimatedStyle,
-                  ]}
-                >
-                  {(baseTagData || []).map((tag, index) => {
-                    return (
-                      <Image
-                        key={tag._id || index}
-                        source={getTagImage(tag, true)}
-                        style={styles(colors).previewImageItem}
-                        resizeMode="cover"
-                      />
-                    );
-                  })}
-                </Animated.View>
+                <Image
+                  source={getTagImage(focusedTag, true)}
+                  style={styles(colors).previewImageItem}
+                  resizeMode="cover"
+                />
               </View>
             </View>
 
-            {heroTag && (
+            {focusedTag && (
               <TouchableOpacity
                 style={styles(colors).planBadge}
                 onPress={() =>
-                  selectedTag &&
+                  focusedTag &&
                   navigation.navigate("TagScreen", {
-                    tagId: selectedTag._id,
-                    tagName: selectedTag.name,
+                    tagId: focusedTag._id,
+                    tagName: focusedTag.name,
                   })
                 }
                 activeOpacity={0.8}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel={`${focusedTag?.name || 'Selected'} meal plan`}
+                accessibilityHint="Double tap to view this meal plan"
               >
                 <Text style={styles(colors).planBadgeText}>
-                  {selectedTagName}
+                  {getTagName(focusedTag)}
                 </Text>
               </TouchableOpacity>
             )}
@@ -721,9 +814,13 @@ const HomeScreen = ({ navigation }) => {
           </LinearGradient>
 
           <View style={styles(colors).heroCurve}>
-            {/* Spinning Dish Background */}
+            {/* Spinning Dish Background - Theme aware */}
             <Animated.Image
-              source={require("../../../assets/spin-dish.png")}
+              source={
+                isDark
+                  ? require("../../../assets/spin-dish-dark.png")
+                  : require("../../../assets/spin-dish.png")
+              }
               style={[styles(colors).spinDishBackground, spinAnimatedStyle]}
               resizeMode="contain"
               onLoad={() => console.log("Spin dish image loaded successfully")}
@@ -736,84 +833,92 @@ const HomeScreen = ({ navigation }) => {
           <Animated.FlatList
             ref={flatListRef}
             data={tagData || []}
-            keyExtractor={(item, index) => {
-              // Safer key extraction with fallbacks
-              if (item?.infiniteIndex !== undefined) {
-                return `infinite-${item.infiniteIndex}`;
-              }
-              if (item?._id) {
-                return `id-${item._id}-${index}`;
-              }
-              if (item?.id) {
-                return `item-${item.id}-${index}`;
-              }
-              return `index-${index}`;
-            }}
-            scrollEventThrottle={32} // Increased to reduce scroll calculations
+            keyExtractor={(_, index) => index.toString()}
+            scrollEventThrottle={16}
             onScroll={scrollHandler}
-            snapToInterval={ITEM_SIZE}
-            decelerationRate="fast"
-            snapToAlignment="center"
-            disableIntervalMomentum={true} // Reduce momentum calculations
+            pagingEnabled
+            snapToInterval={ListItemWidth}
+            showsHorizontalScrollIndicator={false}
+            initialNumToRender={5}
+            maxToRenderPerBatch={3}
+            windowSize={7}
+            removeClippedSubviews={true}
             style={{
               position: "absolute",
-              bottom: 20, // Lift up slightly from bottom
-              height: 320, // More height for the arc
+              top: "50%",
+              marginTop: -350,
+              height: 300,
+              left: 0,
+              right: 0,
             }}
-            showsHorizontalScrollIndicator={false}
             contentContainerStyle={{
               justifyContent: "center",
               alignItems: "center",
-              paddingHorizontal: PADDING,
+              paddingHorizontal: 1.5 * ListItemWidth,
+              paddingRight: 1.8 * ListItemWidth, // Extra spacing at the end for last item
             }}
             horizontal
-            getItemLayout={(data, index) => ({
-              length: ITEM_SIZE,
-              offset: ITEM_SIZE * index,
-              index,
-            })}
-            initialNumToRender={3}
-            maxToRenderPerBatch={1} // Reduced to 1 for very low memory usage
-            windowSize={3}
-            removeClippedSubviews={true}
-            updateCellsBatchingPeriod={200} // Increased to reduce update frequency
-            legacyImplementation={false}
-            maintainVisibleContentPosition={null} // Disable for performance
             renderItem={({ item, index }) => {
-              return <CarouselItem tag={item} index={index} />;
+              return <CircularCarouselListItem tag={item} index={index} />;
             }}
           />
 
+          {/* Pagination Dots */}
+          <View style={styles(colors).paginationContainer}>
+            {tagData.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles(colors).paginationDot,
+                  index === currentCarouselIndex &&
+                    styles(colors).paginationDotActive,
+                ]}
+              />
+            ))}
+          </View>
+
           <View style={styles(colors).planInfoContainer}>
-            <Text style={styles(colors).planDescription}>
-              {selectedTagDescription}
-            </Text>
+            <Animated.Text
+              style={[styles(colors).planDescription, descriptionAnimatedStyle]}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {getTagDescription(focusedTag)}
+            </Animated.Text>
 
             <TouchableOpacity
               style={[
                 styles(colors).learnMoreButton,
-                !selectedTag && styles(colors).learnMoreButtonDisabled,
+                !focusedTag && styles(colors).learnMoreButtonDisabled,
               ]}
               onPress={() =>
-                selectedTag &&
+                focusedTag &&
                 navigation.navigate("TagScreen", {
-                  tagId: selectedTag._id,
-                  tagName: selectedTag.name,
+                  tagId: focusedTag._id,
+                  tagName: focusedTag.name,
                 })
               }
               activeOpacity={0.7}
-              disabled={!selectedTag}
+              disabled={!focusedTag}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`Explore ${focusedTag?.name || 'meal'} category`}
+              accessibilityHint="Double tap to view meals in this category"
             >
               <Text style={styles(colors).learnMoreText}>Explore meals</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Search Bar - Copy from SearchScreen */}
+          {/* Search Bar */}
           <View style={styles(colors).searchContainer}>
             <TouchableOpacity
               style={styles(colors).searchInputContainer}
-              onPress={() => navigation.navigate("Search")}
+              onPress={handleSearchPress}
               activeOpacity={0.85}
+              accessible={true}
+              accessibilityRole="search"
+              accessibilityLabel="Search meal plans"
+              accessibilityHint="Double tap to search for meal plans"
             >
               <CustomIcon
                 name="search-filled"
@@ -827,7 +932,25 @@ const HomeScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
+
+        {/* Circular Reveal Animation - Reference Style */}
+        <RNAnimated.View
+          pointerEvents="none"
+          style={[
+            styles(colors).circleBackground,
+            {
+              transform: [
+                {
+                  scale: circleAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 50],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+      </View>
     </SafeAreaView>
   );
 };
@@ -836,27 +959,24 @@ const styles = (colors) =>
   createStylesWithDMSans({
     container: {
       flex: 1,
-      backgroundColor: "#652815",
+      backgroundColor: colors.primary2,
+      paddingTop: statusBarHeight,
     },
-    scrollView: {
+    mainContent: {
       flex: 1,
     },
-    scrollContent: {
-      paddingBottom: 40,
-    },
     contentSection: {
-      height: 400, // Provide enough space for the arched carousel
+      height: 380,
       position: "relative",
-      marginTop: 20,
+      marginTop: verticalScale(40),
     },
     heroWrapper: {
       position: "relative",
-      backgroundColor: "#652815",
     },
     heroBackground: {
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 140,
+      paddingHorizontal: scale(50),
+      paddingTop: verticalScale(15),
+      paddingBottom: verticalScale(isSmallScreen ? 60 : 80),
     },
     header: {
       flexDirection: "row",
@@ -867,203 +987,185 @@ const styles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: "rgba(255, 255, 255, 0.25)",
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 20,
-      maxWidth: width * 0.8, // Allow more width for centered location
-      minWidth: width * 0.4, // Ensure minimum width
+      paddingHorizontal: scale(16),
+      paddingVertical: verticalScale(9),
+      borderRadius: moderateScale(20),
+      maxWidth: width * 1.8, // Allow more width for centered location
+      minWidth: width * 0.7, // Ensure minimum width
     },
     locationText: {
-      fontSize: 14,
-      color: "#FFFFFF",
-      marginHorizontal: 8,
+      flex: 1,
+      fontSize: moderateScale(14),
+      color: colors.white,
+      marginHorizontal: scale(8),
       fontWeight: "500",
     },
     heroTextContainer: {
-      marginTop: 28,
+      marginTop: verticalScale(20),
       alignItems: "center",
     },
     heroTitle: {
-      fontSize: 32,
+      fontSize: moderateScale(getResponsiveValue(22, 26, 28, 32)),
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: colors.white,
     },
     heroSubtitle: {
-      fontSize: 24,
+      fontSize: moderateScale(getResponsiveValue(16, 18, 20, 24)),
       fontWeight: "600",
-      color: "#F9B87A",
-      marginTop: 4,
+      color: colors.primary,
+      // marginTop: 4,
     },
     heroImageContainer: {
-      marginTop: 24,
+      marginTop: verticalScale(16),
       alignItems: "center",
       justifyContent: "center",
     },
     heroImageCircle: {
-      width: 340,
-      height: 340,
-      borderRadius: 320,
-      borderWidth: 3,
-      borderColor: "#FFFFFF",
+      width: heroImageSize,
+      height: heroImageSize,
+      borderRadius: heroImageBorderRadius,
+      borderWidth: scale(3),
+      borderColor: colors.white,
       overflow: "hidden",
       justifyContent: "center",
       alignItems: "center",
     },
-    previewCarousel: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "flex-start",
-    },
     previewImageItem: {
-      width: 334, // Slightly smaller than circle (340 - 6px for border)
-      height: 334,
-      borderRadius: 167, // Perfect circle (334/2)
-      marginRight: 0, // No spacing between images
+      width: previewImageSize, // Perfect fit inside circle
+      height: previewImageSize,
+      borderRadius: previewImageBorderRadius, // Rounded to fit circle perfectly
     },
     chooseHeading: {
-      fontSize: 22,
+      fontSize: moderateScale(getResponsiveValue(18, 20, 22, 24)),
       fontWeight: "700",
-      color: "#652815",
+      color: colors.white,
       textAlign: "center",
-      paddingTop: 16,
+      paddingTop: verticalScale(12),
     },
     planBadge: {
       position: "absolute",
-      bottom: 150,
+      bottom: verticalScale(getResponsiveValue(80, 100, 120, 150)),
       alignSelf: "center",
-      backgroundColor: "#FFFFFF",
-      paddingHorizontal: 20,
-      paddingVertical: 15,
-      marginBottom: 10,
-      borderRadius: 22,
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 6,
+      backgroundColor: colors.white,
+      paddingHorizontal: scale(18),
+      paddingVertical: verticalScale(12),
+      marginBottom: verticalScale(8),
+      borderRadius: moderateScale(20),
+      ...getShadowStyle({
+        shadowColor: colors.text,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+      }),
     },
     planBadgeText: {
-      fontSize: 20,
+      fontSize: moderateScale(getResponsiveValue(16, 20, 22, 26)),
       fontWeight: "700",
-      color: "#652815",
-    },
-
-    planScrollContainer: {
-      position: "relative",
-      marginTop: 24,
-      height: 150,
-      justifyContent: "center",
+      color: colors.primary2,
     },
     spinDishBackground: {
       position: "absolute",
-      top: -50,
+      top: verticalScale(0),
       left: "50%",
-      marginLeft: -300, // Half of width to center
-      width: 600, // Extra large to overflow beyond screen
-      height: 600,
+      marginLeft: -scale(300), // Half of responsive width to center
+      width: scale(600), // Responsive size
+      height: scale(600),
       zIndex: 0, // Behind all content
-      // opacity: 0.2,
-    },
-    planScroller: {
-      paddingHorizontal: 1.5 * ListItemWidth,
-      alignItems: "center",
-      zIndex: 15, // Ensure ScrollView content is above fixed circle
-    },
-    planChip: {
-      width: 70,
-      height: 70,
-      borderRadius: 35,
-      marginHorizontal: 6,
-      borderWidth: 2,
-      borderColor: "transparent",
-      overflow: "hidden",
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#F5F1EE",
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
-      elevation: 4,
-      zIndex: 20, // Higher z-index to be on top
-    },
-    planChipSelected: {
-      borderColor: "#F9B87A",
-      shadowOpacity: 0.25,
-      elevation: 5,
-    },
-    planChipCentered: {
-      borderWidth: 3,
-      borderColor: "#FFFFFF",
-      shadowColor: "#1b1b1b",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 8,
-      zIndex: 25, // Highest z-index for centered plan
-    },
-    planChipImage: {
-      width: "100%",
-      height: "100%",
-      borderRadius: 35,
     },
     planInfoContainer: {
-      marginTop: 16, // Reduce top margin to accommodate carousel
+      position: "absolute",
+      top: verticalScale(20), // Position at top
+      left: 0,
+      right: 0,
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingBottom: 20,
-    },
-    planTitle: {
-      fontSize: 20,
-      fontWeight: "600",
-      color: "#652815",
+      paddingHorizontal: scale(20),
+      paddingBottom: verticalScale(15),
     },
     planDescription: {
-      // marginTop: 10,
-      fontSize: 14,
-      color: "#7C6A64",
+      fontSize: moderateScale(14),
+      color: colors.textSecondary,
       textAlign: "center",
-      lineHeight: 20,
+      lineHeight: moderateScale(20),
+      marginBottom: verticalScale(10), // Changed to bottom margin
     },
     learnMoreButton: {
-      marginTop: 16,
+      // marginTop: verticalScale(8),
     },
     learnMoreButtonDisabled: {
       opacity: 0.5,
     },
     learnMoreText: {
       fontSize: 14,
-      color: "#F9B87A",
+      color: colors.primary,
       fontWeight: "600",
       textDecorationLine: "underline",
     },
     searchContainer: {
-      paddingHorizontal: 20,
-      paddingVertical: 15,
-      marginTop: 10,
+      position: "absolute",
+      top: verticalScale(65), // Position higher below description
+      left: 0,
+      right: 0,
+      paddingHorizontal: scale(20),
+      paddingVertical: verticalScale(15),
     },
     searchInputContainer: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.cardBackground,
-      borderRadius: 30,
-      paddingHorizontal: 15,
-      paddingVertical: 12,
-      borderWidth: 1,
+      borderRadius: moderateScale(30),
+      paddingHorizontal: scale(15),
+      paddingVertical: verticalScale(12),
+      borderWidth: scale(1),
       borderColor: colors.border,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...getShadowStyle({
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      }),
     },
     searchIcon: {
-      marginRight: 10,
+      marginRight: scale(10),
     },
     searchPlaceholder: {
       flex: 1,
-      fontSize: 16,
+      fontSize: moderateScale(16),
       color: colors.textMuted,
+    },
+    // Circular reveal animation background (reference style)
+    circleBackground: {
+      backgroundColor: colors.primary,
+      position: "absolute",
+      width: 60,
+      height: 60,
+      bottom: 100,
+      left: "50%",
+      marginLeft: -30, // Half of width to center
+      borderRadius: 30,
+      zIndex: 1000, // Above all content
+    },
+    // Pagination dots
+    paginationContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: verticalScale(150),
+      paddingVertical: verticalScale(8),
+    },
+    paginationDot: {
+      width: scale(6),
+      height: scale(6),
+      borderRadius: scale(3),
+      backgroundColor: colors.textMuted,
+      marginHorizontal: scale(4),
+      opacity: 0.5,
+    },
+    paginationDotActive: {
+      width: scale(8),
+      height: scale(8),
+      borderRadius: scale(4),
+      backgroundColor: colors.primary,
+      opacity: 1,
     },
   });
 

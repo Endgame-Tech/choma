@@ -86,14 +86,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     }
   }, [])
   return (
-    <header className="bg-choma-white dark:bg-choma-black shadow-sm border-b border-choma-brown/10 dark:border-choma-orange/20 transition-colors duration-200">
+    <header className="bg-white/95 dark:bg-choma-dark-card/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-choma-brown/20 transition-all duration-200">
       <div className="px-3 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Mobile menu button */}
             <button
               onClick={onMenuClick}
-              className="lg:hidden p-2 text-choma-brown/60 dark:text-choma-white/60 hover:text-choma-brown dark:hover:text-choma-white transition-colors"
+              className="lg:hidden p-2 text-choma-brown/60 dark:text-choma-white/60 hover:text-choma-brown dark:hover:text-choma-white hover:bg-choma-brown/5 dark:hover:bg-choma-orange/10 rounded-lg transition-all duration-200"
               aria-label="Open menu"
             >
               <Bars3Icon className="w-6 h-6" />
@@ -115,12 +115,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center space-x-2 sm:space-x-3 hover:bg-choma-brown/5 dark:hover:bg-choma-orange/10 rounded-lg p-2 transition-colors"
+                className="flex items-center space-x-2 sm:space-x-3 hover:bg-choma-brown/5 dark:hover:bg-choma-orange/10 rounded-xl p-2 transition-all duration-200 group"
                 aria-label="Open user menu"
                 {...(showUserMenu ? { 'aria-expanded': 'true' } : { 'aria-expanded': 'false' })}
               >
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-choma-brown dark:bg-choma-orange rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-choma-brown to-choma-brown-light dark:from-choma-orange dark:to-choma-orange-light rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200">
                     <span className="text-xs sm:text-sm font-medium text-choma-white dark:text-choma-brown">
                       {admin?.firstName ? admin.firstName.charAt(0).toUpperCase() : 'A'}
                     </span>
@@ -137,12 +137,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-white/95 dark:bg-gray-800/95 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
-                  <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-600 sm:hidden">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <div className="absolute right-0 mt-2 w-56 bg-white/95 dark:bg-choma-dark-card/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-choma-brown/20 py-1 z-50">
+                  <div className="px-4 py-2 border-b border-gray-200 dark:border-choma-brown/20 sm:hidden">
+                    <p className="text-sm font-medium text-gray-900 dark:text-choma-white">
                       {admin ? `${admin.firstName} ${admin.lastName}` : 'Admin User'}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500 dark:text-choma-white/60">
                       {admin?.email || 'Loading...'}
                     </p>
                   </div>
@@ -154,7 +154,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                         navigate('/profile')
                         setShowUserMenu(false)
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-choma-white hover:bg-gray-100 dark:hover:bg-choma-orange/10 flex items-center space-x-2 transition-colors duration-200"
                     >
                       <UserCircleIcon className="w-4 h-4" />
                       <span>View Profile</span>
@@ -162,9 +162,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   </div>
 
                   {/* Security Section */}
-                  <div className="border-t border-gray-200 dark:border-gray-600 py-1">
+                  <div className="border-t border-gray-200 dark:border-choma-brown/20 py-1">
                     <div className="px-4 py-2">
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <p className="text-xs font-medium text-gray-500 dark:text-choma-white/60 uppercase tracking-wider">
                         Security
                       </p>
                     </div>
@@ -172,7 +172,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                     <button
                       onClick={handleTwoFactorSetup}
                       disabled={loading2FA}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 disabled:opacity-50"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-choma-white hover:bg-gray-100 dark:hover:bg-choma-orange/10 flex items-center space-x-2 disabled:opacity-50 transition-colors duration-200"
                     >
                       <ShieldCheckIcon className="w-4 h-4" />
                       <div className="flex-1 flex items-center justify-between">
@@ -190,7 +190,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                     {twoFactorStatus?.isEnabled && (
                       <button
                         onClick={handleBackupCodes}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-choma-white hover:bg-gray-100 dark:hover:bg-choma-orange/10 flex items-center space-x-2 transition-colors duration-200"
                       >
                         <KeyIcon className="w-4 h-4" />
                         <div className="flex-1 flex items-center justify-between">

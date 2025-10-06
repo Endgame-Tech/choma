@@ -31,6 +31,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
     description: '',
     coverImage: '',
     durationWeeks: '4',
+    tier: 'Silver',
     targetAudience: 'Family',
     mealTypes: ['breakfast', 'lunch', 'dinner'],
     planFeatures: '',
@@ -111,6 +112,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
         description: typeof mealPlanAny.description === 'string' ? mealPlanAny.description as string : '',
         coverImage: typeof mealPlanAny.coverImage === 'string' ? mealPlanAny.coverImage as string : '',
         durationWeeks: typeof mealPlanAny.durationWeeks === 'number' ? String(mealPlanAny.durationWeeks as number) : (typeof mealPlanAny.durationWeeks === 'string' ? mealPlanAny.durationWeeks as string : '4'),
+        tier: typeof mealPlanAny.tier === 'string' ? mealPlanAny.tier as string : 'Silver',
         targetAudience: typeof mealPlanAny.targetAudience === 'string' ? mealPlanAny.targetAudience as string : 'Family',
         mealTypes: Array.isArray(mealPlanAny.mealTypes) && mealPlanAny.mealTypes.length > 0
           ? (mealPlanAny.mealTypes as string[])
@@ -170,6 +172,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
         description: formData.description,
         coverImage: formData.coverImage,
         durationWeeks: parseInt(formData.durationWeeks),
+        tier: formData.tier,
         targetAudience: formData.targetAudience,
         mealTypes: formData.mealTypes,
         planFeatures: formData.planFeatures.split(',').map(feature => feature.trim()).filter(feature => feature),
@@ -324,7 +327,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
             {/* Plan Configuration */}
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">📅 Plan Configuration</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                     Duration *
@@ -351,6 +354,26 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                       </span>
                     )}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                    Tier *
+                  </label>
+                  <select
+                    name="tier"
+                    value={formData.tier}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="Premium">💎 Premium</option>
+                    <option value="Gold">🥇 Gold</option>
+                    <option value="Silver">🥈 Silver</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
+                    Plan category level
+                  </p>
                 </div>
 
                 <div>

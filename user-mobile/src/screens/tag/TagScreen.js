@@ -12,6 +12,7 @@ import {
   RefreshControl,
   Animated,
   TextInput,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -24,6 +25,11 @@ import tagService from "../../services/tagService";
 import discountService from "../../services/discountService";
 import MealPlanCard from "../../components/meal-plans/MealPlanCard";
 import { THEME } from "../../utils/colors";
+import BlendSvg from "../../../assets/blend.svg";
+import RatingModal from "../../components/rating/RatingModal";
+import RatingDisplay from "../../components/rating/RatingDisplay";
+import { ratingApi } from "../../services/ratingApi";
+import { formatApproximateNumber } from "../../utils/numberUtils";
 
 const { width } = Dimensions.get("window");
 
@@ -33,7 +39,7 @@ const TagScreen = ({ navigation, route }) => {
   const { toggleBookmark, isBookmarked } = useBookmarks();
 
   // Route params
-  const { tagId, tagName: initialTagName } = route.params;
+  const { tagId, tagName: initialTagName, selectedDuration: initialSelectedDuration } = route.params;
 
   // State
   const [tag, setTag] = useState(null);
@@ -52,6 +58,17 @@ const TagScreen = ({ navigation, route }) => {
   const [filteredMealPlans, setFilteredMealPlans] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
 
+  // Duration filter state
+  const [durationOptions, setDurationOptions] = useState([]);
+  const [selectedDuration, setSelectedDuration] = useState(null);
+
+  // Rating state
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [existingRatings, setExistingRatings] = useState([]);
+  const [ratingStats, setRatingStats] = useState(null);
+  const [userRating, setUserRating] = useState(null);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
+
   // Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerOpacity = scrollY.interpolate({
@@ -65,24 +82,69 @@ const TagScreen = ({ navigation, route }) => {
     loadTagData();
   }, [tagId]);
 
-  // Filter meal plans based on search
+  // Filter meal plans based on search and duration
   useEffect(() => {
+    let filtered = mealPlans;
+
+    // Apply search filter
     if (searchQuery.trim()) {
-      const filtered = mealPlans.filter(plan =>
+      filtered = filtered.filter(plan =>
         plan.planName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         plan.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         plan.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setFilteredMealPlans(filtered);
-    } else {
-      setFilteredMealPlans(mealPlans);
     }
-  }, [searchQuery, mealPlans]);
+
+    // Apply duration filter
+    if (selectedDuration) {
+      filtered = filtered.filter(plan =>
+        plan.durationWeeks === selectedDuration.weeks
+      );
+    }
+
+    setFilteredMealPlans(filtered);
+  }, [searchQuery, selectedDuration, mealPlans]);
 
   // Load discount data
   useEffect(() => {
     fetchDiscountData();
   }, [user, mealPlans]);
+
+  const extractDurationOptions = useCallback((plans) => {
+    try {
+      // Extract unique duration weeks from meal plans
+      const durations = [
+        ...new Set(
+          plans
+            .map((plan) => plan.durationWeeks)
+            .filter((duration) => duration && duration > 0)
+        ),
+      ].sort((a, b) => a - b);
+
+      // Format duration options like TagFilterBar
+      const formattedOptions = durations.map((weeks) => ({
+        id: weeks,
+        label: weeks === 1 ? "1 Week Plan" : `${weeks} Week Plan`,
+        weeks: weeks,
+        description: `${weeks} week${weeks > 1 ? "s" : ""} duration`,
+      }));
+
+      setDurationOptions(formattedOptions);
+
+      // Auto-select duration if provided from navigation
+      if (initialSelectedDuration) {
+        const matchingDuration = formattedOptions.find(
+          d => d.weeks === initialSelectedDuration.weeks
+        );
+        if (matchingDuration) {
+          setSelectedDuration(matchingDuration);
+        }
+      }
+    } catch (error) {
+      console.error("Error extracting duration options:", error);
+      setDurationOptions([]);
+    }
+  }, [initialSelectedDuration]);
 
   const loadTagData = useCallback(async (isRefresh = false) => {
     try {
@@ -105,10 +167,14 @@ const TagScreen = ({ navigation, route }) => {
         setTag(tagResponse);
       }
 
-      if (mealPlansResponse?.data) {
-        setMealPlans(mealPlansResponse.data.mealPlans || []);
-        setHasMoreData(mealPlansResponse.data.pagination?.hasNext || false);
+      if (mealPlansResponse?.success && mealPlansResponse?.data) {
+        const plans = mealPlansResponse.data || [];
+        setMealPlans(plans);
+        setHasMoreData(mealPlansResponse.pagination?.hasNext || false);
         setCurrentPage(2);
+
+        // Extract duration options from meal plans
+        extractDurationOptions(plans);
       }
     } catch (err) {
       console.error("Error loading tag data:", err);
@@ -126,9 +192,9 @@ const TagScreen = ({ navigation, route }) => {
       setLoadingMore(true);
       const response = await tagService.getMealPlansByTag(tagId, currentPage, 20);
 
-      if (response?.data?.mealPlans) {
-        setMealPlans(prev => [...prev, ...response.data.mealPlans]);
-        setHasMoreData(response.data.pagination?.hasNext || false);
+      if (response?.success && response?.data) {
+        setMealPlans(prev => [...prev, ...response.data]);
+        setHasMoreData(response.pagination?.hasNext || false);
         setCurrentPage(prev => prev + 1);
       }
     } catch (err) {
@@ -170,6 +236,112 @@ const TagScreen = ({ navigation, route }) => {
       setDiscountLoading(false);
     }
   }, [user, mealPlans]);
+
+  // Fetch ratings for this tag
+  const fetchRatings = useCallback(async () => {
+    if (!tag) {
+      return;
+    }
+
+    try {
+      setRatingsLoading(true);
+      const tagIdForRating = tag._id || tagId;
+
+      // Get rating statistics
+      const statsResponse = await ratingApi.getEntityStats(
+        "tag",
+        tagIdForRating
+      );
+
+      if (statsResponse.success) {
+        setRatingStats(statsResponse.data);
+      } else {
+        setRatingStats(null);
+      }
+
+      // Get existing ratings (first page for display)
+      const ratingsResponse = await ratingApi.getEntityRatings(
+        "tag",
+        tagIdForRating,
+        {
+          limit: 5,
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        }
+      );
+      if (ratingsResponse.success) {
+        setExistingRatings(ratingsResponse.data.ratings || []);
+      }
+
+      // Check if current user has already rated this tag
+      const userRatingsResponse = await ratingApi.getMyRatings({
+        entityType: "tag",
+        ratingType: "tag",
+      });
+      if (userRatingsResponse.success) {
+        const userTagRating = userRatingsResponse.data.ratings?.find(
+          (rating) => rating.ratedEntity === tagIdForRating
+        );
+        setUserRating(userTagRating || null);
+      }
+    } catch (error) {
+      console.error("Error in fetchRatings:", error);
+    } finally {
+      setRatingsLoading(false);
+    }
+  }, [tag, tagId]);
+
+  // Handle rating submission
+  const handleRatingSubmit = async (ratingData) => {
+    try {
+      if (userRating) {
+        // Update existing rating
+        await ratingApi.updateRating(userRating._id, ratingData);
+      } else {
+        // Create new rating
+        await ratingApi.createRating(ratingData);
+      }
+
+      // Refresh ratings after submission
+      await fetchRatings();
+
+      // Force a delay to ensure backend processing is complete
+      setTimeout(async () => {
+        await fetchRatings();
+      }, 2000);
+
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+
+      let errorMessage = "Failed to submit rating. Please try again.";
+
+      if (error.message && error.message.includes("already rated")) {
+        try {
+          await fetchRatings();
+          errorMessage = "Your rating has been recorded successfully.";
+          return;
+        } catch (fetchError) {
+          console.error("Error fetching updated ratings:", fetchError);
+        }
+        errorMessage = "You have already rated this tag. Your rating has been updated.";
+      } else if (error.message && error.message.includes("not found")) {
+        errorMessage = "This tag is no longer available for rating.";
+      } else if (error.message && error.message.includes("unauthorized")) {
+        errorMessage = "Please log in to rate this tag.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      Alert.alert("Rating Error", errorMessage, [{ text: "OK" }]);
+    }
+  };
+
+  // Fetch ratings when tag is loaded
+  useEffect(() => {
+    if (tag) {
+      fetchRatings();
+    }
+  }, [tag, fetchRatings]);
 
   const getPlanDescription = (plan) => {
     return (
@@ -227,7 +399,7 @@ const TagScreen = ({ navigation, route }) => {
             onPress={() => navigation.goBack()}
             style={styles(colors).backButton}
           >
-            <CustomIcon name="chevron-left" size={24} color="#FFFFFF" />
+            <CustomIcon name="chevron-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
           <View style={styles(colors).headerActions}>
@@ -251,30 +423,31 @@ const TagScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* Hero Content */}
-        <View style={styles(colors).heroContent}>
-          <View style={styles(colors).heroImageContainer}>
-            <Image
-              source={getTagImage(true)}
-              style={styles(colors).heroImage}
-              resizeMode="cover"
-            />
-          </View>
+        {/* Hero Background Image */}
+        <Image
+          source={getTagImage(true)}
+          style={styles(colors).heroBackgroundImage}
+          resizeMode="cover"
+        />
 
-          <View style={styles(colors).heroTextContainer}>
-            <Text style={styles(colors).tagName}>
-              {tag?.name || initialTagName || "Tag"}
-            </Text>
-            <Text style={styles(colors).tagDescription}>
-              {tag?.description || "Discover amazing meal plans in this category"}
-            </Text>
-            <View style={styles(colors).mealCountContainer}>
-              <CustomIcon name="utensils" size={16} color="#F9B87A" />
-              <Text style={styles(colors).mealCountText}>
-                {mealPlans.length} meal plan{mealPlans.length !== 1 ? 's' : ''}
-              </Text>
-            </View>
-          </View>
+        {/* Tag Image Circle */}
+        {/* <View style={styles(colors).tagImageContainer}>
+          <Image
+            source={getTagImage(false)}
+            style={styles(colors).tagImageCircle}
+            resizeMode="cover"
+          />
+        </View> */}
+
+        {/* Blend Transition */}
+        <View style={styles(colors).blendTransition}>
+          <BlendSvg
+            width="100%"
+            height={60}
+            fill={colors.background}
+            preserveAspectRatio="none"
+            style={styles(colors).blendSvg}
+          />
         </View>
       </LinearGradient>
     </View>
@@ -420,7 +593,7 @@ const TagScreen = ({ navigation, route }) => {
             onPress={() => navigation.goBack()}
             style={styles(colors).backButton}
           >
-            <CustomIcon name="chevron-left" size={24} color={colors.text} />
+            <CustomIcon name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles(colors).animatedHeaderTitle} numberOfLines={1}>
             {tag?.name || initialTagName || "Tag"}
@@ -458,9 +631,281 @@ const TagScreen = ({ navigation, route }) => {
       >
         {renderHeader()}
         {renderSearchBar()}
+
+        {/* Tag Information Section */}
+        <View style={styles(colors).tagInfoSection}>
+          <Text style={styles(colors).tagName}>
+            {tag?.name || initialTagName || "Tag"}
+          </Text>
+          <Text style={styles(colors).tagSubtitle}>
+            Category • Food • Meal Plans
+          </Text>
+          <View style={styles(colors).contactContainer}>
+            <View style={styles(colors).contactRow}>
+              <CustomIcon name="clock" size={16} color={colors.textSecondary} />
+              <Text style={styles(colors).contactText}>
+                {mealPlans.length} meal plan{mealPlans.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Duration Filter Pills */}
+        {durationOptions.length > 0 && (
+          <View style={styles(colors).durationFilterSection}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles(colors).durationOptionsContainer}
+            >
+              {/* All Plans Option */}
+              <TouchableOpacity
+                style={[
+                  styles(colors).durationOption,
+                  !selectedDuration && styles(colors).selectedDurationOption,
+                ]}
+                onPress={() => setSelectedDuration(null)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles(colors).durationOptionText,
+                    !selectedDuration && styles(colors).selectedDurationOptionText,
+                  ]}
+                >
+                  All Plans
+                </Text>
+              </TouchableOpacity>
+
+              {/* Duration Options */}
+              {durationOptions.map((duration) => (
+                <TouchableOpacity
+                  key={duration.id}
+                  style={[
+                    styles(colors).durationOption,
+                    selectedDuration?.id === duration.id && styles(colors).selectedDurationOption,
+                  ]}
+                  onPress={() => setSelectedDuration(
+                    selectedDuration?.id === duration.id ? null : duration
+                  )}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles(colors).durationOptionText,
+                      selectedDuration?.id === duration.id && styles(colors).selectedDurationOptionText,
+                    ]}
+                  >
+                    {duration.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Bio Section */}
+        <View style={styles(colors).bioSection}>
+          <Text style={styles(colors).bioTitle}>Bio</Text>
+          <Text style={styles(colors).bioText}>
+            {tag?.description || "Delicious meal plans carefully crafted for your healthy lifestyle. We offer fresh, nutritious options that make eating well simple and enjoyable."}
+          </Text>
+        </View>
+
         {renderContent()}
+
+        {/* Ratings Section */}
+        <View style={styles(colors).ratingsSection}>
+          <View style={styles(colors).ratingsSectionHeader}>
+            <Text style={styles(colors).ratingsTitle}>Reviews & Ratings</Text>
+            <TouchableOpacity
+              style={styles(colors).rateButton}
+              onPress={() => setRatingModalVisible(true)}
+            >
+              <Text style={styles(colors).rateButtonText}>
+                {userRating ? "Update your rating" : "Rate this tag"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {ratingsLoading ? (
+            <View style={styles(colors).ratingsLoadingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles(colors).ratingsLoadingText}>Loading ratings...</Text>
+            </View>
+          ) : (
+            <>
+              {(() => {
+                const hasRatingStats = !!ratingStats;
+                const totalRatings =
+                  ratingStats?.data?.overallStats?.totalRatings || 0;
+                const averageRating =
+                  ratingStats?.data?.overallStats?.averageRating || 0;
+
+                console.log("🔍 Rating display debug:", {
+                  hasRatingStats,
+                  totalRatings,
+                  averageRating,
+                  existingRatingsLength: existingRatings.length,
+                });
+
+                // Show ratings if we have rating stats OR if we have existing ratings
+                const shouldShowRatings =
+                  hasRatingStats || existingRatings.length > 0;
+
+                if (!shouldShowRatings) {
+                  return (
+                    <View style={styles(colors).ratingStatsContainer}>
+                      <Text style={styles(colors).noRatingsText}>No ratings yet</Text>
+                      <Text style={styles(colors).noRatingsSubtext}>
+                        Be the first to rate this tag!
+                      </Text>
+                    </View>
+                  );
+                }
+
+                return (
+                  <View style={styles(colors).ratingStatsContainer}>
+                    <View style={styles(colors).ratingOverview}>
+                      <View style={styles(colors).ratingAverageContainer}>
+                        <Text style={styles(colors).ratingAverageNumber}>
+                          {ratingStats?.data?.overallStats?.averageRating
+                            ? ratingStats.data.overallStats.averageRating.toFixed(1)
+                            : "0.0"}
+                        </Text>
+                        <View style={styles(colors).starsContainer}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <CustomIcon
+                              key={star}
+                              name={
+                                star <=
+                                Math.round(
+                                  ratingStats?.data?.overallStats?.averageRating ||
+                                    0
+                                )
+                                  ? "star-filled"
+                                  : star <=
+                                    (ratingStats?.data?.overallStats?.averageRating ||
+                                      0)
+                                  ? "star-half"
+                                  : "star-outline"
+                              }
+                              size={16}
+                              color={
+                                star <=
+                                  ratingStats?.data?.overallStats?.averageRating ||
+                                0
+                                  ? colors.rating
+                                  : colors.textMuted
+                              }
+                            />
+                          ))}
+                        </View>
+                        <Text style={styles(colors).ratingCount}>
+                          {formatApproximateNumber(
+                            ratingStats?.data?.overallStats?.totalRatings ||
+                              existingRatings.length ||
+                              0
+                          )}{" "}
+                          rating
+                          {(ratingStats?.data?.overallStats?.totalRatings ||
+                            existingRatings.length ||
+                            0) !== 1
+                            ? "s"
+                            : ""}
+                        </Text>
+                      </View>
+
+                      <View style={styles(colors).ratingDistribution}>
+                        {[5, 4, 3, 2, 1].map((rating) => {
+                          const count =
+                            ratingStats?.data?.overallStats?.ratingCounts?.[
+                              rating.toString()
+                            ] || 0;
+                          const percentage =
+                            (ratingStats?.data?.overallStats?.totalRatings || 0) > 0
+                              ? (count /
+                                  (ratingStats?.data?.overallStats?.totalRatings ||
+                                    1)) *
+                                100
+                              : 0;
+
+                          return (
+                            <View
+                              key={rating}
+                              style={styles(colors).ratingDistributionRow}
+                            >
+                              <Text style={styles(colors).ratingDistributionStar}>
+                                {rating}
+                              </Text>
+                              <CustomIcon
+                                name="star-filled"
+                                size={12}
+                                color={colors.rating}
+                              />
+                              <View style={styles(colors).ratingDistributionBar}>
+                                <View
+                                  style={[
+                                    styles(colors).ratingDistributionFill,
+                                    { width: `${percentage}%` },
+                                  ]}
+                                />
+                              </View>
+                              <Text style={styles(colors).ratingDistributionCount}>
+                                {count}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  </View>
+                );
+              })()}
+
+              {/* Recent Reviews */}
+              {existingRatings.length > 0 && (
+                <View style={styles(colors).recentReviewsContainer}>
+                  <Text style={styles(colors).recentReviewsTitle}>Recent Reviews</Text>
+                  {existingRatings.slice(0, 3).map((rating) => {
+                    return (
+                      <RatingDisplay
+                        key={rating._id}
+                        ratings={[rating]}
+                        showFullReview={false}
+                        style={styles(colors).ratingDisplayItem}
+                      />
+                    );
+                  })}
+
+                  {ratingStats?.data?.overallStats?.totalRatings ||
+                  existingRatings.length > 3 ? (
+                    <TouchableOpacity style={styles(colors).viewAllReviewsButton}>
+                      <Text style={styles(colors).viewAllReviewsText}>
+                        View all reviews
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              )}
+            </>
+          )}
+        </View>
+
         <View style={styles(colors).bottomPadding} />
       </Animated.ScrollView>
+
+      {/* Rating Modal */}
+      <RatingModal
+        visible={ratingModalVisible}
+        onClose={() => setRatingModalVisible(false)}
+        onSubmit={handleRatingSubmit}
+        entityType="tag"
+        entityId={tag?._id || tagId}
+        entityName={tag?.name || initialTagName}
+        existingRating={userRating}
+        ratingType="tag"
+      />
     </SafeAreaView>
   );
 };
@@ -477,25 +922,35 @@ const styles = (colors) =>
     heroWrapper: {
       position: "relative",
       backgroundColor: "#652815",
+      height: 250,
+      overflow: "hidden",
     },
     heroBackground: {
       paddingTop: 20,
-      paddingBottom: 40,
-      paddingHorizontal: 20,
+      paddingBottom: 0,
+      paddingHorizontal: 0,
+      position: "relative",
+      height: "100%",
+      minHeight: 250,
     },
     navigationHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       marginBottom: 30,
+      paddingHorizontal: 20,
+      position: "relative",
+      zIndex: 10,
     },
     backButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      backgroundColor: colors.black,
       justifyContent: "center",
       alignItems: "center",
+      borderWidth: 1,
+      borderColor: "#1b1b1b",
     },
     headerActions: {
       flexDirection: "row",
@@ -505,62 +960,89 @@ const styles = (colors) =>
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      backgroundColor: colors.black,
       justifyContent: "center",
       alignItems: "center",
+      borderWidth: 1,
+      borderColor: "#1b1b1b",
     },
-    heroContent: {
-      alignItems: "center",
+    heroBackgroundImage: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: "100%",
+      height: "100%",
+      minHeight: 250,
     },
-    heroImageContainer: {
-      width: 120,
-      height: 120,
-      borderRadius: 60,
-      borderWidth: 3,
-      borderColor: "#FFFFFF",
-      overflow: "hidden",
-      marginBottom: 20,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
+    blendTransition: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      width: "100%",
+      height: 60,
+      zIndex: 2,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.1,
       shadowRadius: 8,
-      elevation: 8,
+      elevation: 5,
     },
-    heroImage: {
+    blendSvg: {
       width: "100%",
       height: "100%",
     },
-    heroTextContainer: {
-      alignItems: "center",
+    tagImageContainer: {
+      position: "absolute",
+      bottom: -40, // Half of the circle height to position it at the middle-bottom
+      left: width / 2 - 40, // Center horizontally
+      width: 80,
+      height: 80,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 8,
+      zIndex: 20,
+    },
+    tagImageCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+    },
+    tagInfoSection: {
+      backgroundColor: colors.background,
       paddingHorizontal: 20,
+      paddingVertical: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
     },
     tagName: {
-      fontSize: 28,
+      fontSize: 24,
       fontWeight: "700",
-      color: "#FFFFFF",
-      textAlign: "center",
+      color: colors.text,
       marginBottom: 8,
     },
-    tagDescription: {
-      fontSize: 16,
-      color: "#F9B87A",
-      textAlign: "center",
-      lineHeight: 22,
-      marginBottom: 16,
+    tagSubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 12,
     },
-    mealCountContainer: {
+    contactContainer: {
+      alignItems: "flex-start",
+      width: "100%",
+    },
+    contactRow: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 20,
+      marginBottom: 8,
     },
-    mealCountText: {
+    contactText: {
       fontSize: 14,
-      color: "#FFFFFF",
-      fontWeight: "500",
-      marginLeft: 6,
+      color: colors.textSecondary,
+      marginLeft: 8,
     },
     animatedHeader: {
       position: "absolute",
@@ -724,6 +1206,194 @@ const styles = (colors) =>
       color: colors.white,
       fontSize: 14,
       fontWeight: "600",
+    },
+    durationFilterSection: {
+      backgroundColor: colors.background,
+      paddingVertical: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    durationOptionsContainer: {
+      paddingHorizontal: 20,
+      paddingRight: 40, // Extra padding for last item
+    },
+    durationOption: {
+      backgroundColor: colors.background,
+      borderRadius: 42,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      marginRight: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      minWidth: 80,
+    },
+    selectedDurationOption: {
+      backgroundColor: colors.text,
+      borderColor: colors.text,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    durationOptionText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    selectedDurationOptionText: {
+      color: colors.background,
+    },
+    bioSection: {
+      backgroundColor: colors.background,
+      paddingHorizontal: 20,
+      paddingVertical: 20,
+    },
+    bioTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 12,
+    },
+    bioText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    ratingsSection: {
+      backgroundColor: colors.background,
+      paddingHorizontal: 20,
+      paddingVertical: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    ratingsSectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    ratingsTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    rateButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: THEME.borderRadius.medium,
+    },
+    rateButtonText: {
+      color: colors.white,
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    ratingsLoadingContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 20,
+    },
+    ratingsLoadingText: {
+      marginLeft: 12,
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    ratingStatsContainer: {
+      marginBottom: 20,
+    },
+    ratingOverview: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    ratingAverageContainer: {
+      alignItems: "center",
+      flex: 1,
+    },
+    ratingAverageNumber: {
+      fontSize: 48,
+      fontWeight: "700",
+      color: colors.text,
+      lineHeight: 56,
+    },
+    starsContainer: {
+      flexDirection: "row",
+      marginVertical: 8,
+      gap: 2,
+    },
+    ratingCount: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    ratingDistribution: {
+      flex: 2,
+      marginLeft: 20,
+    },
+    ratingDistributionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    ratingDistributionStar: {
+      fontSize: 12,
+      color: colors.text,
+      width: 12,
+    },
+    ratingDistributionBar: {
+      flex: 1,
+      height: 8,
+      backgroundColor: colors.border,
+      borderRadius: 4,
+      marginHorizontal: 8,
+      overflow: "hidden",
+    },
+    ratingDistributionFill: {
+      height: "100%",
+      backgroundColor: colors.rating,
+      borderRadius: 4,
+    },
+    ratingDistributionCount: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      width: 20,
+      textAlign: "right",
+    },
+    noRatingsText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: 4,
+    },
+    noRatingsSubtext: {
+      fontSize: 14,
+      color: colors.textMuted,
+      textAlign: "center",
+    },
+    recentReviewsContainer: {
+      marginTop: 20,
+    },
+    recentReviewsTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 16,
+    },
+    ratingDisplayItem: {
+      marginBottom: 16,
+    },
+    viewAllReviewsButton: {
+      alignSelf: "center",
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+    },
+    viewAllReviewsText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: "500",
     },
     bottomPadding: {
       height: 120,

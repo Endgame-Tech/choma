@@ -10,16 +10,19 @@ import {
   Platform,
   StatusBar,
   ImageBackground,
+  Image,
   Dimensions,
   Animated,
   Easing,
   Keyboard,
+  SafeAreaView,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../styles/theme";
-import { THEME } from "../../utils/colors";
 import ChomaLogo from "../../components/ui/ChomaLogo";
+import LoginCurve from "../../components/ui/LoginCurve";
 import { useAlert } from "../../contexts/AlertContext";
 import apiService from "../../services/api";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
@@ -280,6 +283,13 @@ const EmailVerificationScreen = ({ navigation, route }) => {
             { transform: [{ translateY: topSectionOffset }] },
           ]}
         >
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={24} color="#fff" />
+          </TouchableOpacity>
+
           <View style={styles.logoContainer}>
             <ChomaLogo width={150} height={82} />
           </View>
@@ -295,6 +305,13 @@ const EmailVerificationScreen = ({ navigation, route }) => {
               resizeMode="cover"
             />
           </View>
+        </Animated.View>
+
+        {/* Curved transition */}
+        <Animated.View
+          style={[{ transform: [{ translateY: keyboardOffset }] }]}
+        >
+          <LoginCurve />
         </Animated.View>
 
         {/* Bottom white section with form */}
@@ -313,16 +330,6 @@ const EmailVerificationScreen = ({ navigation, route }) => {
             enableOnAndroid={true}
             keyboardDismissMode="interactive"
           >
-            {/* Header with back button */}
-            <View style={styles.header}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Ionicons name="chevron-back" size={20} color="#666" />
-              </TouchableOpacity>
-            </View>
-
             {/* Welcome text */}
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Verify Your Email</Text>
@@ -430,11 +437,11 @@ const styles = createStylesWithDMSans({
     right: 0,
     bottom: 0,
     backgroundColor: "#652815",
-    opacity: 0.8, // Subtle pattern overlay
+    opacity: 0.8,
   },
   backgroundImageStyle: {
     opacity: 1,
-    transform: [{ scale: 2.5 }], // Makes the pattern 2x bigger
+    transform: [{ scale: 2.5 }],
   },
   topSection: {
     flex: 0.5,
@@ -442,6 +449,13 @@ const styles = createStylesWithDMSans({
     paddingHorizontal: 20,
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    padding: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 25,
+    marginBottom: 10,
   },
   logoContainer: {
     marginTop: 15,
@@ -460,10 +474,9 @@ const styles = createStylesWithDMSans({
   bottomSection: {
     flex: 0.75,
     backgroundColor: "#fff",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
     minHeight: height * 0.1,
-    zIndex: 3,
+    zIndex: 5,
+    position: "relative",
   },
   formContainer: {
     flex: 1,
@@ -473,17 +486,6 @@ const styles = createStylesWithDMSans({
     paddingHorizontal: 30,
     paddingBottom: 70,
     justifyContent: "center",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  backButton: {
-    padding: 8,
-    backgroundColor: "#f8f8f8",
-    borderRadius: 20,
   },
   welcomeContainer: {
     alignItems: "center",

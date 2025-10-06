@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,19 +6,28 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  KeyboardAvoidingView,
   ScrollView,
   Platform,
   StatusBar,
+  ImageBackground,
+  Image,
+  Dimensions,
+  Animated,
+  Easing,
+  Keyboard,
+  SafeAreaView,
+  KeyboardAvoidingView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { COLORS, THEME } from "../../utils/colors";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import { APP_CONFIG } from "../../utils/constants";
 import { useAlert } from "../../contexts/AlertContext";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import ChomaLogo from "../../components/ui/ChomaLogo";
+import LoginCurve from "../../components/ui/LoginCurve";
+
+const { width, height } = Dimensions.get("window");
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -31,6 +40,75 @@ const ForgotPasswordScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Animation for smooth keyboard transitions
+  const [keyboardOffset] = useState(new Animated.Value(0));
+  const [topSectionOffset] = useState(new Animated.Value(0));
+
+  // Rotation animation for the food image (slow spin)
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const rotateInterpolate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  useEffect(() => {
+    const spin = Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 20000, // 20 seconds per full rotation
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    spin.start();
+    return () => spin.stop();
+  }, [rotateAnim]);
+
+  // Smooth keyboard animation listeners
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (event) => {
+        // White form section - move up more (original amount)
+        Animated.timing(keyboardOffset, {
+          duration: Platform.OS === "ios" ? 300 : 250,
+          toValue: -event.endCoordinates.height * 0.3, // Keep white form moving up by 30%
+          useNativeDriver: false,
+        }).start();
+
+        // Top section (logo + food image) - move up less
+        Animated.timing(topSectionOffset, {
+          duration: Platform.OS === "ios" ? 300 : 250,
+          toValue: -event.endCoordinates.height * 0.1, // Logo and food image move up only 10%
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        // Reset both animations
+        Animated.timing(keyboardOffset, {
+          duration: Platform.OS === "ios" ? 300 : 250,
+          toValue: 0,
+          useNativeDriver: false,
+        }).start();
+
+        Animated.timing(topSectionOffset, {
+          duration: Platform.OS === "ios" ? 300 : 250,
+          toValue: 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, [keyboardOffset, topSectionOffset]);
 
   const handleSendCode = async () => {
     if (!email.trim()) {
@@ -147,31 +225,25 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const renderStep1 = () => (
     <>
-      <View style={styles(colors).logoContainer}>
-        <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
-          style={styles(colors).logoBackground}
-        >
-          <Ionicons name="lock-closed" size={40} color={colors.white} />
-        </LinearGradient>
-        <Text style={styles(colors).title}>Forgot Password</Text>
-        <Text style={styles(colors).subtitle}>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>Forgot Password</Text>
+        <Text style={styles.subtitle}>
           Enter your email address and we'll send you a reset code
         </Text>
       </View>
 
-      <View style={styles(colors).form}>
-        <View style={styles(colors).inputContainer}>
+      <View style={styles.form}>
+        <View style={styles.inputContainer}>
           <Ionicons
             name="mail-outline"
             size={20}
-            color={colors.textMuted}
-            style={styles(colors).inputIcon}
+            color="#999"
+            style={styles.inputIcon}
           />
           <TextInput
-            style={styles(colors).input}
+            style={styles.input}
             placeholder="Email address"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor="#999"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -182,28 +254,19 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={[
-            styles(colors).actionButton,
-            isLoading && styles(colors).actionButtonDisabled,
+            styles.actionButton,
+            isLoading && styles.actionButtonDisabled,
           ]}
           onPress={handleSendCode}
           disabled={isLoading}
         >
-          <LinearGradient
-            colors={
-              isLoading
-                ? [colors.textMuted, colors.textMuted]
-                : [colors.primary, colors.primaryDark]
-            }
-            style={styles(colors).buttonGradient}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={styles(colors).actionButtonText}>
-                Send Reset Code
-              </Text>
-            )}
-          </LinearGradient>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.actionButtonText}>
+              Send Reset Code
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </>
@@ -211,31 +274,25 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const renderStep2 = () => (
     <>
-      <View style={styles(colors).logoContainer}>
-        <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
-          style={styles(colors).logoBackground}
-        >
-          <Ionicons name="mail" size={40} color={colors.white} />
-        </LinearGradient>
-        <Text style={styles(colors).title}>Enter Reset Code</Text>
-        <Text style={styles(colors).subtitle}>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>Enter Reset Code</Text>
+        <Text style={styles.subtitle}>
           We've sent a 6-digit code to {email}
         </Text>
       </View>
 
-      <View style={styles(colors).form}>
-        <View style={styles(colors).inputContainer}>
+      <View style={styles.form}>
+        <View style={styles.inputContainer}>
           <Ionicons
             name="key-outline"
             size={20}
-            color={colors.textMuted}
-            style={styles(colors).inputIcon}
+            color="#999"
+            style={styles.inputIcon}
           />
           <TextInput
-            style={styles(colors).input}
+            style={styles.input}
             placeholder="Enter 6-digit code"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor="#999"
             value={resetCode}
             onChangeText={setResetCode}
             keyboardType="number-pad"
@@ -244,22 +301,17 @@ const ForgotPasswordScreen = ({ navigation }) => {
         </View>
 
         <TouchableOpacity
-          style={styles(colors).actionButton}
+          style={styles.actionButton}
           onPress={handleVerifyCode}
         >
-          <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
-            style={styles(colors).buttonGradient}
-          >
-            <Text style={styles(colors).actionButtonText}>Verify Code</Text>
-          </LinearGradient>
+          <Text style={styles.actionButtonText}>Verify Code</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles(colors).linkButton}
+          style={styles.linkButton}
           onPress={() => setStep(1)}
         >
-          <Text style={styles(colors).linkButtonText}>
+          <Text style={styles.linkButtonText}>
             Change email address
           </Text>
         </TouchableOpacity>
@@ -269,256 +321,343 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const renderStep3 = () => (
     <>
-      <View style={styles(colors).logoContainer}>
-        <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
-          style={styles(colors).logoBackground}
-        >
-          <Ionicons name="create-outline" size={40} color={colors.white} />
-        </LinearGradient>
-        <Text style={styles(colors).title}>Create New Password</Text>
-        <Text style={styles(colors).subtitle}>Enter your new password</Text>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>Create New Password</Text>
+        <Text style={styles.subtitle}>Enter your new password</Text>
       </View>
 
-      <View style={styles(colors).form}>
-        <View style={styles(colors).inputContainer}>
+      <View style={styles.form}>
+        <View style={styles.inputContainer}>
           <Ionicons
             name="lock-closed-outline"
             size={20}
-            color={colors.textMuted}
-            style={styles(colors).inputIcon}
+            color="#999"
+            style={styles.inputIcon}
           />
           <TextInput
-            style={styles(colors).input}
+            style={styles.input}
             placeholder="New password"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor="#999"
             value={newPassword}
             onChangeText={setNewPassword}
             secureTextEntry={!showPassword}
           />
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)}
-            style={styles(colors).eyeIcon}
+            style={styles.eyeIcon}
           >
             <Ionicons
               name={showPassword ? "eye-outline" : "eye-off-outline"}
               size={20}
-              color={colors.textMuted}
+              color="#999"
             />
           </TouchableOpacity>
         </View>
 
-        <View style={styles(colors).inputContainer}>
+        <View style={styles.inputContainer}>
           <Ionicons
             name="lock-closed-outline"
             size={20}
-            color={colors.textMuted}
-            style={styles(colors).inputIcon}
+            color="#999"
+            style={styles.inputIcon}
           />
           <TextInput
-            style={styles(colors).input}
+            style={styles.input}
             placeholder="Confirm new password"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor="#999"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry={!showConfirmPassword}
           />
           <TouchableOpacity
             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            style={styles(colors).eyeIcon}
+            style={styles.eyeIcon}
           >
             <Ionicons
               name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
               size={20}
-              color={colors.textMuted}
+              color="#999"
             />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
           style={[
-            styles(colors).actionButton,
-            isLoading && styles(colors).actionButtonDisabled,
+            styles.actionButton,
+            isLoading && styles.actionButtonDisabled,
           ]}
           onPress={handleResetPassword}
           disabled={isLoading}
         >
-          <LinearGradient
-            colors={
-              isLoading
-                ? [colors.textMuted, colors.textMuted]
-                : [colors.primary, colors.primaryDark]
-            }
-            style={styles(colors).buttonGradient}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={styles(colors).actionButtonText}>
-                Reset Password
-              </Text>
-            )}
-          </LinearGradient>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.actionButtonText}>
+              Reset Password
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </>
   );
 
   return (
-    <SafeAreaView style={styles(colors).container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#652815" />
 
-      <KeyboardAvoidingView
-        style={styles(colors).container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ScrollView contentContainerStyle={styles(colors).scrollContainer}>
-          <View style={styles(colors).header}>
-            <TouchableOpacity
-              style={styles(colors).backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons name="chevron-back" size={20} color={colors.text} />
-            </TouchableOpacity>
+      {/* Background with brown color and pattern */}
+      <View style={styles.backgroundContainer}>
+        <ImageBackground
+          source={require("../../../assets/patternchoma.png")}
+          style={styles.backgroundPattern}
+          resizeMode="repeat"
+          imageStyle={styles.backgroundImageStyle}
+        />
+
+        {/* Top section with logo and food image */}
+        <Animated.View
+          style={[
+            styles.topSection,
+            { transform: [{ translateY: topSectionOffset }] },
+          ]}
+        >
+          {/* <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={24} color="#fff" />
+          </TouchableOpacity> */}
+
+          <View style={styles.logoContainer}>
+            <ChomaLogo width={150} height={82} />
           </View>
 
-          <View style={styles(colors).content}>
+          {/* Food Image (slow rotating) */}
+          <View style={styles.foodImageContainer}>
+            <Animated.Image
+              source={require("../../../assets/authImage.png")}
+              style={[
+                styles.foodImage,
+                { transform: [{ rotate: rotateInterpolate }] },
+              ]}
+              resizeMode="cover"
+            />
+          </View>
+        </Animated.View>
+
+        {/* Curved transition */}
+        <Animated.View
+          style={[{ transform: [{ translateY: keyboardOffset }] }]}
+        >
+          <LoginCurve />
+        </Animated.View>
+
+        {/* Bottom white section with form */}
+        <Animated.View
+          style={[
+            styles.bottomSection,
+            { transform: [{ translateY: keyboardOffset }] },
+          ]}
+        >
+          <ScrollView
+            style={styles.formContainer}
+            contentContainerStyle={styles.formContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+            enableOnAndroid={true}
+            keyboardDismissMode="interactive"
+          >
             {step === 1 && renderStep1()}
             {step === 2 && renderStep2()}
             {step === 3 && renderStep3()}
 
-            <View style={styles(colors).footer}>
-              <Text style={styles(colors).footerText}>
-                Remember your password?{" "}
-              </Text>
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Remember your password? </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text style={styles(colors).signInLink}>Sign In</Text>
+                <Text style={styles.signInLink}>Sign In</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+            {/* Add some bottom padding for better scrolling */}
+            <View style={styles.bottomPadding} />
+          </ScrollView>
+        </Animated.View>
+      </View>
+    </View>
   );
 };
 
-const styles = (colors) =>
-  createStylesWithDMSans({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
+const styles = createStylesWithDMSans({
+  container: {
+    flex: 1,
+    backgroundColor: "#652815",
+  },
+  backgroundContainer: {
+    flex: 1,
+    position: "relative",
+  },
+  backgroundPattern: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#652815",
+    opacity: 0.8,
+  },
+  backgroundImageStyle: {
+    opacity: 1,
+    transform: [{ scale: 2.5 }],
+  },
+  topSection: {
+    flex: 0.5,
+    paddingTop: Platform.OS === "ios" ? 30 : 30,
+    paddingHorizontal: 20,
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    position: "absolute",
+    top: 70,
+    left: 20,
+    padding: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 25,
+    // marginBottom: 10,
+  },
+  logoContainer: {
+    marginTop: 15,
+    marginBottom: 20,
+  },
+  foodImageContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  foodImage: {
+    width: 360,
+    height: 350,
+    // borderRadius: 130,
+  },
+  bottomSection: {
+    flex: 0.75,
+    backgroundColor: "#fff",
+    minHeight: height * 0.1,
+    zIndex: 5,
+    position: "relative",
+  },
+  formContainer: {
+    flex: 1,
+  },
+  formContent: {
+    flexGrow: 1,
+    paddingHorizontal: 30,
+    paddingBottom: 70,
+    justifyContent: "center",
+  },
+  titleContainer: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    paddingHorizontal: 20,
+  },
+  form: {
+    width: "100%",
+    marginBottom: 30,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f8f8",
+    borderRadius: 25,
+    marginBottom: 16,
+    paddingHorizontal: 20,
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#e8e8e8",
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "400",
+  },
+  eyeIcon: {
+    padding: 8,
+  },
+  actionButton: {
+    backgroundColor: "#652815",
+    borderRadius: 25,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 20,
+    shadowColor: "#652815",
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
-    scrollContainer: {
-      flexGrow: 1,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 20,
-      paddingTop: 10,
-    },
-    backButton: {
-      padding: 8,
-      backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.medium,
-    },
-    content: {
-      flex: 1,
-      paddingHorizontal: 20,
-      justifyContent: "center",
-    },
-    logoContainer: {
-      alignItems: "center",
-      marginBottom: 40,
-    },
-    logoBackground: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      justifyContent: "center",
-      alignItems: "center",
-      marginBottom: 20,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: "bold",
-      color: colors.text,
-      marginBottom: 8,
-      textAlign: "center",
-    },
-    subtitle: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      textAlign: "center",
-      paddingHorizontal: 20,
-    },
-    form: {
-      marginBottom: 30,
-    },
-    inputContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.medium,
-      marginBottom: 16,
-      paddingHorizontal: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    inputIcon: {
-      marginRight: 12,
-    },
-    input: {
-      flex: 1,
-      height: 50,
-      fontSize: 16,
-      color: colors.text,
-    },
-    eyeIcon: {
-      padding: 4,
-    },
-    actionButton: {
-      borderRadius: THEME.borderRadius.medium,
-      overflow: "hidden",
-      marginTop: 20,
-    },
-    buttonGradient: {
-      height: 50,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    actionButtonDisabled: {
-      opacity: 0.6,
-    },
-    actionButtonText: {
-      color: colors.black,
-      fontSize: 16,
-      fontWeight: "600",
-    },
-    linkButton: {
-      marginTop: 16,
-      alignItems: "center",
-    },
-    linkButtonText: {
-      color: colors.primary,
-      fontSize: 14,
-      fontWeight: "500",
-    },
-    footer: {
-      flexDirection: "row",
-      justifyContent: "center",
-      alignItems: "center",
-      marginTop: 30,
-    },
-    footerText: {
-      color: colors.textSecondary,
-      fontSize: 14,
-    },
-    signInLink: {
-      color: colors.primary,
-      fontSize: 14,
-      fontWeight: "600",
-    },
-  });
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  buttonGradient: {
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  actionButtonDisabled: {
+    opacity: 0.7,
+  },
+  actionButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  linkButton: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  linkButtonText: {
+    color: "#E6B17A",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  footerText: {
+    color: "#666",
+    fontSize: 14,
+  },
+  signInLink: {
+    color: "#E6B17A",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  bottomPadding: {
+    height: 30,
+  },
+});
 
 export default ForgotPasswordScreen;

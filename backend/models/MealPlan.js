@@ -53,6 +53,13 @@ const MealPlanSchema = new mongoose.Schema({
     default: 4,
   },
 
+  // Tier system for plan categorization
+  tier: {
+    type: String,
+    enum: ["Premium", "Gold", "Silver"],
+    default: "Silver",
+  },
+
   // Publishing system
   isPublished: {
     type: Boolean,

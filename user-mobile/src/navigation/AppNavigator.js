@@ -14,6 +14,17 @@ import CustomNavigationIcon from "../components/ui/CustomNavigationIcon";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../styles/theme";
 
+// Import custom transitions
+import {
+  TransitionPresets,
+  ScreenTransitions,
+  CustomCardStyleInterpolators,
+  TransitionSpecs
+} from "./transitions/CustomTransitions";
+
+// Import custom tab bar wrapper
+import ScreenWithTabBar from "../components/navigation/ScreenWithTabBar";
+
 // Import all screen components
 import HomeScreen from "../screens/home/HomeScreen";
 import WelcomeScreen from "../screens/home/WelcomeScreen";
@@ -62,6 +73,8 @@ import SearchScreen from "../screens/search/SearchScreen";
 
 // Tag screens
 import TagScreen from "../screens/tag/TagScreen";
+import DurationSelectionScreen from "../screens/duration/DurationSelectionScreen";
+import MealPlanListingScreen from "../screens/mealplan/MealPlanListingScreen";
 
 // Notification screens
 import NotificationScreen from "../screens/notifications/NotificationScreen";
@@ -74,7 +87,6 @@ import SettingsScreen from "../screens/settings/SettingsScreen";
 import HelpCenterScreen from "../screens/help/HelpCenterScreen";
 
 const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
 
 
 // Auth Stack Navigator
@@ -103,142 +115,17 @@ const AuthStack = () => {
 };
 
 
-// Main Tab Navigator with Modern Design - Always Dark Mode
-const TabNavigator = () => {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-
-  // Fixed dark mode colors for tab bar
-  const darkTabColors = {
-    background: "#1a1a1a",
-    white: "#ffffff",
-    primary: "#4ECDC4", // Your primary color
-    textMuted: "#f3f1f1ff",
-  };
-
-  return (
-    <Tab.Navigator
-      initialRouteName="Home"
-      backBehavior="history"
-      sceneContainerStyle={{ backgroundColor: "transparent" }}
-      screenOptions={({ route }) => ({
-        // Add smooth transitions
-        animationEnabled: true,
-        headerShown: false,
-        tabBarShowLabel: false,
-        // Enable lazy loading for smoother performance
-        lazy: true,
-        // Add transition animation type
-        animationTypeForReplace: "push",
-        tabBarIcon: ({ focused, color, size }) => (
-          <CustomNavigationIcon
-            route={route}
-            focused={focused}
-            color={color}
-            size={size}
-            colors={darkTabColors}
-          />
-        ),
-        tabBarActiveTintColor: darkTabColors.primary,
-        tabBarInactiveTintColor: darkTabColors.textMuted,
-        tabBarStyle: {
-          backgroundColor: "#1a1a1af6", // Always dark
-          borderTopWidth: 0, // Remove top border
-          paddingBottom: 8,
-          paddingTop: 17,
-          height: 80,
-          marginHorizontal: 20,
-          bottom: insets.bottom + 20, // Dynamic safe area + spacing
-          borderRadius: 50,
-          position: "absolute",
-          borderWidth: 1,
-          borderColor: "rgba(255, 255, 255, 0.53)", // Always dark border
-          elevation: 6, // Crucial for Android to see through
-        },
-        // Add smooth tab press animation
-        tabBarButton: (props) => (
-          <TouchableOpacity
-            {...props}
-            activeOpacity={0.9}
-            style={[
-              props.style,
-              {
-                borderRadius: 50,
-              },
-            ]}
-            onPress={(e) => {
-              // Add haptic feedback if available
-              if (Platform.OS === "ios") {
-                require("react-native").Haptics?.impactAsync?.(
-                  require("react-native").Haptics?.ImpactFeedbackStyle?.Light
-                );
-              }
-              props.onPress?.(e);
-            }}
-          />
-        ),
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "500",
-        },
-        tabBarItemStyle: {
-          paddingVertical: 4,
-        },
-      })}
-      tabBarBackground={() => (
-        <View style={styles.tabBarBackgroundContainer}>
-          <BlurView
-            tint="dark" // Always dark blur
-            intensity={80}
-            style={styles.blurView}
-          />
-        </View>
-      )}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          title: "Home",
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{
-          title: "Search",
-        }}
-      />
-      <Tab.Screen
-        name="Orders"
-        component={OrdersScreen}
-        options={{
-          title: "Orders",
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          title: "Profile",
-        }}
-      />
-    </Tab.Navigator>
-  );
+// Circular reveal transition config for main screens
+const circularRevealTransition = {
+  headerShown: false,
+  animationEnabled: true,
+  transitionSpec: {
+    open: TransitionSpecs.slowTiming,
+    close: TransitionSpecs.timing,
+  },
+  cardStyleInterpolator: CustomCardStyleInterpolators.forCircularReveal,
+  gestureEnabled: false, // Disable swipe-back gesture on main screens
 };
-const styles = StyleSheet.create({
-  tabBarBackgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 50,
-    overflow: "hidden", // This is key to contain the blur within the rounded corners
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.61)", // A subtle border can help define the tab bar
-  },
-  blurView: {
-    ...StyleSheet.absoluteFillObject,
-  },
-});
 
 // Wrapped Onboarding Screen to handle completion
 const OnboardingWrapper = ({ onOnboardingComplete }) => {
@@ -250,66 +137,28 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
   const { isAuthenticated } = useAuth();
   const { colors } = useTheme();
 
+  // Default screen options - minimal to avoid conflicts
   const defaultScreenOptions = {
     headerShown: false,
     cardStyle: { backgroundColor: colors.background },
-    gestureEnabled: true,
-    gestureDirection: "horizontal",
-    gestureResponseDistance: 150,
+    // Enable animations explicitly
+    animationEnabled: true,
+    // Use platform default transition timing with native driver
     transitionSpec: {
       open: {
-        animation: "spring",
+        animation: 'timing',
         config: {
-          stiffness: 300,
-          damping: 30,
-          mass: 1,
-          overshootClamping: false,
-          restDisplacementThreshold: 0.01,
-          restSpeedThreshold: 0.01,
+          duration: 250,
+          useNativeDriver: true,
         },
       },
       close: {
-        animation: "timing",
+        animation: 'timing',
         config: {
-          duration: 250,
-          easing: require("react-native").Easing.bezier(0.25, 0.46, 0.45, 0.94),
+          duration: 200,
+          useNativeDriver: true,
         },
       },
-    },
-    cardStyleInterpolator: ({ current, next, layouts }) => {
-      return {
-        cardStyle: {
-          transform: [
-            {
-              translateX: current.progress.interpolate({
-                inputRange: [0, 1],
-                outputRange: [layouts.screen.width, 0],
-                extrapolate: "clamp",
-              }),
-            },
-            {
-              scale: current.progress.interpolate({
-                inputRange: [0, 0.5, 1],
-                outputRange: [0.85, 0.95, 1],
-                extrapolate: "clamp",
-              }),
-            },
-          ],
-          opacity: current.progress.interpolate({
-            inputRange: [0, 0.3, 1],
-            outputRange: [0, 0.5, 1],
-            extrapolate: "clamp",
-          }),
-        },
-        overlayStyle: {
-          opacity: current.progress.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 0.3],
-            extrapolate: "clamp",
-          }),
-          backgroundColor: "black",
-        },
-      };
     },
   };
 
@@ -332,20 +181,50 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
 
   return (
     <Stack.Navigator screenOptions={defaultScreenOptions}>
-      {isFirstLaunch ? (
-        // Onboarding flow
-        <Stack.Screen name="Onboarding">
-          {() => (
-            <OnboardingWrapper onOnboardingComplete={onOnboardingComplete} />
-          )}
-        </Stack.Screen>
-      ) : !isAuthenticated ? (
-        // Auth flow
-        <Stack.Screen name="Auth" component={AuthStack} />
-      ) : (
+        {isFirstLaunch ? (
+          // Onboarding flow
+          <Stack.Screen name="Onboarding">
+            {() => (
+              <OnboardingWrapper onOnboardingComplete={onOnboardingComplete} />
+            )}
+          </Stack.Screen>
+        ) : !isAuthenticated ? (
+          // Auth flow
+          <Stack.Screen name="Auth" component={AuthStack} />
+        ) : (
         // Main app flow
         <>
-          <Stack.Screen name="Main" component={TabNavigator} />
+          {/* Main Stack Screens with Circular Reveal and Tab Bar */}
+          <Stack.Screen
+            name="Home"
+            options={circularRevealTransition}
+          >
+            {(props) => (
+              <ScreenWithTabBar showTabBar={false}>
+                <HomeScreen {...props} />
+              </ScreenWithTabBar>
+            )}
+          </Stack.Screen>
+          <Stack.Screen
+            name="Orders"
+            options={circularRevealTransition}
+          >
+            {(props) => (
+              <ScreenWithTabBar>
+                <OrdersScreen {...props} />
+              </ScreenWithTabBar>
+            )}
+          </Stack.Screen>
+          <Stack.Screen
+            name="Profile"
+            options={circularRevealTransition}
+          >
+            {(props) => (
+              <ScreenWithTabBar>
+                <ProfileScreen {...props} />
+              </ScreenWithTabBar>
+            )}
+          </Stack.Screen>
           <Stack.Screen
             name="MealPlans"
             component={MealPlansScreen}
@@ -362,10 +241,87 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             }}
           />
           <Stack.Screen
+            name="SearchScreen"
+            options={{
+              headerShown: false,
+              animationEnabled: true,
+              // Apply circular reveal transition for search
+              transitionSpec: {
+                open: TransitionSpecs.slowTiming,
+                close: TransitionSpecs.timing,
+              },
+              cardStyleInterpolator: CustomCardStyleInterpolators.forCircularReveal,
+              gestureEnabled: false, // Disable swipe-back gesture
+            }}
+          >
+            {(props) => (
+              <ScreenWithTabBar>
+                <SearchScreen {...props} />
+              </ScreenWithTabBar>
+            )}
+          </Stack.Screen>
+          <Stack.Screen
+            name="DurationSelectionScreen"
+            component={DurationSelectionScreen}
+            options={{
+              headerShown: false,
+              animationEnabled: true,
+              transitionSpec: {
+                open: TransitionSpecs.slowTiming,
+                close: TransitionSpecs.timing,
+              },
+              cardStyleInterpolator: CustomCardStyleInterpolators.forCircularReveal,
+              gestureEnabled: false,
+            }}
+          />
+          <Stack.Screen
+            name="MealPlanListingScreen"
+            component={MealPlanListingScreen}
+            options={{
+              headerShown: false,
+              animationEnabled: true,
+              transitionSpec: {
+                open: {
+                  animation: 'timing',
+                  config: {
+                    duration: 300,
+                    useNativeDriver: true,
+                  },
+                },
+                close: {
+                  animation: 'timing',
+                  config: {
+                    duration: 250,
+                    useNativeDriver: true,
+                  },
+                },
+              },
+              cardStyleInterpolator: ({ current }) => {
+                return {
+                  cardStyle: {
+                    opacity: current.progress,
+                  },
+                };
+              },
+              gestureEnabled: true,
+              gestureDirection: 'vertical',
+            }}
+          />
+          <Stack.Screen
             name="TagScreen"
             component={TagScreen}
             options={{
               headerShown: false,
+              animationEnabled: true,
+              // Apply circular reveal transition explicitly
+              transitionSpec: {
+                open: TransitionSpecs.slowTiming,
+                close: TransitionSpecs.timing,
+              },
+              cardStyleInterpolator: CustomCardStyleInterpolators.forCircularReveal,
+              gestureEnabled: true,
+              gestureDirection: 'horizontal',
+              gestureResponseDistance: 150,
             }}
           />
           <Stack.Screen
@@ -396,6 +352,7 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             component={CheckoutScreen}
             options={{
               headerShown: false,
+              ...ScreenTransitions.Checkout, // Modal transition
             }}
           />
           <Stack.Screen
@@ -403,6 +360,7 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             component={PaymentScreen}
             options={{
               headerShown: false,
+              ...ScreenTransitions.Payment, // Scale transition
             }}
           />
           <Stack.Screen
@@ -440,6 +398,7 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             component={WalletScreen}
             options={{
               headerShown: false,
+              ...ScreenTransitions.Wallet, // Modal transition
             }}
           />
           <Stack.Screen
@@ -447,6 +406,7 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             component={AddMoneyScreen}
             options={{
               headerShown: false,
+              ...ScreenTransitions.AddMoneyScreen, // Modal transition
             }}
           />
           <Stack.Screen
@@ -454,6 +414,7 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             component={AddCardScreen}
             options={{
               headerShown: false,
+              ...ScreenTransitions.AddCardScreen, // Modal transition
             }}
           />
           <Stack.Screen
@@ -506,6 +467,7 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             component={SettingsScreen}
             options={{
               headerShown: false,
+              ...ScreenTransitions.Settings, // Modal transition
             }}
           />
           <Stack.Screen
