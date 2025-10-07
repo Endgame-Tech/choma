@@ -25,6 +25,7 @@ import discountService from "../../services/discountService";
 import { useAuth } from "../../hooks/useAuth";
 import apiService from "../../services/api";
 import { THEME } from "../../utils/colors";
+import BlendSvg from "../../../assets/blend.svg";
 
 const { width, height } = Dimensions.get("window");
 
@@ -214,13 +215,28 @@ const MealPlanListingScreen = ({ navigation, route }) => {
     );
   };
 
+  const getTagImage = (useBigPreview = true) => {
+    if (!tag) return require("../../../assets/authImage.png");
+
+    const imageSource = useBigPreview
+      ? tag.bigPreviewImage || tag.image
+      : tag.image;
+
+    if (typeof imageSource === "string" && imageSource.trim()) {
+      return { uri: imageSource };
+    }
+
+    return require("../../../assets/authImage.png");
+  };
+
   const renderHeader = () => (
-    <View style={styles(colors).headerContainer}>
+    <View style={styles(colors).heroWrapper}>
       <LinearGradient
         colors={[colors.primary2, colors.primary2]}
-        style={styles(colors).headerGradient}
+        style={styles(colors).heroBackground}
       >
-        <View style={styles(colors).headerTop}>
+        {/* Navigation Header */}
+        <View style={styles(colors).navigationHeader}>
           <TouchableOpacity
             style={styles(colors).backButton}
             onPress={() => navigation.goBack()}
@@ -239,6 +255,33 @@ const MealPlanListingScreen = ({ navigation, route }) => {
           </View>
 
           <View style={{ width: 40 }} />
+        </View>
+
+        {/* Hero Background Image */}
+        <Image
+          source={getTagImage(true)}
+          style={styles(colors).heroBackgroundImage}
+          resizeMode="cover"
+        />
+
+        {/* Tag Image Circle */}
+        <View style={styles(colors).tagImageContainer}>
+          <Image
+            source={getTagImage(false)}
+            style={styles(colors).tagImageCircle}
+            resizeMode="cover"
+          />
+        </View>
+
+        {/* Blend Transition */}
+        <View style={styles(colors).blendTransition}>
+          <BlendSvg
+            width="100%"
+            height={60}
+            fill={colors.background}
+            preserveAspectRatio="none"
+            style={styles(colors).blendSvg}
+          />
         </View>
       </LinearGradient>
     </View>
@@ -478,26 +521,34 @@ const styles = (colors) =>
     scrollView: {
       flex: 1,
     },
-    headerContainer: {
-      backgroundColor: colors.primary2,
+    heroWrapper: {
+      position: "relative",
+      marginBottom: 30,
     },
-    headerGradient: {
+    heroBackground: {
       paddingTop: verticalScale(10),
-      paddingBottom: verticalScale(15),
-      paddingHorizontal: scale(20),
+      paddingBottom: verticalScale(80),
+      minHeight: 250,
+      position: "relative",
     },
-    headerTop: {
+    navigationHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      paddingHorizontal: scale(20),
+      paddingVertical: verticalScale(10),
+      position: "relative",
+      zIndex: 10,
     },
     backButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      backgroundColor: colors.black,
       justifyContent: "center",
       alignItems: "center",
+      borderWidth: 1,
+      borderColor: "#1b1b1b",
     },
     headerTextContainer: {
       flex: 1,
@@ -515,6 +566,47 @@ const styles = (colors) =>
       color: colors.primary,
       textAlign: "center",
       marginTop: 2,
+    },
+    heroBackgroundImage: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: "100%",
+      height: "100%",
+      minHeight: 250,
+    },
+    tagImageContainer: {
+      position: "absolute",
+      bottom: -30,
+      alignSelf: "center",
+      zIndex: 11,
+      ...getShadowStyle({
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      }),
+    },
+    tagImageCircle: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      borderWidth: 4,
+      borderColor: colors.white,
+    },
+    blendTransition: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 60,
+      zIndex: 5,
+    },
+    blendSvg: {
+      width: "100%",
+      height: 60,
     },
     heroBannerContainer: {
       marginBottom: 10,

@@ -253,7 +253,6 @@ const DurationSelectionScreen = ({ navigation, route }) => {
             {
               width: DurationItemWidth,
               height: DurationItemWidth,
-              borderRadius: DurationItemWidth / 2,
               justifyContent: "center",
               alignItems: "center",
               elevation: 5,
@@ -262,7 +261,6 @@ const DurationSelectionScreen = ({ navigation, route }) => {
               shadowRadius: 20,
               minWidth: 44,
               minHeight: 44,
-              overflow: 'hidden',
             },
             rStyle,
           ]}
@@ -274,19 +272,15 @@ const DurationSelectionScreen = ({ navigation, route }) => {
               position: 'absolute',
               width: DurationItemWidth,
               height: DurationItemWidth,
-              borderRadius: DurationItemWidth / 2,
             }}
-            resizeMode="cover"
+            resizeMode="contain"
           />
 
-          {/* White border overlay */}
+          {/* Content overlay */}
           <View
             style={{
               width: DurationItemWidth,
               height: DurationItemWidth,
-              borderRadius: DurationItemWidth / 2,
-              borderWidth: 3,
-              borderColor: colors.white,
               justifyContent: "center",
               alignItems: "center",
             }}
@@ -311,24 +305,6 @@ const DurationSelectionScreen = ({ navigation, route }) => {
             >
               {duration.weeks === 1 ? "Week" : "Weeks"}
             </Text>
-
-            {/* Down arrow indicator */}
-            <Animated.View
-              style={[
-                {
-                  position: "absolute",
-                  bottom: 8,
-                  alignSelf: "center",
-                  backgroundColor: colors.primary,
-                  borderRadius: 20,
-                  padding: 6,
-                },
-                arrowStyle,
-              ]}
-              pointerEvents="none"
-            >
-              <CustomIcon name="chevron-down" size={20} color={colors.white} />
-            </Animated.View>
           </View>
         </Animated.View>
       </TouchableOpacity>
