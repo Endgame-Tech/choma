@@ -5,6 +5,7 @@ import type { MealPlan as UiMealPlan } from '../types'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import ImageUpload from './ImageUpload'
 import TagSelector from './TagSelector'
+import TierSelector from './TierSelector'
 import { mealPlansApi } from '../services/mealApi'
 
 interface EditMealPlanModalProps {
@@ -289,8 +290,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                       <img
                         src={formData.coverImage}
                         alt="Meal plan cover"
-                        className="w-full h-auto object-cover rounded-lg shadow-md border border-gray-200 dark:border-neutral-600"
-                        style={{ aspectRatio: '1080/1350' }}
+                        className="w-full h-auto object-cover rounded-lg shadow-md border border-gray-200 dark:border-neutral-600 aspect-[1080/1350]"
                         onError={(e) => {
                           console.error('Failed to load image:', formData.coverImage);
                           e.currentTarget.style.display = 'none';
@@ -327,7 +327,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
             {/* Plan Configuration */}
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">📅 Plan Configuration</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                     Duration *
@@ -358,26 +358,6 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
-                    Tier *
-                  </label>
-                  <select
-                    name="tier"
-                    value={formData.tier}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="Premium">💎 Premium</option>
-                    <option value="Gold">🥇 Gold</option>
-                    <option value="Silver">🥈 Silver</option>
-                  </select>
-                  <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
-                    Plan category level
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                     Target Audience *
                   </label>
                   <select
@@ -385,6 +365,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                     value={formData.targetAudience}
                     onChange={handleInputChange}
                     required
+                    title="Select target audience"
                     className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     {targetAudiences.map(audience => (
@@ -392,6 +373,19 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Tier Selection */}
+              <div className="mt-6">
+                <TierSelector
+                  selectedTier={formData.tier}
+                  onTierChange={(tier) => setFormData(prev => ({ ...prev, tier }))}
+                />
+                {mealPlan.tier !== formData.tier && (
+                  <div className="mt-2 text-xs text-orange-600 dark:text-orange-400">
+                    ⚠️ Changing tier from {mealPlan.tier} to {formData.tier} may affect pricing
+                  </div>
+                )}
               </div>
 
               {/* Meal Types Selection */}

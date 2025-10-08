@@ -99,7 +99,7 @@ class DeepLinkingService {
           break;
         default:
           console.warn("Unknown deep link hostname:", hostname);
-          navigation.navigate("Main", { screen: "Home" });
+          navigation.navigate("Home");
       }
     } catch (error) {
       console.error("Error navigating to screen:", error);
@@ -111,7 +111,7 @@ class DeepLinkingService {
 
     if (pathSegments.length === 0) {
       // Navigate to meal plans list
-      navigation.navigate("Main", { screen: "Home" });
+      navigation.navigate("Home");
     } else if (pathSegments.length === 1) {
       // Navigate to specific meal plan
       const mealPlanId = pathSegments[0];
@@ -128,7 +128,7 @@ class DeepLinkingService {
 
     if (pathSegments.length === 0) {
       // Navigate to orders list
-      navigation.navigate("Main", { screen: "Orders" });
+      navigation.navigate("Orders");
     } else if (pathSegments.length === 1) {
       // Navigate to specific order
       const orderId = pathSegments[0];
@@ -154,7 +154,7 @@ class DeepLinkingService {
 
     if (pathSegments.length === 0) {
       // Navigate to profile
-      navigation.navigate("Main", { screen: "Profile" });
+      navigation.navigate("Profile");
     } else if (pathSegments[0] === "settings") {
       // Navigate to settings
       navigation.navigate("Settings");
@@ -181,7 +181,7 @@ class DeepLinkingService {
       // Handle referral code
       navigation.navigate("Signup", { referralCode: code });
     } else {
-      navigation.navigate("Main", { screen: "Home" });
+      navigation.navigate("Home");
     }
   }
 

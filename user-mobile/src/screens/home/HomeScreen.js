@@ -42,6 +42,8 @@ import tagService from "../../services/tagService";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import * as Haptics from "expo-haptics";
+import { Svg, Path } from "react-native-svg";
+import MaskedView from "@react-native-masked-view/masked-view";
 
 const { width, height } = Dimensions.get("window");
 
@@ -378,21 +380,24 @@ const HomeScreen = ({ navigation }) => {
   const tagData = hasRealTags ? tags : PLACEHOLDER_PLANS; // Simple direct data usage
 
   // Lazy load images for carousel items near current position
-  const prefetchNearbyImages = useCallback((centerIndex) => {
-    const range = 2; // Prefetch 2 items before and after
-    const startIndex = Math.max(0, centerIndex - range);
-    const endIndex = Math.min(tagData.length - 1, centerIndex + range);
+  const prefetchNearbyImages = useCallback(
+    (centerIndex) => {
+      const range = 2; // Prefetch 2 items before and after
+      const startIndex = Math.max(0, centerIndex - range);
+      const endIndex = Math.min(tagData.length - 1, centerIndex + range);
 
-    for (let i = startIndex; i <= endIndex; i++) {
-      const tag = tagData[i];
-      if (tag?.image) {
-        Image.prefetch(tag.image).catch(() => {});
+      for (let i = startIndex; i <= endIndex; i++) {
+        const tag = tagData[i];
+        if (tag?.image) {
+          Image.prefetch(tag.image).catch(() => {});
+        }
+        if (tag?.bigPreviewImage) {
+          Image.prefetch(tag.bigPreviewImage).catch(() => {});
+        }
       }
-      if (tag?.bigPreviewImage) {
-        Image.prefetch(tag.bigPreviewImage).catch(() => {});
-      }
-    }
-  }, [tagData]);
+    },
+    [tagData]
+  );
 
   // Reference circular carousel implementation - clean and simple
   const CircularCarouselListItem = React.memo(({ tag, index }) => {
@@ -469,53 +474,75 @@ const HomeScreen = ({ navigation }) => {
         onPress={() => onSelectTag(index)}
         accessible={true}
         accessibilityRole="button"
-        accessibilityLabel={`Select ${tag?.name || 'category'} meal plan`}
+        accessibilityLabel={`Select ${tag?.name || "category"} meal plan`}
         accessibilityHint="Double tap to view this meal plan category"
       >
         <Animated.View
           style={[
             {
               width: ListItemWidth,
-              aspectRatio: 1,
+              height: ListItemWidth,
+              justifyContent: "center",
+              alignItems: "center",
               elevation: 5,
               shadowOpacity: 0.2,
               shadowOffset: { width: 0, height: 0 },
               shadowRadius: 20,
-              minWidth: 44, // Minimum touch target
-              minHeight: 44,
+              minWidth: 54, // Minimum touch target
+              minHeight: 54,
             },
             rStyle,
           ]}
         >
+          {/* Tag disk background image */}
           <Image
-            source={getTagImage(tag, false)}
+            source={require("../../../assets/tag-disk.png")}
             style={{
-              margin: 3,
-              height: ListItemWidth,
+              position: "absolute",
               width: ListItemWidth,
-              borderRadius: 200,
-              borderWidth: 2,
-              borderColor: colors.white,
+              height: ListItemWidth,
             }}
-            resizeMode="cover"
+            resizeMode="contain"
           />
+
+          {/* Tag image overlay */}
+          <View
+            style={{
+              width: ListItemWidth * 0.8, // Make tag image smaller than disk
+              height: ListItemWidth * 0.8,
+              borderRadius: (ListItemWidth * 0.6) / 2,
+              overflow: "hidden",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Image
+              source={getTagImage(tag, false)}
+              style={{
+                width: "100%",
+                height: "100%",
+              }}
+              resizeMode="cover"
+            />
+          </View>
+
           {/* Down arrow indicator - only visible on centered item */}
-          <Animated.View
+          {/* <Animated.View
             style={[
               {
-                position: 'absolute',
+                position: "absolute",
                 bottom: 8,
-                alignSelf: 'center',
+                alignSelf: "center",
                 backgroundColor: colors.primary,
                 borderRadius: 20,
                 padding: 6,
               },
-              arrowStyle
+              arrowStyle,
             ]}
             pointerEvents="none"
           >
             <CustomIcon name="chevron-down" size={20} color={colors.white} />
-          </Animated.View>
+          </Animated.View> */}
         </Animated.View>
       </TouchableOpacity>
     );
@@ -554,45 +581,48 @@ const HomeScreen = ({ navigation }) => {
     tag?.description || "Perfect for healthy eating";
 
   // Pre-fetch duration options for a tag
-  const prefetchDurationsForTag = useCallback(async (tag) => {
-    if (!tag || !tag._id) return;
+  const prefetchDurationsForTag = useCallback(
+    async (tag) => {
+      if (!tag || !tag._id) return;
 
-    // Skip if already prefetched
-    if (prefetchedDurations[tag._id]) return;
+      // Skip if already prefetched
+      if (prefetchedDurations[tag._id]) return;
 
-    try {
-      const response = await tagService.getMealPlansByTag(tag._id, 1, 100);
+      try {
+        const response = await tagService.getMealPlansByTag(tag._id, 1, 100);
 
-      if (response?.success && response?.data) {
-        const plans = response.data || [];
+        if (response?.success && response?.data) {
+          const plans = response.data || [];
 
-        // Extract unique duration weeks
-        const durations = [
-          ...new Set(
-            plans
-              .map((plan) => plan.durationWeeks)
-              .filter((duration) => duration && duration > 0)
-          ),
-        ].sort((a, b) => a - b);
+          // Extract unique duration weeks
+          const durations = [
+            ...new Set(
+              plans
+                .map((plan) => plan.durationWeeks)
+                .filter((duration) => duration && duration > 0)
+            ),
+          ].sort((a, b) => a - b);
 
-        // Format duration options
-        const formattedOptions = durations.map((weeks) => ({
-          id: weeks,
-          label: weeks === 1 ? "1 Week" : `${weeks} Weeks`,
-          weeks: weeks,
-          description: `${weeks} week${weeks > 1 ? "s" : ""} meal plan`,
-        }));
+          // Format duration options
+          const formattedOptions = durations.map((weeks) => ({
+            id: weeks,
+            label: weeks === 1 ? "1 Week" : `${weeks} Weeks`,
+            weeks: weeks,
+            description: `${weeks} week${weeks > 1 ? "s" : ""} meal plan`,
+          }));
 
-        // Cache the result
-        setPrefetchedDurations(prev => ({
-          ...prev,
-          [tag._id]: formattedOptions
-        }));
+          // Cache the result
+          setPrefetchedDurations((prev) => ({
+            ...prev,
+            [tag._id]: formattedOptions,
+          }));
+        }
+      } catch (error) {
+        console.error("Error prefetching durations:", error);
       }
-    } catch (error) {
-      console.error("Error prefetching durations:", error);
-    }
-  }, [prefetchedDurations]);
+    },
+    [prefetchedDurations]
+  );
 
   const onSelectTag = (index) => {
     if (!tagData[index]) return;
@@ -604,7 +634,7 @@ const HomeScreen = ({ navigation }) => {
 
     if (isAtCenter) {
       // Item is already centered - navigate to duration selection
-      navigation.navigate('DurationSelectionScreen', {
+      navigation.navigate("DurationSelectionScreen", {
         tag: tagData[index],
         tagId: tagData[index]._id,
         tagName: tagData[index].name,
@@ -656,7 +686,9 @@ const HomeScreen = ({ navigation }) => {
           // Haptic feedback ONLY when item is exactly centered (snapped)
           // Check if scroll position is very close to exact center
           const exactCenterOffset = clampedIndex * ListItemWidth;
-          const distanceFromCenter = Math.abs(contentOffset.value - exactCenterOffset);
+          const distanceFromCenter = Math.abs(
+            contentOffset.value - exactCenterOffset
+          );
           const isAtCenter = distanceFromCenter < 5; // Within 5 pixels of exact center
 
           // Only trigger haptic if at center AND index changed
@@ -680,7 +712,13 @@ const HomeScreen = ({ navigation }) => {
     }, 33); // 30fps for better battery life while maintaining smoothness
 
     return () => clearInterval(interval);
-  }, [tagData, focusedTag, ListItemWidth, prefetchNearbyImages, prefetchDurationsForTag]);
+  }, [
+    tagData,
+    focusedTag,
+    ListItemWidth,
+    prefetchNearbyImages,
+    prefetchDurationsForTag,
+  ]);
 
   // Animate description changes
   useEffect(() => {
@@ -726,7 +764,9 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles(colors).container}>
       <StatusBar
-        barStyle={colors.background === "#FFFFFF" ? "dark-content" : "light-content"}
+        barStyle={
+          colors.background === "#FFFFFF" ? "dark-content" : "light-content"
+        }
         backgroundColor={colors.primary2}
       />
       <View style={styles(colors).mainContent}>
@@ -761,7 +801,11 @@ const HomeScreen = ({ navigation }) => {
                 {isLoadingLocation ? (
                   <ActivityIndicator size="small" color={colors.white} />
                 ) : (
-                  <CustomIcon name="chevron-down" size={12} color={colors.white} />
+                  <CustomIcon
+                    name="chevron-down"
+                    size={12}
+                    color={colors.white}
+                  />
                 )}
               </TouchableOpacity>
             </View>
@@ -779,13 +823,38 @@ const HomeScreen = ({ navigation }) => {
             </View>
 
             <View style={styles(colors).heroImageContainer}>
-              {/* Hero image synced with focused carousel item */}
-              <View style={styles(colors).heroImageCircle}>
-                <Image
-                  source={getTagImage(focusedTag, true)}
-                  style={styles(colors).previewImageItem}
-                  resizeMode="cover"
-                />
+              {/* Hero image with organic circle border */}
+              <View style={styles(colors).heroImageWrapper}>
+                <MaskedView
+                  style={{ width: heroImageSize, height: heroImageSize }}
+                  maskElement={
+                    <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375">
+                      <Path
+                        d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
+                        fill="white"
+                      />
+                    </Svg>
+                  }
+                >
+                  <Image
+                    source={getTagImage(focusedTag, true)}
+                    style={{
+                      width: heroImageSize,
+                      height: heroImageSize,
+                    }}
+                    resizeMode="cover"
+                  />
+                </MaskedView>
+
+                {/* SVG stroke border on top */}
+                <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375" style={{ position: 'absolute', top: 0, left: 0 }}>
+                  <Path
+                    d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
+                    fill="none"
+                    stroke={colors.primary}
+                    strokeWidth="5"
+                  />
+                </Svg>
               </View>
             </View>
 
@@ -802,7 +871,9 @@ const HomeScreen = ({ navigation }) => {
                 activeOpacity={0.8}
                 accessible={true}
                 accessibilityRole="button"
-                accessibilityLabel={`${focusedTag?.name || 'Selected'} meal plan`}
+                accessibilityLabel={`${
+                  focusedTag?.name || "Selected"
+                } meal plan`}
                 accessibilityHint="Double tap to view this meal plan"
               >
                 <Text style={styles(colors).planBadgeText}>
@@ -823,7 +894,7 @@ const HomeScreen = ({ navigation }) => {
               }
               style={[styles(colors).spinDishBackground, spinAnimatedStyle]}
               resizeMode="contain"
-              onLoad={() => console.log("Spin dish image loaded successfully")}
+              // onLoad={() => }
               onError={(error) => console.log("Spin dish image error:", error)}
             />
           </View>
@@ -855,7 +926,7 @@ const HomeScreen = ({ navigation }) => {
               justifyContent: "center",
               alignItems: "center",
               paddingHorizontal: 1.5 * ListItemWidth,
-              paddingRight: 1.8 * ListItemWidth, // Extra spacing at the end for last item
+              paddingRight: 1.5 * ListItemWidth, // Extra spacing at the end for last item
             }}
             horizontal
             renderItem={({ item, index }) => {
@@ -902,7 +973,9 @@ const HomeScreen = ({ navigation }) => {
               disabled={!focusedTag}
               accessible={true}
               accessibilityRole="button"
-              accessibilityLabel={`Explore ${focusedTag?.name || 'meal'} category`}
+              accessibilityLabel={`Explore ${
+                focusedTag?.name || "meal"
+              } category`}
               accessibilityHint="Double tap to view meals in this category"
             >
               <Text style={styles(colors).learnMoreText}>Explore meals</Text>
@@ -1020,20 +1093,17 @@ const styles = (colors) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    heroImageCircle: {
+    heroImageWrapper: {
       width: heroImageSize,
       height: heroImageSize,
-      borderRadius: heroImageBorderRadius,
-      borderWidth: scale(3),
-      borderColor: colors.white,
-      overflow: "hidden",
-      justifyContent: "center",
       alignItems: "center",
-    },
-    previewImageItem: {
-      width: previewImageSize, // Perfect fit inside circle
-      height: previewImageSize,
-      borderRadius: previewImageBorderRadius, // Rounded to fit circle perfectly
+      justifyContent: "center",
+      ...getShadowStyle({
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+      }),
     },
     chooseHeading: {
       fontSize: moderateScale(getResponsiveValue(18, 20, 22, 24)),
@@ -1115,14 +1185,14 @@ const styles = (colors) =>
       borderRadius: moderateScale(30),
       paddingHorizontal: scale(15),
       paddingVertical: verticalScale(12),
-      borderWidth: scale(1),
+      borderWidth: scale(1.5),
       borderColor: colors.border,
-      ...getShadowStyle({
-        shadowColor: colors.shadow,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      }),
+      // ...getShadowStyle({
+      //   shadowColor: colors.shadow,
+      //   shadowOffset: { width: 0, height: 2 },
+      //   shadowOpacity: 0.1,
+      //   shadowRadius: 4,
+      // }),
     },
     searchIcon: {
       marginRight: scale(10),

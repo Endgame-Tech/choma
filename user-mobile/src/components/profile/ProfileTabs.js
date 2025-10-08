@@ -68,10 +68,11 @@ const styles = (colors) =>
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: 12,
-      paddingHorizontal: 16,
+      // paddingHorizontal: 12, // Reduced padding
       borderRadius: 25,
       flex: 1,
-      marginHorizontal: 2,
+      // marginHorizontal: 1, // Reduced margin
+      minWidth: 0, // Allow flex shrinking
     },
     activeTab: {
       backgroundColor: colors.cardBackground,
@@ -79,8 +80,10 @@ const styles = (colors) =>
     tabText: {
       fontSize: 14,
       color: colors.textMuted,
-      marginLeft: 8,
+      marginLeft: 6, // Reduced margin
       fontWeight: "500",
+      flexShrink: 1, // Allow text to shrink if needed
+      textAlign: "center",
     },
     activeTabText: {
       color: colors.primary,

@@ -284,12 +284,12 @@ const BatchPreparationPanel: React.FC<BatchPreparationPanelProps> = ({ onSchedul
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-4">
+          <div className={styles.progressContainer}>
             <div
               className={styles.progressBar}
               style={{
-                '--progress-width': `${Math.round(((selectedBatch.totalPreparationTime * 60 - preparationTimer) / (selectedBatch.totalPreparationTime * 60)) * 100)}%`
-              } as React.CSSProperties}
+                width: `${Math.round(((selectedBatch.totalPreparationTime * 60 - preparationTimer) / (selectedBatch.totalPreparationTime * 60)) * 100)}%`
+              }}
             ></div>
           </div>
 

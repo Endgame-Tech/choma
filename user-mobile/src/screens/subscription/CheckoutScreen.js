@@ -110,16 +110,20 @@ const CheckoutScreen = ({ route, navigation }) => {
     }
   }, [user, mealPlan]);
 
-  // Enhanced geocoding function with caching and fallbacks  
+  // Enhanced geocoding function with caching and fallbacks
   const geocodeAddressWithFallbacks = async (latitude, longitude) => {
     try {
       console.log("🔍 Reverse geocoding coordinates:", latitude, longitude);
 
       // Create cache key for this coordinate pair (rounded to ~10m precision)
       const cacheKey = `${latitude.toFixed(4)}_${longitude.toFixed(4)}`;
-      
+
       // Check cache first
-      const cachedResult = await cacheService.get('geocoding', 'global', cacheKey);
+      const cachedResult = await cacheService.get(
+        "geocoding",
+        "global",
+        cacheKey
+      );
       if (cachedResult && cachedResult.data) {
         console.log("📋 Using cached geocoding result");
         return cachedResult.data;
@@ -140,7 +144,12 @@ const CheckoutScreen = ({ route, navigation }) => {
       if (addressResponse && addressResponse.length > 0) {
         console.log("✅ Reverse geocoding successful");
         // Cache the successful result
-        await cacheService.set('geocoding', addressResponse, 'global', cacheKey);
+        await cacheService.set(
+          "geocoding",
+          addressResponse,
+          "global",
+          cacheKey
+        );
         return addressResponse;
       }
 
@@ -165,7 +174,12 @@ const CheckoutScreen = ({ route, navigation }) => {
               "✅ Reverse geocoding successful with coordinate adjustment"
             );
             // Cache the successful result
-            await cacheService.set('geocoding', addressResponse, 'global', cacheKey);
+            await cacheService.set(
+              "geocoding",
+              addressResponse,
+              "global",
+              cacheKey
+            );
             return addressResponse;
           }
         } catch (err) {
@@ -202,7 +216,12 @@ const CheckoutScreen = ({ route, navigation }) => {
             },
           ];
           // Cache the successful backend result
-          await cacheService.set('geocoding', geocodedResult, 'global', cacheKey);
+          await cacheService.set(
+            "geocoding",
+            geocodedResult,
+            "global",
+            cacheKey
+          );
           return geocodedResult;
         }
       } catch (backendError) {
@@ -518,21 +537,30 @@ const CheckoutScreen = ({ route, navigation }) => {
       if (mealPlanId && !initialMealPlan) {
         try {
           setLoading(true);
-          
+
           // Check cache first for meal plan details
-          const cachedMealPlan = await cacheService.get('mealPlanDetails', 'global', mealPlanId);
+          const cachedMealPlan = await cacheService.get(
+            "mealPlanDetails",
+            "global",
+            mealPlanId
+          );
           if (cachedMealPlan && cachedMealPlan.data) {
             console.log("📋 Using cached meal plan details");
             setMealPlan(cachedMealPlan.data);
             setLoading(false);
-            
+
             // If data is stale, fetch fresh data in background
             if (cachedMealPlan.isStale) {
               console.log("🔄 Refreshing stale meal plan data in background");
               const result = await api.getMealPlanById(mealPlanId);
               if (result.success && result.data) {
                 setMealPlan(result.data);
-                await cacheService.set('mealPlanDetails', result.data, 'global', mealPlanId);
+                await cacheService.set(
+                  "mealPlanDetails",
+                  result.data,
+                  "global",
+                  mealPlanId
+                );
               }
             }
             return;
@@ -543,7 +571,12 @@ const CheckoutScreen = ({ route, navigation }) => {
           if (result.success && result.data) {
             setMealPlan(result.data);
             // Cache the fetched meal plan
-            await cacheService.set('mealPlanDetails', result.data, 'global', mealPlanId);
+            await cacheService.set(
+              "mealPlanDetails",
+              result.data,
+              "global",
+              mealPlanId
+            );
           } else {
             setError("Failed to fetch meal plan details. Please try again.");
             console.error("Error fetching meal plan details:", result.error);
@@ -1004,7 +1037,9 @@ const CheckoutScreen = ({ route, navigation }) => {
 
       <ScrollView
         style={styles(colors).content}
+        contentContainerStyle={styles(colors).scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Selected Meal Plan */}
         <View style={styles(colors).section}>
@@ -1017,12 +1052,12 @@ const CheckoutScreen = ({ route, navigation }) => {
                   mealPlan.coverImage
                     ? { uri: mealPlan.coverImage }
                     : mealPlan.planImageUrl
-                      ? { uri: mealPlan.planImageUrl }
+                    ? { uri: mealPlan.planImageUrl }
+                    : mealPlan.image
+                    ? typeof mealPlan.image === "string"
+                      ? { uri: mealPlan.image }
                       : mealPlan.image
-                        ? typeof mealPlan.image === "string"
-                          ? { uri: mealPlan.image }
-                          : mealPlan.image
-                        : require("../../assets/images/meal-plans/fitfuel.jpg")
+                    : require("../../assets/images/meal-plans/fitfuel.jpg")
                 }
                 style={styles(colors).mealPlanImage}
                 resizeMode="cover"
@@ -1153,7 +1188,7 @@ const CheckoutScreen = ({ route, navigation }) => {
                     color={colors.success}
                   />
                 )}
-              </TouchableOpacity>              
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -1551,6 +1586,10 @@ const styles = (colors) =>
       flex: 1,
       padding: 20,
     },
+    scrollContent: {
+      flexGrow: 1,
+      paddingBottom: 20, // Extra padding at bottom for better scrolling
+    },
     section: {
       marginBottom: 30,
     },
@@ -1714,7 +1753,7 @@ const styles = (colors) =>
       color: colors.primary,
     },
     bottomPadding: {
-      height: 20,
+      height: 100, // Increased from 20 to provide more space for scrolling
     },
     footer: {
       padding: 20,

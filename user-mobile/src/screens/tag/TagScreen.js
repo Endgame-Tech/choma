@@ -39,7 +39,11 @@ const TagScreen = ({ navigation, route }) => {
   const { toggleBookmark, isBookmarked } = useBookmarks();
 
   // Route params
-  const { tagId, tagName: initialTagName, selectedDuration: initialSelectedDuration } = route.params;
+  const {
+    tagId,
+    tagName: initialTagName,
+    selectedDuration: initialSelectedDuration,
+  } = route.params;
 
   // State
   const [tag, setTag] = useState(null);
@@ -74,7 +78,7 @@ const TagScreen = ({ navigation, route }) => {
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
     outputRange: [0, 1],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
 
   // Load initial data
@@ -88,17 +92,18 @@ const TagScreen = ({ navigation, route }) => {
 
     // Apply search filter
     if (searchQuery.trim()) {
-      filtered = filtered.filter(plan =>
-        plan.planName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        plan.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        plan.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(
+        (plan) =>
+          plan.planName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          plan.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          plan.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     // Apply duration filter
     if (selectedDuration) {
-      filtered = filtered.filter(plan =>
-        plan.durationWeeks === selectedDuration.weeks
+      filtered = filtered.filter(
+        (plan) => plan.durationWeeks === selectedDuration.weeks
       );
     }
 
@@ -110,92 +115,102 @@ const TagScreen = ({ navigation, route }) => {
     fetchDiscountData();
   }, [user, mealPlans]);
 
-  const extractDurationOptions = useCallback((plans) => {
-    try {
-      // Extract unique duration weeks from meal plans
-      const durations = [
-        ...new Set(
-          plans
-            .map((plan) => plan.durationWeeks)
-            .filter((duration) => duration && duration > 0)
-        ),
-      ].sort((a, b) => a - b);
+  const extractDurationOptions = useCallback(
+    (plans) => {
+      try {
+        // Extract unique duration weeks from meal plans
+        const durations = [
+          ...new Set(
+            plans
+              .map((plan) => plan.durationWeeks)
+              .filter((duration) => duration && duration > 0)
+          ),
+        ].sort((a, b) => a - b);
 
-      // Format duration options like TagFilterBar
-      const formattedOptions = durations.map((weeks) => ({
-        id: weeks,
-        label: weeks === 1 ? "1 Week Plan" : `${weeks} Week Plan`,
-        weeks: weeks,
-        description: `${weeks} week${weeks > 1 ? "s" : ""} duration`,
-      }));
+        // Format duration options like TagFilterBar
+        const formattedOptions = durations.map((weeks) => ({
+          id: weeks,
+          label: weeks === 1 ? "1 Week Plan" : `${weeks} Week Plan`,
+          weeks: weeks,
+          description: `${weeks} week${weeks > 1 ? "s" : ""} duration`,
+        }));
 
-      setDurationOptions(formattedOptions);
+        setDurationOptions(formattedOptions);
 
-      // Auto-select duration if provided from navigation
-      if (initialSelectedDuration) {
-        const matchingDuration = formattedOptions.find(
-          d => d.weeks === initialSelectedDuration.weeks
-        );
-        if (matchingDuration) {
-          setSelectedDuration(matchingDuration);
+        // Auto-select duration if provided from navigation
+        if (initialSelectedDuration) {
+          const matchingDuration = formattedOptions.find(
+            (d) => d.weeks === initialSelectedDuration.weeks
+          );
+          if (matchingDuration) {
+            setSelectedDuration(matchingDuration);
+          }
         }
+      } catch (error) {
+        console.error("Error extracting duration options:", error);
+        setDurationOptions([]);
       }
-    } catch (error) {
-      console.error("Error extracting duration options:", error);
-      setDurationOptions([]);
-    }
-  }, [initialSelectedDuration]);
+    },
+    [initialSelectedDuration]
+  );
 
-  const loadTagData = useCallback(async (isRefresh = false) => {
-    try {
-      if (isRefresh) {
-        setRefreshing(true);
-        setCurrentPage(1);
-        setHasMoreData(true);
-      } else {
-        setLoading(true);
+  const loadTagData = useCallback(
+    async (isRefresh = false) => {
+      try {
+        if (isRefresh) {
+          setRefreshing(true);
+          setCurrentPage(1);
+          setHasMoreData(true);
+        } else {
+          setLoading(true);
+        }
+        setError(null);
+
+        // Load tag details and meal plans in parallel
+        const [tagResponse, mealPlansResponse] = await Promise.all([
+          tagService.getTagById(tagId),
+          tagService.getMealPlansByTag(tagId, 1, 20),
+        ]);
+
+        if (tagResponse) {
+          setTag(tagResponse);
+        }
+
+        if (mealPlansResponse?.success && mealPlansResponse?.data) {
+          const plans = mealPlansResponse.data || [];
+          setMealPlans(plans);
+          setHasMoreData(mealPlansResponse.pagination?.hasNext || false);
+          setCurrentPage(2);
+
+          // Extract duration options from meal plans
+          extractDurationOptions(plans);
+        }
+      } catch (err) {
+        console.error("Error loading tag data:", err);
+        setError(err.message || "Failed to load tag data");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-      setError(null);
-
-      // Load tag details and meal plans in parallel
-      const [tagResponse, mealPlansResponse] = await Promise.all([
-        tagService.getTagById(tagId),
-        tagService.getMealPlansByTag(tagId, 1, 20)
-      ]);
-
-      if (tagResponse) {
-        setTag(tagResponse);
-      }
-
-      if (mealPlansResponse?.success && mealPlansResponse?.data) {
-        const plans = mealPlansResponse.data || [];
-        setMealPlans(plans);
-        setHasMoreData(mealPlansResponse.pagination?.hasNext || false);
-        setCurrentPage(2);
-
-        // Extract duration options from meal plans
-        extractDurationOptions(plans);
-      }
-    } catch (err) {
-      console.error("Error loading tag data:", err);
-      setError(err.message || "Failed to load tag data");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [tagId]);
+    },
+    [tagId]
+  );
 
   const loadMoreMealPlans = useCallback(async () => {
     if (!hasMoreData || loadingMore) return;
 
     try {
       setLoadingMore(true);
-      const response = await tagService.getMealPlansByTag(tagId, currentPage, 20);
+      const response = await tagService.getMealPlansByTag(
+        tagId,
+        currentPage,
+        20
+      );
 
       if (response?.success && response?.data) {
-        setMealPlans(prev => [...prev, ...response.data]);
+        setMealPlans((prev) => [...prev, ...response.data]);
         setHasMoreData(response.pagination?.hasNext || false);
-        setCurrentPage(prev => prev + 1);
+        setCurrentPage((prev) => prev + 1);
       }
     } catch (err) {
       console.error("Error loading more meal plans:", err);
@@ -219,7 +234,10 @@ const TagScreen = ({ navigation, route }) => {
           const discount = await discountService.calculateDiscount(user, plan);
           discounts[plan._id || plan.id] = discount;
         } catch (error) {
-          console.error(`Error calculating discount for plan ${plan._id}:`, error);
+          console.error(
+            `Error calculating discount for plan ${plan._id}:`,
+            error
+          );
           discounts[plan._id || plan.id] = {
             discountPercent: 0,
             discountAmount: 0,
@@ -309,7 +327,6 @@ const TagScreen = ({ navigation, route }) => {
       setTimeout(async () => {
         await fetchRatings();
       }, 2000);
-
     } catch (error) {
       console.error("Error submitting rating:", error);
 
@@ -323,7 +340,8 @@ const TagScreen = ({ navigation, route }) => {
         } catch (fetchError) {
           console.error("Error fetching updated ratings:", fetchError);
         }
-        errorMessage = "You have already rated this tag. Your rating has been updated.";
+        errorMessage =
+          "You have already rated this tag. Your rating has been updated.";
       } else if (error.message && error.message.includes("not found")) {
         errorMessage = "This tag is no longer available for rating.";
       } else if (error.message && error.message.includes("unauthorized")) {
@@ -399,28 +417,8 @@ const TagScreen = ({ navigation, route }) => {
             onPress={() => navigation.goBack()}
             style={styles(colors).backButton}
           >
-            <CustomIcon name="chevron-back" size={24} color="#FFFFFF" />
+            <CustomIcon name="chevron-back" size={24} color={colors.primary} />
           </TouchableOpacity>
-
-          <View style={styles(colors).headerActions}>
-            <TouchableOpacity
-              onPress={() => setShowSearch(!showSearch)}
-              style={styles(colors).headerActionButton}
-            >
-              <CustomIcon
-                name={showSearch ? "close" : "search-filled"}
-                size={20}
-                color="#FFFFFF"
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {/* Add share functionality */}}
-              style={styles(colors).headerActionButton}
-            >
-              <CustomIcon name="share" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Hero Background Image */}
@@ -504,7 +502,9 @@ const TagScreen = ({ navigation, route }) => {
       return (
         <View style={styles(colors).errorContainer}>
           <CustomIcon name="alert-circle" size={48} color={colors.error} />
-          <Text style={styles(colors).errorTitle}>Oops! Something went wrong</Text>
+          <Text style={styles(colors).errorTitle}>
+            Oops! Something went wrong
+          </Text>
           <Text style={styles(colors).errorText}>{error}</Text>
           <TouchableOpacity
             style={styles(colors).retryButton}
@@ -527,20 +527,23 @@ const TagScreen = ({ navigation, route }) => {
             color={colors.textMuted}
           />
           <Text style={styles(colors).emptyTitle}>
-            {searchQuery.trim() ? "No matching meal plans" : "No meal plans yet"}
+            {searchQuery.trim()
+              ? "No matching meal plans"
+              : "No meal plans yet"}
           </Text>
           <Text style={styles(colors).emptyText}>
             {searchQuery.trim()
               ? "Try adjusting your search terms"
-              : "Check back soon for new meal plans in this category!"
-            }
+              : "Check back soon for new meal plans in this category!"}
           </Text>
           {searchQuery.trim() && (
             <TouchableOpacity
               style={styles(colors).clearSearchButton}
               onPress={() => setSearchQuery("")}
             >
-              <Text style={styles(colors).clearSearchButtonText}>Clear Search</Text>
+              <Text style={styles(colors).clearSearchButtonText}>
+                Clear Search
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -551,7 +554,8 @@ const TagScreen = ({ navigation, route }) => {
       <View style={styles(colors).mealPlansSection}>
         {searchQuery.trim() && (
           <Text style={styles(colors).resultsHeader}>
-            {plansToShow.length} result{plansToShow.length !== 1 ? 's' : ''} for "{searchQuery}"
+            {plansToShow.length} result{plansToShow.length !== 1 ? "s" : ""} for
+            "{searchQuery}"
           </Text>
         )}
 
@@ -583,17 +587,14 @@ const TagScreen = ({ navigation, route }) => {
 
       {/* Animated Header Overlay */}
       <Animated.View
-        style={[
-          styles(colors).animatedHeader,
-          { opacity: headerOpacity }
-        ]}
+        style={[styles(colors).animatedHeader, { opacity: headerOpacity }]}
       >
         <View style={styles(colors).animatedHeaderContent}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles(colors).backButton}
+            // style={styles(colors).backButton}
           >
-            <CustomIcon name="chevron-back" size={24} color={colors.text} />
+            <CustomIcon name="chevron-back" size={20} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles(colors).animatedHeaderTitle} numberOfLines={1}>
             {tag?.name || initialTagName || "Tag"}
@@ -644,7 +645,7 @@ const TagScreen = ({ navigation, route }) => {
             <View style={styles(colors).contactRow}>
               <CustomIcon name="clock" size={16} color={colors.textSecondary} />
               <Text style={styles(colors).contactText}>
-                {mealPlans.length} meal plan{mealPlans.length !== 1 ? 's' : ''}
+                {mealPlans.length} meal plan{mealPlans.length !== 1 ? "s" : ""}
               </Text>
             </View>
           </View>
@@ -670,7 +671,8 @@ const TagScreen = ({ navigation, route }) => {
                 <Text
                   style={[
                     styles(colors).durationOptionText,
-                    !selectedDuration && styles(colors).selectedDurationOptionText,
+                    !selectedDuration &&
+                      styles(colors).selectedDurationOptionText,
                   ]}
                 >
                   All Plans
@@ -683,17 +685,21 @@ const TagScreen = ({ navigation, route }) => {
                   key={duration.id}
                   style={[
                     styles(colors).durationOption,
-                    selectedDuration?.id === duration.id && styles(colors).selectedDurationOption,
+                    selectedDuration?.id === duration.id &&
+                      styles(colors).selectedDurationOption,
                   ]}
-                  onPress={() => setSelectedDuration(
-                    selectedDuration?.id === duration.id ? null : duration
-                  )}
+                  onPress={() =>
+                    setSelectedDuration(
+                      selectedDuration?.id === duration.id ? null : duration
+                    )
+                  }
                   activeOpacity={0.7}
                 >
                   <Text
                     style={[
                       styles(colors).durationOptionText,
-                      selectedDuration?.id === duration.id && styles(colors).selectedDurationOptionText,
+                      selectedDuration?.id === duration.id &&
+                        styles(colors).selectedDurationOptionText,
                     ]}
                   >
                     {duration.label}
@@ -708,7 +714,8 @@ const TagScreen = ({ navigation, route }) => {
         <View style={styles(colors).bioSection}>
           <Text style={styles(colors).bioTitle}>Bio</Text>
           <Text style={styles(colors).bioText}>
-            {tag?.description || "Delicious meal plans carefully crafted for your healthy lifestyle. We offer fresh, nutritious options that make eating well simple and enjoyable."}
+            {tag?.description ||
+              "Delicious meal plans carefully crafted for your healthy lifestyle. We offer fresh, nutritious options that make eating well simple and enjoyable."}
           </Text>
         </View>
 
@@ -731,7 +738,9 @@ const TagScreen = ({ navigation, route }) => {
           {ratingsLoading ? (
             <View style={styles(colors).ratingsLoadingContainer}>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={styles(colors).ratingsLoadingText}>Loading ratings...</Text>
+              <Text style={styles(colors).ratingsLoadingText}>
+                Loading ratings...
+              </Text>
             </View>
           ) : (
             <>
@@ -756,7 +765,9 @@ const TagScreen = ({ navigation, route }) => {
                 if (!shouldShowRatings) {
                   return (
                     <View style={styles(colors).ratingStatsContainer}>
-                      <Text style={styles(colors).noRatingsText}>No ratings yet</Text>
+                      <Text style={styles(colors).noRatingsText}>
+                        No ratings yet
+                      </Text>
                       <Text style={styles(colors).noRatingsSubtext}>
                         Be the first to rate this tag!
                       </Text>
@@ -770,7 +781,9 @@ const TagScreen = ({ navigation, route }) => {
                       <View style={styles(colors).ratingAverageContainer}>
                         <Text style={styles(colors).ratingAverageNumber}>
                           {ratingStats?.data?.overallStats?.averageRating
-                            ? ratingStats.data.overallStats.averageRating.toFixed(1)
+                            ? ratingStats.data.overallStats.averageRating.toFixed(
+                                1
+                              )
                             : "0.0"}
                         </Text>
                         <View style={styles(colors).starsContainer}>
@@ -780,21 +793,21 @@ const TagScreen = ({ navigation, route }) => {
                               name={
                                 star <=
                                 Math.round(
-                                  ratingStats?.data?.overallStats?.averageRating ||
-                                    0
+                                  ratingStats?.data?.overallStats
+                                    ?.averageRating || 0
                                 )
                                   ? "star-filled"
                                   : star <=
-                                    (ratingStats?.data?.overallStats?.averageRating ||
-                                      0)
+                                    (ratingStats?.data?.overallStats
+                                      ?.averageRating || 0)
                                   ? "star-half"
                                   : "star-outline"
                               }
                               size={16}
                               color={
                                 star <=
-                                  ratingStats?.data?.overallStats?.averageRating ||
-                                0
+                                  ratingStats?.data?.overallStats
+                                    ?.averageRating || 0
                                   ? colors.rating
                                   : colors.textMuted
                               }
@@ -823,10 +836,11 @@ const TagScreen = ({ navigation, route }) => {
                               rating.toString()
                             ] || 0;
                           const percentage =
-                            (ratingStats?.data?.overallStats?.totalRatings || 0) > 0
+                            (ratingStats?.data?.overallStats?.totalRatings ||
+                              0) > 0
                               ? (count /
-                                  (ratingStats?.data?.overallStats?.totalRatings ||
-                                    1)) *
+                                  (ratingStats?.data?.overallStats
+                                    ?.totalRatings || 1)) *
                                 100
                               : 0;
 
@@ -835,7 +849,9 @@ const TagScreen = ({ navigation, route }) => {
                               key={rating}
                               style={styles(colors).ratingDistributionRow}
                             >
-                              <Text style={styles(colors).ratingDistributionStar}>
+                              <Text
+                                style={styles(colors).ratingDistributionStar}
+                              >
                                 {rating}
                               </Text>
                               <CustomIcon
@@ -843,7 +859,9 @@ const TagScreen = ({ navigation, route }) => {
                                 size={12}
                                 color={colors.rating}
                               />
-                              <View style={styles(colors).ratingDistributionBar}>
+                              <View
+                                style={styles(colors).ratingDistributionBar}
+                              >
                                 <View
                                   style={[
                                     styles(colors).ratingDistributionFill,
@@ -851,7 +869,9 @@ const TagScreen = ({ navigation, route }) => {
                                   ]}
                                 />
                               </View>
-                              <Text style={styles(colors).ratingDistributionCount}>
+                              <Text
+                                style={styles(colors).ratingDistributionCount}
+                              >
                                 {count}
                               </Text>
                             </View>
@@ -866,7 +886,9 @@ const TagScreen = ({ navigation, route }) => {
               {/* Recent Reviews */}
               {existingRatings.length > 0 && (
                 <View style={styles(colors).recentReviewsContainer}>
-                  <Text style={styles(colors).recentReviewsTitle}>Recent Reviews</Text>
+                  <Text style={styles(colors).recentReviewsTitle}>
+                    Recent Reviews
+                  </Text>
                   {existingRatings.slice(0, 3).map((rating) => {
                     return (
                       <RatingDisplay
@@ -880,7 +902,9 @@ const TagScreen = ({ navigation, route }) => {
 
                   {ratingStats?.data?.overallStats?.totalRatings ||
                   existingRatings.length > 3 ? (
-                    <TouchableOpacity style={styles(colors).viewAllReviewsButton}>
+                    <TouchableOpacity
+                      style={styles(colors).viewAllReviewsButton}
+                    >
                       <Text style={styles(colors).viewAllReviewsText}>
                         View all reviews
                       </Text>

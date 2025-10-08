@@ -12,6 +12,7 @@ import {
   PixelRatio,
   RefreshControl,
   Image,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../styles/theme";
@@ -33,19 +34,22 @@ const { width, height } = Dimensions.get("window");
 const scale = (size) => {
   const pixelRatio = PixelRatio.get();
   const deviceScale = width / 375;
-  const androidFactor = Platform.OS === "android" ? Math.min(pixelRatio / 2, 1.2) : 1;
+  const androidFactor =
+    Platform.OS === "android" ? Math.min(pixelRatio / 2, 1.2) : 1;
   return size * deviceScale * androidFactor;
 };
 
 const verticalScale = (size) => (height / 812) * size;
-const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
 
 const isSmallScreen = width < 350;
 const isMediumScreen = width >= 350 && width < 414;
 const isLargeScreen = width >= 414;
 const isTablet = width >= 768;
 
-const statusBarHeight = Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
+const statusBarHeight =
+  Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
 
 const getResponsiveValue = (small, medium, large, tablet = large) => {
   if (isTablet) return tablet;
@@ -81,6 +85,7 @@ const MealPlanListingScreen = ({ navigation, route }) => {
   const [selectedTier, setSelectedTier] = useState(null);
   const [discountData, setDiscountData] = useState({});
   const [discountLoading, setDiscountLoading] = useState(true);
+  const [availableTiers, setAvailableTiers] = useState([]);
 
   // Banner state
   const [banners, setBanners] = useState([]);
@@ -89,6 +94,14 @@ const MealPlanListingScreen = ({ navigation, route }) => {
   const [isUserInteracting, setIsUserInteracting] = useState(false);
   const [trackedImpressions, setTrackedImpressions] = useState(new Set());
   const bannerScrollRef = useRef(null);
+
+  // Animation
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
 
   useEffect(() => {
     loadMealPlans();
@@ -105,46 +118,61 @@ const MealPlanListingScreen = ({ navigation, route }) => {
     loadPublicDashboardData();
   }, []);
 
-  // Filter meal plans when tier changes
+  // Filter meal plans when tier changes and calculate available tiers
   useEffect(() => {
+    // Calculate available tiers from meal plans
+    const tiersInPlans = [
+      ...new Set(mealPlans.map((plan) => plan.tier).filter(Boolean)),
+    ];
+    const availableTierOptions = TIER_OPTIONS.filter((tierOption) =>
+      tiersInPlans.includes(tierOption.id)
+    );
+    setAvailableTiers(availableTierOptions);
+
+    // Filter meal plans based on selected tier
     if (!selectedTier) {
       setFilteredMealPlans(mealPlans);
     } else {
-      const filtered = mealPlans.filter(plan => plan.tier === selectedTier);
+      const filtered = mealPlans.filter((plan) => plan.tier === selectedTier);
       setFilteredMealPlans(filtered);
     }
   }, [selectedTier, mealPlans]);
 
-  const loadMealPlans = useCallback(async (isRefresh = false) => {
-    try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
-      const response = await tagService.getMealPlansByTag(tagId, 1, 100);
-
-      if (response?.success && response?.data) {
-        let plans = response.data || [];
-
-        // Filter by duration if provided
-        if (selectedDuration) {
-          plans = plans.filter(plan => plan.durationWeeks === selectedDuration.weeks);
+  const loadMealPlans = useCallback(
+    async (isRefresh = false) => {
+      try {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
         }
 
-        setMealPlans(plans);
-        setFilteredMealPlans(plans);
+        const response = await tagService.getMealPlansByTag(tagId, 1, 100);
+
+        if (response?.success && response?.data) {
+          let plans = response.data || [];
+
+          // Filter by duration if provided
+          if (selectedDuration) {
+            plans = plans.filter(
+              (plan) => plan.durationWeeks === selectedDuration.weeks
+            );
+          }
+
+          setMealPlans(plans);
+          setFilteredMealPlans(plans);
+        }
+      } catch (error) {
+        console.error("Error loading meal plans:", error);
+        setMealPlans([]);
+        setFilteredMealPlans([]);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-    } catch (error) {
-      console.error("Error loading meal plans:", error);
-      setMealPlans([]);
-      setFilteredMealPlans([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [tagId, selectedDuration]);
+    },
+    [tagId, selectedDuration]
+  );
 
   const fetchDiscountData = useCallback(async () => {
     if (!user || !mealPlans.length) {
@@ -161,7 +189,10 @@ const MealPlanListingScreen = ({ navigation, route }) => {
           const discount = await discountService.calculateDiscount(user, plan);
           discounts[plan._id || plan.id] = discount;
         } catch (error) {
-          console.error(`Error calculating discount for plan ${plan._id}:`, error);
+          console.error(
+            `Error calculating discount for plan ${plan._id}:`,
+            error
+          );
           discounts[plan._id || plan.id] = {
             discountPercent: 0,
             discountAmount: 0,
@@ -178,6 +209,11 @@ const MealPlanListingScreen = ({ navigation, route }) => {
       setDiscountLoading(false);
     }
   }, [user, mealPlans]);
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    { useNativeDriver: false }
+  );
 
   const loadPublicDashboardData = async () => {
     try {
@@ -238,23 +274,11 @@ const MealPlanListingScreen = ({ navigation, route }) => {
         {/* Navigation Header */}
         <View style={styles(colors).navigationHeader}>
           <TouchableOpacity
-            style={styles(colors).backButton}
             onPress={() => navigation.goBack()}
-            activeOpacity={0.8}
+            style={styles(colors).backButton}
           >
-            <CustomIcon name="chevron-back" size={24} color={colors.white} />
+            <CustomIcon name="chevron-back" size={24} color={colors.primary} />
           </TouchableOpacity>
-
-          <View style={styles(colors).headerTextContainer}>
-            <Text style={styles(colors).headerTitle}>{tagName}</Text>
-            {selectedDuration && (
-              <Text style={styles(colors).headerSubtitle}>
-                {selectedDuration.label}
-              </Text>
-            )}
-          </View>
-
-          <View style={{ width: 40 }} />
         </View>
 
         {/* Hero Background Image */}
@@ -263,15 +287,6 @@ const MealPlanListingScreen = ({ navigation, route }) => {
           style={styles(colors).heroBackgroundImage}
           resizeMode="cover"
         />
-
-        {/* Tag Image Circle */}
-        <View style={styles(colors).tagImageContainer}>
-          <Image
-            source={getTagImage(false)}
-            style={styles(colors).tagImageCircle}
-            resizeMode="cover"
-          />
-        </View>
 
         {/* Blend Transition */}
         <View style={styles(colors).blendTransition}>
@@ -284,6 +299,81 @@ const MealPlanListingScreen = ({ navigation, route }) => {
           />
         </View>
       </LinearGradient>
+    </View>
+  );
+
+  const renderFixedBackground = () => (
+    <View style={styles(colors).fixedBackground}>
+      <LinearGradient
+        colors={[colors.primary2, colors.primary2]}
+        style={styles(colors).heroBackground}
+      >
+        {/* Hero Background Image */}
+        <Image
+          source={getTagImage(true)}
+          style={styles(colors).heroBackgroundImage}
+          resizeMode="cover"
+        />
+      </LinearGradient>
+    </View>
+  );
+
+  const renderStickyHeader = () => (
+    <View
+      style={[
+        styles(colors).stickyHeaderContainer,
+        isHeaderSticky && styles(colors).stickyHeaderFixed,
+      ]}
+    >
+      {/* Tag Image Circle Overlay */}
+      <View
+        style={[
+          styles(colors).tagImageOverlay,
+          isHeaderSticky && styles(colors).tagImageOverlaySticky,
+        ]}
+      >
+        <View style={styles(colors).tagImageContainer}>
+          <Image
+            source={getTagImage(false)}
+            style={styles(colors).tagImageCircle}
+            resizeMode="cover"
+          />
+        </View>
+      </View>
+
+      {/* Blend Transition */}
+      <View style={styles(colors).blendTransition}>
+        <BlendSvg
+          width="100%"
+          height={60}
+          fill={colors.background}
+          preserveAspectRatio="none"
+          style={styles(colors).blendSvg}
+        />
+      </View>
+
+      {/* Tag Information Section */}
+      <View style={styles(colors).tagInfoSection}>
+        <Text style={styles(colors).tagName}>{tagName}</Text>
+        {selectedDuration && (
+          <Text style={styles(colors).tagSubtitle}>
+            {selectedDuration.label}
+          </Text>
+        )}
+        <View style={styles(colors).contactContainer}>
+          <View style={styles(colors).contactRow}>
+            <CustomIcon
+              name="clock-filled"
+              size={16}
+              color={colors.textSecondary}
+            />
+            <Text style={styles(colors).contactText}>
+              {filteredMealPlans.length} meal plan
+              {filteredMealPlans.length !== 1 ? "s" : ""}
+            </Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 
@@ -379,58 +469,100 @@ const MealPlanListingScreen = ({ navigation, route }) => {
     );
   };
 
-  const renderTierFilters = () => (
-    <View style={styles(colors).tierFiltersContainer}>
-      <Text style={styles(colors).tierFiltersLabel}>Filter by Tier</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles(colors).tierFiltersList}
-      >
-        {/* All Plans option */}
-        <TouchableOpacity
-          style={[
-            styles(colors).tierPill,
-            !selectedTier && styles(colors).tierPillActive,
-          ]}
-          onPress={() => setSelectedTier(null)}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={[
-              styles(colors).tierPillText,
-              !selectedTier && styles(colors).tierPillTextActive,
-            ]}
-          >
-            All Plans
-          </Text>
-        </TouchableOpacity>
+  const renderTierFilters = () => {
+    // Don't show tier filters if no tiers are available
+    if (availableTiers.length === 0) {
+      return null;
+    }
 
-        {/* Tier options in hierarchy order */}
-        {TIER_OPTIONS.map((tier) => (
-          <TouchableOpacity
-            key={tier.id}
-            style={[
-              styles(colors).tierPill,
-              selectedTier === tier.id && styles(colors).tierPillActive,
-            ]}
-            onPress={() => setSelectedTier(selectedTier === tier.id ? null : tier.id)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles(colors).tierPillEmoji}>{tier.emoji}</Text>
-            <Text
+    return (
+      <View style={styles(colors).tierFiltersContainer}>
+        <Text style={styles(colors).tierFiltersLabel}>Filter by Tier</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles(colors).tierFiltersList}
+        >
+          {/* All Plans option - only show if there are multiple tiers available */}
+          {availableTiers.length > 1 && (
+            <TouchableOpacity
               style={[
-                styles(colors).tierPillText,
-                selectedTier === tier.id && styles(colors).tierPillTextActive,
+                styles(colors).tierItem,
+                !selectedTier && styles(colors).selectedTierItem,
               ]}
+              onPress={() => setSelectedTier(null)}
+              activeOpacity={0.7}
             >
-              {tier.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
+              <View
+                style={[
+                  styles(colors).tierImageContainer,
+                  !selectedTier && styles(colors).selectedTierImageContainer,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles(colors).allTierIcon,
+                    !selectedTier && styles(colors).selectedAllTierIcon,
+                  ]}
+                >
+                  🍽️
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles(colors).tierName,
+                  !selectedTier && styles(colors).selectedTierName,
+                ]}
+              >
+                All Plans
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Only show tiers that have meal plans available */}
+          {availableTiers.map((tier) => (
+            <TouchableOpacity
+              key={tier.id}
+              style={[
+                styles(colors).tierItem,
+                selectedTier === tier.id && styles(colors).selectedTierItem,
+              ]}
+              onPress={() =>
+                setSelectedTier(selectedTier === tier.id ? null : tier.id)
+              }
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles(colors).tierImageContainer,
+                  selectedTier === tier.id &&
+                    styles(colors).selectedTierImageContainer,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles(colors).tierEmoji,
+                    selectedTier === tier.id &&
+                      styles(colors).selectedTierEmoji,
+                  ]}
+                >
+                  {tier.emoji}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles(colors).tierName,
+                  selectedTier === tier.id && styles(colors).selectedTierName,
+                ]}
+              >
+                {tier.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -457,7 +589,9 @@ const MealPlanListingScreen = ({ navigation, route }) => {
               style={styles(colors).clearFilterButton}
               onPress={() => setSelectedTier(null)}
             >
-              <Text style={styles(colors).clearFilterButtonText}>View All Plans</Text>
+              <Text style={styles(colors).clearFilterButtonText}>
+                View All Plans
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -467,13 +601,16 @@ const MealPlanListingScreen = ({ navigation, route }) => {
     return (
       <View style={styles(colors).mealPlansContainer}>
         <Text style={styles(colors).resultsCount}>
-          {filteredMealPlans.length} meal plan{filteredMealPlans.length !== 1 ? 's' : ''} found
+          {filteredMealPlans.length} meal plan
+          {filteredMealPlans.length !== 1 ? "s" : ""} found
         </Text>
         {filteredMealPlans.map((plan) => (
           <MealPlanCard
             key={plan._id || plan.id}
             plan={plan}
-            onPress={() => navigation.navigate("MealPlanDetail", { bundle: plan })}
+            onPress={() =>
+              navigation.navigate("MealPlanDetail", { bundle: plan })
+            }
             onBookmarkPress={() => toggleBookmark(plan._id || plan.id)}
             isBookmarked={isBookmarked(plan._id || plan.id)}
             discountData={discountData}
@@ -485,16 +622,35 @@ const MealPlanListingScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles(colors).container}>
-      <StatusBar
-        barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor={colors.primary2}
-      />
-      {renderHeader()}
+    <SafeAreaView
+      style={styles(colors).container}
+      edges={["top", "left", "right"]}
+    >
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
 
-      <ScrollView
+      {/* Animated Header Overlay */}
+      <Animated.View
+        style={[styles(colors).animatedHeader, { opacity: headerOpacity }]}
+      >
+        <View style={styles(colors).animatedHeaderContent}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            // style={styles(colors).backButton}
+          >
+            <CustomIcon name="chevron-back" size={20} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles(colors).animatedHeaderTitle} numberOfLines={1}>
+            {tagName}
+          </Text>
+          <View style={styles(colors).headerActions} />
+        </View>
+      </Animated.View>
+
+      <Animated.ScrollView
         style={styles(colors).scrollView}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -504,10 +660,42 @@ const MealPlanListingScreen = ({ navigation, route }) => {
           />
         }
       >
+        {renderHeader()}
+
+        {/* Tag Information Section */}
+        <View style={styles(colors).tagInfoSection}>
+          <Text style={styles(colors).tagName}>{tagName}</Text>
+          {selectedDuration && (
+            <Text style={styles(colors).tagSubtitle}>
+              {selectedDuration.label}
+            </Text>
+          )}
+          <View style={styles(colors).contactContainer}>
+            <View style={styles(colors).contactRow}>
+              <CustomIcon
+                name="clock-filled"
+                size={16}
+                color={colors.textSecondary}
+              />
+              <Text style={styles(colors).contactText}>
+                {filteredMealPlans.length} meal plan
+                {filteredMealPlans.length !== 1 ? "s" : ""}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Promo Banners */}
         {renderPromoBanners()}
+
+        {/* Tier Filters */}
         {renderTierFilters()}
+
+        {/* Content */}
         {renderContent()}
-      </ScrollView>
+
+        <View style={styles(colors).bottomPadding} />
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 };
@@ -520,23 +708,28 @@ const styles = (colors) =>
     },
     scrollView: {
       flex: 1,
+      backgroundColor: colors.background,
     },
     heroWrapper: {
       position: "relative",
-      marginBottom: 30,
+      backgroundColor: colors.primary2,
+      height: 250,
+      overflow: "hidden",
     },
     heroBackground: {
-      paddingTop: verticalScale(10),
-      paddingBottom: verticalScale(80),
-      minHeight: 250,
+      paddingTop: 20,
+      paddingBottom: 0,
+      paddingHorizontal: 0,
       position: "relative",
+      height: "100%",
+      minHeight: 250,
     },
     navigationHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: scale(20),
-      paddingVertical: verticalScale(10),
+      marginBottom: 30,
+      paddingHorizontal: 20,
       position: "relative",
       zIndex: 10,
     },
@@ -550,22 +743,9 @@ const styles = (colors) =>
       borderWidth: 1,
       borderColor: "#1b1b1b",
     },
-    headerTextContainer: {
-      flex: 1,
-      alignItems: "center",
-    },
-    headerTitle: {
-      fontSize: moderateScale(20),
-      fontWeight: "700",
-      color: colors.white,
-      textAlign: "center",
-    },
-    headerSubtitle: {
-      fontSize: moderateScale(14),
-      fontWeight: "500",
-      color: colors.primary,
-      textAlign: "center",
-      marginTop: 2,
+    headerActions: {
+      flexDirection: "row",
+      gap: 12,
     },
     heroBackgroundImage: {
       position: "absolute",
@@ -577,39 +757,84 @@ const styles = (colors) =>
       height: "100%",
       minHeight: 250,
     },
-    tagImageContainer: {
-      position: "absolute",
-      bottom: -30,
-      alignSelf: "center",
-      zIndex: 11,
-      ...getShadowStyle({
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      }),
-    },
-    tagImageCircle: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      borderWidth: 4,
-      borderColor: colors.white,
-    },
     blendTransition: {
       position: "absolute",
       bottom: 0,
       left: 0,
       right: 0,
+      width: "100%",
       height: 60,
-      zIndex: 5,
+      zIndex: 2,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 5,
     },
     blendSvg: {
       width: "100%",
-      height: 60,
+      height: "100%",
+    },
+    animatedHeader: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1000,
+      backgroundColor: colors.background,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    animatedHeaderContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      paddingTop: 55, // Account for status bar
+    },
+    animatedHeaderTitle: {
+      flex: 1,
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      textAlign: "center",
+      marginHorizontal: 20,
+    },
+    tagInfoSection: {
+      backgroundColor: colors.background,
+      paddingHorizontal: scale(20),
+      paddingVertical: verticalScale(20),
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    tagName: {
+      fontSize: moderateScale(24),
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: verticalScale(8),
+    },
+    tagSubtitle: {
+      fontSize: moderateScale(14),
+      color: colors.textSecondary,
+      marginBottom: verticalScale(12),
+    },
+    contactContainer: {
+      alignItems: "flex-start",
+      width: "100%",
+    },
+    contactRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: verticalScale(8),
+    },
+    contactText: {
+      fontSize: moderateScale(14),
+      color: colors.textSecondary,
+      marginLeft: scale(8),
     },
     heroBannerContainer: {
-      marginBottom: 10,
+      marginVertical: 10,
     },
     heroBanner: {
       backgroundColor: colors.primary,
@@ -669,34 +894,61 @@ const styles = (colors) =>
     },
     tierFiltersList: {
       paddingHorizontal: scale(20),
-      paddingBottom: verticalScale(5),
+      paddingVertical: verticalScale(5),
     },
-    tierPill: {
-      flexDirection: "row",
+    tierItem: {
       alignItems: "center",
-      backgroundColor: colors.cardBackground,
-      borderRadius: moderateScale(20),
+      marginRight: scale(15),
       paddingVertical: verticalScale(8),
-      paddingHorizontal: scale(16),
-      marginRight: scale(10),
+      paddingHorizontal: scale(12),
+      borderRadius: moderateScale(20),
+      backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
+      minWidth: scale(70),
     },
-    tierPillActive: {
-      backgroundColor: colors.text,
-      borderColor: colors.text,
+    selectedTierItem: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 4,
     },
-    tierPillEmoji: {
-      fontSize: moderateScale(16),
-      marginRight: scale(6),
+    tierImageContainer: {
+      width: scale(40),
+      height: scale(40),
+      borderRadius: scale(20),
+      backgroundColor: colors.background,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: verticalScale(6),
+      overflow: "hidden",
     },
-    tierPillText: {
-      fontSize: moderateScale(14),
+    selectedTierImageContainer: {
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+    },
+    allTierIcon: {
+      fontSize: moderateScale(20),
+    },
+    selectedAllTierIcon: {
+      color: colors.white,
+    },
+    tierEmoji: {
+      fontSize: moderateScale(20),
+    },
+    selectedTierEmoji: {
+      fontSize: moderateScale(20),
+    },
+    tierName: {
+      fontSize: moderateScale(12),
       fontWeight: "600",
       color: colors.text,
+      textAlign: "center",
     },
-    tierPillTextActive: {
-      color: colors.background,
+    selectedTierName: {
+      color: colors.white,
     },
     mealPlansContainer: {
       padding: scale(20),
@@ -751,6 +1003,9 @@ const styles = (colors) =>
       fontSize: moderateScale(14),
       fontWeight: "600",
       color: colors.white,
+    },
+    bottomPadding: {
+      height: 120,
     },
   });
 

@@ -43,38 +43,21 @@ const UserAvatar = ({
     profileImageSource = `${profileImageSource}${separator}retry=${retryCount}`;
   }
 
-  console.log("👤 UserAvatar - imageUri:", imageUri);
-  console.log("👤 UserAvatar - user.profileImage:", user?.profileImage);
-  console.log("👤 UserAvatar - profileImageSource:", profileImageSource);
-  console.log("👤 UserAvatar - imageLoadError:", imageLoadError);
-  console.log("👤 UserAvatar - imageLoading:", imageLoading);
-  console.log("👤 UserAvatar - retryCount:", retryCount);
-
   const handleImageLoadStart = () => {
-    console.log("🖼️ UserAvatar - Image load started");
     setImageLoading(true);
   };
 
   const handleImageLoadEnd = () => {
-    console.log("🖼️ UserAvatar - Image load ended successfully");
     setImageLoading(false);
   };
 
   const handleImageError = (error) => {
-    console.log("❌ UserAvatar - Failed to load profile image:", error);
-    console.log("❌ UserAvatar - Image URL was:", profileImageSource);
-    console.log("❌ UserAvatar - Retry count:", retryCount);
-
     // Try to retry loading the image up to 2 times
     if (retryCount < 2) {
-      console.log("🔄 UserAvatar - Retrying image load...");
       setRetryCount(retryCount + 1);
       setImageLoading(false);
       // Don't set imageLoadError yet, let it retry
     } else {
-      console.log(
-        "❌ UserAvatar - Max retries reached, falling back to initials"
-      );
       setImageLoadError(true);
       setImageLoading(false);
     }
@@ -89,8 +72,6 @@ const UserAvatar = ({
           onLoadStart={handleImageLoadStart}
           onLoadEnd={handleImageLoadEnd}
           onError={handleImageError}
-          // Add cache policy to help with loading
-          cache="reload"
           key={`avatar-${profileImageSource}-${retryCount}`} // Force re-render on retry
         />
         {imageLoading && (

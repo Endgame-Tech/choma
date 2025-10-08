@@ -121,6 +121,9 @@ const SearchScreen = ({ navigation }) => {
   const [selectedTagId, setSelectedTagId] = useState(null);
   const [selectedTag, setSelectedTag] = useState(null);
 
+  // Random tag display state
+  const [tagState, setTagState] = useState({ tags: [], loading: false });
+
   // Scroll to top state
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const scrollViewRef = useRef(null);
@@ -216,6 +219,35 @@ const SearchScreen = ({ navigation }) => {
 
     fetchDiscountData();
   }, [user, searchResults, mealPlans]);
+
+  // Fetch tags for random tag display
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        console.log("🏷️ Starting to fetch tags for random display");
+        setTagState((prev) => ({ ...prev, loading: true }));
+        const tagsData = await tagService.getAllTags(true);
+
+        console.log("🏷️ Tags fetched:", tagsData?.length || 0, "tags");
+
+        if (Array.isArray(tagsData) && tagsData.length > 0) {
+          setTagState({ tags: tagsData, loading: false });
+          console.log(
+            "🏷️ Tags set successfully:",
+            tagsData.map((t) => t.name)
+          );
+        } else {
+          console.log("🏷️ No tags received or invalid data");
+          setTagState({ tags: [], loading: false });
+        }
+      } catch (error) {
+        console.error("Error fetching tags for random display:", error);
+        setTagState({ tags: [], loading: false });
+      }
+    };
+
+    fetchTags();
+  }, []);
 
   // Helper function to set fallback popular searches from actual meal plans
   const setFallbackPopularSearches = async () => {
@@ -649,7 +681,123 @@ const SearchScreen = ({ navigation }) => {
       return plans.map((plan) => renderTagMealPlanCard(plan));
     }
 
-    return plans.map((plan) => renderMealPlanCard(plan));
+    return renderMealPlanFeedWithRandomTags(plans);
+  };
+
+  // New function to render meal plans with random tags interspersed
+  const renderMealPlanFeedWithRandomTags = (plans) => {
+    const mixedContent = [];
+    const availableTags = tagState.tags || [];
+
+    console.log("🏷️ Random tag debug:", {
+      availableTagsCount: availableTags.length,
+      plansCount: plans.length,
+      tagStateLoading: tagState.loading,
+    });
+
+    // Only add random tags if we have enough tags and meal plans
+    if (availableTags.length < 1 || plans.length < 3) {
+      console.log("🏷️ Not enough tags or plans for random display", {
+        availableTagsCount: availableTags.length,
+        plansCount: plans.length,
+        needsMinTags: 1,
+        needsMinPlans: 3,
+      });
+      return plans.map((plan) => renderMealPlanCard(plan));
+    }
+
+    // Create a copy of available tags for random selection
+    const shuffledTags = [...availableTags].sort(() => Math.random() - 0.5);
+    let tagIndex = 0;
+
+    plans.forEach((plan, index) => {
+      // Add the meal plan
+      mixedContent.push(renderMealPlanCard(plan));
+
+      // Add a random tag every 3 meal plans for testing (but not after the last plan)
+      const shouldAddTag = (index + 1) % 3 === 0 && index < plans.length - 1;
+
+      if (shouldAddTag && tagIndex < shuffledTags.length) {
+        const randomTag = shuffledTags[tagIndex];
+        console.log(
+          "🏷️ Adding random tag:",
+          randomTag.name,
+          "at position",
+          index
+        );
+        mixedContent.push(
+          renderRandomTagCard(randomTag, `random-tag-${index}-${tagIndex}`)
+        );
+        tagIndex++;
+
+        // Reshuffle tags if we've used them all
+        if (tagIndex >= shuffledTags.length) {
+          shuffledTags.sort(() => Math.random() - 0.5);
+          tagIndex = 0;
+        }
+      }
+    });
+
+    console.log(
+      "🏷️ Mixed content items:",
+      mixedContent.length,
+      "original plans:",
+      plans.length
+    );
+    return mixedContent;
+  };
+
+  // Render random tag card component
+  const renderRandomTagCard = (tag, key) => {
+    return (
+      <TouchableOpacity
+        key={key}
+        style={styles(colors).randomTagCard}
+        onPress={() =>
+          navigation.navigate("TagScreen", {
+            tagId: tag._id,
+            tagName: tag.name,
+          })
+        }
+        activeOpacity={0.8}
+      >
+        <View style={styles(colors).randomTagImageContainer}>
+          <Image
+            source={getTagImage(tag)}
+            style={styles(colors).randomTagImage}
+            resizeMode="cover"
+          />
+          <View style={styles(colors).randomTagOverlay}>
+            <Text style={styles(colors).randomTagText}>Explore</Text>
+            <Text style={styles(colors).randomTagName}>{tag.name}</Text>
+            <View style={styles(colors).randomTagButton}>
+              <CustomIcon name="chevron-forward" size={16} color={colors.white} />
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Helper function to get tag image (same logic as HomeScreen)
+  // Helper function to get tag preview image (same logic as HomeScreen)
+  const getTagImage = (tag) => {
+    try {
+      if (!tag) {
+        return require("../../../assets/authImage.png");
+      }
+
+      // Use bigPreviewImage for better visual appeal, fallback to regular image
+      const imageSource = tag.bigPreviewImage || tag.image;
+      if (typeof imageSource === "string" && imageSource.trim()) {
+        return { uri: imageSource };
+      }
+
+      return require("../../../assets/authImage.png");
+    } catch (error) {
+      console.warn("Tag preview image loading error:", error.message);
+      return require("../../../assets/authImage.png");
+    }
   };
 
   // Tag handling functions
@@ -1169,7 +1317,7 @@ const SearchScreen = ({ navigation }) => {
               )}
             </View>
 
-            {/* Search History and Popular Searches for Empty Search */}
+            {/* Search History and Popular Searches for Empty Search
             {historyLoading ? (
               <View style={styles(colors).loadingContainer}>
                 <ActivityIndicator size="small" color={colors.primary} />
@@ -1206,7 +1354,7 @@ const SearchScreen = ({ navigation }) => {
                   ))}
                 </View>
               )
-            )}
+            )} */}
           </>
         )}
 
@@ -1737,6 +1885,64 @@ const styles = (colors) =>
       width: 50,
       height: 50,
       borderRadius: 25,
+      backgroundColor: colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    // Random tag card styles
+    randomTagCard: {
+      width: "100%",
+      height: 120,
+      marginVertical: 10,
+      borderRadius: 10,
+      overflow: "hidden",
+      backgroundColor: colors.cardBackground,
+      shadowColor: colors.shadow,
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    randomTagImageContainer: {
+      flex: 1,
+      position: "relative",
+    },
+    randomTagImage: {
+      width: "100%",
+      height: "100%",
+    },
+    randomTagOverlay: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    randomTagText: {
+      fontSize: 12,
+      color: colors.white,
+      opacity: 0.8,
+      fontWeight: "500",
+    },
+    randomTagName: {
+      fontSize: 16,
+      color: colors.white,
+      fontWeight: "700",
+      flex: 1,
+      marginLeft: 8,
+    },
+    randomTagButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
       backgroundColor: colors.primary,
       justifyContent: "center",
       alignItems: "center",

@@ -6,11 +6,6 @@
     "auditLog": "C:\\dev\\choma\\backend\\logs\\.f375db52851a085e273ee074794ff01187047dac-audit.json",
     "files": [
         {
-            "date": 1758628236663,
-            "name": "C:\\dev\\choma\\backend\\logs\\error-2025-09-23.log",
-            "hash": "0b6e5ddb17114743c86805711fb63677709ed16b496a72139f62a9e2c72349a8"
-        },
-        {
             "date": 1758718122188,
             "name": "C:\\dev\\choma\\backend\\logs\\error-2025-09-24.log",
             "hash": "6349b56261bfaf8cf0cec4edf9635fb5bf69919305f48e6d970b80bc5b4210f6"
@@ -59,6 +54,11 @@
             "date": 1759749536499,
             "name": "C:\\dev\\choma\\backend\\logs\\error-2025-10-06.log",
             "hash": "f9dcf60374fe7ac077913f029ca5bf8cb0af125c4fe1fc7c53363864b691c953"
+        },
+        {
+            "date": 1759923532809,
+            "name": "C:\\dev\\choma\\backend\\logs\\error-2025-10-08.log",
+            "hash": "c1f5e529107f15f958184f1a1b93f26da669c5347dd7c180d8b1177e3cb6f51d"
         }
     ],
     "hashType": "sha256"

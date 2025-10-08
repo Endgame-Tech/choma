@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "../ui/UserAvatar";
 import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import BlendSvg from "../../../assets/blend.svg";
 
 const ProfileHeader = ({
   user,
@@ -64,6 +65,7 @@ const ProfileHeader = ({
           <Image
             source={{ uri: profileImage || user?.profileImage }}
             style={styles(colors).backgroundImage}
+            resizeMode="cover"
             onError={() =>
               console.log("Profile background image failed to load")
             }
@@ -73,6 +75,28 @@ const ProfileHeader = ({
         )}
         {/* Optional overlay for better text readability */}
         <View style={styles(colors).backgroundOverlay} />
+      </View>
+
+      {/* Profile Image Circle Overlay */}
+      <View style={styles(colors).profileImageOverlay}>
+        <View style={styles(colors).profileImageContainer}>
+          <UserAvatar
+            imageUri={profileImage || user?.profileImage}
+            size={100}
+            style={styles(colors).profileImageCircle}
+          />
+        </View>
+      </View>
+
+      {/* Blend Wave Transition */}
+      <View style={styles(colors).blendTransition}>
+        <BlendSvg
+          width="100%"
+          height={60}
+          fill={colors.background}
+          preserveAspectRatio="none"
+          style={styles(colors).blendSvg}
+        />
       </View>
 
       {/* Dark bottom section */}
@@ -133,6 +157,7 @@ const styles = (colors) =>
   createStylesWithDMSans({
     container: {
       backgroundColor: colors.background,
+      position: "relative",
     },
     imageBackground: {
       height: 400,
@@ -157,13 +182,40 @@ const styles = (colors) =>
       bottom: 0,
       backgroundColor: "rgba(0, 0, 0, 0.3)", // Dark overlay for text readability
     },
+    profileImageOverlay: {
+      position: "absolute",
+      top: -50, // Position to sit above the wave transition
+      alignSelf: "center",
+      zIndex: 20,
+    },
+    profileImageContainer: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    profileImageCircle: {
+      borderWidth: 4,
+      borderColor: colors.white,
+    },
+    blendTransition: {
+      position: "absolute",
+      top: -60, // Negative positioning to overlap properly like MealPlanListingScreen
+      left: 0,
+      right: 0,
+      height: 60,
+      zIndex: 5,
+    },
+    blendSvg: {
+      width: "100%",
+      height: 60,
+    },
     darkSection: {
       backgroundColor: colors.background,
       paddingHorizontal: 20,
       paddingVertical: 20,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      marginTop: -20,
+      paddingTop: 60, // Extra padding to account for profile image overlay
     },
     contentRow: {
       flexDirection: "row",

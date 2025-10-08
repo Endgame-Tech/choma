@@ -17,14 +17,14 @@ const CustomNavigationIcon = ({ route, focused, color, size = 24, colors }) => {
 
   // Simple fade animation
   useEffect(() => {
-    console.log('Animation triggered:', { focused, route: route.name });
+    // console.log('Animation triggered:', { focused, route: route.name });
 
     Animated.timing(backgroundOpacity, {
       toValue: focused ? 1 : 0,
       duration: 300,
       useNativeDriver: false,
     }).start((finished) => {
-      console.log('Animation finished:', { finished, focused, route: route.name });
+      // console.log('Animation finished:', { finished, focused, route: route.name });
     });
   }, [focused, backgroundOpacity, route.name]);
 

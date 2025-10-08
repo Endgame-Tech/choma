@@ -30,6 +30,8 @@ import { createStylesWithDMSans } from "../../utils/fontUtils";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import tagService from "../../services/tagService";
+import { Svg, Path } from "react-native-svg";
+import MaskedView from "@react-native-masked-view/masked-view";
 
 const { width, height } = Dimensions.get("window");
 
@@ -69,9 +71,6 @@ const getShadowStyle = (shadowProps) => ({
 });
 
 const heroImageSize = getResponsiveValue(260, 300, 340, 420);
-const heroImageBorderRadius = heroImageSize / 2;
-const previewImageSize = heroImageSize - 6;
-const previewImageBorderRadius = previewImageSize / 2;
 
 const DurationItemWidth = getResponsiveValue(
   width / 4.5,
@@ -269,7 +268,7 @@ const DurationSelectionScreen = ({ navigation, route }) => {
           <Image
             source={require("../../../assets/duration-disk.png")}
             style={{
-              position: 'absolute',
+              position: "absolute",
               width: DurationItemWidth,
               height: DurationItemWidth,
             }}
@@ -476,12 +475,37 @@ const DurationSelectionScreen = ({ navigation, route }) => {
               </View>
 
               <View style={styles(colors).heroImageContainer}>
-                <View style={styles(colors).heroImageCircle}>
-                  <Image
-                    source={getTagImage()}
-                    style={styles(colors).previewImageItem}
-                    resizeMode="cover"
-                  />
+                <View style={styles(colors).heroImageWrapper}>
+                  <MaskedView
+                    style={{ width: heroImageSize, height: heroImageSize }}
+                    maskElement={
+                      <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375">
+                        <Path
+                          d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
+                          fill="white"
+                        />
+                      </Svg>
+                    }
+                  >
+                    <Image
+                      source={getTagImage()}
+                      style={{
+                        width: heroImageSize,
+                        height: heroImageSize,
+                      }}
+                      resizeMode="cover"
+                    />
+                  </MaskedView>
+
+                  {/* SVG stroke border on top */}
+                  <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375" style={{ position: 'absolute', top: 0, left: 0 }}>
+                    <Path
+                      d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
+                      fill="none"
+                      stroke={colors.primary}
+                      strokeWidth="5"
+                    />
+                  </Svg>
                 </View>
               </View>
 
@@ -616,12 +640,37 @@ const DurationSelectionScreen = ({ navigation, route }) => {
             </View>
 
             <View style={styles(colors).heroImageContainer}>
-              <View style={styles(colors).heroImageCircle}>
-                <Image
-                  source={getTagImage()}
-                  style={styles(colors).previewImageItem}
-                  resizeMode="cover"
-                />
+              <View style={styles(colors).heroImageWrapper}>
+                <MaskedView
+                  style={{ width: heroImageSize, height: heroImageSize }}
+                  maskElement={
+                    <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375">
+                      <Path
+                        d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
+                        fill="white"
+                      />
+                    </Svg>
+                  }
+                >
+                  <Image
+                    source={getTagImage()}
+                    style={{
+                      width: heroImageSize,
+                      height: heroImageSize,
+                    }}
+                    resizeMode="cover"
+                  />
+                </MaskedView>
+
+                {/* SVG stroke border on top */}
+                <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375" style={{ position: 'absolute', top: 0, left: 0 }}>
+                  <Path
+                    d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
+                    fill="none"
+                    stroke={colors.primary}
+                    strokeWidth="5"
+                  />
+                </Svg>
               </View>
             </View>
 
@@ -669,7 +718,7 @@ const DurationSelectionScreen = ({ navigation, route }) => {
               justifyContent: "center",
               alignItems: "center",
               paddingHorizontal: 1.5 * DurationItemWidth,
-              paddingRight: 1.8 * DurationItemWidth,
+              paddingRight: 1.5 * DurationItemWidth,
             }}
             horizontal
             renderItem={({ item, index }) => (
@@ -836,20 +885,17 @@ const styles = (colors) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    heroImageCircle: {
+    heroImageWrapper: {
       width: heroImageSize,
       height: heroImageSize,
-      borderRadius: heroImageBorderRadius,
-      borderWidth: scale(3),
-      borderColor: colors.white,
-      overflow: "hidden",
-      justifyContent: "center",
       alignItems: "center",
-    },
-    previewImageItem: {
-      width: previewImageSize,
-      height: previewImageSize,
-      borderRadius: previewImageBorderRadius,
+      justifyContent: "center",
+      ...getShadowStyle({
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+      }),
     },
     chooseHeading: {
       fontSize: moderateScale(getResponsiveValue(16, 18, 20, 22)),

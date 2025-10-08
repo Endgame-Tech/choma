@@ -92,6 +92,7 @@ export interface MealPlan {
   description: string
   coverImage: string
   durationWeeks: number
+  tier: string
   targetAudience: string
   mealTypes: string[]
   planFeatures: string[]

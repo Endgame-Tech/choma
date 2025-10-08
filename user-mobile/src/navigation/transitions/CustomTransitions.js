@@ -4,13 +4,13 @@
  * Using CardStyleInterpolators for optimal performance
  */
 
-import { Easing } from 'react-native';
+import { Easing } from "react-native";
 
 // Animation configurations based on official documentation
 export const TransitionSpecs = {
   // iOS-style spring animation for natural feel
   spring: {
-    animation: 'spring',
+    animation: "spring",
     config: {
       stiffness: 300,
       damping: 30,
@@ -23,7 +23,7 @@ export const TransitionSpecs = {
 
   // Fast timing animation for quick transitions
   timing: {
-    animation: 'timing',
+    animation: "timing",
     config: {
       duration: 250,
       easing: Easing.bezier(0.25, 0.46, 0.45, 0.94), // Custom easing curve
@@ -32,7 +32,7 @@ export const TransitionSpecs = {
 
   // Slow timing for special transitions
   slowTiming: {
-    animation: 'timing',
+    animation: "timing",
     config: {
       duration: 400,
       easing: Easing.bezier(0.4, 0.0, 0.2, 1.0), // Material Design easing
@@ -54,7 +54,7 @@ export const CustomCardStyleInterpolators = {
             translateX: current.progress.interpolate({
               inputRange: [0, 1],
               outputRange: [layouts.screen.width, 0],
-              extrapolate: 'clamp',
+              extrapolate: "clamp",
             }),
           },
           {
@@ -62,23 +62,23 @@ export const CustomCardStyleInterpolators = {
             scale: current.progress.interpolate({
               inputRange: [0, 0.5, 1],
               outputRange: [0.9, 0.95, 1],
-              extrapolate: 'clamp',
+              extrapolate: "clamp",
             }),
           },
         ],
         opacity: current.progress.interpolate({
           inputRange: [0, 0.3, 1],
           outputRange: [0, 0.5, 1],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
       },
       overlayStyle: {
         opacity: current.progress.interpolate({
           inputRange: [0, 1],
           outputRange: [0, 0.2],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
-        backgroundColor: 'black',
+        backgroundColor: "black",
       },
     };
   },
@@ -93,7 +93,7 @@ export const CustomCardStyleInterpolators = {
         opacity: current.progress.interpolate({
           inputRange: [0, 1],
           outputRange: [0, 1],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
       },
     };
@@ -111,7 +111,7 @@ export const CustomCardStyleInterpolators = {
             translateY: current.progress.interpolate({
               inputRange: [0, 1],
               outputRange: [layouts.screen.height, 0],
-              extrapolate: 'clamp',
+              extrapolate: "clamp",
             }),
           },
         ],
@@ -120,9 +120,9 @@ export const CustomCardStyleInterpolators = {
         opacity: current.progress.interpolate({
           inputRange: [0, 1],
           outputRange: [0, 0.4],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
-        backgroundColor: 'black',
+        backgroundColor: "black",
       },
     };
   },
@@ -139,28 +139,28 @@ export const CustomCardStyleInterpolators = {
             scale: current.progress.interpolate({
               inputRange: [0, 0.7, 1],
               outputRange: [0.1, 0.8, 1],
-              extrapolate: 'clamp',
+              extrapolate: "clamp",
             }),
           },
         ],
         opacity: current.progress.interpolate({
           inputRange: [0, 0.5, 1],
           outputRange: [0, 0.7, 1],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
         borderRadius: current.progress.interpolate({
           inputRange: [0, 0.7, 1],
           outputRange: [layouts.screen.width / 2, 40, 0],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
       },
       overlayStyle: {
         opacity: current.progress.interpolate({
           inputRange: [0, 1],
           outputRange: [0, 0.3],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
-        backgroundColor: 'black',
+        backgroundColor: "#F7AE1A", // Use primary color for consistency
       },
     };
   },
@@ -177,23 +177,23 @@ export const CustomCardStyleInterpolators = {
             scale: current.progress.interpolate({
               inputRange: [0, 1],
               outputRange: [0.8, 1],
-              extrapolate: 'clamp',
+              extrapolate: "clamp",
             }),
           },
         ],
         opacity: current.progress.interpolate({
           inputRange: [0, 1],
           outputRange: [0, 1],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
       },
       overlayStyle: {
         opacity: current.progress.interpolate({
           inputRange: [0, 1],
           outputRange: [0, 0.5],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
-        backgroundColor: 'black',
+        backgroundColor: "black",
       },
     };
   },
@@ -210,7 +210,7 @@ export const CustomCardStyleInterpolators = {
             translateX: current.progress.interpolate({
               inputRange: [0, 1],
               outputRange: [layouts.screen.width, 0],
-              extrapolate: 'clamp',
+              extrapolate: "clamp",
             }),
           },
         ],
@@ -218,7 +218,7 @@ export const CustomCardStyleInterpolators = {
       // Previous screen slides back slowly (parallax effect)
       ...(next && {
         overlayStyle: {
-          backgroundColor: 'transparent',
+          backgroundColor: "transparent",
         },
         cardStyle: {
           transform: [
@@ -226,14 +226,14 @@ export const CustomCardStyleInterpolators = {
               translateX: next.progress.interpolate({
                 inputRange: [0, 1],
                 outputRange: [0, -layouts.screen.width * 0.3],
-                extrapolate: 'clamp',
+                extrapolate: "clamp",
               }),
             },
           ],
           opacity: next.progress.interpolate({
             inputRange: [0, 1],
             outputRange: [1, 0.8],
-            extrapolate: 'clamp',
+            extrapolate: "clamp",
           }),
         },
       }),
@@ -247,7 +247,7 @@ export const CustomCardStyleInterpolators = {
   forSearchCircularReveal: ({ current, layouts }) => {
     const screenDiagonal = Math.sqrt(
       layouts.screen.width * layouts.screen.width +
-      layouts.screen.height * layouts.screen.height
+        layouts.screen.height * layouts.screen.height
     );
 
     return {
@@ -257,25 +257,25 @@ export const CustomCardStyleInterpolators = {
             scale: current.progress.interpolate({
               inputRange: [0, 0.5, 1],
               outputRange: [0, 0.3, 1],
-              extrapolate: 'clamp',
+              extrapolate: "clamp",
             }),
           },
         ],
         opacity: current.progress.interpolate({
           inputRange: [0, 0.3, 1],
           outputRange: [0, 0.8, 1],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
         // Start reveal from search bar area (bottom of screen, centered)
-        transformOrigin: 'bottom center',
+        transformOrigin: "bottom center",
       },
       overlayStyle: {
         opacity: current.progress.interpolate({
           inputRange: [0, 1],
           outputRange: [0, 0.2],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
-        backgroundColor: 'rgba(101, 40, 21, 0.8)', // Your app's brown color
+        backgroundColor: "#F7AE1A", // Use primary color for consistency
       },
     };
   },
@@ -285,7 +285,7 @@ export const CustomCardStyleInterpolators = {
    * Perfect for search screens and quick access overlays
    */
   forSearchSlideFromTop: ({ current, layouts }) => {
-    console.log('🔄 Search transition called with progress:', current.progress);
+    console.log("🔄 Search transition called with progress:", current.progress);
     return {
       cardStyle: {
         transform: [
@@ -293,7 +293,7 @@ export const CustomCardStyleInterpolators = {
             translateY: current.progress.interpolate({
               inputRange: [0, 1],
               outputRange: [-layouts.screen.height, 0],
-              extrapolate: 'clamp',
+              extrapolate: "clamp",
             }),
           },
         ],
@@ -302,9 +302,9 @@ export const CustomCardStyleInterpolators = {
         opacity: current.progress.interpolate({
           inputRange: [0, 1],
           outputRange: [0, 0.3],
-          extrapolate: 'clamp',
+          extrapolate: "clamp",
         }),
-        backgroundColor: 'black',
+        backgroundColor: "black",
       },
     };
   },
@@ -314,13 +314,13 @@ export const CustomCardStyleInterpolators = {
 export const GestureConfigs = {
   default: {
     gestureEnabled: true,
-    gestureDirection: 'horizontal',
+    gestureDirection: "horizontal",
     gestureResponseDistance: 150,
   },
 
   modal: {
     gestureEnabled: true,
-    gestureDirection: 'vertical',
+    gestureDirection: "vertical",
     gestureResponseDistance: 200,
   },
 
@@ -337,7 +337,8 @@ export const TransitionPresets = {
       open: TransitionSpecs.spring,
       close: TransitionSpecs.timing,
     },
-    cardStyleInterpolator: CustomCardStyleInterpolators.forEnhancedHorizontalSlide,
+    cardStyleInterpolator:
+      CustomCardStyleInterpolators.forEnhancedHorizontalSlide,
     ...GestureConfigs.default,
   },
 
@@ -399,7 +400,7 @@ export const TransitionPresets = {
     },
     cardStyleInterpolator: CustomCardStyleInterpolators.forSearchSlideFromTop,
     gestureEnabled: true,
-    gestureDirection: 'vertical',
+    gestureDirection: "vertical",
     gestureResponseDistance: 200,
   },
 
@@ -407,14 +408,14 @@ export const TransitionPresets = {
   circularReveal: {
     transitionSpec: {
       open: {
-        animation: 'timing',
+        animation: "timing",
         config: {
           duration: 400,
           easing: Easing.bezier(0.4, 0.0, 0.2, 1.0), // Material Design easing
         },
       },
       close: {
-        animation: 'timing',
+        animation: "timing",
         config: {
           duration: 300,
           easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
@@ -423,7 +424,7 @@ export const TransitionPresets = {
     },
     cardStyleInterpolator: CustomCardStyleInterpolators.forSearchCircularReveal,
     gestureEnabled: true,
-    gestureDirection: 'vertical',
+    gestureDirection: "vertical",
     gestureResponseDistance: 150,
   },
 };
@@ -431,36 +432,36 @@ export const TransitionPresets = {
 // Screen-specific transition recommendations
 export const ScreenTransitions = {
   // Main navigation flow
-  'Home': TransitionPresets.main,
-  'TagScreen': TransitionPresets.circular, // Matches your circular carousel theme
-  'MealPlanDetail': TransitionPresets.main,
+  Home: TransitionPresets.main,
+  TagScreen: TransitionPresets.circular, // Matches your circular carousel theme
+  MealPlanDetail: TransitionPresets.main,
 
   // Modal-style screens
-  'Settings': TransitionPresets.modal,
-  'Profile': TransitionPresets.modal,
-  'Wallet': TransitionPresets.modal,
-  'AddMoneyScreen': TransitionPresets.modal,
-  'AddCardScreen': TransitionPresets.modal,
+  Settings: TransitionPresets.modal,
+  Profile: TransitionPresets.modal,
+  Wallet: TransitionPresets.modal,
+  AddMoneyScreen: TransitionPresets.modal,
+  AddCardScreen: TransitionPresets.modal,
 
   // Quick overlays
-  'Search': TransitionPresets.circularReveal,
-  'Notifications': TransitionPresets.fade,
+  Search: TransitionPresets.circularReveal,
+  Notifications: TransitionPresets.fade,
 
   // Hierarchical screens
-  'Orders': TransitionPresets.parallax,
-  'OrderDetail': TransitionPresets.main,
+  Orders: TransitionPresets.parallax,
+  OrderDetail: TransitionPresets.main,
 
   // Special screens
-  'Payment': TransitionPresets.scale,
-  'Checkout': TransitionPresets.modal,
-  'SubscriptionSuccess': TransitionPresets.scale,
+  Payment: TransitionPresets.scale,
+  Checkout: TransitionPresets.modal,
+  SubscriptionSuccess: TransitionPresets.scale,
 
   // Tracking screens
-  'TrackingScreen': TransitionPresets.main,
-  'MapTracking': TransitionPresets.fade,
-  'EnhancedTracking': TransitionPresets.main,
+  TrackingScreen: TransitionPresets.main,
+  MapTracking: TransitionPresets.fade,
+  EnhancedTracking: TransitionPresets.main,
 
   // Additional modal screens
-  'AddMoneyScreen': TransitionPresets.modal,
-  'AddCardScreen': TransitionPresets.modal,
+  AddMoneyScreen: TransitionPresets.modal,
+  AddCardScreen: TransitionPresets.modal,
 };

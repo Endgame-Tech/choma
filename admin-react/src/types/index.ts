@@ -44,6 +44,8 @@ export interface MealPlan {
   duration?: string
   // number of weeks for the plan (used across UI)
   durationWeeks?: number
+  // tier level for the plan
+  tier?: string
   // number of weeks for the plan (used across UI)
   // derived / display fields
   totalPrice?: number

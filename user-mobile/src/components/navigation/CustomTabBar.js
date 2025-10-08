@@ -44,23 +44,24 @@ const CustomTabBar = () => {
     const isFocused = currentRoute === routeName;
     if (isFocused) return; // Don't navigate if already on this tab
 
-    // Trigger circular reveal animation
+    // Navigate immediately to update the tab indicator
+    navigation.navigate(routeName);
+
+    // Reset and start the animation
+    circleAnimation.setValue(0); // Ensure animation starts from the beginning
     Animated.timing(circleAnimation, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
     }).start(() => {
-      // Navigate when circle fully expands
-      navigation.navigate(routeName);
-
-      // Reverse animation to reveal new screen
+      // After the circle has expanded, start shrinking it to reveal the new screen
       setTimeout(() => {
         Animated.timing(circleAnimation, {
           toValue: 0,
           duration: 400,
           useNativeDriver: true,
         }).start();
-      }, 100);
+      }, 100); // A short delay before revealing
     });
   };
 
@@ -77,6 +78,7 @@ const CustomTabBar = () => {
         style={[
           styles.circleBackground,
           {
+            backgroundColor: colors.primary,
             transform: [
               {
                 scale: circleAnimation.interpolate({
@@ -173,14 +175,12 @@ const styles = StyleSheet.create({
   },
   // Circular reveal animation background
   circleBackground: {
-    backgroundColor: "#F9B87A",
     position: "absolute",
     width: 60,
     height: 60,
-    bottom: "50%",
+    bottom: 100, // Position from the bottom like in HomeScreen
     left: "50%",
     marginLeft: -30,
-    marginBottom: -30,
     borderRadius: 30,
     zIndex: 10000,
   },

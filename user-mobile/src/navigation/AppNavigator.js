@@ -1,11 +1,6 @@
 // src/navigation/AppNavigator.js - Modern Dark Theme Update
 import React from "react";
-import {
-  View,
-  StyleSheet,
-  Platform,
-  TouchableOpacity,
-} from "react-native";
+import { View, StyleSheet, Platform, TouchableOpacity } from "react-native";
 import { BlurView } from "expo-blur";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -19,7 +14,7 @@ import {
   TransitionPresets,
   ScreenTransitions,
   CustomCardStyleInterpolators,
-  TransitionSpecs
+  TransitionSpecs,
 } from "./transitions/CustomTransitions";
 
 // Import custom tab bar wrapper
@@ -53,6 +48,7 @@ import PaymentScreen from "../screens/subscription/PaymentScreen";
 import SubscriptionSuccessScreen from "../screens/subscription/SubscriptionSuccessScreen";
 import SubscriptionDetailsScreen from "../screens/subscription/SubscriptionDetailsScreen";
 import SubscriptionTrackingScreen from "../screens/subscription/SubscriptionTrackingScreen";
+import TodayMealScreen from "../screens/subscription/TodayMealScreen";
 
 // Dashboard screens
 import DashboardScreen from "../screens/dashboard/DashboardScreen";
@@ -88,7 +84,6 @@ import HelpCenterScreen from "../screens/help/HelpCenterScreen";
 
 const Stack = createStackNavigator();
 
-
 // Auth Stack Navigator
 const AuthStack = () => {
   const { colors } = useTheme();
@@ -113,7 +108,6 @@ const AuthStack = () => {
     </Stack.Navigator>
   );
 };
-
 
 // Circular reveal transition config for main screens
 const circularRevealTransition = {
@@ -146,14 +140,14 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
     // Use platform default transition timing with native driver
     transitionSpec: {
       open: {
-        animation: 'timing',
+        animation: "timing",
         config: {
           duration: 250,
           useNativeDriver: true,
         },
       },
       close: {
-        animation: 'timing',
+        animation: "timing",
         config: {
           duration: 200,
           useNativeDriver: true,
@@ -181,44 +175,35 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
 
   return (
     <Stack.Navigator screenOptions={defaultScreenOptions}>
-        {isFirstLaunch ? (
-          // Onboarding flow
-          <Stack.Screen name="Onboarding">
-            {() => (
-              <OnboardingWrapper onOnboardingComplete={onOnboardingComplete} />
-            )}
-          </Stack.Screen>
-        ) : !isAuthenticated ? (
-          // Auth flow
-          <Stack.Screen name="Auth" component={AuthStack} />
-        ) : (
+      {isFirstLaunch ? (
+        // Onboarding flow
+        <Stack.Screen name="Onboarding">
+          {() => (
+            <OnboardingWrapper onOnboardingComplete={onOnboardingComplete} />
+          )}
+        </Stack.Screen>
+      ) : !isAuthenticated ? (
+        // Auth flow
+        <Stack.Screen name="Auth" component={AuthStack} />
+      ) : (
         // Main app flow
         <>
           {/* Main Stack Screens with Circular Reveal and Tab Bar */}
-          <Stack.Screen
-            name="Home"
-            options={circularRevealTransition}
-          >
+          <Stack.Screen name="Home" options={circularRevealTransition}>
             {(props) => (
               <ScreenWithTabBar showTabBar={false}>
                 <HomeScreen {...props} />
               </ScreenWithTabBar>
             )}
           </Stack.Screen>
-          <Stack.Screen
-            name="Orders"
-            options={circularRevealTransition}
-          >
+          <Stack.Screen name="Orders" options={circularRevealTransition}>
             {(props) => (
               <ScreenWithTabBar>
                 <OrdersScreen {...props} />
               </ScreenWithTabBar>
             )}
           </Stack.Screen>
-          <Stack.Screen
-            name="Profile"
-            options={circularRevealTransition}
-          >
+          <Stack.Screen name="Profile" options={circularRevealTransition}>
             {(props) => (
               <ScreenWithTabBar>
                 <ProfileScreen {...props} />
@@ -250,7 +235,8 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
                 open: TransitionSpecs.slowTiming,
                 close: TransitionSpecs.timing,
               },
-              cardStyleInterpolator: CustomCardStyleInterpolators.forCircularReveal,
+              cardStyleInterpolator:
+                CustomCardStyleInterpolators.forCircularReveal,
               gestureEnabled: false, // Disable swipe-back gesture
             }}
           >
@@ -270,26 +256,26 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
                 open: TransitionSpecs.slowTiming,
                 close: TransitionSpecs.timing,
               },
-              cardStyleInterpolator: CustomCardStyleInterpolators.forCircularReveal,
+              cardStyleInterpolator:
+                CustomCardStyleInterpolators.forCircularReveal,
               gestureEnabled: false,
             }}
           />
           <Stack.Screen
             name="MealPlanListingScreen"
-            component={MealPlanListingScreen}
             options={{
               headerShown: false,
               animationEnabled: true,
               transitionSpec: {
                 open: {
-                  animation: 'timing',
+                  animation: "timing",
                   config: {
                     duration: 300,
                     useNativeDriver: true,
                   },
                 },
                 close: {
-                  animation: 'timing',
+                  animation: "timing",
                   config: {
                     duration: 250,
                     useNativeDriver: true,
@@ -303,10 +289,16 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
                   },
                 };
               },
-              gestureEnabled: true,
-              gestureDirection: 'vertical',
+              gestureEnabled: false,
+              gestureDirection: "vertical",
             }}
-          />
+          >
+            {(props) => (
+              <ScreenWithTabBar>
+                <MealPlanListingScreen {...props} />
+              </ScreenWithTabBar>
+            )}
+          </Stack.Screen>
           <Stack.Screen
             name="TagScreen"
             component={TagScreen}
@@ -318,9 +310,10 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
                 open: TransitionSpecs.slowTiming,
                 close: TransitionSpecs.timing,
               },
-              cardStyleInterpolator: CustomCardStyleInterpolators.forCircularReveal,
+              cardStyleInterpolator:
+                CustomCardStyleInterpolators.forCircularReveal,
               gestureEnabled: true,
-              gestureDirection: 'horizontal',
+              gestureDirection: "horizontal",
               gestureResponseDistance: 150,
             }}
           />
@@ -381,6 +374,13 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
           <Stack.Screen
             name="SubscriptionTracking"
             component={SubscriptionTrackingScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="TodayMeal"
+            component={TodayMealScreen}
             options={{
               headerShown: false,
             }}

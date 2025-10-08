@@ -665,7 +665,7 @@ export const discountApi = {
   // Get meal plans for admin (for discount configuration)
   async getAllMealPlansForAdmin(): Promise<{ success: boolean; data?: MealPlan[]; error?: string }> {
     try {
-      const response = await api.get<ApiResponse<MealPlan[]>>('/meal-plans/list');
+      const response = await api.get<ApiResponse<MealPlan[]>>('/discount-rules/meal-plans');
       return {
         success: response.data.success,
         data: response.data.data || [],

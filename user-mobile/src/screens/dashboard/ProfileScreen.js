@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import CustomIcon from "../../components/ui/CustomIcon";
 import { LinearGradient } from "expo-linear-gradient";
+import BlendSvg from "../../../assets/blend.svg";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../hooks/useAuth";
 import { DIETARY_PREFERENCES, VALIDATION } from "../../utils/profileConstants";
@@ -2276,6 +2277,16 @@ Your meal plan has been updated with fresh options.`;
 
         {/* Sticky Header Content */}
         <View style={styles(colors).headerContent}>
+          {/* Blend Wave Transition */}
+          <View style={styles(colors).blendTransition}>
+            <BlendSvg
+              width="100%"
+              height={60}
+              fill={colors.background}
+              preserveAspectRatio="none"
+            />
+          </View>
+
           {/* Name and Info Section */}
           <View style={styles(colors).nameSection}>
             {/* Content Row - Left: Name/Email, Right: Buttons */}
@@ -2620,7 +2631,8 @@ const styles = (colors) =>
     },
     nameSection: {
       paddingHorizontal: 20,
-      paddingVertical: 20,
+      paddingTop: 20,
+      paddingBottom: 20,
     },
     contentRow: {
       flexDirection: "row",
@@ -3372,8 +3384,16 @@ const styles = (colors) =>
         height: 5,
       },
       shadowOpacity: 0.2,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
+      position: "relative",
+      // Removed border radius - using wave transition instead
+    },
+    blendTransition: {
+      position: "absolute",
+      top: -60,
+      left: 0,
+      right: 0,
+      height: 60,
+      zIndex: 5,
     },
     // Settings Tab Styles
     settingInfo: {

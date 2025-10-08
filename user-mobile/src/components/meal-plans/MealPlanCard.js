@@ -244,18 +244,19 @@ const styles = (colors) =>
       marginLeft: 3,
     },
     mealplanTextContent: {
-      padding: 16,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
     },
     mealplanTitle: {
       fontSize: 18,
       fontWeight: 600,
       color: colors.text,
-      marginBottom: 6,
+      marginBottom: 1,
     },
     mealplanDescription: {
       fontSize: 14,
       color: colors.textSecondary,
-      marginBottom: 8,
+      marginBottom: 4,
       lineHeight: 20,
     },
     mealplanBottomRow: {

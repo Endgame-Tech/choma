@@ -25,10 +25,10 @@ const SubscriptionSuccessScreen = ({ route, navigation }) => {
   };
 
   const handleGoHome = () => {
-    // Navigate to the Main tab navigator and then to Home
+    // Navigate to Home screen
     navigation.reset({
       index: 0,
-      routes: [{ name: "Main", params: { screen: "Home" } }],
+      routes: [{ name: "Home" }],
     });
   };
 
