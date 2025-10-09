@@ -243,16 +243,24 @@ const LoginScreen = ({ navigation }) => {
 
       if (result?.success) {
         console.log("✅ Google Sign-In successful");
-        // Navigation will be handled by the auth context
+        showSuccess("Welcome!", `Signed in as ${result.user?.displayName || result.user?.email}`);
+        // Navigation will be handled by the auth context after token is stored
       } else if (result?.cancelled) {
         console.log("🚫 Google Sign-In cancelled by user");
+        // Don't show error for user cancellation
       } else {
         console.error("❌ Google Sign-In failed:", result?.error);
-        showError("Google Sign-In Failed", result?.error || "Unable to sign in with Google");
+        showError(
+          "Google Sign-In Failed",
+          result?.error || "Unable to sign in with Google. Please try again."
+        );
       }
     } catch (error) {
       console.error("❌ Google Sign-In Error:", error);
-      showError("Google Sign-In Error", "Something went wrong with Google sign-in");
+      showError(
+        "Sign-In Error",
+        "An unexpected error occurred. Please try again."
+      );
     }
   };
 

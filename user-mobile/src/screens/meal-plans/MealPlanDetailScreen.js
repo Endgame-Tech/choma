@@ -272,7 +272,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       Alert.alert("Rating Error", errorMessage, [{ text: "OK" }]);
     }
   };
-  const [expandedDay, setExpandedDay] = useState(null);
+  const [expandedDays, setExpandedDays] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [mealPlanDetails, setMealPlanDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -288,6 +288,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
   // Rating state
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [discountModalVisible, setDiscountModalVisible] = useState(false);
   const [existingRatings, setExistingRatings] = useState([]);
   const [ratingStats, setRatingStats] = useState(null);
   const [userRating, setUserRating] = useState(null);
@@ -924,13 +925,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   // Toggle day expansion with smooth animation - memoized
   const toggleDayExpansion = useCallback(
     (day) => {
-      const isExpanding = expandedDay !== day;
+      const isCurrentlyExpanded = expandedDays.includes(day);
+      const isExpanding = !isCurrentlyExpanded;
 
       if (!animationValues[day]) {
-        animationValues[day] = new Animated.Value(0);
+        animationValues[day] = new Animated.Value(isCurrentlyExpanded ? 1 : 0);
       }
 
-      setExpandedDay(isExpanding ? day : null);
+      setExpandedDays(prev => isExpanding ? [...prev, day] : prev.filter(d => d !== day));
 
       // Enhanced spring animation for smoother expand/collapse
       Animated.spring(animationValues[day], {
@@ -943,7 +945,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         restSpeedThreshold: 0.01,
       }).start();
     },
-    [expandedDay, animationValues]
+    [expandedDays, animationValues]
   );
 
   const renderDayCard = useCallback(
@@ -1015,7 +1017,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           key={dayData.day}
           style={[
             styles(colors).dayCard,
-            expandedDay === dayData.day && styles(colors).dayCardExpanded,
+            expandedDays.includes(dayData.day) && styles(colors).dayCardExpanded,
           ]}
         >
           <TouchableOpacity
@@ -1024,7 +1026,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             activeOpacity={0.9}
             accessibilityLabel={`${dayData.day} meals`}
             accessibilityHint={`Tap to ${
-              expandedDay === dayData.day ? "collapse" : "expand"
+              expandedDays.includes(dayData.day) ? "collapse" : "expand"
             } meal details for ${dayData.day}`}
             accessibilityRole="button"
             accessible={true}
@@ -1065,9 +1067,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 }),
               },
             ]}
-            pointerEvents={expandedDay === dayData.day ? "auto" : "none"}
+            pointerEvents={expandedDays.includes(dayData.day) ? "auto" : "none"}
           >
-            {expandedDay === dayData.day && (
+            {expandedDays.includes(dayData.day) && (
               <View style={styles(colors).dayContent}>
                 {/* Horizontal Meal Slider */}
                 <View style={styles(colors).mealSliderWrapper}>
@@ -1176,7 +1178,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           </Animated.View>
 
           {/* Collapsed preview (dynamic meal types based on available data) - Clickable to expand */}
-          {expandedDay !== dayData.day && (
+          {!expandedDays.includes(dayData.day) && (
             <TouchableOpacity
               style={styles(colors).mealPreviewContainer}
               onPress={() => toggleDayExpansion(dayData.day)}
@@ -1222,7 +1224,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     },
     [
       animationValues,
-      expandedDay,
+      expandedDays,
       toggleDayExpansion,
       openMealModal,
       colors,
@@ -1259,7 +1261,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             ]}
             onPress={() => {
               setSelectedWeek(week);
-              setExpandedDay(null);
+              setExpandedDays([]);
             }}
             accessibilityLabel={`Week ${week}`}
             accessibilityHint={`Tap to view meal plan for week ${week}`}
@@ -1279,7 +1281,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         ))}
       </View>
     );
-  }, [weeklyMealPlan, selectedWeek, setSelectedWeek, setExpandedDay, colors]);
+  }, [weeklyMealPlan, selectedWeek, setSelectedWeek, setExpandedDays, colors]);
 
   const renderFeature = useCallback(
     (feature) => (
@@ -1299,6 +1301,29 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   );
 
   const weeklyMealPlan = getWeeklyMealPlan();
+
+  useEffect(() => {
+    if (weeklyMealPlan && weeklyMealPlan[selectedWeek]) {
+      const allDaysInWeek = weeklyMealPlan[selectedWeek]
+        .filter(
+          (dayData) =>
+            dayData.breakfast !== "Breakfast not specified" ||
+            dayData.lunch !== "Lunch not specified" ||
+            dayData.dinner !== "Dinner not specified"
+        )
+        .map((dayData) => dayData.day);
+
+      setExpandedDays(allDaysInWeek);
+
+      allDaysInWeek.forEach((day) => {
+        if (!animationValues[day]) {
+          animationValues[day] = new Animated.Value(1);
+        } else {
+          animationValues[day].setValue(1);
+        }
+      });
+    }
+  }, [weeklyMealPlan, selectedWeek]);
 
   if (loading) {
     return <MealPlanDetailSkeleton />;
@@ -1513,18 +1538,55 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <ActivityIndicator size="small" color={colors.primary} />
             ) : discountInfo && discountInfo.discountPercent > 0 ? (
               <>
-                <Text style={styles(colors).currentPrice}>
-                  ₦{discountInfo.discountedPrice.toLocaleString()}
-                </Text>
-                <Text style={styles(colors).originalPrice}>
-                  ₦{discountInfo.originalPrice.toLocaleString()}
-                </Text>
-                <View style={styles(colors).discountPill}>
-                  <CustomIcon name="gift" size={18} color={colors.primary} />
-                  <Text style={styles(colors).discountPillText}>
-                    Up to {discountInfo.discountPercent}% Off
-                  </Text>
-                </View>
+                {discountInfo.discountType === 'ad' ? (
+                  // Ad Discount: Show counter value struck through, original price as current
+                  <>
+                    <View style={styles(colors).priceRowWithInfo}>
+                      <Text style={styles(colors).originalPrice}>
+                        ₦{discountInfo.counterValue?.toLocaleString()}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setDiscountModalVisible(true)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <CustomIcon name="info-circle" size={18} color={colors.primary} />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles(colors).currentPrice}>
+                      ₦{discountInfo.originalPrice?.toLocaleString()}
+                    </Text>
+                    <View style={styles(colors).discountPill}>
+                      <CustomIcon name="gift" size={18} color={colors.primary} />
+                      <Text style={styles(colors).discountPillText}>
+                        {discountInfo.discountPercent}% Off
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  // Promo Discount: Show original price struck through, discounted price as current
+                  <>
+                    <View style={styles(colors).priceRowWithInfo}>
+                      <Text style={styles(colors).originalPrice}>
+                        ₦{discountInfo.originalPrice?.toLocaleString()}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setDiscountModalVisible(true)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <CustomIcon name="info-circle" size={18} color={colors.primary} />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles(colors).currentPrice}>
+                      ₦{discountInfo.discountedPrice?.toLocaleString()}
+                    </Text>
+                    <View style={styles(colors).discountPill}>
+                      <CustomIcon name="gift" size={18} color={colors.primary} />
+                      <Text style={styles(colors).discountPillText}>
+                        {discountInfo.discountPercent}% Off
+                      </Text>
+                    </View>
+                  </>
+                )}
               </>
             ) : (
               <Text style={styles(colors).currentPrice}>
@@ -2082,6 +2144,55 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         title="Rate this Meal Plan"
         description="Share your experience with this meal plan to help others make better choices"
       />
+
+      {/* Discount Info Modal */}
+      {discountInfo && discountInfo.discountPercent > 0 && (
+        <Modal
+          visible={discountModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDiscountModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles(colors).discountModalOverlay}
+            activeOpacity={1}
+            onPress={() => setDiscountModalVisible(false)}
+          >
+            <View style={styles(colors).discountModalContent}>
+              <View style={styles(colors).discountModalHeader}>
+                <CustomIcon name="gift" size={28} color={colors.primary} />
+                <Text style={styles(colors).discountModalTitle}>Discount Details</Text>
+              </View>
+              <View style={styles(colors).discountModalBody}>
+                <Text style={styles(colors).discountModalName}>
+                  {discountInfo.reason || 'Special Offer'}
+                </Text>
+                {discountInfo.eligibilityReason && (
+                  <Text style={styles(colors).discountModalDescription}>
+                    {discountInfo.eligibilityReason}
+                  </Text>
+                )}
+                <View style={styles(colors).discountModalBadge}>
+                  <Text style={styles(colors).discountModalBadgeText}>
+                    {discountInfo.discountPercent}% OFF
+                  </Text>
+                </View>
+                {discountInfo.isLimitedTime && discountInfo.validUntil && (
+                  <Text style={styles(colors).discountModalLimitedTime}>
+                    ⏰ Valid until {new Date(discountInfo.validUntil).toLocaleDateString()}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity
+                style={styles(colors).discountModalCloseButton}
+                onPress={() => setDiscountModalVisible(false)}
+              >
+                <Text style={styles(colors).discountModalCloseText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -2229,13 +2340,13 @@ const styles = (colors) =>
       alignItems: "center",
     },
     planInfo: {
-      padding: 20,
+      paddingHorizontal: 20,
     },
     planTitle: {
       fontSize: 24,
       fontWeight: "bold",
       color: colors.text,
-      marginBottom: 12,
+      marginBottom: 6,
     },
     planMeta: {
       flexDirection: "row",
@@ -2271,7 +2382,7 @@ const styles = (colors) =>
       fontSize: 16,
       color: colors.textSecondary,
       lineHeight: 24,
-      marginBottom: 20,
+      marginBottom: 10,
     },
     sizeSection: {
       marginBottom: 20,
@@ -3115,6 +3226,82 @@ const styles = (colors) =>
       fontWeight: 300,
       flexShrink: 1,
       minWidth: 0,
+    },
+    priceRowWithInfo: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginRight: 12,
+    },
+    // Discount Modal Styles
+    discountModalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    discountModalContent: {
+      backgroundColor: colors.background,
+      borderRadius: 24,
+      padding: 28,
+      width: "100%",
+      maxWidth: 420,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    discountModalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      marginBottom: 20,
+    },
+    discountModalTitle: {
+      fontSize: 22,
+      fontWeight: "bold",
+      color: colors.text,
+    },
+    discountModalBody: {
+      gap: 14,
+    },
+    discountModalName: {
+      fontSize: 20,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    discountModalDescription: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    discountModalBadge: {
+      backgroundColor: colors.primary + "15",
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      borderRadius: 14,
+      alignSelf: "flex-start",
+    },
+    discountModalBadgeText: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.primary,
+    },
+    discountModalLimitedTime: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontStyle: "italic",
+    },
+    discountModalCloseButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 14,
+      marginTop: 24,
+      alignItems: "center",
+    },
+    discountModalCloseText: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: colors.white,
     },
   });
 

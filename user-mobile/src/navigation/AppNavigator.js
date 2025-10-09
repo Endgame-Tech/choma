@@ -312,7 +312,7 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
               },
               cardStyleInterpolator:
                 CustomCardStyleInterpolators.forCircularReveal,
-              gestureEnabled: true,
+              gestureEnabled: false,
               gestureDirection: "horizontal",
               gestureResponseDistance: 150,
             }}
@@ -346,6 +346,7 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             options={{
               headerShown: false,
               ...ScreenTransitions.Checkout, // Modal transition
+              gestureEnabled: false, // Disable swipe down to dismiss
             }}
           />
           <Stack.Screen
@@ -468,6 +469,8 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             options={{
               headerShown: false,
               ...ScreenTransitions.Settings, // Modal transition
+              gestureEnabled: false,
+              
             }}
           />
           <Stack.Screen

@@ -159,12 +159,16 @@ exports.login = async (req, res) => {
     const [customer, activeSubscriptionsCheck] = await Promise.all([
       Customer.findOne({ email }).select("+password").lean(),
       // Pre-fetch subscription status to avoid second query
-      Customer.findOne({ email }).then(user => 
-        user ? Subscription.find({ 
-          userId: user._id,
-          status: { $in: ['active', 'paused'] }
-        }).limit(1).lean() : []
-      )
+      Customer.findOne({ email }).then((user) =>
+        user
+          ? Subscription.find({
+              userId: user._id,
+              status: { $in: ["active", "paused"] },
+            })
+              .limit(1)
+              .lean()
+          : []
+      ),
     ]);
 
     if (!customer) {
@@ -248,10 +252,12 @@ exports.getProfile = async (req, res) => {
     // Run customer and subscription queries in parallel for faster response
     const [customer, activeSubscriptions] = await Promise.all([
       Customer.findById(req.user.id).lean(), // Use lean() for faster queries
-      Subscription.find({ 
+      Subscription.find({
         userId: req.user.id,
-        status: { $in: ['active', 'paused'] }
-      }).limit(1).lean() // Use lean() for faster queries
+        status: { $in: ["active", "paused"] },
+      })
+        .limit(1)
+        .lean(), // Use lean() for faster queries
     ]);
 
     if (!customer) {
@@ -1493,7 +1499,6 @@ exports.logPrivacyAction = async (req, res) => {
   }
 };
 
-
 // ============= SOCIAL LOGIN CONTROLLERS =============
 
 // Google OAuth login
@@ -1513,26 +1518,42 @@ exports.googleLogin = async (req, res) => {
     if (idToken) {
       // Verify Google ID token
       const { OAuth2Client } = require("google-auth-library");
-      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-      
+      const client = new OAuth2Client();
+
+      // Multiple client IDs for different platforms
+      const WEB_CLIENT_ID =
+        "947042824831-225ncmrikk55nes8r8adqoa3hlh6s8ip.apps.googleusercontent.com";
+      const ANDROID_CLIENT_ID =
+        "947042824831-16c0m28m40bf5kafcpam3lefe92270mv.apps.googleusercontent.com";
+      const IOS_CLIENT_ID = "your-ios-client-id.apps.googleusercontent.com";
+
+      // Accepted audiences include web, android and ios client ids
+      const requiredAudiences = [
+        WEB_CLIENT_ID,
+        ANDROID_CLIENT_ID,
+        IOS_CLIENT_ID,
+      ].filter(Boolean);
+
       const ticket = await client.verifyIdToken({
         idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: requiredAudiences,
       });
-      
+
       googleUser = ticket.getPayload();
     } else if (accessToken) {
       // Verify Google access token by calling Google API
       const fetch = require("node-fetch");
-      const response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`);
-      
+      const response = await fetch(
+        `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`
+      );
+
       if (!response.ok) {
         return res.status(401).json({
           success: false,
           message: "Invalid Google access token",
         });
       }
-      
+
       googleUser = await response.json();
     }
 
@@ -1544,12 +1565,16 @@ exports.googleLogin = async (req, res) => {
     }
 
     // Check if user exists with this email
-    let customer = await Customer.findOne({ email: googleUser.email }).select("+password");
+    let customer = await Customer.findOne({ email: googleUser.email }).select(
+      "+password"
+    );
 
     if (customer) {
       // User exists - link Google account if not already linked
-      const existingGoogle = customer.socialProviders.find(p => p.provider === "google");
-      
+      const existingGoogle = customer.socialProviders.find(
+        (p) => p.provider === "google"
+      );
+
       if (!existingGoogle) {
         customer.socialProviders.push({
           provider: "google",
@@ -1558,7 +1583,7 @@ exports.googleLogin = async (req, res) => {
           name: googleUser.name,
           profilePicture: googleUser.picture,
         });
-        
+
         customer.accountType = customer.password ? "hybrid" : "social";
         await customer.save();
       }
@@ -1571,13 +1596,15 @@ exports.googleLogin = async (req, res) => {
         email: googleUser.email,
         profileImage: googleUser.picture,
         accountType: "social",
-        socialProviders: [{
-          provider: "google",
-          providerId: googleUser.sub || googleUser.id,
-          email: googleUser.email,
-          name: googleUser.name,
-          profilePicture: googleUser.picture,
-        }],
+        socialProviders: [
+          {
+            provider: "google",
+            providerId: googleUser.sub || googleUser.id,
+            email: googleUser.email,
+            name: googleUser.name,
+            profilePicture: googleUser.picture,
+          },
+        ],
       });
     }
 
@@ -1605,7 +1632,6 @@ exports.googleLogin = async (req, res) => {
         accountType: customer.accountType,
       },
     });
-
   } catch (error) {
     console.error("Google login error:", error);
     res.status(500).json({
@@ -1630,31 +1656,38 @@ exports.facebookLogin = async (req, res) => {
 
     // Verify Facebook access token
     const fetch = require("node-fetch");
-    const response = await fetch(`https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,first_name,last_name,picture`);
-    
+    const response = await fetch(
+      `https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,first_name,last_name,picture`
+    );
+
     if (!response.ok) {
       return res.status(401).json({
         success: false,
         message: "Invalid Facebook access token",
       });
     }
-    
+
     const facebookUser = await response.json();
 
     if (!facebookUser || !facebookUser.email) {
       return res.status(401).json({
         success: false,
-        message: "Failed to get user information from Facebook or email not provided",
+        message:
+          "Failed to get user information from Facebook or email not provided",
       });
     }
 
     // Check if user exists with this email
-    let customer = await Customer.findOne({ email: facebookUser.email }).select("+password");
+    let customer = await Customer.findOne({ email: facebookUser.email }).select(
+      "+password"
+    );
 
     if (customer) {
       // User exists - link Facebook account if not already linked
-      const existingFacebook = customer.socialProviders.find(p => p.provider === "facebook");
-      
+      const existingFacebook = customer.socialProviders.find(
+        (p) => p.provider === "facebook"
+      );
+
       if (!existingFacebook) {
         customer.socialProviders.push({
           provider: "facebook",
@@ -1663,7 +1696,7 @@ exports.facebookLogin = async (req, res) => {
           name: facebookUser.name,
           profilePicture: facebookUser.picture?.data?.url,
         });
-        
+
         customer.accountType = customer.password ? "hybrid" : "social";
         await customer.save();
       }
@@ -1676,13 +1709,15 @@ exports.facebookLogin = async (req, res) => {
         email: facebookUser.email,
         profileImage: facebookUser.picture?.data?.url,
         accountType: "social",
-        socialProviders: [{
-          provider: "facebook",
-          providerId: facebookUser.id,
-          email: facebookUser.email,
-          name: facebookUser.name,
-          profilePicture: facebookUser.picture?.data?.url,
-        }],
+        socialProviders: [
+          {
+            provider: "facebook",
+            providerId: facebookUser.id,
+            email: facebookUser.email,
+            name: facebookUser.name,
+            profilePicture: facebookUser.picture?.data?.url,
+          },
+        ],
       });
     }
 
@@ -1710,7 +1745,6 @@ exports.facebookLogin = async (req, res) => {
         accountType: customer.accountType,
       },
     });
-
   } catch (error) {
     console.error("Facebook login error:", error);
     res.status(500).json({

@@ -70,7 +70,6 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "scheme": "choma",
     "extra": {
       "eas": {
         "projectId": "aaa62329-cbac-4b68-93b1-ec10a2ef1be2"

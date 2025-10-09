@@ -836,7 +836,7 @@ const styles = (colors) =>
       lineHeight: 18,
     },
     bottomPadding: {
-      height: 120,
+      height: 10,
     },
   });
 

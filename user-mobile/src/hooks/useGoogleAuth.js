@@ -1,105 +1,178 @@
-import { useState, useEffect } from "react";
-import * as Google from "expo-auth-session/providers/google";
-import { makeRedirectUri } from "expo-auth-session";
+import { useState } from "react";
+import {
+  GoogleSignin,
+  isErrorWithCode,
+  isSuccessResponse,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
 import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { firebaseAuth } from "../../firebase.config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
+import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export const useGoogleAuth = () => {
-  const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // Use Firebase redirect URI for all platforms
-  const redirectUri = "https://getchoma-bca76.firebaseapp.com/__/auth/handler";
-
-  console.log("🔍 Platform:", Platform.OS);
-  console.log("🔍 Using redirectUri:", redirectUri);
-
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: Platform.select({
-      ios: "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com", // TODO: Replace with your iOS client ID
-      android:
-        "947042824831-16c0m28m40bf5kafcpam3lefe92270mv.apps.googleusercontent.com",
-      web: "947042824831-3losbgjvcqitipahf9p4ap1f27sipa0b.apps.googleusercontent.com",
-    }),
-    redirectUri,
-  });
-
-  useEffect(() => {
-    handleGoogleResponse();
-  }, [response]);
-
-  const handleGoogleResponse = async () => {
-    if (response?.type === "success") {
-      setLoading(true);
-      try {
-        const { id_token } = response.params;
-        const credential = GoogleAuthProvider.credential(id_token);
-
-        const result = await signInWithCredential(firebaseAuth, credential);
-        const user = result.user;
-
-        // Store user token
-        await AsyncStorage.setItem(
-          "userToken",
-          user.accessToken || "google_signed_in"
-        );
-
-        // Set user info
-        const userDetails = {
-          uid: user.uid,
-          displayName: user.displayName,
-          email: user.email,
-          photoURL: user.photoURL,
-          accessToken: user.accessToken,
-        };
-
-        setUserInfo(userDetails);
-
-        console.log("✅ Google Sign-In successful:", userDetails.displayName);
-        return { success: true, user: userDetails };
-      } catch (error) {
-        console.error("❌ Google Sign-In Error:", error);
-        return { success: false, error: error.message };
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (response?.type === "cancel") {
-      console.log("🚫 Google Sign-In cancelled");
-      return { success: false, cancelled: true };
-    }
-
-    return null;
-  };
+  const { setUser, setIsAuthenticated, setIsLoading } = useAuth();
 
   const signInWithGoogle = async () => {
+    if (loading) {
+      console.log("⏳ Google Sign-In already in progress");
+      return { success: false, error: "Authentication already in progress" };
+    }
+
     setLoading(true);
+    setIsLoading(true);
+
     try {
-      console.log("🔘 Calling promptAsync...");
-      console.log("🔘 promptAsync result:", promptAsync);
-      console.log("🔘 request:", request);
-      console.log("🔍 OAuth Request Details:", {
-        clientId: request?.clientId,
-        scopes: request?.scopes,
-        redirectUri: request?.redirectUri,
-      });
-      const result = await promptAsync();
-      return result;
+      console.log("� Starting Google Sign-In...");
+
+      // Check if Google Play Services is available
+      await GoogleSignin.hasPlayServices();
+
+      // Sign in with Google
+      const response = await GoogleSignin.signIn();
+
+      if (isSuccessResponse(response)) {
+        const { data: userInfo } = response;
+        console.log("� Google Sign-In successful, processing tokens...");
+
+        // Get the ID token for Firebase authentication
+        const { idToken } = userInfo;
+
+        if (!idToken) {
+          throw new Error("No ID token received from Google");
+        }
+
+        console.log("🔐 Signing in with Firebase...");
+
+        // Create Firebase credential and sign in
+        const firebaseCredential = GoogleAuthProvider.credential(idToken);
+        const result = await signInWithCredential(
+          firebaseAuth,
+          firebaseCredential
+        );
+        const firebaseUser = result.user;
+
+        console.log("✅ Firebase authentication successful");
+        console.log("📤 Sending to backend...");
+
+        // Debug: Log what tokens we have
+        console.log("🔍 Available tokens:", {
+          hasIdToken: !!idToken,
+          hasAccessToken: !!userInfo.accessToken,
+          idTokenPreview: idToken ? idToken.substring(0, 50) + "..." : "null",
+          accessTokenPreview: userInfo.accessToken
+            ? userInfo.accessToken.substring(0, 50) + "..."
+            : "null",
+        });
+
+        // Send to your backend for user creation/login
+        const backendResponse = await api.post("/auth/social/google", {
+          idToken: idToken || null,
+          accessToken: userInfo.accessToken || null,
+        });
+
+        // Debug: Log the complete backend response
+        console.log("🔍 Backend response:", {
+          success: backendResponse.success,
+          hasToken: !!backendResponse.token,
+          hasCustomer: !!backendResponse.customer,
+          keys: Object.keys(backendResponse),
+          response: JSON.stringify(backendResponse, null, 2),
+        });
+
+        // Handle nested response structure - backend returns data nested in 'data' property
+        const responseData = backendResponse.data || backendResponse;
+
+        if (backendResponse.success && responseData.token) {
+          // Store your app's auth token (not Firebase token)
+          const appToken = responseData.token;
+          await AsyncStorage.setItem("userToken", appToken);
+
+          // Store user data - backend returns customer object
+          const userData = responseData.customer;
+          await AsyncStorage.setItem("userData", JSON.stringify(userData));
+
+          const userDetails = {
+            ...userData,
+            uid: firebaseUser.uid,
+            displayName: userData.fullName || firebaseUser.displayName,
+            email: userData.email || firebaseUser.email,
+            photoURL: userData.profileImage || firebaseUser.photoURL,
+          };
+
+          // Update the main AuthContext state
+          setUser(userDetails);
+          setIsAuthenticated(true);
+
+          console.log(
+            "✅ Complete authentication successful:",
+            userDetails.displayName
+          );
+
+          return {
+            success: true,
+            user: userDetails,
+            token: appToken,
+          };
+        } else {
+          throw new Error(
+            responseData.message || "Backend authentication failed"
+          );
+        }
+      } else {
+        console.log("🚫 Google Sign-In cancelled by user");
+        return { success: false, cancelled: true };
+      }
     } catch (error) {
-      console.error("❌ Error initiating Google Sign-In:", error);
+      console.error("❌ Google Sign-In Error:", error);
+
+      let errorMessage = "Authentication failed";
+
+      if (isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.SIGN_IN_CANCELLED:
+            errorMessage = "Sign-in was cancelled by user";
+            console.log("🚫 Sign-in cancelled by user");
+            return { success: false, cancelled: true };
+          case statusCodes.IN_PROGRESS:
+            errorMessage = "Sign-in operation is already in progress";
+            break;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            errorMessage = "Google Play Services is not available or outdated";
+            break;
+          default:
+            errorMessage = error.message || "An unknown error occurred";
+        }
+      } else {
+        errorMessage =
+          error.response?.data?.message || error.message || errorMessage;
+      }
+
+      return { success: false, error: errorMessage };
+    } finally {
       setLoading(false);
-      return { success: false, error: error.message };
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
+      // Sign out from Google
+      await GoogleSignin.signOut();
+
+      // Sign out from Firebase
       await firebaseAuth.signOut();
+
+      // Clear stored data
       await AsyncStorage.removeItem("userToken");
-      setUserInfo(null);
+      await AsyncStorage.removeItem("userData");
+
+      // Update AuthContext state
+      setUser(null);
+      setIsAuthenticated(false);
+
       console.log("✅ Signed out successfully");
     } catch (error) {
       console.error("❌ Sign out error:", error);
@@ -107,10 +180,8 @@ export const useGoogleAuth = () => {
   };
 
   return {
-    userInfo,
     loading,
     signInWithGoogle,
     signOut,
-    isSignedIn: !!userInfo,
   };
 };

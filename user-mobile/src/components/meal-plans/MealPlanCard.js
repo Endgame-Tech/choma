@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity, Image, Modal } from "react-native";
 import CustomIcon from "../ui/CustomIcon";
 import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
@@ -16,6 +16,7 @@ const MealPlanCard = ({
 }) => {
   const { colors } = useTheme();
   const [imageError, setImageError] = useState(false);
+  const [discountModalVisible, setDiscountModalVisible] = useState(false);
 
   const imageSource =
     imageError || !plan.image
@@ -132,29 +133,93 @@ const MealPlanCard = ({
 
         <View style={styles(colors).mealplanBottomRow}>
           <View style={styles(colors).mealplanPriceContainer}>
-            <View style={styles(colors).priceRatingRow}>
-              <Text style={styles(colors).mealplanPrice}>
-                ₦{plan.price?.toLocaleString()}
-              </Text>
-
-              {/* Show average rating beside price */}
-              {(plan.rating || plan.averageRating || plan.avgRating) && (
-                <View style={styles(colors).ratingDisplay}>
-                  <CustomIcon
-                    name="star-filled"
-                    size={12}
-                    color={colors.rating || colors.primary}
-                  />
-                  <Text style={styles(colors).ratingText}>
-                    {(
-                      plan.rating ||
-                      plan.averageRating ||
-                      plan.avgRating
-                    ).toFixed(1)}
-                  </Text>
-                </View>
-              )}
-            </View>
+            {hasDiscount ? (
+              <View style={styles(colors).priceWithDiscountContainer}>
+                {planDiscount.discountType === 'ad' ? (
+                  // Ad Discount: Show counter value struck through, original price as current
+                  <>
+                    <View style={styles(colors).priceRow}>
+                      <Text style={styles(colors).strikethroughPrice}>
+                        ₦{planDiscount.counterValue?.toLocaleString() || plan.price?.toLocaleString()}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setDiscountModalVisible(true)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <CustomIcon name="info-circle" size={14} color={colors.primary} />
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles(colors).priceRatingRow}>
+                      <Text style={styles(colors).mealplanPrice}>
+                        ₦{planDiscount.originalPrice?.toLocaleString() || plan.price?.toLocaleString()}
+                      </Text>
+                      {(plan.rating || plan.averageRating || plan.avgRating) && (
+                        <View style={styles(colors).ratingDisplay}>
+                          <CustomIcon
+                            name="star-filled"
+                            size={12}
+                            color={colors.rating || colors.primary}
+                          />
+                          <Text style={styles(colors).ratingText}>
+                            {(plan.rating || plan.averageRating || plan.avgRating).toFixed(1)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </>
+                ) : (
+                  // Promo Discount: Show original price struck through, discounted price as current
+                  <>
+                    <View style={styles(colors).priceRow}>
+                      <Text style={styles(colors).strikethroughPrice}>
+                        ₦{planDiscount.originalPrice?.toLocaleString() || plan.price?.toLocaleString()}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setDiscountModalVisible(true)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <CustomIcon name="info-circle" size={14} color={colors.primary} />
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles(colors).priceRatingRow}>
+                      <Text style={styles(colors).mealplanPrice}>
+                        ₦{planDiscount.discountedPrice?.toLocaleString() || plan.price?.toLocaleString()}
+                      </Text>
+                      {(plan.rating || plan.averageRating || plan.avgRating) && (
+                        <View style={styles(colors).ratingDisplay}>
+                          <CustomIcon
+                            name="star-filled"
+                            size={12}
+                            color={colors.rating || colors.primary}
+                          />
+                          <Text style={styles(colors).ratingText}>
+                            {(plan.rating || plan.averageRating || plan.avgRating).toFixed(1)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </>
+                )}
+              </View>
+            ) : (
+              <View style={styles(colors).priceRatingRow}>
+                <Text style={styles(colors).mealplanPrice}>
+                  ₦{plan.price?.toLocaleString()}
+                </Text>
+                {(plan.rating || plan.averageRating || plan.avgRating) && (
+                  <View style={styles(colors).ratingDisplay}>
+                    <CustomIcon
+                      name="star-filled"
+                      size={12}
+                      color={colors.rating || colors.primary}
+                    />
+                    <Text style={styles(colors).ratingText}>
+                      {(plan.rating || plan.averageRating || plan.avgRating).toFixed(1)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
 
           {/* Rating Button */}
@@ -169,6 +234,44 @@ const MealPlanCard = ({
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Discount Info Modal */}
+        {hasDiscount && (
+          <Modal
+            visible={discountModalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setDiscountModalVisible(false)}
+          >
+            <TouchableOpacity
+              style={styles(colors).modalOverlay}
+              activeOpacity={1}
+              onPress={() => setDiscountModalVisible(false)}
+            >
+              <View style={styles(colors).modalContent}>
+                <View style={styles(colors).modalHeader}>
+                  <CustomIcon name="gift" size={24} color={colors.primary} />
+                  <Text style={styles(colors).modalTitle}>Discount Details</Text>
+                </View>
+                <View style={styles(colors).modalBody}>
+                  <Text style={styles(colors).modalDiscountName}>{planDiscount.reason || 'Special Offer'}</Text>
+                  {planDiscount.eligibilityReason && (
+                    <Text style={styles(colors).modalDescription}>{planDiscount.eligibilityReason}</Text>
+                  )}
+                  <View style={styles(colors).modalDiscountBadge}>
+                    <Text style={styles(colors).modalDiscountText}>{planDiscount.discountPercent}% OFF</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles(colors).modalCloseButton}
+                  onPress={() => setDiscountModalVisible(false)}
+                >
+                  <Text style={styles(colors).modalCloseText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -319,6 +422,85 @@ const styles = (colors) =>
       opacity: 0.8,
       color: colors.text,
       fontWeight: "700",
+    },
+    priceWithDiscountContainer: {
+      gap: 2,
+    },
+    priceRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    strikethroughPrice: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textDecorationLine: "line-through",
+      fontWeight: "500",
+    },
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    modalContent: {
+      backgroundColor: colors.background,
+      borderRadius: 20,
+      padding: 24,
+      width: "100%",
+      maxWidth: 400,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 16,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: colors.text,
+    },
+    modalBody: {
+      gap: 12,
+    },
+    modalDiscountName: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    modalDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    modalDiscountBadge: {
+      backgroundColor: colors.primary + "15",
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 12,
+      alignSelf: "flex-start",
+    },
+    modalDiscountText: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: colors.primary,
+    },
+    modalCloseButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 12,
+      borderRadius: 12,
+      marginTop: 20,
+      alignItems: "center",
+    },
+    modalCloseText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.white,
     },
   });
 export default MealPlanCard;

@@ -4,6 +4,16 @@ import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { LogBox } from "react-native";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+
+GoogleSignin.configure({
+  // Use only Web Client ID for cross-platform compatibility
+  webClientId:
+    "947042824831-225ncmrikk55nes8r8adqoa3hlh6s8ip.apps.googleusercontent.com", // Your web client ID
+  offlineAccess: true, // Enable to get refresh token
+  hostedDomain: "", // specify a hosted domain if you want to restrict to specific domain
+  forceCodeForRefreshToken: true, // [Android] related to `serverAuthCode`, read the docs link below *.
+});
 
 // Suppress development warnings in Expo Go
 if (__DEV__) {
@@ -40,8 +50,6 @@ import { GoogleAuthProvider } from "./src/context/GoogleAuthContext";
 import { loadFonts } from "./src/utils/fontLoader";
 import { applyDefaultFont } from "./src/utils/fontUtils";
 
-
-
 // Navigation
 import AppNavigator from "./src/navigation/AppNavigator";
 import OnboardingScreen from "./src/screens/onboarding/OnboardingScreen";
@@ -74,7 +82,6 @@ export default function App() {
   useEffect(() => {
     initializeApp();
   }, []);
-    
   const initializeApp = async () => {
     try {
       // Load fonts first
@@ -244,29 +251,29 @@ export default function App() {
               <GoogleAuthProvider>
                 <AuthProvider>
                   <CartProvider>
-                  <ToastProvider>
-                    {({ showNotificationToast }) => (
-                      <NotificationProvider
-                        showToastNotification={showNotificationToast}
-                      >
-                        <BookmarkProvider>
-                          <ThemeProvider>
-                            <AlertProvider>
-                              <NavigationContainer ref={navigationRef}>
-                                <StatusBar style="auto" />
-                                <AppNavigator
-                                  isFirstLaunch={isFirstLaunch}
-                                  onOnboardingComplete={() =>
-                                    setIsFirstLaunch(false)
-                                  }
-                                />
-                              </NavigationContainer>
-                            </AlertProvider>
-                          </ThemeProvider>
-                        </BookmarkProvider>
-                      </NotificationProvider>
-                    )}
-                  </ToastProvider>
+                    <ToastProvider>
+                      {({ showNotificationToast }) => (
+                        <NotificationProvider
+                          showToastNotification={showNotificationToast}
+                        >
+                          <BookmarkProvider>
+                            <ThemeProvider>
+                              <AlertProvider>
+                                <NavigationContainer ref={navigationRef}>
+                                  <StatusBar style="auto" />
+                                  <AppNavigator
+                                    isFirstLaunch={isFirstLaunch}
+                                    onOnboardingComplete={() =>
+                                      setIsFirstLaunch(false)
+                                    }
+                                  />
+                                </NavigationContainer>
+                              </AlertProvider>
+                            </ThemeProvider>
+                          </BookmarkProvider>
+                        </NotificationProvider>
+                      )}
+                    </ToastProvider>
                   </CartProvider>
                 </AuthProvider>
               </GoogleAuthProvider>

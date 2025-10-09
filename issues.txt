@@ -1,0 +1,40 @@
+2025-10-09 12:50:52] DEBUG [WVegM3cSI8] Closing connection to the server using "end"
+[2025-10-09 12:50:52] INFO  [WVegM3cSI8] Connection closed
+✅ Connected to MongoDB Atlas
+🗄️ Database: chomaDev
+13:50:53 [info]: Database connected successfully {
+  "service": "choma-backend"
+}
+Socket.IO initialized for real-time notifications
+⏭️ Keep-alive service disabled (not in production or no URL)
+🚀 Server started on port 5001
+📡 Environment: development
+🔗 API Base URL: http://localhost:5001/api
+🔗 Network API URL: http://10.55.154.104:5001/api
+🔌 WebSocket URL: ws://localhost:5001/socket.io
+🔌 Network WebSocket URL: ws://10.55.154.104:5001/socket.io
+✅ Server is listening on all interfaces (0.0.0.0)
+💻 For mobile devices, use: http://10.55.154.104:5001/api
+📱 Mobile connection test: http://10.55.154.104:5001/health
+13:51:20 [http]: Incoming Request {
+  "service": "choma-backend",
+  "id": "6sqx12es4",
+  "method": "POST",
+  "url": "/api/auth/social/google",
+  "ip": "10.55.154.151",
+  "userAgent": "okhttp/4.12.0"
+}
+Google login error: Error: Wrong recipient, payload audience != requiredAudience
+    at OAuth2Client.verifySignedJwtWithCertsAsync (C:\dev\choma\backend\node_modules\google-auth-library\build\src\auth\oauth2client.js:787:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async OAuth2Client.verifyIdTokenAsync (C:\dev\choma\backend\node_modules\google-auth-library\build\src\auth\oauth2client.js:541:23)
+    at async exports.googleLogin (C:\dev\choma\backend\controllers\authController.js:1525:22)
+13:51:22 [http]: Request Completed {
+  "service": "choma-backend",
+  "id": "6sqx12es4",
+  "method": "POST",
+  "url": "/api/auth/social/google",
+  "statusCode": 500,
+  "duration": "1810ms",
+  "contentLength": "122"
+}
