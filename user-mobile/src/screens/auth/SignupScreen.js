@@ -1308,7 +1308,7 @@ const styles = createStylesWithDMSans({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f8f8",
+    // backgroundColor: "#f8f8f8",
     borderRadius: 25,
     marginBottom: 16,
     paddingHorizontal: 20,
@@ -1398,7 +1398,7 @@ const styles = createStylesWithDMSans({
   locationButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f8f8",
+    // backgroundColor: "#f8f8f8",
     borderRadius: 25,
     paddingHorizontal: 16,
     paddingVertical: 12,

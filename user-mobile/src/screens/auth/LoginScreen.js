@@ -243,7 +243,10 @@ const LoginScreen = ({ navigation }) => {
 
       if (result?.success) {
         console.log("✅ Google Sign-In successful");
-        showSuccess("Welcome!", `Signed in as ${result.user?.displayName || result.user?.email}`);
+        showSuccess(
+          "Welcome!",
+          `Signed in as ${result.user?.displayName || result.user?.email}`
+        );
         // Navigation will be handled by the auth context after token is stored
       } else if (result?.cancelled) {
         console.log("🚫 Google Sign-In cancelled by user");
@@ -332,7 +335,10 @@ const LoginScreen = ({ navigation }) => {
 
             {/* Continue With Google Button */}
             <TouchableOpacity
-              style={[styles.googleButton, googleLoading && styles.googleButtonDisabled]}
+              style={[
+                styles.googleButton,
+                googleLoading && styles.googleButtonDisabled,
+              ]}
               onPress={handleGoogleSignIn}
               disabled={googleLoading}
             >
@@ -344,7 +350,9 @@ const LoginScreen = ({ navigation }) => {
                     source={require("../../../assets/Google Icon.png")}
                     style={styles.googleIcon}
                   />
-                  <Text style={styles.googleButtonText}>Continue With Google</Text>
+                  <Text style={styles.googleButtonText}>
+                    Continue With Google
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -442,6 +450,14 @@ const LoginScreen = ({ navigation }) => {
                 </View>
               )}
 
+              {/* Forgot Password */}
+              <TouchableOpacity
+                style={styles.forgotPasswordContainer}
+                onPress={() => navigation.navigate("ForgotPassword")}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot Password</Text>
+              </TouchableOpacity>
+
               {/* Sign In Button */}
               <TouchableOpacity
                 style={[
@@ -456,14 +472,6 @@ const LoginScreen = ({ navigation }) => {
                 ) : (
                   <Text style={styles.loginButtonText}>Sign In</Text>
                 )}
-              </TouchableOpacity>
-
-              {/* Forgot Password */}
-              <TouchableOpacity
-                style={styles.forgotPasswordContainer}
-                onPress={() => navigation.navigate("ForgotPassword")}
-              >
-                <Text style={styles.forgotPasswordText}>Forgot Password</Text>
               </TouchableOpacity>
 
               {/* Sign Up Link */}
@@ -548,12 +556,13 @@ const styles = createStylesWithDMSans({
   formContent: {
     flexGrow: 1,
     paddingHorizontal: 30,
-    paddingBottom: 70,
+    paddingBottom: Platform.OS === "ios" ? 40 : 60, // Extra padding for navigation bar
     justifyContent: "center",
   },
   welcomeContainer: {
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 10,
+    marginTop: 10,
   },
   welcomeTitle: {
     fontSize: 24,
@@ -573,7 +582,7 @@ const styles = createStylesWithDMSans({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    // marginBottom: 20,
     marginHorizontal: 30,
     borderWidth: 1,
     borderColor: "#e8e8e8",
@@ -622,7 +631,7 @@ const styles = createStylesWithDMSans({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f8f8",
+    // backgroundColor: "#f8f8f8",
     borderRadius: 25,
     marginBottom: 16,
     paddingHorizontal: 20,
@@ -672,12 +681,14 @@ const styles = createStylesWithDMSans({
     fontWeight: "600",
   },
   forgotPasswordContainer: {
-    alignItems: "center",
-    marginBottom: 20,
+    alignItems: "flex-end",
+    marginBottom: 5,
+    marginTop: -15,
+    paddingHorizontal: 10,
   },
   forgotPasswordText: {
-    color: "#E6B17A",
-    fontSize: 14,
+    color: "#1b1b1b",
+    fontSize: 12,
     fontWeight: "500",
   },
   signupContainer: {
@@ -694,9 +705,6 @@ const styles = createStylesWithDMSans({
     color: "#E6B17A",
     fontSize: 14,
     fontWeight: "600",
-  },
-  bottomPadding: {
-    height: 30,
   },
   errorContainer: {
     flexDirection: "row",
@@ -723,6 +731,9 @@ const styles = createStylesWithDMSans({
     color: "#dc3545",
     fontSize: 12,
     fontWeight: "500",
+  },
+  bottomPadding: {
+    height: Platform.OS === "ios" ? 30 : 50, // Extra space for navigation bar
   },
 });
 

@@ -680,12 +680,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             {};
 
           // Debug: Log the dayData structure to understand nutrition data
-          console.log(`🔍 DEBUG: Day data for ${fullDay}:`, {
-            day: fullDay,
-            breakfast: dayData.breakfast,
-            lunch: dayData.lunch,
-            dinner: dayData.dinner,
-          });
+          // Commented out to prevent excessive logging on every render
+          // console.log(`🔍 DEBUG: Day data for ${fullDay}:`, {
+          //   day: fullDay,
+          //   breakfast: dayData.breakfast,
+          //   lunch: dayData.lunch,
+          //   dinner: dayData.dinner,
+          // });
 
           weeklyMealPlan[weekNumber].push({
             day: fullDay,
@@ -932,7 +933,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         animationValues[day] = new Animated.Value(isCurrentlyExpanded ? 1 : 0);
       }
 
-      setExpandedDays(prev => isExpanding ? [...prev, day] : prev.filter(d => d !== day));
+      setExpandedDays((prev) =>
+        isExpanding ? [...prev, day] : prev.filter((d) => d !== day)
+      );
 
       // Enhanced spring animation for smoother expand/collapse
       Animated.spring(animationValues[day], {
@@ -1017,7 +1020,8 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
           key={dayData.day}
           style={[
             styles(colors).dayCard,
-            expandedDays.includes(dayData.day) && styles(colors).dayCardExpanded,
+            expandedDays.includes(dayData.day) &&
+              styles(colors).dayCardExpanded,
           ]}
         >
           <TouchableOpacity
@@ -1032,24 +1036,26 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             accessible={true}
           >
             <Text style={styles(colors).dayName}>{dayData.day}</Text>
-            <Animated.View
-              style={{
-                transform: [
-                  {
-                    rotate: animationValue.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["0deg", "180deg"],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <CustomIcon
-                name="chevron-down"
-                size={20}
-                color={colors.textSecondary}
-              />
-            </Animated.View>
+            {!expandedDays.includes(dayData.day) && (
+              <Animated.View
+                style={{
+                  transform: [
+                    {
+                      rotate: animationValue.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0deg", "180deg"],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <CustomIcon
+                  name="chevron-down"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </Animated.View>
+            )}
           </TouchableOpacity>
 
           {/* Animated expandable content - restructured for better touch handling */}
@@ -1092,7 +1098,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                               styles(colors).mealSliderCardSingle,
                           ]}
                           onPress={() => openMealModal(meals, index)}
-                          activeOpacity={0.9}
+                          activeOpacity={1}
                           accessibilityLabel={`${item.label}: ${item.name}`}
                           accessibilityHint={`Tap to view details about ${item.label}`}
                           accessibilityRole="button"
@@ -1538,7 +1544,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <ActivityIndicator size="small" color={colors.primary} />
             ) : discountInfo && discountInfo.discountPercent > 0 ? (
               <>
-                {discountInfo.discountType === 'ad' ? (
+                {discountInfo.discountType === "ad" ? (
                   // Ad Discount: Show counter value struck through, original price as current
                   <>
                     <View style={styles(colors).priceRowWithInfo}>
@@ -1549,14 +1555,22 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                         onPress={() => setDiscountModalVisible(true)}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
-                        <CustomIcon name="info-circle" size={18} color={colors.primary} />
+                        <CustomIcon
+                          name="info"
+                          size={18}
+                          color={colors.primary}
+                        />
                       </TouchableOpacity>
                     </View>
                     <Text style={styles(colors).currentPrice}>
                       ₦{discountInfo.originalPrice?.toLocaleString()}
                     </Text>
                     <View style={styles(colors).discountPill}>
-                      <CustomIcon name="gift" size={18} color={colors.primary} />
+                      <CustomIcon
+                        name="gift"
+                        size={18}
+                        color={colors.primary}
+                      />
                       <Text style={styles(colors).discountPillText}>
                         {discountInfo.discountPercent}% Off
                       </Text>
@@ -1573,14 +1587,22 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                         onPress={() => setDiscountModalVisible(true)}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
-                        <CustomIcon name="info-circle" size={18} color={colors.primary} />
+                        <CustomIcon
+                          name="info"
+                          size={18}
+                          color={colors.primary}
+                        />
                       </TouchableOpacity>
                     </View>
                     <Text style={styles(colors).currentPrice}>
                       ₦{discountInfo.discountedPrice?.toLocaleString()}
                     </Text>
                     <View style={styles(colors).discountPill}>
-                      <CustomIcon name="gift" size={18} color={colors.primary} />
+                      <CustomIcon
+                        name="gift"
+                        size={18}
+                        color={colors.primary}
+                      />
                       <Text style={styles(colors).discountPillText}>
                         {discountInfo.discountPercent}% Off
                       </Text>
@@ -1886,16 +1908,17 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               ratingStats?.data?.overallStats?.averageRating || 0;
             const shouldShowRatings = hasRatingStats && totalRatings > 0;
 
-            console.log("🎯 Rating display condition check:");
-            console.log("   hasRatingStats:", hasRatingStats);
-            console.log("   totalRatings:", totalRatings);
-            console.log("   shouldShowRatings:", shouldShowRatings);
-            console.log("   existingRatings.length:", existingRatings.length);
+            // Commented out to prevent excessive logging on every render
+            // console.log("🎯 Rating display condition check:");
+            // console.log("   hasRatingStats:", hasRatingStats);
+            // console.log("   totalRatings:", totalRatings);
+            // console.log("   shouldShowRatings:", shouldShowRatings);
+            // console.log("   existingRatings.length:", existingRatings.length);
 
             // Show ratings if we have rating stats OR if we have existing ratings
             const finalShouldShow =
               shouldShowRatings || existingRatings.length > 0;
-            console.log("   finalShouldShow:", finalShouldShow);
+            // console.log("   finalShouldShow:", finalShouldShow);
 
             return finalShouldShow;
           })() ? (
@@ -2161,11 +2184,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             <View style={styles(colors).discountModalContent}>
               <View style={styles(colors).discountModalHeader}>
                 <CustomIcon name="gift" size={28} color={colors.primary} />
-                <Text style={styles(colors).discountModalTitle}>Discount Details</Text>
+                <Text style={styles(colors).discountModalTitle}>
+                  Discount Details
+                </Text>
               </View>
               <View style={styles(colors).discountModalBody}>
                 <Text style={styles(colors).discountModalName}>
-                  {discountInfo.reason || 'Special Offer'}
+                  {discountInfo.reason || "Special Offer"}
                 </Text>
                 {discountInfo.eligibilityReason && (
                   <Text style={styles(colors).discountModalDescription}>
@@ -2179,7 +2204,8 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                 </View>
                 {discountInfo.isLimitedTime && discountInfo.validUntil && (
                   <Text style={styles(colors).discountModalLimitedTime}>
-                    ⏰ Valid until {new Date(discountInfo.validUntil).toLocaleDateString()}
+                    ⏰ Valid until{" "}
+                    {new Date(discountInfo.validUntil).toLocaleDateString()}
                   </Text>
                 )}
               </View>
@@ -2532,8 +2558,7 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     dayCardExpanded: {
-      borderColor: colors.primary,
-      backgroundColor: `${colors.primary}10`,
+      // No special styling for expanded state
     },
     dayHeader: {
       flexDirection: "row",

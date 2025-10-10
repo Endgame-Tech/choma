@@ -2409,6 +2409,26 @@ class ApiService {
     return result;
   }
 
+  // Check if email is already registered
+  async checkEmailExists(email) {
+    console.log("🔍 Checking if email exists:", email);
+
+    const result = await this.request(
+      `/auth/check-email/${encodeURIComponent(email)}`,
+      {
+        method: "GET",
+      }
+    );
+
+    if (result.success) {
+      console.log("✅ Email check completed");
+    } else {
+      console.error("❌ Failed to check email:", result.error);
+    }
+
+    return result;
+  }
+
   // ==========================================
   // RECURRING DELIVERY API METHODS
   // ==========================================

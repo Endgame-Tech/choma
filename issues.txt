@@ -1,40 +1,205 @@
-2025-10-09 12:50:52] DEBUG [WVegM3cSI8] Closing connection to the server using "end"
-[2025-10-09 12:50:52] INFO  [WVegM3cSI8] Connection closed
-✅ Connected to MongoDB Atlas
-🗄️ Database: chomaDev
-13:50:53 [info]: Database connected successfully {
-  "service": "choma-backend"
+
+› Press ? │ show all commands
+
+Logs for your project will appear below. Press Ctrl+C to exit.
+› Opening on Android...
+› Opening com.choma.app/.MainActivity on SM_G991N
+› Press ? │ show all commands
+Android Bundled 2915ms index.js (2160 modules)
+ WARN  [2025-10-10T13:11:03.800Z]  @firebase/analytics: Analytics: Firebase Analytics is not supported in this environment. Wrap initializa
+tion of analytics in analytics.isSupported() to prevent initialization in unsupported environments. Details: (1) Cookies are not available. (analytics/invalid-analytics-context).
+ WARN  [2025-10-10T13:11:03.831Z]  @firebase/analytics: Analytics: IndexedDB unavailable or restricted in this environment. Wrap initializa
+tion of analytics in analytics.isSupported() to prevent initialization in unsupported environments. Details: IndexedDB is not available in this environment. (analytics/indexeddb-unavailable).
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  📱 Initializing Choma app...
+ LOG  🔤 Loading DM Sans fonts...
+ LOG  ✅ DM Sans fonts loaded successfully!
+ LOG  ✅ Font overrides applied - using DM Sans
+ LOG  🔥 Setting up push notifications...
+ LOG  🔗 Deep linking initialized
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  🚀 Navigation performance optimizations initialized
+ LOG  ✅ App initialization complete
+ WARN  SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
+ LOG  🔥 Firebase messaging enabled for all environments
+ LOG  🔥 Initializing Firebase app...
+ LOG  ✅ Using Firebase app from configuration files
+ LOG  🔥 Initializing Firebase messaging
+ LOG  📱 Environment: {"appOwnership": null, "executionEnvironment": "bare", "firebaseAvailable": true, "firebaseInitialized": true, "isDev": true}
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as par
+t of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as par
+t of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `getToken`. Please use `getToken()` instead.
+ LOG  ℹ️ Loading notifications from backend... 
+ LOG  🔍 Checking authentication status...
+ LOG  🚀 Initializing API service...
+ LOG  ✅ API service initialized with stored token
+ LOG  📱 Token found, verifying with backend...
+ LOG  🔍 API Service Auth Debug:
+ LOG    - Has token: true
+ LOG    - Token preview: eyJhbGciOiJIUzI1NiIs...
+ LOG    - User ID: 68e7bb413a8616c17bffd6e5
+ LOG  🔥 Firebase FCM Token obtained: eNRJMuBkSeGZI898X-QXW6:APA91bEXft27bP8B139ZEXFqhRC...
+ LOG  API Request (Attempt 1): GET http://10.55.154.104:5001/api/notifications?_t=1760101867459
+ LOG  📋 Cache HIT (storage): authUser
+ LOG  🚀 Optimistic loading: returning cached user data
+ LOG  ⏱️ Rate limiting: waiting 189ms before next request
+ LOG  ✅ User authenticated (cached): eberetesti12@gmail.com
+ LOG  ✅ Using Firebase FCM for push notifications
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as par
+t of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+ WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as par
+t of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `onMessage`. Please use `onMessage()` instead.
+ LOG  📱 Registering FCM push token: {"deviceId": "I am Legend", "platform": "android", "token": "eNRJMuBkSeGZI898X-QX...", "tokenType": "fcm"}
+ LOG  ⏱️ Rate limiting: waiting 176ms before next request
+ LOG  🍽️ Fetching all meal plans from backend... 
+ LOG  🔄 Fetching meal plans from backend... 
+ LOG  🌐 API URL: http://10.55.154.104:5001/api/mealplans
+ LOG  👤 User check: Logged in
+ LOG  🔍 Checking for active subscription...
+ LOG  � Calling getUserSubscriptions API...
+ LOG  📋 Fetching user subscriptions
+ LOG  🌐 TagService fetching from: http://10.55.154.104:5001/api/tags?_t=1760101867803
+ LOG  🔍 Debug - Token status before request: {"hasToken": true, "tokenLength": 244, "tokenPreview": "eyJhbGciOiJIUzI1NiIs..."}
+ LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://10.55.154.104:5001/api/auth/dashboard"}
+ LOG  API Request (Attempt 1): GET http://10.55.154.104:5001/api/auth/dashboard
+ LOG  📱 Biometric auth initialized
+ LOG  Available biometric types: [1, 2]
+ LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://10.55.154.104:5001/api/auth/profile"}
+ LOG  API Request (Attempt 1): GET http://10.55.154.104:5001/api/auth/profile
+ LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://10.55.154.104:5001/api/auth/push-token"}
+ LOG  API Request (Attempt 1): POST http://10.55.154.104:5001/api/auth/push-token
+ LOG  🏥 Backend health check: PASS
+ LOG  📋 Cache HIT (storage): mealPlans
+ LOG  ✅ Successfully loaded 7 meal plans
+ LOG  📋 Meal plan names: Testing, Testing (Copy), Testing (Copy) (Copy), FitFam Fuel, FitFam Fuel (Copy), FitFam Fuel (Copy) (Copy), hh
+ LOG  📦 Received 7 meal plans, starting progressive rendering...
+ LOG  ✅ Started progressive loading of 7 meal plans
+ LOG  📦 TagService API response: {"count": 2, "data": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "bigPreviewImage": "https://res.cloud
+inary.com/dql0tbyes/image/upload/v1759070793/choma/tag-previews/cwodrxzaaafceau6tr4o.jpg", "createdAt": "2025-09-17T11:16:19.730Z", "descri
+ption": "For Gym enthusaist", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1759070763/choma/tags/kjqubzd7gsgonnxjx9je.png",
+ "isActive": true, "mealPlanCount": 2, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-28T14:46:43.040Z"}, {"__v": 0
+, "_id": "68d068513dd82e948d537bc5", "bigPreviewImage": "https://res.cloudinary.com/dql0tbyes/image/upload/v1759070865/choma/tag-previews/z
+q3tyquhy2sryxbrsse9.jpg", "createdAt": "2025-09-21T21:04:17.731Z", "description": "This me", "image": "https://res.cloudinary.com/dql0tbyes
+/image/upload/v1759070845/choma/tags/pzq09wi5tx03jpkax8zi.png", "isActive": true, "mealPlanCount": 2, "name": "James b", "sortOrder": 2, "tagId": "TAG003", "updatedAt": "2025-09-28T14:47:30.416Z"}], "success": true}
+ LOG  🔄 Background: updated cached user data
+ LOG  📋 Cache SET: authUser (564 bytes)
+ LOG  ℹ️ Raw API response structure: {
+  "success": true,
+  "data": {
+    "success": true,
+    "data": {
+      "notifications": [
+        {
+          "_id": "68e8e838931f7faa97c041f0",
+          "userId": "68e7bb413a8616c17bffd6e5",
+          "title": "Order Update - Confirmed",
+          "message": "Your order #ORD-1760092334239-HQWESHSWS has been confirmed and assigned to our chef! 🍳",
+          "type": "order_status_update",
+          "isRead": false,
+          "data": {
+            "orderId": "68e8e0ae931f7faa97c03f63",
+            "orderNumber": "ORD-1760092334239-HQWESHSWS",
+            "oldStatus": "Pending",
+            "newStatus": "Confirmed",
+            "timestamp": "2025-10-10T11:04:24.229Z"
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-11-09T11:04:24.581Z",
+          "createdAt": "2025-10-10T11:04:24.582Z",
+          "updatedAt": "2025-10-10T11:04:25.656Z",
+          "__v": 0,
+          "pushSentAt": "2025-10-10T11:04:25.656Z"
+        },
+        {
+          "_id": "68e8e0b2931f7faa97c03f7c",
+          "userId": "68e7bb413a8616c17bffd6e5",
+          "title": "Payment Successful! 💳",
+          "message": "Your payment of ₦13469 has been processed successfully.",
+          "type": "payment_success",
+          "isRead": false,
+          "data": {
+            "amount": 13469,
+            "reference": "choma-1760092357162-403843",
+            "subscriptionId": "68e8e09a931f7faa97c03f4d"
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-11-09T10:32:18.615Z",
+          "createdAt": "2025-10-10T10:32:18.615Z",
+          "updatedAt": "2025-10-10T10:32:19.014Z",
+          "__v": 0,
+          "pushSentAt": "2025-10-10T10:32:19.014Z"
+        },
+        {
+          "_id": "68e8e0b1931f7faa97c03f71",
+          "userId": "68e7bb413a8616c17bffd6e5",
+          "title": "Subscription Activated! ✅",
+          "message": "Your FitFam Fuel (Copy) subscription is now active. Your meals start on Sat Oct 11 2025 11:31:45 GMT+0100 (West Africa Standard Time).",
+          "type": "subscription_created",
+          "isRead": false,
+          "data": {
+            "planName": "FitFam Fuel (Copy)",
+            "startDate": "2025-10-11T10:31:45.362Z",
+            "frequency": "all",
+            "duration": "1"
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-11-09T10:32:17.520Z",
+          "createdAt": "2025-10-10T10:32:17.520Z",
+          "updatedAt": "2025-10-10T10:32:18.061Z",
+          "__v": 0,
+          "pushSentAt": "2025-10-10T10:32:18.061Z"
+        },
+        {
+          "_id": "68e8e0ae931f7faa97c03f67",
+          "userId": "68e7bb413a8616c17bffd6e5",
+          "title": "Order Confirmed! 📦",
+          "message": "Order #ORD-1760092334239-HQWESHSWS has been confirmed and is being prepared by our chef.",
+          "type": "order_confirmed",
+          "isRead": false,
+          "data": {
+            "orderNumber": "ORD-1760092334239-HQWESHSWS",
+            "planName": "FitFam Fuel (Copy)",
+            "deliveryDate": "2025-10-11T10:31:45.362Z",
+            "totalAmount": 13469
+          },
+          "priority": "high",
+          "pushSent": true,
+          "expiresAt": "2025-11-09T10:32:14.943Z",
+          "createdAt": "2025-10-10T10:32:14.944Z",
+          "updatedAt": "2025-10-10T10:32:16.815Z",
+          "__v": 0,
+          "pushSentAt": "2025-10-10T10:32:16.815Z"
+        }
+      ],
+      "pagination": {
+        "currentPage": 1,
+        "totalPages": 1,
+        "totalNotifications": 4,
+        "hasNext": false,
+        "hasPrev": false,
+        "unreadCount": 4
+      }
+    }
+  }
 }
-Socket.IO initialized for real-time notifications
-⏭️ Keep-alive service disabled (not in production or no URL)
-🚀 Server started on port 5001
-📡 Environment: development
-🔗 API Base URL: http://localhost:5001/api
-🔗 Network API URL: http://10.55.154.104:5001/api
-🔌 WebSocket URL: ws://localhost:5001/socket.io
-🔌 Network WebSocket URL: ws://10.55.154.104:5001/socket.io
-✅ Server is listening on all interfaces (0.0.0.0)
-💻 For mobile devices, use: http://10.55.154.104:5001/api
-📱 Mobile connection test: http://10.55.154.104:5001/health
-13:51:20 [http]: Incoming Request {
-  "service": "choma-backend",
-  "id": "6sqx12es4",
-  "method": "POST",
-  "url": "/api/auth/social/google",
-  "ip": "10.55.154.151",
-  "userAgent": "okhttp/4.12.0"
+ LOG  ℹ️ Notification API response: {"actualDataExists": true, "dataExists": true, "notificationsCount": 4, "notificationsExists": true, "responseDataType": "object", "success": true, "unreadCount": 4}
+ LOG  📋 Processing notifications: {"firstNotification": {"isRead": false, "title": "Order Update - Confirmed", "type": "order_status_update"}, "notificationArray": true, "notificationCount": 4}
+ LOG  ✅ Notifications loaded successfully: 4 Unread count (API/Local/Final): 4 4 4
+ LOG  ✅ FCM push token registered with backend: {"data": {"message": "Push token registered successfully", "success": true}, "success": trrue}
+ LOG  ✅ User signed in: Testimony Ihechukwu
+ LOG  ✅ User signed in: Testimony Ihechukwu
+ LOG  ✅ User subscriptions fetched successfully
+ LOG  📦 Subscriptions API response: {
+  "success": true,
+  "data": []
 }
-Google login error: Error: Wrong recipient, payload audience != requiredAudience
-    at OAuth2Client.verifySignedJwtWithCertsAsync (C:\dev\choma\backend\node_modules\google-auth-library\build\src\auth\oauth2client.js:787:23)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async OAuth2Client.verifyIdTokenAsync (C:\dev\choma\backend\node_modules\google-auth-library\build\src\auth\oauth2client.js:541:23)
-    at async exports.googleLogin (C:\dev\choma\backend\controllers\authController.js:1525:22)
-13:51:22 [http]: Request Completed {
-  "service": "choma-backend",
-  "id": "6sqx12es4",
-  "method": "POST",
-  "url": "/api/auth/social/google",
-  "statusCode": 500,
-  "duration": "1810ms",
-  "contentLength": "122"
-}
+ LOG  📦 Found subscriptions array in data
+ LOG  📦 Total subscriptions found: 0
+ LOG  ℹ️ No subscriptions found, staying on Home screen
+ LOG  👤 User check: Logged in
+ LOG  ℹ️ Already checked subscription, skipping

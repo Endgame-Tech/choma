@@ -536,8 +536,8 @@ const Orders: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-neutral-100">{order.customer.fullName}</div>
-                      <div className="text-xs text-gray-500 dark:text-neutral-300">{order.customer.email}</div>
+                      <div className="text-sm text-gray-900 dark:text-neutral-100">{order.customer?.fullName || 'Unknown Customer'}</div>
+                      <div className="text-xs text-gray-500 dark:text-neutral-300">{order.customer?.email || 'No email'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 dark:text-neutral-100">

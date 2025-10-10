@@ -37,6 +37,7 @@ const EmailInputScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [isAlreadyVerified, setIsAlreadyVerified] = useState(false);
+  const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false);
 
   // Animation for smooth keyboard transitions
   const [keyboardOffset] = useState(new Animated.Value(0));
@@ -116,11 +117,36 @@ const EmailInputScreen = ({ navigation }) => {
   const checkEmailStatus = async (emailToCheck) => {
     if (!emailToCheck || !validateEmail(emailToCheck)) {
       setIsAlreadyVerified(false);
+      setIsAlreadyRegistered(false);
       return;
     }
 
     try {
       setIsCheckingStatus(true);
+
+      // First check if email is already registered (user has completed signup)
+      const emailCheckResponse = await apiService.checkEmailExists(
+        emailToCheck.trim()
+      );
+
+      // Handle nested response structure
+      const emailData = emailCheckResponse?.data?.data || emailCheckResponse?.data;
+
+      // Only process if endpoint exists (not 404)
+      if (emailCheckResponse.success && emailData?.exists) {
+        console.log("Email is already registered");
+        setIsAlreadyRegistered(true);
+        setIsAlreadyVerified(false);
+        return;
+      } else if (emailCheckResponse.status === 404) {
+        console.log("Email check endpoint not implemented yet, skipping check");
+        // Continue to verification check
+      } else if (!emailCheckResponse.success && emailData?.exists === false) {
+        console.log("Email is not registered yet");
+        // Continue to verification check
+      }
+
+      // If not registered (or check failed), check verification status
       const statusResponse = await apiService.checkVerificationStatus(
         emailToCheck.trim(),
         "customer_registration"
@@ -136,12 +162,15 @@ const EmailInputScreen = ({ navigation }) => {
         verificationData?.verified
       ) {
         setIsAlreadyVerified(true);
+        setIsAlreadyRegistered(false);
       } else {
         setIsAlreadyVerified(false);
+        setIsAlreadyRegistered(false);
       }
     } catch (error) {
       console.log("Status check failed:", error);
       setIsAlreadyVerified(false);
+      setIsAlreadyRegistered(false);
     } finally {
       setIsCheckingStatus(false);
     }
@@ -169,16 +198,49 @@ const EmailInputScreen = ({ navigation }) => {
 
     try {
       setIsLoading(true);
-      console.log("Checking verification status for:", email.trim());
+      console.log("Checking email status for:", email.trim());
 
-      // First check if email is already verified
+      // First check if email is already registered
+      const emailCheckResponse = await apiService.checkEmailExists(
+        email.trim()
+      );
+
+      console.log(
+        "Email check response:",
+        JSON.stringify(emailCheckResponse, null, 2)
+      );
+
+      // Handle nested response structure
+      const emailData = emailCheckResponse?.data?.data || emailCheckResponse?.data;
+
+      // Only check if endpoint exists (not 404)
+      if (emailCheckResponse.success && emailData?.exists) {
+        console.log("User already registered with this email");
+        showError(
+          "Account Already Exists",
+          "This email is already registered. Please sign in instead.",
+          [
+            {
+              text: "Sign In",
+              onPress: () => navigation.navigate("Login"),
+              style: "primary",
+            },
+          ]
+        );
+        return;
+      } else if (emailCheckResponse.status === 404) {
+        console.log("Email check endpoint not implemented yet, continuing with verification flow");
+        // Continue to verification check
+      }
+
+      // If not registered, check verification status
       const statusResponse = await apiService.checkVerificationStatus(
         email.trim(),
         "customer_registration"
       );
 
       console.log(
-        "Status check response:",
+        "Verification status response:",
         JSON.stringify(statusResponse, null, 2)
       );
 
@@ -367,9 +429,10 @@ const EmailInputScreen = ({ navigation }) => {
                   styles.verifyButton,
                   (isLoading || !email.trim()) && styles.verifyButtonDisabled,
                   isAlreadyVerified && styles.verifyButtonVerified,
+                  isAlreadyRegistered && styles.verifyButtonRegistered,
                 ]}
                 onPress={handleSendVerification}
-                disabled={isLoading || !email.trim()}
+                disabled={isLoading || !email.trim() || isAlreadyRegistered}
               >
                 {isLoading ? (
                   <ActivityIndicator color="#fff" />
@@ -377,6 +440,13 @@ const EmailInputScreen = ({ navigation }) => {
                   <View style={styles.buttonRow}>
                     <ActivityIndicator color="#fff" size="small" />
                     <Text style={styles.verifyButtonText}>Checking...</Text>
+                  </View>
+                ) : isAlreadyRegistered ? (
+                  <View style={styles.buttonRow}>
+                    <Ionicons name="information-circle" size={20} color="#fff" />
+                    <Text style={styles.verifyButtonText}>
+                      Already Registered
+                    </Text>
                   </View>
                 ) : isAlreadyVerified ? (
                   <View style={styles.buttonRow}>
@@ -394,7 +464,29 @@ const EmailInputScreen = ({ navigation }) => {
 
               {/* Info Text */}
               <View style={styles.infoContainer}>
-                {isAlreadyVerified ? (
+                {isAlreadyRegistered ? (
+                  <>
+                    <View style={styles.infoRow}>
+                      <Ionicons
+                        name="information-circle"
+                        size={16}
+                        color="#FF9800"
+                      />
+                      <Text style={[styles.infoText, { color: "#FF9800" }]}>
+                        Account already exists
+                      </Text>
+                    </View>
+                    <Text style={styles.infoText}>
+                      This email is already registered. Please sign in to continue.
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.signInButton}
+                      onPress={() => navigation.navigate("Login")}
+                    >
+                      <Text style={styles.signInButtonText}>Go to Sign In</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : isAlreadyVerified ? (
                   <>
                     <View style={styles.infoRow}>
                       <Ionicons
@@ -524,7 +616,7 @@ const styles = createStylesWithDMSans({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f8f8",
+    // backgroundColor: "#f8f8f8",
     borderRadius: 25,
     marginBottom: 16,
     paddingHorizontal: 20,
@@ -563,10 +655,26 @@ const styles = createStylesWithDMSans({
   verifyButtonVerified: {
     backgroundColor: "#4CAF50",
   },
+  verifyButtonRegistered: {
+    backgroundColor: "#FF9800",
+  },
   buttonRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  signInButton: {
+    backgroundColor: "#E6B17A",
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    alignSelf: "center",
+  },
+  signInButtonText: {
+    color: "#652815",
+    fontSize: 14,
+    fontWeight: "600",
   },
   verifyButtonText: {
     color: "#fff",

@@ -48,7 +48,9 @@ import PaymentScreen from "../screens/subscription/PaymentScreen";
 import SubscriptionSuccessScreen from "../screens/subscription/SubscriptionSuccessScreen";
 import SubscriptionDetailsScreen from "../screens/subscription/SubscriptionDetailsScreen";
 import SubscriptionTrackingScreen from "../screens/subscription/SubscriptionTrackingScreen";
-import TodayMealScreen from "../screens/subscription/TodayMealScreen";
+import TodayMealScreen from "../components/home/TodayMealScreen";
+import MyPlanScreen from "../screens/subscription/MyPlanScreen";
+import MealTimelineScreen from "../screens/subscription/MealTimelineScreen";
 
 // Dashboard screens
 import DashboardScreen from "../screens/dashboard/DashboardScreen";
@@ -373,6 +375,20 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             }}
           />
           <Stack.Screen
+            name="MyPlan"
+            component={MyPlanScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="MealTimeline"
+            component={MealTimelineScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
             name="SubscriptionTracking"
             component={SubscriptionTrackingScreen}
             options={{
@@ -470,7 +486,6 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
               headerShown: false,
               ...ScreenTransitions.Settings, // Modal transition
               gestureEnabled: false,
-              
             }}
           />
           <Stack.Screen

@@ -405,7 +405,7 @@ const styles = createStylesWithDMSans({
     paddingHorizontal: 20,
   },
   summaryCard: {
-    backgroundColor: "#f8f8f8",
+    // backgroundColor: "#f8f8f8",
     borderRadius: 25,
     padding: 20,
     marginBottom: 30,

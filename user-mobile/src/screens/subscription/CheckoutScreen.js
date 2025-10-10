@@ -771,11 +771,29 @@ const CheckoutScreen = ({ route, navigation }) => {
   // Calculate pricing based on meal plan's totalPrice and user selections
   const originalBasePlanPrice = mealPlan?.totalPrice || mealPlan?.price || 0; // Use totalPrice if available, fallback to price
 
-  // Apply discount to base price if available
+  // Handle different discount types properly
   const hasValidDiscount = discount && discount.discountPercent > 0;
-  const basePlanPrice = hasValidDiscount
-    ? discount.discountedPrice
-    : originalBasePlanPrice;
+  let basePlanPrice;
+  let displayOriginalPrice;
+  let displayCurrentPrice;
+
+  if (hasValidDiscount) {
+    if (discount.discountType === "ad") {
+      // Ad discount: User pays original price, but sees fake higher price as "original"
+      basePlanPrice = discount.originalPrice || originalBasePlanPrice; // Price customer actually pays
+      displayOriginalPrice = discount.counterValue; // Fake higher price to show as crossed out
+      displayCurrentPrice = discount.originalPrice || originalBasePlanPrice;
+    } else {
+      // Promo discount: Actual price reduction
+      basePlanPrice = discount.discountedPrice; // Reduced price customer pays
+      displayOriginalPrice = discount.originalPrice || originalBasePlanPrice;
+      displayCurrentPrice = discount.discountedPrice;
+    }
+  } else {
+    basePlanPrice = originalBasePlanPrice;
+    displayOriginalPrice = originalBasePlanPrice;
+    displayCurrentPrice = originalBasePlanPrice;
+  }
 
   const frequencyMultiplier =
     frequencies.find((f) => f.id === selectedFrequency)?.multiplier || 1;
@@ -803,6 +821,14 @@ const CheckoutScreen = ({ route, navigation }) => {
   const handleProceedToPayment = () => {
     if (!deliveryAddress.trim()) {
       showError("Required Field", "Please enter your delivery address");
+      return;
+    }
+
+    if (!user?.phoneNumber?.trim()) {
+      showError(
+        "Required Field",
+        "Please add your phone number to your profile before proceeding with checkout"
+      );
       return;
     }
 
@@ -1399,67 +1425,57 @@ const CheckoutScreen = ({ route, navigation }) => {
           <View style={styles(colors).summaryCard}>
             <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).summaryLabel}>
-                Plan Base Price ({parsePlanWeeks(mealPlan)} weeks)
+                Plan price ({parsePlanWeeks(mealPlan)}{" "}
+                {parsePlanWeeks(mealPlan) === 1 ? "week" : "weeks"})
               </Text>
-              <Text style={styles(colors).summaryValue}>
-                ₦{originalBasePlanPrice.toLocaleString()}
-              </Text>
-            </View>
-
-            {/* Show discount if available */}
-            {discount && discount.discountPercent > 0 && (
-              <View style={styles(colors).summaryRow}>
-                <Text
-                  style={[
-                    styles(colors).summaryLabel,
-                    { color: colors.success },
-                  ]}
-                >
-                  {discount.reason} ({discount.discountPercent}% OFF)
-                </Text>
-                <Text
-                  style={[
-                    styles(colors).summaryValue,
-                    { color: colors.success },
-                  ]}
-                >
-                  -₦{discount.discountAmount.toLocaleString()}
-                </Text>
+              <View style={styles(colors).priceContainer}>
+                {hasValidDiscount ? (
+                  <>
+                    {discount.discountType === "ad" ? (
+                      <>
+                        {/* Ad Discount: Show counter value struck through, actual price as current */}
+                        <Text style={styles(colors).originalPrice}>
+                          ₦{displayOriginalPrice?.toLocaleString()}
+                        </Text>
+                        <Text style={styles(colors).discountedPrice}>
+                          ₦{displayCurrentPrice?.toLocaleString()}
+                        </Text>
+                        <View style={styles(colors).discountBadge}>
+                          <Text style={styles(colors).discountText}>
+                            {discount.discountPercent}% OFF
+                          </Text>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        {/* Promo Discount: Show original price struck through, discounted price as current */}
+                        <Text style={styles(colors).originalPrice}>
+                          ₦{displayOriginalPrice?.toLocaleString()}
+                        </Text>
+                        <Text style={styles(colors).discountedPrice}>
+                          ₦{displayCurrentPrice?.toLocaleString()}
+                        </Text>
+                        <View style={styles(colors).discountBadge}>
+                          <Text style={styles(colors).discountText}>
+                            {discount.discountPercent}% OFF
+                          </Text>
+                        </View>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <Text style={styles(colors).summaryValue}>
+                    ₦{displayCurrentPrice?.toLocaleString()}
+                  </Text>
+                )}
               </View>
-            )}
-
-            {discount && discount.discountPercent > 0 && (
-              <View style={styles(colors).summaryRow}>
-                <Text style={styles(colors).summaryLabel}>
-                  Discounted Base Price
-                </Text>
-                <Text style={styles(colors).summaryValue}>
-                  ₦{basePlanPrice.toLocaleString()}
-                </Text>
-              </View>
-            )}
-            <View style={styles(colors).summaryRow}>
-              <Text style={styles(colors).summaryLabel}>
-                Meal Selection Adjustment
-              </Text>
-              <Text style={styles(colors).summaryValue}>
-                ×{frequencyMultiplier}
-              </Text>
             </View>
-            <View style={styles(colors).summaryRow}>
-              <Text style={styles(colors).summaryLabel}>
-                Duration Adjustment
-              </Text>
-              <Text style={styles(colors).summaryValue}>
-                ×{durationMultiplier}
-              </Text>
-            </View>
-            <View style={styles(colors).summaryRow}>
+            {/* <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).summaryLabel}>Subtotal</Text>
               <Text style={styles(colors).summaryValue}>
                 ₦{subtotal.toLocaleString()}
               </Text>
-            </View>
+            </View> */}
             <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).summaryLabel}>
                 Delivery Fee (
@@ -1498,9 +1514,9 @@ const CheckoutScreen = ({ route, navigation }) => {
                       )} consolidated deliveries`
                     : `₦${selectedZone.price.toLocaleString()} × ${deliveryCount} daily deliveries`}
                 </Text>
-                <Text style={[styles(colors).summaryValue, { fontSize: 14 }]}>
+                {/* <Text style={[styles(colors).summaryValue, { fontSize: 14 }]}>
                   = ₦{validDeliveryFee.toLocaleString()}
-                </Text>
+                </Text> */}
               </View>
             )}
             <View style={styles(colors).summaryDivider} />
@@ -1518,12 +1534,12 @@ const CheckoutScreen = ({ route, navigation }) => {
 
       {/* Proceed Button */}
       <View style={styles(colors).footer}>
-        <View style={styles(colors).totalSummary}>
+        {/* <View style={styles(colors).totalSummary}>
           <Text style={styles(colors).totalSummaryLabel}>Total Amount</Text>
           <Text style={styles(colors).totalSummaryValue}>
             ₦{totalPrice.toLocaleString()}
           </Text>
-        </View>
+        </View> */}
 
         <TouchableOpacity
           style={styles(colors).proceedButton}
@@ -1732,6 +1748,33 @@ const styles = (colors) =>
       fontSize: 16,
       color: colors.text,
       fontWeight: "500",
+    },
+    priceContainer: {
+      alignItems: "flex-end",
+    },
+    originalPrice: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textDecorationLine: "line-through",
+      marginBottom: 2,
+    },
+    discountedPrice: {
+      fontSize: 16,
+      color: colors.success,
+      fontWeight: "600",
+    },
+    discountBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      marginTop: 4,
+      alignSelf: "flex-end",
+    },
+    discountText: {
+      fontSize: 10,
+      color: colors.background,
+      fontWeight: "600",
     },
     freeText: {
       color: colors.success,

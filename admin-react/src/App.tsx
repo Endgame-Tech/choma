@@ -26,6 +26,8 @@ import Discounts from './pages/Discounts'
 import Drivers from './pages/Drivers'
 import RecurringDeliveryDashboard from './pages/RecurringDeliveryDashboard'
 import SubscriptionManagement from './pages/SubscriptionManagement'
+import CustomMeals from './pages/CustomMeals'
+import CustomMealPlans from './pages/CustomMealPlans'
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -107,6 +109,8 @@ function AppRoutes() {
     { path: '/drivers', element: <ProtectedRoute><Drivers /></ProtectedRoute> },
     { path: '/recurring-deliveries', element: <ProtectedRoute><RecurringDeliveryDashboard /></ProtectedRoute> },
     { path: '/subscription-management', element: <ProtectedRoute><SubscriptionManagement /></ProtectedRoute> },
+    { path: '/custom-meals', element: <ProtectedRoute><CustomMeals /></ProtectedRoute> },
+    { path: '/custom-meal-plans', element: <ProtectedRoute><CustomMealPlans /></ProtectedRoute> },
     { path: '*', element: <Navigate to='/' replace /> }
   ]
 

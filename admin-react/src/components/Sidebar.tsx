@@ -13,7 +13,9 @@ import {
   MegaphoneIcon,
   TruckIcon,
   ReceiptPercentIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  RectangleGroupIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline'
 import { usePermissionCheck } from '../contexts/PermissionContext'
 import type { AdminPermissions } from '../types/admin'
@@ -28,6 +30,8 @@ const navigationItems = [
   // { name: 'Users', href: '/users', icon: UsersIcon, permission: 'users' as keyof AdminPermissions },
   { name: 'Meals', href: '/meals', icon: CubeIcon, permission: 'meals' as keyof AdminPermissions },
   { name: 'Meal Plans', href: '/meal-plans', icon: BookOpenIcon, permission: 'mealPlans' as keyof AdminPermissions },
+  { name: 'Custom Meals', href: '/custom-meals', icon: RectangleGroupIcon, permission: 'meals' as keyof AdminPermissions },
+  { name: 'Custom Meal Plans', href: '/custom-meal-plans', icon: ClipboardDocumentCheckIcon, permission: 'orders' as keyof AdminPermissions },
   { name: 'Promo Banners', href: '/promo-banners', icon: MegaphoneIcon, permission: 'banners' as keyof AdminPermissions },
   { name: 'Discounts', href: '/discounts', icon: ReceiptPercentIcon, permission: 'banners' as keyof AdminPermissions },
   // Delivery Prices: permission key is 'deliveryPrices' (see AdminPermissions)

@@ -1642,6 +1642,39 @@ exports.googleLogin = async (req, res) => {
   }
 };
 
+// Check if email exists
+exports.checkEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: "Email is required",
+      });
+    }
+
+    // Check if customer exists in database
+    const customer = await Customer.findOne({
+      email: email.toLowerCase().trim(),
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        exists: !!customer,
+        email: email,
+      },
+    });
+  } catch (error) {
+    console.error("Check email error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to check email",
+    });
+  }
+};
+
 // Facebook OAuth login
 exports.facebookLogin = async (req, res) => {
   try {

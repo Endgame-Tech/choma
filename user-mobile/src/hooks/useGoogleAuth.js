@@ -86,13 +86,22 @@ export const useGoogleAuth = () => {
         const responseData = backendResponse.data || backendResponse;
 
         if (backendResponse.success && responseData.token) {
-          // Store your app's auth token (not Firebase token)
+          // Store your app's auth token using API service (ensures consistency with email/password login)
           const appToken = responseData.token;
-          await AsyncStorage.setItem("userToken", appToken);
+          await api.storeToken(appToken); // Use API service's token storage method
 
           // Store user data - backend returns customer object
           const userData = responseData.customer;
           await AsyncStorage.setItem("userData", JSON.stringify(userData));
+
+          // Cache user data for faster subsequent auth (same as email/password login)
+          if (userData) {
+            await api.setCachedUser({
+              success: true,
+              data: { customer: userData },
+            });
+            console.log("📋 User data cached after Google Sign-In for faster auth");
+          }
 
           const userDetails = {
             ...userData,
@@ -165,8 +174,9 @@ export const useGoogleAuth = () => {
       // Sign out from Firebase
       await firebaseAuth.signOut();
 
-      // Clear stored data
-      await AsyncStorage.removeItem("userToken");
+      // Clear stored data using API service
+      await api.removeToken(); // Use API service's token removal method
+      await api.clearCachedUser(); // Clear cached user data
       await AsyncStorage.removeItem("userData");
 
       // Update AuthContext state

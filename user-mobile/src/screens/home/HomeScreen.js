@@ -39,6 +39,7 @@ import { createStylesWithDMSans } from "../../utils/fontUtils";
 import { useAuth } from "../../hooks/useAuth";
 import { useMealPlans } from "../../hooks/useMealPlans";
 import tagService from "../../services/tagService";
+import apiService from "../../services/api";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import * as Haptics from "expo-haptics";
@@ -101,8 +102,8 @@ const getShadowStyle = (shadowProps) => ({
   }),
 });
 
-// Responsive dimensions - Increased for better visibility
-const heroImageSize = getResponsiveValue(260, 300, 340, 420);
+// Responsive dimensions - Smaller preview image
+const heroImageSize = getResponsiveValue(220, 260, 300, 360);
 const heroImageBorderRadius = heroImageSize / 2;
 const previewImageSize = heroImageSize - 6; // Account for border
 const previewImageBorderRadius = previewImageSize / 2;
@@ -171,6 +172,10 @@ const HomeScreen = ({ navigation }) => {
   );
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
+  // State for checking active subscription
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const [hasCheckedSubscription, setHasCheckedSubscription] = useState(false);
+
   // Pre-fetch duration data for focused tag
   const [prefetchedDurations, setPrefetchedDurations] = useState({});
 
@@ -194,6 +199,92 @@ const HomeScreen = ({ navigation }) => {
   ];
 
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  // Check for active subscription and navigate to TodayMeal
+  useEffect(() => {
+    const checkActiveSubscription = async () => {
+      // Only check once per session
+      if (hasCheckedSubscription) {
+        console.log("ℹ️ Already checked subscription, skipping");
+        return;
+      }
+
+      try {
+        console.log("🔍 Checking for active subscription...");
+        setCheckingSubscription(true);
+
+        // STRATEGY: Call getUserSubscriptions API directly (more reliable)
+        console.log("� Calling getUserSubscriptions API...");
+        const subscriptionsResult = await apiService.getUserDashboard();
+        console.log(
+          "📦 Subscriptions API response:",
+          JSON.stringify(subscriptionsResult, null, 2)
+        );
+
+        let subscriptions = [];
+
+        // Check if dashboard has active subscription
+        // Handle nested data structure: data.data or just data
+        if (subscriptionsResult?.success && subscriptionsResult?.data) {
+          // Try to get dashboard data from nested structure first
+          const dashboardData =
+            subscriptionsResult.data.data || subscriptionsResult.data;
+
+          console.log("📊 Dashboard data structure:", {
+            hasData: !!subscriptionsResult.data,
+            hasNestedData: !!subscriptionsResult.data.data,
+            hasActiveSubscription: dashboardData.hasActiveSubscription,
+            hasSubscription: !!dashboardData.subscription,
+          });
+
+          if (
+            dashboardData.hasActiveSubscription &&
+            dashboardData.subscription
+          ) {
+            const subscription = dashboardData.subscription;
+            console.log("✅ Active subscription detected from dashboard!");
+            console.log("� Subscription details:", {
+              id: subscription.id,
+              planName: subscription.planName,
+              status: subscription.status,
+              startDate: subscription.startDate,
+              daysRemaining: subscription.daysRemaining,
+            });
+            console.log("🚀 Navigating to TodayMeal screen...");
+
+            // Navigate to TodayMeal screen with subscription data
+            navigation.replace("TodayMeal", {
+              subscription: subscription,
+              subscriptionId: subscription.id,
+            });
+          } else {
+            console.log(
+              "ℹ️ No active subscription in dashboard, staying on Home screen"
+            );
+            setCheckingSubscription(false);
+          }
+        } else {
+          console.log("⚠️ Dashboard API returned no data");
+          setCheckingSubscription(false);
+        }
+      } catch (error) {
+        console.error("❌ Error checking subscription:", error);
+        console.error("❌ Error details:", error.message);
+        setCheckingSubscription(false);
+      } finally {
+        setHasCheckedSubscription(true);
+      }
+    };
+
+    // Only check if user is logged in
+    console.log("👤 User check:", user ? "Logged in" : "Not logged in");
+    if (user) {
+      checkActiveSubscription();
+    } else {
+      console.log("⏩ No user, skipping subscription check");
+      setCheckingSubscription(false);
+    }
+  }, [user, navigation, hasCheckedSubscription]);
 
   useEffect(() => {
     // Start the spinning animation with physics-based timing
@@ -761,106 +852,249 @@ const HomeScreen = ({ navigation }) => {
     );
   }
 
+  // Show loading screen while checking for active subscription
+  if (checkingSubscription) {
+    return (
+      <SafeAreaView style={styles(colors).container} edges={["top"]}>
+        <StatusBar
+          barStyle={
+            colors.background === "#FFFFFF" ? "dark-content" : "light-content"
+          }
+          backgroundColor={colors.primary2}
+        />
+        <View style={styles(colors).loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles(colors).loadingText}>Loading your meals...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles(colors).container}>
+    <SafeAreaView style={styles(colors).container} edges={["top"]}>
       <StatusBar
         barStyle={
           colors.background === "#FFFFFF" ? "dark-content" : "light-content"
         }
         backgroundColor={colors.primary2}
       />
-      <View style={styles(colors).mainContent}>
-        <View style={styles(colors).heroWrapper}>
-          <LinearGradient
-            colors={[colors.primary2, colors.primary2]}
-            style={styles(colors).heroBackground}
-          >
-            <View style={styles(colors).header}>
-              <TouchableOpacity
-                style={styles(colors).locationPill}
-                onPress={handleLocationPress}
-                activeOpacity={0.7}
-                disabled={isLoadingLocation}
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel={`Current location: ${currentLocation}`}
-                accessibilityHint="Double tap to refresh your location"
-              >
-                <CustomIcon
-                  name="location-filled"
-                  size={14}
-                  color={colors.primary}
-                />
-                <Text
-                  style={styles(colors).locationText}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {isLoadingLocation ? "Getting location..." : currentLocation}
-                </Text>
-                {isLoadingLocation ? (
-                  <ActivityIndicator size="small" color={colors.white} />
-                ) : (
-                  <CustomIcon
-                    name="chevron-down"
-                    size={12}
-                    color={colors.white}
-                  />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            <View
-              style={styles(colors).heroTextContainer}
-              accessible={true}
-              accessibilityLabel={`${heroMessages[currentMessageIndex]}, getChoma`}
-              accessibilityRole="header"
+      <ScrollView
+        style={styles(colors).scrollContainer}
+        contentContainerStyle={styles(colors).scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View style={styles(colors).mainContent}>
+          <View style={styles(colors).heroWrapper}>
+            <LinearGradient
+              colors={[colors.primary2, colors.primary2]}
+              style={styles(colors).heroBackground}
             >
-              <Text style={styles(colors).heroTitle}>
-                {heroMessages[currentMessageIndex]}
-              </Text>
-              <Text style={styles(colors).heroSubtitle}>getChoma</Text>
-            </View>
-
-            <View style={styles(colors).heroImageContainer}>
-              {/* Hero image with organic circle border */}
-              <View style={styles(colors).heroImageWrapper}>
-                <MaskedView
-                  style={{ width: heroImageSize, height: heroImageSize }}
-                  maskElement={
-                    <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375">
-                      <Path
-                        d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
-                        fill="white"
-                      />
-                    </Svg>
-                  }
+              <View style={styles(colors).header}>
+                <TouchableOpacity
+                  style={styles(colors).locationPill}
+                  onPress={handleLocationPress}
+                  activeOpacity={0.7}
+                  disabled={isLoadingLocation}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Current location: ${currentLocation}`}
+                  accessibilityHint="Double tap to refresh your location"
                 >
-                  <Image
-                    source={getTagImage(focusedTag, true)}
-                    style={{
-                      width: heroImageSize,
-                      height: heroImageSize,
-                    }}
-                    resizeMode="cover"
+                  <CustomIcon
+                    name="location-filled"
+                    size={14}
+                    color={colors.primary}
                   />
-                </MaskedView>
-
-                {/* SVG stroke border on top */}
-                <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375" style={{ position: 'absolute', top: 0, left: 0 }}>
-                  <Path
-                    d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
-                    fill="none"
-                    stroke={colors.primary}
-                    strokeWidth="5"
-                  />
-                </Svg>
+                  <Text
+                    style={styles(colors).locationText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {isLoadingLocation
+                      ? "Getting location..."
+                      : currentLocation}
+                  </Text>
+                  {isLoadingLocation ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : (
+                    <CustomIcon
+                      name="chevron-down"
+                      size={12}
+                      color={colors.white}
+                    />
+                  )}
+                </TouchableOpacity>
               </View>
+
+              <View
+                style={styles(colors).heroTextContainer}
+                accessible={true}
+                accessibilityLabel={`${heroMessages[currentMessageIndex]}, getChoma`}
+                accessibilityRole="header"
+              >
+                <Text style={styles(colors).heroTitle}>
+                  {heroMessages[currentMessageIndex]}
+                </Text>
+                <Text style={styles(colors).heroSubtitle}>getChoma</Text>
+              </View>
+
+              <View style={styles(colors).heroImageContainer}>
+                {/* Hero image with organic circle border */}
+                <View style={styles(colors).heroImageWrapper}>
+                  <MaskedView
+                    style={{ width: heroImageSize, height: heroImageSize }}
+                    maskElement={
+                      <Svg
+                        width={heroImageSize}
+                        height={heroImageSize}
+                        viewBox="0 0 375 375"
+                      >
+                        <Path
+                          d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
+                          fill="white"
+                        />
+                      </Svg>
+                    }
+                  >
+                    <Image
+                      source={getTagImage(focusedTag, true)}
+                      style={{
+                        width: heroImageSize,
+                        height: heroImageSize,
+                      }}
+                      resizeMode="cover"
+                    />
+                  </MaskedView>
+
+                  {/* SVG stroke border on top */}
+                  <Svg
+                    width={heroImageSize}
+                    height={heroImageSize}
+                    viewBox="0 0 375 375"
+                    style={{ position: "absolute", top: 0, left: 0 }}
+                  >
+                    <Path
+                      d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
+                      fill="none"
+                      stroke={colors.primary}
+                      strokeWidth="5"
+                    />
+                  </Svg>
+                </View>
+              </View>
+
+              {focusedTag && (
+                <TouchableOpacity
+                  style={styles(colors).planBadge}
+                  onPress={() =>
+                    focusedTag &&
+                    navigation.navigate("TagScreen", {
+                      tagId: focusedTag._id,
+                      tagName: focusedTag.name,
+                    })
+                  }
+                  activeOpacity={0.8}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${
+                    focusedTag?.name || "Selected"
+                  } meal plan`}
+                  accessibilityHint="Double tap to view this meal plan"
+                >
+                  <Text style={styles(colors).planBadgeText}>
+                    {getTagName(focusedTag)}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <Text style={styles(colors).chooseHeading}>
+                Choose a category
+              </Text>
+            </LinearGradient>
+
+            <View style={styles(colors).heroCurve}>
+              {/* Spinning Dish Background - Theme aware */}
+              <Animated.Image
+                source={
+                  isDark
+                    ? require("../../../assets/spin-dish-dark.png")
+                    : require("../../../assets/spin-dish.png")
+                }
+                style={[styles(colors).spinDishBackground, spinAnimatedStyle]}
+                resizeMode="contain"
+                // onLoad={() => }
+                onError={(error) =>
+                  console.log("Spin dish image error:", error)
+                }
+              />
+            </View>
+          </View>
+
+          <View style={styles(colors).contentSection}>
+            <Animated.FlatList
+              ref={flatListRef}
+              data={tagData || []}
+              keyExtractor={(_, index) => index.toString()}
+              scrollEventThrottle={16}
+              onScroll={scrollHandler}
+              pagingEnabled
+              snapToInterval={ListItemWidth}
+              showsHorizontalScrollIndicator={false}
+              initialNumToRender={5}
+              maxToRenderPerBatch={3}
+              windowSize={7}
+              removeClippedSubviews={true}
+              style={{
+                position: "absolute",
+                // top: "50%",
+                marginTop: -170,
+                height: 300,
+                left: 0,
+                right: 0,
+              }}
+              contentContainerStyle={{
+                justifyContent: "center",
+                alignItems: "center",
+                paddingHorizontal: 1.5 * ListItemWidth,
+                paddingRight: 1.5 * ListItemWidth, // Extra spacing at the end for last item
+              }}
+              horizontal
+              renderItem={({ item, index }) => {
+                return <CircularCarouselListItem tag={item} index={index} />;
+              }}
+            />
+
+            {/* Pagination Dots */}
+            <View style={styles(colors).paginationContainer}>
+              {tagData.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles(colors).paginationDot,
+                    index === currentCarouselIndex &&
+                      styles(colors).paginationDotActive,
+                  ]}
+                />
+              ))}
             </View>
 
-            {focusedTag && (
+            <View style={styles(colors).planInfoContainer}>
+              <Animated.Text
+                style={[
+                  styles(colors).planDescription,
+                  descriptionAnimatedStyle,
+                ]}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {getTagDescription(focusedTag)}
+              </Animated.Text>
+
               <TouchableOpacity
-                style={styles(colors).planBadge}
+                style={[
+                  styles(colors).learnMoreButton,
+                  !focusedTag && styles(colors).learnMoreButtonDisabled,
+                ]}
                 onPress={() =>
                   focusedTag &&
                   navigation.navigate("TagScreen", {
@@ -868,162 +1102,63 @@ const HomeScreen = ({ navigation }) => {
                     tagName: focusedTag.name,
                   })
                 }
-                activeOpacity={0.8}
+                activeOpacity={0.7}
+                disabled={!focusedTag}
                 accessible={true}
                 accessibilityRole="button"
-                accessibilityLabel={`${
-                  focusedTag?.name || "Selected"
-                } meal plan`}
-                accessibilityHint="Double tap to view this meal plan"
+                accessibilityLabel={`Explore ${
+                  focusedTag?.name || "meal"
+                } category`}
+                accessibilityHint="Double tap to view meals in this category"
               >
-                <Text style={styles(colors).planBadgeText}>
-                  {getTagName(focusedTag)}
+                <Text style={styles(colors).learnMoreText}>Explore meals</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Search Bar */}
+            <View style={styles(colors).searchContainer}>
+              <TouchableOpacity
+                style={styles(colors).searchInputContainer}
+                onPress={handleSearchPress}
+                activeOpacity={0.85}
+                accessible={true}
+                accessibilityRole="search"
+                accessibilityLabel="Search meal plans"
+                accessibilityHint="Double tap to search for meal plans"
+              >
+                <CustomIcon
+                  name="search-filled"
+                  size={20}
+                  color={colors.textMuted}
+                  style={styles(colors).searchIcon}
+                />
+                <Text style={styles(colors).searchPlaceholder}>
+                  Browse meal plans...
                 </Text>
               </TouchableOpacity>
-            )}
-            <Text style={styles(colors).chooseHeading}>Choose a category</Text>
-          </LinearGradient>
-
-          <View style={styles(colors).heroCurve}>
-            {/* Spinning Dish Background - Theme aware */}
-            <Animated.Image
-              source={
-                isDark
-                  ? require("../../../assets/spin-dish-dark.png")
-                  : require("../../../assets/spin-dish.png")
-              }
-              style={[styles(colors).spinDishBackground, spinAnimatedStyle]}
-              resizeMode="contain"
-              // onLoad={() => }
-              onError={(error) => console.log("Spin dish image error:", error)}
-            />
+            </View>
           </View>
-        </View>
 
-        <View style={styles(colors).contentSection}>
-          <Animated.FlatList
-            ref={flatListRef}
-            data={tagData || []}
-            keyExtractor={(_, index) => index.toString()}
-            scrollEventThrottle={16}
-            onScroll={scrollHandler}
-            pagingEnabled
-            snapToInterval={ListItemWidth}
-            showsHorizontalScrollIndicator={false}
-            initialNumToRender={5}
-            maxToRenderPerBatch={3}
-            windowSize={7}
-            removeClippedSubviews={true}
-            style={{
-              position: "absolute",
-              top: "50%",
-              marginTop: -350,
-              height: 300,
-              left: 0,
-              right: 0,
-            }}
-            contentContainerStyle={{
-              justifyContent: "center",
-              alignItems: "center",
-              paddingHorizontal: 1.5 * ListItemWidth,
-              paddingRight: 1.5 * ListItemWidth, // Extra spacing at the end for last item
-            }}
-            horizontal
-            renderItem={({ item, index }) => {
-              return <CircularCarouselListItem tag={item} index={index} />;
-            }}
+          {/* Circular Reveal Animation - Reference Style */}
+          <RNAnimated.View
+            pointerEvents="none"
+            style={[
+              styles(colors).circleBackground,
+              {
+                transform: [
+                  {
+                    scale: circleAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 50],
+                    }),
+                  },
+                ],
+              },
+            ]}
           />
-
-          {/* Pagination Dots */}
-          <View style={styles(colors).paginationContainer}>
-            {tagData.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles(colors).paginationDot,
-                  index === currentCarouselIndex &&
-                    styles(colors).paginationDotActive,
-                ]}
-              />
-            ))}
-          </View>
-
-          <View style={styles(colors).planInfoContainer}>
-            <Animated.Text
-              style={[styles(colors).planDescription, descriptionAnimatedStyle]}
-              numberOfLines={2}
-              ellipsizeMode="tail"
-            >
-              {getTagDescription(focusedTag)}
-            </Animated.Text>
-
-            <TouchableOpacity
-              style={[
-                styles(colors).learnMoreButton,
-                !focusedTag && styles(colors).learnMoreButtonDisabled,
-              ]}
-              onPress={() =>
-                focusedTag &&
-                navigation.navigate("TagScreen", {
-                  tagId: focusedTag._id,
-                  tagName: focusedTag.name,
-                })
-              }
-              activeOpacity={0.7}
-              disabled={!focusedTag}
-              accessible={true}
-              accessibilityRole="button"
-              accessibilityLabel={`Explore ${
-                focusedTag?.name || "meal"
-              } category`}
-              accessibilityHint="Double tap to view meals in this category"
-            >
-              <Text style={styles(colors).learnMoreText}>Explore meals</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Search Bar */}
-          <View style={styles(colors).searchContainer}>
-            <TouchableOpacity
-              style={styles(colors).searchInputContainer}
-              onPress={handleSearchPress}
-              activeOpacity={0.85}
-              accessible={true}
-              accessibilityRole="search"
-              accessibilityLabel="Search meal plans"
-              accessibilityHint="Double tap to search for meal plans"
-            >
-              <CustomIcon
-                name="search-filled"
-                size={20}
-                color={colors.textMuted}
-                style={styles(colors).searchIcon}
-              />
-              <Text style={styles(colors).searchPlaceholder}>
-                Browse meal plans...
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
-
-        {/* Circular Reveal Animation - Reference Style */}
-        <RNAnimated.View
-          pointerEvents="none"
-          style={[
-            styles(colors).circleBackground,
-            {
-              transform: [
-                {
-                  scale: circleAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 50],
-                  }),
-                },
-              ],
-            },
-          ]}
-        />
-      </View>
+      </ScrollView>
+      <SafeAreaView style={styles(colors).bottomSafeArea} edges={["bottom"]} />
     </SafeAreaView>
   );
 };
@@ -1033,13 +1168,24 @@ const styles = (colors) =>
     container: {
       flex: 1,
       backgroundColor: colors.primary2,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      minHeight: height, // Ensure minimum height equals screen height
       paddingTop: statusBarHeight,
+    },
+    bottomSafeArea: {
+      backgroundColor: colors.background,
     },
     mainContent: {
       flex: 1,
+      minHeight: height - statusBarHeight, // Minimum height for fixed layout
     },
     contentSection: {
-      height: 380,
+      // height: 380,
       position: "relative",
       marginTop: verticalScale(40),
     },
@@ -1177,6 +1323,8 @@ const styles = (colors) =>
       right: 0,
       paddingHorizontal: scale(20),
       paddingVertical: verticalScale(15),
+      // paddingBottom:
+      //   Platform.OS === "android" ? verticalScale(5) : verticalScale(5), // Extra bottom padding for Android navigation
     },
     searchInputContainer: {
       flexDirection: "row",
@@ -1187,12 +1335,13 @@ const styles = (colors) =>
       paddingVertical: verticalScale(12),
       borderWidth: scale(1.5),
       borderColor: colors.border,
-      // ...getShadowStyle({
-      //   shadowColor: colors.shadow,
-      //   shadowOffset: { width: 0, height: 2 },
-      //   shadowOpacity: 0.1,
-      //   shadowRadius: 4,
-      // }),
+      ...getShadowStyle({
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 10, height: 12 },
+        shadowOpacity: 0.1,
+        shadowRadius: 14,
+        elevation: 3,
+      }),
     },
     searchIcon: {
       marginRight: scale(10),
@@ -1219,15 +1368,17 @@ const styles = (colors) =>
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
-      marginTop: verticalScale(150),
+      bottom: Platform.OS === "android" ? verticalScale(12) : verticalScale(2), // Higher position on Android
       paddingVertical: verticalScale(8),
+      paddingBottom:
+        Platform.OS === "android" ? verticalScale(15) : verticalScale(8), // Extra padding for navigation buttons
     },
     paginationDot: {
       width: scale(6),
       height: scale(6),
       borderRadius: scale(3),
       backgroundColor: colors.textMuted,
-      marginHorizontal: scale(4),
+      marginHorizontal: scale(3),
       opacity: 0.5,
     },
     paginationDotActive: {
@@ -1236,6 +1387,18 @@ const styles = (colors) =>
       borderRadius: scale(4),
       backgroundColor: colors.primary,
       opacity: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.background,
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: colors.textSecondary,
+      fontWeight: "500",
     },
   });
 

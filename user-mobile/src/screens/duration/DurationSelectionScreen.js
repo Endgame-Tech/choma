@@ -70,7 +70,7 @@ const getShadowStyle = (shadowProps) => ({
   }),
 });
 
-const heroImageSize = getResponsiveValue(260, 300, 340, 420);
+const heroImageSize = getResponsiveValue(220, 260, 300, 360);
 
 const DurationItemWidth = getResponsiveValue(
   width / 4.5,
@@ -479,7 +479,11 @@ const DurationSelectionScreen = ({ navigation, route }) => {
                   <MaskedView
                     style={{ width: heroImageSize, height: heroImageSize }}
                     maskElement={
-                      <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375">
+                      <Svg
+                        width={heroImageSize}
+                        height={heroImageSize}
+                        viewBox="0 0 375 375"
+                      >
                         <Path
                           d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
                           fill="white"
@@ -498,7 +502,12 @@ const DurationSelectionScreen = ({ navigation, route }) => {
                   </MaskedView>
 
                   {/* SVG stroke border on top */}
-                  <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375" style={{ position: 'absolute', top: 0, left: 0 }}>
+                  <Svg
+                    width={heroImageSize}
+                    height={heroImageSize}
+                    viewBox="0 0 375 375"
+                    style={{ position: "absolute", top: 0, left: 0 }}
+                  >
                     <Path
                       d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
                       fill="none"
@@ -644,7 +653,11 @@ const DurationSelectionScreen = ({ navigation, route }) => {
                 <MaskedView
                   style={{ width: heroImageSize, height: heroImageSize }}
                   maskElement={
-                    <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375">
+                    <Svg
+                      width={heroImageSize}
+                      height={heroImageSize}
+                      viewBox="0 0 375 375"
+                    >
                       <Path
                         d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
                         fill="white"
@@ -663,7 +676,12 @@ const DurationSelectionScreen = ({ navigation, route }) => {
                 </MaskedView>
 
                 {/* SVG stroke border on top */}
-                <Svg width={heroImageSize} height={heroImageSize} viewBox="0 0 375 375" style={{ position: 'absolute', top: 0, left: 0 }}>
+                <Svg
+                  width={heroImageSize}
+                  height={heroImageSize}
+                  viewBox="0 0 375 375"
+                  style={{ position: "absolute", top: 0, left: 0 }}
+                >
                   <Path
                     d="M188.67,.63c27.65,1.13,54.8,6.39,80.03,17.7,25.57,11.46,49.48,26.89,67.38,48.37,18.05,21.65,30.03,47.81,35.76,75.35,5.68,27.29,3.07,55.29-2.88,82.53-5.99,27.4-13.84,55.25-31.92,76.76-17.96,21.36-44.86,31.93-69.92,44.35-25.31,12.55-50.2,27.93-78.45,29.21-28.62,1.29-56.26-9.35-81.94-21.98-25.54-12.56-48.89-29.24-66.87-51.21-18.07-22.08-31.62-47.9-37.12-75.84-5.43-27.6-2.41-56.21,5.87-83.1,8-25.99,24.92-47.46,41.09-69.36,16.67-22.58,30.79-48.71,55.71-61.76C130.49-1.5,160.34-.54,188.67,.63Z"
                     fill="none"
@@ -731,48 +749,44 @@ const DurationSelectionScreen = ({ navigation, route }) => {
               {durationOptions[currentDurationIndex]?.description || ""}
             </Text>
           </View>
+        </View>
 
-          {/* Bottom Actions */}
-          <View style={styles(colors).bottomActionsContainer}>
-            <TouchableOpacity
-              style={styles(colors).backButtonBadge}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.8}
-              accessible={true}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              accessibilityHint="Double tap to go back"
-            >
-              <CustomIcon
-                name="chevron-back"
-                size={20}
-                color={colors.primary2}
-              />
-            </TouchableOpacity>
+        {/* Bottom Actions - Fixed at bottom */}
+        <View style={styles(colors).bottomActionsContainer}>
+          <TouchableOpacity
+            style={styles(colors).backButtonBadge}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            accessibilityHint="Double tap to go back"
+          >
+            <CustomIcon name="chevron-back" size={20} color={colors.primary2} />
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles(colors).exploreBadge}
-              onPress={() => {
-                if (durationOptions[currentDurationIndex]) {
-                  navigation.navigate("MealPlanListingScreen", {
-                    tag: tag,
-                    tagId: tagId,
-                    tagName: tagName,
-                    selectedDuration: durationOptions[currentDurationIndex],
-                  });
-                }
-              }}
-              activeOpacity={0.8}
-              accessible={true}
-              accessibilityRole="button"
-              accessibilityLabel="Explore meal plans"
-              accessibilityHint="Double tap to view meal plans with selected duration"
-            >
-              <Text style={styles(colors).exploreBadgeText}>
-                Explore meal plans
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles(colors).exploreBadge}
+            onPress={() => {
+              if (durationOptions[currentDurationIndex]) {
+                navigation.navigate("MealPlanListingScreen", {
+                  tag: tag,
+                  tagId: tagId,
+                  tagName: tagName,
+                  selectedDuration: durationOptions[currentDurationIndex],
+                });
+              }
+            }}
+            activeOpacity={0.8}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Explore meal plans"
+            accessibilityHint="Double tap to view meal plans with selected duration"
+          >
+            <Text style={styles(colors).exploreBadgeText}>
+              Explore meal plans
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
@@ -826,14 +840,15 @@ const styles = (colors) =>
     },
     bottomActionsContainer: {
       position: "absolute",
-      top: verticalScale(110),
+      bottom: 0,
       left: 0,
       right: 0,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
       paddingHorizontal: scale(20),
-      paddingVertical: verticalScale(15),
+      // paddingVertical: verticalScale(20),
+      paddingBottom: verticalScale(15), // Extra padding for safe area
     },
     backButtonBadge: {
       backgroundColor: colors.white,

@@ -24,9 +24,10 @@ const SubscriptionManagementModal = ({
   onClose,
   subscription,
   onSubscriptionUpdate,
+  initialTab = "overview",
 }) => {
   const { isDark, colors } = useTheme();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(initialTab || "overview");
   const [pauseReason, setPauseReason] = useState("");
   const [pauseDuration, setPauseDuration] = useState("1_week");
   const [skipDate, setSkipDate] = useState("");
@@ -48,6 +49,12 @@ const SubscriptionManagementModal = ({
   const [contactlessDelivery, setContactlessDelivery] = useState(
     subscription?.deliveryPreferences?.contactless || false
   );
+
+  useEffect(() => {
+    if (visible) {
+      setActiveTab(initialTab || "overview");
+    }
+  }, [visible, initialTab]);
 
   // Fetch meal timeline when schedule tab is activated
   useEffect(() => {

@@ -269,9 +269,33 @@ app.use(
   require("./routes/discountRoutes")
 );
 
+// Admin system settings routes
+app.use(
+  "/api/admin/settings",
+  adminLimiter,
+  require("./routes/systemSettingsRoutes")
+);
+
+// Admin custom meal routes (admin-curated combo meals)
+app.use(
+  "/api/admin/custom-meals",
+  adminLimiter,
+  require("./routes/customMealRoutes")
+);
+
+// Admin custom meal plan routes (view user-generated plans)
+app.use(
+  "/api/admin/custom-meal-plans",
+  adminLimiter,
+  require("./routes/adminCustomMealPlanRoutes")
+);
+
 // Public discount routes
 app.use("/api/discount-rules", require("./routes/discounts"));
 app.use("/api/discounts", require("./routes/discounts"));
+
+// Custom meal plan routes (with general rate limiting)
+app.use("/api/custom-meal-plans", generalLimiter, require("./routes/customMealPlanRoutes"));
 
 // User routes
 app.use("/api/users", require("./routes/users"));

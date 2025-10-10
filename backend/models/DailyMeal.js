@@ -58,6 +58,76 @@ const MealSchema = new mongoose.Schema({
   // Tags for easy searching
   tags: [String],
 
+  // ========================================
+  // CUSTOM MEAL PLAN FEATURES - NEW
+  // ========================================
+
+  // Dietary classifications
+  dietaryTags: {
+    type: [String],
+    enum: [
+      'vegan',
+      'vegetarian',
+      'pescatarian',
+      'halal',
+      'kosher',
+      'gluten-free',
+      'dairy-free',
+      'nut-free',
+      'low-carb',
+      'keto',
+      'paleo'
+    ],
+    default: []
+  },
+
+  // Health goal compatibility
+  healthGoals: {
+    type: [String],
+    enum: [
+      'weight_loss',
+      'muscle_gain',
+      'maintenance',
+      'diabetes_management',
+      'heart_health'
+    ],
+    default: []
+  },
+
+  // Customization options
+  customizationOptions: {
+    canReducePepper: { type: Boolean, default: false },
+    canReduceOil: { type: Boolean, default: false },
+    canRemoveOnions: { type: Boolean, default: false },
+    canMakeVegan: { type: Boolean, default: false },
+    canAdjustSpice: { type: Boolean, default: false },
+    customizationNotes: String
+  },
+
+  // Detailed ingredients for filtering
+  detailedIngredients: [{
+    name: { type: String, required: true },
+    category: {
+      type: String,
+      enum: ['protein', 'vegetable', 'grain', 'spice', 'dairy', 'oil', 'sauce', 'other']
+    },
+    canOmit: { type: Boolean, default: false }
+  }],
+
+  // Preparation method (enhanced)
+  preparationMethod: {
+    type: String,
+    enum: ['grilled', 'steamed', 'fried', 'baked', 'boiled', 'raw', 'roasted'],
+    default: 'grilled'
+  },
+
+  // Glycemic index for diabetic filtering
+  glycemicIndex: {
+    type: String,
+    enum: ['low', 'medium', 'high'],
+    default: 'medium'
+  },
+
   // Timestamps
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
@@ -156,5 +226,15 @@ MealSchema.statics.findByCategory = function (category) {
 MealSchema.index({ name: "text", tags: "text" });
 MealSchema.index({ isAvailable: 1, category: 1 });
 MealSchema.index({ "pricing.totalPrice": 1 });
+
+// Custom meal plan indexes
+MealSchema.index({ healthGoals: 1 });
+MealSchema.index({ dietaryTags: 1 });
+MealSchema.index({ allergens: 1 });
+MealSchema.index({ preparationMethod: 1 });
+MealSchema.index({ glycemicIndex: 1 });
+MealSchema.index({ "nutrition.calories": 1 });
+MealSchema.index({ "nutrition.protein": 1 });
+MealSchema.index({ "nutrition.sugar": 1 });
 
 module.exports = mongoose.model("Meal", MealSchema);

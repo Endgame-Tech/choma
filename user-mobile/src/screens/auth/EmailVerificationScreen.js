@@ -525,7 +525,7 @@ const styles = createStylesWithDMSans({
     borderWidth: 2,
     borderColor: "#e8e8e8",
     borderRadius: 12,
-    backgroundColor: "#f8f8f8",
+    // backgroundColor: "#f8f8f8",
     fontSize: 20,
     fontWeight: "600",
     color: "#333",

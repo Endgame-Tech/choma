@@ -46,14 +46,34 @@ const TodayMealScreen = ({ navigation, route }) => {
       console.log("📋 Dashboard result:", dashboardResult);
 
       if (dashboardResult?.success && dashboardResult?.data) {
-        const subscriptions = dashboardResult.data.subscriptions || [];
+        // Handle nested data structure: data.data or just data
+        const dashboardData = dashboardResult.data.data || dashboardResult.data;
 
-        // Find active subscription
-        const active = subscriptions.find(
-          (sub) => sub.status === "active" || sub.status === "Active"
-        );
+        console.log("📊 Dashboard data structure:", {
+          hasActiveSubscription: dashboardData.hasActiveSubscription,
+          hasSubscription: !!dashboardData.subscription,
+        });
+
+        // Try to get active subscription from dashboard (preferred method)
+        let active = null;
+
+        if (dashboardData.hasActiveSubscription && dashboardData.subscription) {
+          active = dashboardData.subscription;
+          console.log("✅ Found subscription from dashboard.subscription");
+        } else {
+          // Fallback: check subscriptions array
+          const subscriptions = dashboardData.subscriptions || [];
+          active = subscriptions.find(
+            (sub) => sub.status === "active" || sub.status === "Active"
+          );
+          console.log("✅ Found subscription from subscriptions array");
+        }
 
         if (active) {
+          console.log("📦 Setting active subscription:", {
+            id: active._id || active.id,
+            planName: active.planName || active.mealPlanId?.planName,
+          });
           setActiveSubscription(active);
 
           // Get current meal for this subscription
@@ -83,6 +103,8 @@ const TodayMealScreen = ({ navigation, route }) => {
               setCurrentIndex(todayIndex);
             }
           }
+        } else {
+          console.log("❌ No active subscription found in dashboard");
         }
       }
     } catch (error) {
@@ -93,11 +115,26 @@ const TodayMealScreen = ({ navigation, route }) => {
   };
 
   const handleExploreMyPlan = () => {
+    console.log("🔘 Explore My Plan button pressed");
+    console.log(
+      "📋 Active subscription:",
+      activeSubscription ? "exists" : "null"
+    );
+
     if (activeSubscription) {
-      navigation.navigate("SubscriptionDetails", {
+      console.log("✅ Navigating to MyPlan with subscription:", {
+        subscriptionId: activeSubscription._id || activeSubscription.id,
+        planName:
+          activeSubscription.planName ||
+          activeSubscription.mealPlanId?.planName,
+      });
+
+      navigation.navigate("MyPlan", {
         subscription: activeSubscription,
         subscriptionId: activeSubscription._id || activeSubscription.id,
       });
+    } else {
+      console.log("❌ No active subscription found, cannot navigate");
     }
   };
 
@@ -107,15 +144,13 @@ const TodayMealScreen = ({ navigation, route }) => {
 
   const renderMealCard = (meal, index) => {
     const isCenter = index === currentIndex;
-    const isMealToday = meal?.isToday || (currentMeal && meal?._id === currentMeal._id);
+    const isMealToday =
+      meal?.isToday || (currentMeal && meal?._id === currentMeal._id);
 
     return (
       <View
         key={meal?._id || index}
-        style={[
-          styles(colors).mealCard,
-          isCenter && styles(colors).centerCard,
-        ]}
+        style={[styles(colors).mealCard, isCenter && styles(colors).centerCard]}
       >
         <Image
           source={
@@ -152,14 +187,17 @@ const TodayMealScreen = ({ navigation, route }) => {
         <StatusBar barStyle="light-content" backgroundColor="#652815" />
         <View style={styles(colors).loadingContainer}>
           <ActivityIndicator size="large" color={colors.white} />
-          <Text style={styles(colors).loadingText}>Loading today's meal...</Text>
+          <Text style={styles(colors).loadingText}>
+            Loading today's meal...
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
   // Prepare meals array for carousel
-  const mealsToDisplay = adjacentMeals.length > 0 ? adjacentMeals : currentMeal ? [currentMeal] : [];
+  const mealsToDisplay =
+    adjacentMeals.length > 0 ? adjacentMeals : currentMeal ? [currentMeal] : [];
 
   return (
     <SafeAreaView style={styles(colors).container} edges={["top"]}>
@@ -266,12 +304,12 @@ const styles = (colors) =>
       height: 60,
     },
     title: {
-      fontSize: 32,
+      fontSize: 22,
       fontWeight: "700",
       color: colors.white,
       textAlign: "center",
       marginBottom: 40,
-      lineHeight: 40,
+      // lineHeight: 40,
     },
     carousel: {
       flexGrow: 0,

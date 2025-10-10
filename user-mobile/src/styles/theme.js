@@ -8,36 +8,58 @@ import { Typography, DEFAULT_FONT_FAMILY } from "../constants/fonts";
 export const ThemeContext = createContext({
   isDark: false,
   colors: lightColors,
+  themeMode: 'system',
   typography: Typography,
   defaultFontFamily: DEFAULT_FONT_FAMILY,
-  toggleTheme: () => {},
+  setThemeMode: () => {},
 });
 
 export const ThemeProvider = ({ children }) => {
-  const colorScheme = Appearance.getColorScheme();
-  const [isDark, setIsDark] = useState(colorScheme === "dark");
+  const systemColorScheme = Appearance.getColorScheme();
+  const [themeMode, setThemeMode] = useState('system'); // 'light', 'dark', or 'system'
+  const [isDark, setIsDark] = useState(systemColorScheme === "dark");
 
+  // Load saved theme mode from storage
   useEffect(() => {
-    const loadTheme = async () => {
+    const loadThemeMode = async () => {
       try {
-        const savedTheme = await AsyncStorage.getItem("theme");
-        if (savedTheme !== null) {
-          setIsDark(savedTheme === "dark");
+        const savedThemeMode = await AsyncStorage.getItem("themeMode");
+        if (savedThemeMode) {
+          setThemeMode(savedThemeMode);
         }
       } catch (error) {
-        console.error("Failed to load theme from storage", error);
+        console.error("Failed to load themeMode from storage", error);
       }
     };
-    loadTheme();
+    loadThemeMode();
   }, []);
 
-  const toggleTheme = async () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
+  // Listen for system theme changes
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      if (themeMode === 'system') {
+        setIsDark(colorScheme === "dark");
+      }
+    });
+
+    return () => subscription.remove();
+  }, [themeMode]);
+
+  // Update theme based on mode
+  useEffect(() => {
+    if (themeMode === 'system') {
+      setIsDark(systemColorScheme === 'dark');
+    } else {
+      setIsDark(themeMode === 'dark');
+    }
+  }, [themeMode, systemColorScheme]);
+
+  const handleSetThemeMode = async (mode) => {
     try {
-      await AsyncStorage.setItem("theme", newIsDark ? "dark" : "light");
+      await AsyncStorage.setItem("themeMode", mode);
+      setThemeMode(mode);
     } catch (error) {
-      console.error("Failed to save theme to storage", error);
+      console.error("Failed to save themeMode to storage", error);
     }
   };
 
@@ -46,7 +68,8 @@ export const ThemeProvider = ({ children }) => {
     colors: isDark ? darkColors : lightColors,
     typography: Typography,
     defaultFontFamily: DEFAULT_FONT_FAMILY,
-    toggleTheme,
+    themeMode,
+    setThemeMode: handleSetThemeMode,
   };
 
   return (

@@ -9,9 +9,24 @@ const mealProgressionService = require("../services/mealProgressionService");
 // Get user's subscriptions
 exports.getUserSubscriptions = async (req, res) => {
   try {
+    console.log("🔍 getUserSubscriptions - User ID from token:", req.user.id);
+
     const subscriptions = await Subscription.find({ userId: req.user.id })
       .populate("mealPlanId")
       .sort({ createdDate: -1 });
+
+    console.log(
+      `📦 Found ${subscriptions.length} subscriptions for user ${req.user.id}`
+    );
+
+    if (subscriptions.length > 0) {
+      console.log("📋 First subscription:", {
+        id: subscriptions[0]._id,
+        userId: subscriptions[0].userId,
+        status: subscriptions[0].status,
+        startDate: subscriptions[0].startDate,
+      });
+    }
 
     res.json({
       success: true,
@@ -147,7 +162,7 @@ exports.createSubscription = async (req, res) => {
       nextDelivery,
       tentativeEndDate,
       weeksToAdd,
-      note: "End date will be recalculated after first delivery"
+      note: "End date will be recalculated after first delivery",
     });
 
     const subscriptionData = {
@@ -176,7 +191,7 @@ exports.createSubscription = async (req, res) => {
       transactionId:
         transactionId ||
         `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-      
+
       // Initialize recurring delivery settings - subscription NOT activated yet
       recurringDelivery: {
         isActivated: false, // Key: subscription not active until first delivery
@@ -184,13 +199,13 @@ exports.createSubscription = async (req, res) => {
         currentMealProgression: {
           weekNumber: 1,
           dayOfWeek: 1,
-          mealTime: selectedMealTypes?.[0] || 'lunch'
+          mealTime: selectedMealTypes?.[0] || "lunch",
         },
         deliverySchedule: {
           daysOfWeek: [1, 2, 3, 4, 5], // Weekdays by default
-          timeSlot: 'afternoon'
-        }
-      }
+          timeSlot: "afternoon",
+        },
+      },
     };
 
     console.log(

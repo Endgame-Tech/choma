@@ -150,6 +150,9 @@ router.post('/resend-verification', emailVerificationController.resendVerificati
 // GET /api/auth/verification-status/:email - Check verification status
 router.get('/verification-status/:email', emailVerificationController.checkVerificationStatus);
 
+// GET /api/auth/check-email/:email - Check if email is already registered
+router.get('/check-email/:email', authController.checkEmail);
+
 // POST /api/auth/cleanup-verifications - Cleanup expired verifications (admin/cron)
 router.post('/cleanup-verifications', emailVerificationController.cleanupExpiredVerifications);
 
