@@ -2,7 +2,7 @@
 // Controller for managing Custom Meals (admin-curated combo meals)
 
 const CustomMeal = require("../models/CustomMeal");
-const DailyMeal = require("../models/DailyMeal");
+const Meal = require("../models/DailyMeal"); // This is the Meal model
 const mongoose = require("mongoose");
 
 // @desc    Get all custom meals (with optional filters)
@@ -107,7 +107,7 @@ exports.getCustomMealById = async (req, res) => {
 // @access  Private/Admin
 exports.createCustomMeal = async (req, res) => {
   try {
-    const adminId = req.admin?._id || req.admin?.id;
+    const adminId = req.admin?.adminId;
 
     if (!adminId) {
       return res.status(401).json({
@@ -145,7 +145,7 @@ exports.createCustomMeal = async (req, res) => {
 
     // Validate constituent meals exist
     const mealIds = constituentMeals.map((cm) => cm.mealId);
-    const existingMeals = await DailyMeal.find({ _id: { $in: mealIds } });
+    const existingMeals = await Meal.find({ _id: { $in: mealIds } });
 
     if (existingMeals.length !== mealIds.length) {
       return res.status(400).json({
@@ -207,7 +207,7 @@ exports.createCustomMeal = async (req, res) => {
 exports.updateCustomMeal = async (req, res) => {
   try {
     const { id } = req.params;
-    const adminId = req.admin?._id || req.admin?.id;
+    const adminId = req.admin?.adminId;
 
     if (!adminId) {
       return res.status(401).json({
@@ -265,7 +265,7 @@ exports.updateCustomMeal = async (req, res) => {
       }
 
       const mealIds = constituentMeals.map((cm) => cm.mealId);
-      const existingMeals = await DailyMeal.find({ _id: { $in: mealIds } });
+      const existingMeals = await Meal.find({ _id: { $in: mealIds } });
 
       if (existingMeals.length !== mealIds.length) {
         return res.status(400).json({

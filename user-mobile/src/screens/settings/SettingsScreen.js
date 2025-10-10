@@ -27,7 +27,7 @@ import ThemePickerModal from "../../components/settings/ThemePickerModal";
 
 const SettingsScreen = ({ navigation }) => {
   const { logout } = useAuth();
-  const { colors, themeMode, setThemeMode } = useTheme();
+  const { colors, themeMode, setThemeMode, isDark } = useTheme();
   const { showError, showInfo, showConfirm, showAlert } = useAlert();
   const { preferences, updateNotificationPreferences } = useNotification();
 
@@ -220,7 +220,9 @@ const SettingsScreen = ({ navigation }) => {
             {renderActionItem(
               "color-palette",
               "Theme",
-              `Currently: ${themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}`,
+              themeMode === 'system'
+                ? `System (${isDark ? 'Dark' : 'Light'})`
+                : themeMode.charAt(0).toUpperCase() + themeMode.slice(1),
               () => setThemePickerVisible(true)
             )}
 

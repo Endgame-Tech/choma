@@ -15,9 +15,8 @@ export const ThemeContext = createContext({
 });
 
 export const ThemeProvider = ({ children }) => {
-  const systemColorScheme = Appearance.getColorScheme();
   const [themeMode, setThemeMode] = useState('system'); // 'light', 'dark', or 'system'
-  const [isDark, setIsDark] = useState(systemColorScheme === "dark");
+  const [isDark, setIsDark] = useState(Appearance.getColorScheme() === "dark");
 
   // Load saved theme mode from storage
   useEffect(() => {
@@ -48,11 +47,13 @@ export const ThemeProvider = ({ children }) => {
   // Update theme based on mode
   useEffect(() => {
     if (themeMode === 'system') {
-      setIsDark(systemColorScheme === 'dark');
+      // Get current system color scheme dynamically
+      const currentColorScheme = Appearance.getColorScheme();
+      setIsDark(currentColorScheme === 'dark');
     } else {
       setIsDark(themeMode === 'dark');
     }
-  }, [themeMode, systemColorScheme]);
+  }, [themeMode]);
 
   const handleSetThemeMode = async (mode) => {
     try {

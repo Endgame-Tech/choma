@@ -1,205 +1,410 @@
+Task :expo-updates-interface:generateReleaseLintModel UP-TO-DATE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (19.74 MB / 50.33 MB)
+> Task :app:mergeReleaseResources
+AGPBI: {"kind":"error","text":"Android resource compilation failed","sources":[{"file":"C:\\dev\\choma\\user-mobile\\android\\app\\build\\generated\\res\\createBundleReleaseJsAndAssets\\drawable-mdpi\\assets_icon.png"}],"original":"ERROR: C:\\dev\\choma\\user-mobile\\android\\app\\build\\generated\\res\\createBundleReleaseJsAndAssets\\drawable-mdpi\\assets_icon.png: AAPT: error: file failed to compile.\n    ","tool":"AAPT"}
 
-› Press ? │ show all commands
+> Task :expo-dev-launcher:generateReleaseLintModel
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (19.76 MB / 50.33 MB)> Task :app:packageReleaseResources
+> Task :app:parseReleaseLocalResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (19.81 MB / 50.33 MB)
+> Task :app:processReleaseMainManifest
+C:\dev\choma\user-mobile\android\app\src\main\AndroidManifest.xml Warning:
+	activity#expo.modules.imagepicker.ExpoCropImageActivity@android:exported was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+C:\dev\choma\user-mobile\android\app\src\main\AndroidManifest.xml Warning:
+	provider#expo.modules.filesystem.FileSystemFileProvider@android:authorities was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (19.82 MB / 50.33 MB)
+> Task :app:processReleaseManifest
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (19.82 MB / 50.33 MB)> Task :app:processReleaseManifestForPackage
+> Task :app:javaPreCompileRelease
+> Task :app:desugarReleaseFileDependencies
+> Task :app:mergeReleaseStartupProfile UP-TO-DATE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (20.09 MB / 50.33 MB)> Task :app:mergeExtDexRelease
+Download https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar, took 10 m 2 s 377 ms
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (686.89 kB / 50.33 MB)> Task :app:mergeReleaseResources FAILED
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (702.05 kB / 50.33 MB)> Task :app:mergeReleaseArtProfile
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (728.23 kB / 50.33 MB)> Task :app:mergeReleaseAssets
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (747.52 kB / 50.33 MB)> Task :app:compressReleaseAssets
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (770.95 kB / 50.33 MB)> Task :app:extractReleaseVersionControlInfo
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (773.71 kB / 50.33 MB)> Task :app:extractProguardFiles
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (813.99 kB / 50.33 MB)> Task :expo:generateReleaseLintModel
+> Task :react-native-worklets:processReleaseJavaRes NO-SOURCE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (816.75 kB / 50.33 MB)> Task :react-native-worklets:createFullJarRelease
+> Task :react-native-worklets:extractProguardFiles UP-TO-DATE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (825.02 kB / 50.33 MB)> Task :react-native-worklets:generateReleaseLintModel
+> Task :react-native-worklets:prepareLintJarForPublish UP-TO-DATE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (867.73 kB / 50.33 MB)> Task :react-native-maps:stripReleaseDebugSymbols NO-SOURCE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (870.49 kB / 50.33 MB)> Task :react-native-maps:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-maps:extractDeepLinksForAarRelease
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (911.83 kB / 50.33 MB)> Task :react-native-reanimated:buildCMakeRelWithDebInfo[x86][reanimated]
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (1.16 MB / 50.33 MB)> Task :expo:extractReleaseAnnotations
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (1.20 MB / 50.33 MB)> Task :react-native-maps:extractReleaseAnnotations
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (1.78 MB / 50.33 MB)> Task :react-native-reanimated:buildCMakeRelWithDebInfo[x86_64][reanimated]
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (2.30 MB / 50.33 MB)> Task :react-native-reanimated:externalNativeBuildRelease
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (2.30 MB / 50.33 MB)> Task :react-native-reanimated:prefabReleasePackage UP-TO-DATE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (2.70 MB / 50.33 MB)> Task :app:buildCMakeRelWithDebInfo[arm64-v8a]
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.60 MB / 50.33 MB)
+> Task :app:buildCMakeRelWithDebInfo[armeabi-v7a]
+C/C++: CMake Warning in C:/dev/choma/user-mobile/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/dev/choma/user-mobile/android/app/.cxx/RelWithDebInfo/541c412y/armeabi-v7a/rngesturehandler_codegen_autolinked_build/CMakeFiles/react_codegen_rngesturehandler_codegen.dir/./
+C/C++:   has 176 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     react/renderer/components/rngesturehandler_codegen/rngesturehandler_codegenJSI-generated.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+Download https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar, took 6 m 41 s 352 ms
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (78.02 kB / 50.33 MB)
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (86.29 kB / 50.33 MB)> Task :app:buildCMakeRelWithDebInfo[x86]
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (1.38 MB / 50.33 MB)> Task :app:buildCMakeRelWithDebInfo[x86_64]
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (2.48 MB / 50.33 MB)> Task :react-native-gesture-handler:buildCMakeRelWithDebInfo[arm64-v8a]
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (2.61 MB / 50.33 MB)> Task :react-native-gesture-handler:buildCMakeRelWithDebInfo[armeabi-v7a]
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (2.69 MB / 50.33 MB)> Task :react-native-gesture-handler:buildCMakeRelWithDebInfo[x86]
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (2.78 MB / 50.33 MB)> Task :react-native-gesture-handler:buildCMakeRelWithDebInfo[x86_64]
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (2.79 MB / 50.33 MB)> Task :react-native-gesture-handler:mergeReleaseNativeLibs UP-TO-DATE
+> Task :react-native-gesture-handler:copyReleaseJniLibsProjectOnly UP-TO-DATE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (2.79 MB / 50.33 MB)> Task :react-native-reanimated:mergeReleaseNativeLibs UP-TO-DATE
+> Task :react-native-reanimated:copyReleaseJniLibsProjectOnly UP-TO-DATE
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.00 MB / 50.33 MB)> Task :app:mergeReleaseNativeLibs
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.02 MB / 50.33 MB)> Task :app:stripReleaseDebugSymbols
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.05 MB / 50.33 MB)> Task :app:extractReleaseNativeSymbolTables
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.10 MB / 50.33 MB)> Task :app:mergeReleaseNativeDebugMetadata
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.16 MB / 50.33 MB)
+> Task :react-native-reanimated:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.17 MB / 50.33 MB)
+> Task :react-native-reanimated:bundleLibCompileToJarRelease
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.21 MB / 50.33 MB)> Task :react-native-gesture-handler:compileReleaseKotlin
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.22 MB / 50.33 MB)> Task :react-native-gesture-handler:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-gesture-handler:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-reanimated:bundleLibRuntimeToDirRelease
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.23 MB / 50.33 MB)> Task :react-native-gesture-handler:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-gesture-handler:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-reanimated:bundleLibRuntimeToJarRelease
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.23 MB / 50.33 MB)> Task :react-native-gesture-handler:processReleaseJavaRes
+> Task :react-native-gesture-handler:createFullJarRelease UP-TO-DATE
+> Task :react-native-reanimated:createFullJarRelease
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.26 MB / 50.33 MB)> Task :react-native-reanimated:generateReleaseLintModel
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.26 MB / 50.33 MB)> Task :react-native-gesture-handler:generateReleaseLintModel
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.26 MB / 50.33 MB)> Task :react-native-gesture-handler:stripReleaseDebugSymbols
+> Task :react-native-gesture-handler:copyReleaseJniLibsProjectAndLocalJars
+Downloading https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar (3.89 MB / 50.33 MB)> Task :react-native-gesture-handler:extractReleaseAnnotations
+Download https://dl.google.com/dl/android/maven2/com/android/tools/external/com-intellij/kotlin-compiler/31.11.0/kotlin-compiler-31.11.0.jar, took 7 m 54 s 879 ms
+> Task :expo:mergeReleaseGeneratedProguardFiles
+> Task :react-native-masked-view_masked-view:mergeReleaseGeneratedProguardFiles
+> Task :react-native-google-signin_google-signin:mergeReleaseGeneratedProguardFiles
+> Task :react-native-picker_picker:mergeReleaseGeneratedProguardFiles
+> Task :react-native-masked-view_masked-view:mergeReleaseConsumerProguardFiles
+> Task :react-native-google-signin_google-signin:mergeReleaseConsumerProguardFiles
+> Task :expo:mergeReleaseConsumerProguardFiles
+> Task :react-native-picker_picker:mergeReleaseConsumerProguardFiles
+> Task :react-native-maps:mergeReleaseGeneratedProguardFiles
+> Task :react-native-firebase_auth:mergeReleaseGeneratedProguardFiles
+> Task :react-native-gesture-handler:mergeReleaseGeneratedProguardFiles
+> Task :react-native-community_netinfo:mergeReleaseGeneratedProguardFiles
+> Task :react-native-gesture-handler:mergeReleaseConsumerProguardFiles
+> Task :react-native-maps:mergeReleaseConsumerProguardFiles
+> Task :react-native-get-random-values:mergeReleaseGeneratedProguardFiles
+> Task :react-native-community_netinfo:mergeReleaseConsumerProguardFiles
+> Task :react-native-firebase_auth:mergeReleaseConsumerProguardFiles
+> Task :react-native-get-random-values:mergeReleaseConsumerProguardFiles
+> Task :react-native-safe-area-context:mergeReleaseGeneratedProguardFiles
+> Task :react-native-async-storage_async-storage:mergeReleaseGeneratedProguardFiles
+> Task :react-native-firebase_messaging:mergeReleaseGeneratedProguardFiles
+> Task :react-native-safe-area-context:mergeReleaseConsumerProguardFiles
+> Task :react-native-async-storage_async-storage:mergeReleaseConsumerProguardFiles
+> Task :react-native-firebase_messaging:mergeReleaseConsumerProguardFiles
+> Task :react-native-firebase_app:mergeReleaseGeneratedProguardFiles
+> Task :react-native-screens:mergeReleaseGeneratedProguardFiles
+> Task :react-native-webview:mergeReleaseGeneratedProguardFiles
+> Task :react-native-community_datetimepicker:mergeReleaseGeneratedProguardFiles
+> Task :react-native-firebase_app:mergeReleaseConsumerProguardFiles
+> Task :react-native-screens:mergeReleaseConsumerProguardFiles
+> Task :react-native-webview:mergeReleaseConsumerProguardFiles
+> Task :react-native-community_datetimepicker:mergeReleaseConsumerProguardFiles
+> Task :react-native-screens:mergeReleaseJavaResource
+> Task :react-native-masked-view_masked-view:mergeReleaseJavaResource
+> Task :react-native-firebase_messaging:mergeReleaseJavaResource
+> Task :react-native-picker_picker:mergeReleaseJavaResource
+> Task :react-native-community_netinfo:mergeReleaseJavaResource
+> Task :react-native-get-random-values:mergeReleaseJavaResource
+> Task :react-native-firebase_app:mergeReleaseJavaResource
+> Task :react-native-async-storage_async-storage:mergeReleaseJavaResource
+> Task :react-native-maps:mergeReleaseJavaResource
+> Task :react-native-firebase_auth:mergeReleaseJavaResource
+> Task :react-native-webview:mergeReleaseJavaResource
+> Task :react-native-safe-area-context:mergeReleaseJavaResource
+> Task :react-native-gesture-handler:mergeReleaseJavaResource
+> Task :react-native-google-signin_google-signin:mergeReleaseJavaResource
+> Task :react-native-community_datetimepicker:mergeReleaseJavaResource
+> Task :expo:mergeReleaseJavaResource
+> Task :react-native-masked-view_masked-view:syncReleaseLibJars
+> Task :react-native-firebase_messaging:syncReleaseLibJars
+> Task :react-native-async-storage_async-storage:syncReleaseLibJars
+> Task :react-native-firebase_app:syncReleaseLibJars
+> Task :react-native-get-random-values:syncReleaseLibJars
+> Task :react-native-firebase_auth:syncReleaseLibJars
+> Task :react-native-community_netinfo:syncReleaseLibJars
+> Task :react-native-masked-view_masked-view:bundleReleaseLocalLintAar
+> Task :react-native-async-storage_async-storage:bundleReleaseLocalLintAar
+> Task :react-native-picker_picker:syncReleaseLibJars
+> Task :react-native-firebase_app:bundleReleaseLocalLintAar
+> Task :react-native-maps:syncReleaseLibJars
+> Task :react-native-get-random-values:bundleReleaseLocalLintAar
+> Task :react-native-reanimated:extractDeepLinksForAarRelease
+> Task :react-native-community_netinfo:bundleReleaseLocalLintAar
+> Task :react-native-firebase_auth:bundleReleaseLocalLintAar
+> Task :react-native-maps:bundleReleaseLocalLintAar
+> Task :react-native-gesture-handler:syncReleaseLibJars
+> Task :react-native-svg:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-svg:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-reanimated:extractReleaseAnnotations
+> Task :react-native-svg:extractDeepLinksForAarRelease
+> Task :react-native-reanimated:mergeReleaseGeneratedProguardFiles
+> Task :expo-dev-launcher:stripReleaseDebugSymbols NO-SOURCE
+> Task :expo-dev-launcher:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-picker_picker:bundleReleaseLocalLintAar
+> Task :expo-dev-menu:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-community_datetimepicker:syncReleaseLibJars
+> Task :react-native-reanimated:mergeReleaseConsumerProguardFiles
+> Task :react-native-worklets:extractDeepLinksForAarRelease
+> Task :expo-dev-launcher:extractDeepLinksForAarRelease
+> Task :react-native-google-signin_google-signin:syncReleaseLibJars
+> Task :react-native-webview:syncReleaseLibJars
+> Task :react-native-firebase_messaging:bundleReleaseLocalLintAar
+> Task :react-native-reanimated:mergeReleaseJavaResource
+> Task :react-native-gesture-handler:bundleReleaseLocalLintAar
+> Task :expo:syncReleaseLibJars
+> Task :react-native-worklets:extractReleaseAnnotations
+> Task :react-native-safe-area-context:syncReleaseLibJars
+> Task :expo-dev-menu:copyReleaseJniLibsProjectAndLocalJars
+> Task :expo-dev-launcher:extractReleaseAnnotations
+> Task :react-native-google-signin_google-signin:bundleReleaseLocalLintAar
+> Task :react-native-worklets:mergeReleaseGeneratedProguardFiles
+> Task :expo-dev-launcher:mergeReleaseGeneratedProguardFiles
+> Task :expo-dev-menu:extractDeepLinksForAarRelease
+> Task :react-native-worklets:mergeReleaseConsumerProguardFiles
+> Task :expo-dev-launcher:mergeReleaseConsumerProguardFiles
+> Task :expo-dev-menu-interface:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-community_datetimepicker:bundleReleaseLocalLintAar
+> Task :expo-dev-menu-interface:copyReleaseJniLibsProjectAndLocalJars
+> Task :expo-dev-menu-interface:extractDeepLinksForAarRelease
+> Task :react-native-svg:extractReleaseAnnotations
+> Task :react-native-svg:mergeReleaseGeneratedProguardFiles
+> Task :react-native-safe-area-context:bundleReleaseLocalLintAar
+> Task :react-native-webview:bundleReleaseLocalLintAar
+> Task :react-native-svg:mergeReleaseConsumerProguardFiles
+> Task :expo-dev-menu-interface:extractReleaseAnnotations
+> Task :expo-modules-core:extractDeepLinksForAarRelease
+> Task :expo-dev-menu-interface:mergeReleaseGeneratedProguardFiles
+> Task :react-native-reanimated:syncReleaseLibJars
+> Task :expo-dev-menu-interface:mergeReleaseConsumerProguardFiles
+> Task :expo-constants:stripReleaseDebugSymbols NO-SOURCE
+> Task :expo-dev-launcher:mergeReleaseJavaResource
+> Task :expo-dev-client:stripReleaseDebugSymbols NO-SOURCE
+> Task :expo-manifests:stripReleaseDebugSymbols NO-SOURCE
+> Task :expo:bundleReleaseLocalLintAar
+> Task :react-native-worklets:mergeReleaseJavaResource
+> Task :react-native-worklets:syncReleaseLibJars
+> Task :expo-json-utils:stripReleaseDebugSymbols NO-SOURCE
+> Task :expo-manifests:copyReleaseJniLibsProjectAndLocalJars
+> Task :expo-manifests:extractDeepLinksForAarRelease
+> Task :expo-dev-menu:extractReleaseAnnotations
+> Task :expo-dev-menu:mergeReleaseGeneratedProguardFiles
+> Task :expo-dev-menu:mergeReleaseConsumerProguardFiles
+> Task :expo-dev-menu-interface:mergeReleaseJavaResource
+> Task :react-native-worklets:stripReleaseDebugSymbols
+> Task :expo-constants:extractDeepLinksForAarRelease
+> Task :expo-json-utils:copyReleaseJniLibsProjectAndLocalJars
+> Task :expo-json-utils:extractDeepLinksForAarRelease
+> Task :expo-updates-interface:stripReleaseDebugSymbols NO-SOURCE
+> Task :expo-manifests:extractReleaseAnnotations
+> Task :expo-dev-menu:mergeReleaseJavaResource
+> Task :expo-manifests:mergeReleaseGeneratedProguardFiles
+> Task :expo-manifests:mergeReleaseConsumerProguardFiles
+> Task :expo-constants:extractReleaseAnnotations
+> Task :expo-dev-menu-interface:syncReleaseLibJars
+> Task :expo-constants:mergeReleaseGeneratedProguardFiles
+> Task :expo-json-utils:extractReleaseAnnotations
+> Task :expo-constants:mergeReleaseConsumerProguardFiles
+> Task :expo-json-utils:mergeReleaseGeneratedProguardFiles
+> Task :react-native-screens:syncReleaseLibJars
+> Task :expo-json-utils:mergeReleaseConsumerProguardFiles
+> Task :expo-dev-menu-interface:bundleReleaseLocalLintAar
+> Task :expo-modules-core:extractReleaseAnnotations
+> Task :expo-modules-core:mergeReleaseGeneratedProguardFiles
+> Task :expo-json-utils:mergeReleaseJavaResource
+> Task :expo-updates-interface:extractDeepLinksForAarRelease
+> Task :expo-modules-core:mergeReleaseConsumerProguardFiles
+> Task :expo-manifests:mergeReleaseJavaResource
+> Task :react-native-worklets:copyReleaseJniLibsProjectAndLocalJars
+> Task :expo-updates-interface:extractReleaseAnnotations
+> Task :expo-updates-interface:mergeReleaseGeneratedProguardFiles
+> Task :expo-updates-interface:mergeReleaseConsumerProguardFiles
+> Task :expo-dev-launcher:syncReleaseLibJars
+> Task :expo-json-utils:syncReleaseLibJars
+> Task :expo-constants:mergeReleaseJavaResource
+> Task :expo-json-utils:bundleReleaseLocalLintAar
+> Task :expo-modules-core:mergeReleaseJavaResource
+> Task :expo-manifests:syncReleaseLibJars
+> Task :expo-dev-launcher:bundleReleaseLocalLintAar
+> Task :expo-constants:syncReleaseLibJars
+> Task :expo-constants:copyReleaseJniLibsProjectAndLocalJars
+> Task :expo-updates-interface:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-screens:bundleReleaseLocalLintAar
+> Task :expo-modules-core:stripReleaseDebugSymbols
+> Task :expo-updates-interface:mergeReleaseJavaResource
+> Task :react-native-reanimated:stripReleaseDebugSymbols
+> Task :expo-dev-client:copyReleaseJniLibsProjectAndLocalJars
+> Task :expo-dev-client:extractDeepLinksForAarRelease
+> Task :expo-constants:bundleReleaseLocalLintAar
+> Task :expo-manifests:bundleReleaseLocalLintAar
+> Task :react-native-svg:mergeReleaseJavaResource
+> Task :expo-dev-launcher:writeReleaseLintModelMetadata
+> Task :expo-dev-client:extractReleaseAnnotations
+> Task :expo-dev-client:mergeReleaseGeneratedProguardFiles
+> Task :expo-dev-menu:syncReleaseLibJars
+> Task :expo-dev-client:mergeReleaseConsumerProguardFiles
+> Task :expo-dev-client:mergeReleaseJavaResource
+> Task :expo-dev-client:writeReleaseLintModelMetadata
+> Task :expo-dev-menu-interface:writeReleaseLintModelMetadata
+> Task :expo-json-utils:writeReleaseLintModelMetadata
+> Task :expo-constants:writeReleaseLintModelMetadata
+> Task :expo:writeReleaseLintModelMetadata
+> Task :expo-updates-interface:syncReleaseLibJars
+> Task :expo-manifests:writeReleaseLintModelMetadata
+> Task :react-native-firebase_messaging:writeReleaseLintModelMetadata
+> Task :react-native-gesture-handler:writeReleaseLintModelMetadata
+> Task :expo-dev-client:syncReleaseLibJars
+> Task :react-native-firebase_auth:writeReleaseLintModelMetadata
+> Task :expo-updates-interface:bundleReleaseLocalLintAar
+> Task :react-native-get-random-values:writeReleaseLintModelMetadata
+> Task :expo-updates-interface:writeReleaseLintModelMetadata
+> Task :react-native-firebase_app:writeReleaseLintModelMetadata
+> Task :react-native-maps:writeReleaseLintModelMetadata
+> Task :react-native-google-signin_google-signin:writeReleaseLintModelMetadata
+> Task :react-native-masked-view_masked-view:writeReleaseLintModelMetadata
+> Task :react-native-safe-area-context:writeReleaseLintModelMetadata
+> Task :expo-dev-client:bundleReleaseLocalLintAar
+> Task :react-native-webview:writeReleaseLintModelMetadata
+> Task :react-native-screens:writeReleaseLintModelMetadata
+> Task :react-native-async-storage_async-storage:writeReleaseLintModelMetadata
+> Task :react-native-picker_picker:writeReleaseLintModelMetadata
+> Task :expo:generateReleaseLintVitalModel
+> Task :expo-constants:generateReleaseLintVitalModel
+> Task :expo-dev-client:generateReleaseLintVitalModel
+> Task :react-native-community_datetimepicker:writeReleaseLintModelMetadata
+> Task :react-native-community_netinfo:writeReleaseLintModelMetadata
+> Task :expo-json-utils:generateReleaseLintVitalModel
+> Task :react-native-async-storage_async-storage:generateReleaseLintVitalModel
+> Task :expo-dev-launcher:generateReleaseLintVitalModel
+> Task :expo-updates-interface:generateReleaseLintVitalModel
+> Task :expo-dev-menu-interface:generateReleaseLintVitalModel
+> Task :react-native-firebase_app:generateReleaseLintVitalModel
+> Task :react-native-community_datetimepicker:generateReleaseLintVitalModel
+> Task :react-native-firebase_messaging:generateReleaseLintVitalModel
+> Task :expo-manifests:generateReleaseLintVitalModel
+> Task :react-native-community_netinfo:generateReleaseLintVitalModel
+> Task :react-native-firebase_auth:generateReleaseLintVitalModel
+> Task :react-native-gesture-handler:generateReleaseLintVitalModel
+> Task :react-native-get-random-values:generateReleaseLintVitalModel
+> Task :react-native-picker_picker:generateReleaseLintVitalModel
+> Task :react-native-google-signin_google-signin:generateReleaseLintVitalModel
+> Task :react-native-safe-area-context:generateReleaseLintVitalModel
+> Task :react-native-masked-view_masked-view:generateReleaseLintVitalModel
+> Task :react-native-webview:generateReleaseLintVitalModel
+> Task :react-native-svg:syncReleaseLibJars
+> Task :react-native-screens:generateReleaseLintVitalModel
+> Task :react-native-svg:bundleReleaseLocalLintAar
+> Task :react-native-maps:generateReleaseLintVitalModel
+> Task :react-native-svg:writeReleaseLintModelMetadata
+> Task :react-native-svg:generateReleaseLintVitalModel
+> Task :expo-dev-menu:bundleReleaseLocalLintAar
+> Task :expo-dev-menu:writeReleaseLintModelMetadata
+> Task :expo-dev-menu:generateReleaseLintVitalModel
+> Task :react-native-reanimated:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-reanimated:writeReleaseLintModelMetadata
+> Task :react-native-worklets:bundleReleaseLocalLintAar
+> Task :react-native-worklets:writeReleaseLintModelMetadata
+> Task :react-native-worklets:generateReleaseLintVitalModel
+> Task :expo-modules-core:syncReleaseLibJars
+> Task :expo-modules-core:writeReleaseLintModelMetadata
+> Task :expo-modules-core:generateReleaseLintVitalModel
+> Task :expo-modules-core:copyReleaseJniLibsProjectAndLocalJars
+> Task :expo-modules-core:bundleReleaseLocalLintAar
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:validateSigningRelease
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :react-native-reanimated:bundleReleaseLocalLintAar
+> Task :react-native-reanimated:generateReleaseLintVitalModel
+> Task :react-native-community_netinfo:lintVitalAnalyzeRelease
+> Task :react-native-async-storage_async-storage:lintVitalAnalyzeRelease
+> Task :react-native-community_datetimepicker:lintVitalAnalyzeRelease
+> Task :expo-constants:lintVitalAnalyzeRelease
+The Daemon will expire after the build after running out of JVM Metaspace.
+The project memory settings are likely not configured or are configured to an insufficient value.
+The daemon will restart for the next build, which may increase subsequent build times.
+These settings can be adjusted by setting 'org.gradle.jvmargs' in 'gradle.properties'.
+The currently configured max heap space is '2 GiB' and the configured max metaspace is '512 MiB'.
+For more information on how to set these values, please refer to https://docs.gradle.org/8.13/userguide/build_environment.html#sec:configuring_jvm_memory in the Gradle documentation.
+To disable this warning, set 'org.gradle.daemon.performance.disable-logging=true'.
+Daemon will be stopped at the end of the build after running out of JVM Metaspace
+> Task :expo:lintVitalAnalyzeRelease
+> Task :expo-dev-client:lintVitalAnalyzeRelease
+> Task :expo-dev-menu-interface:lintVitalAnalyzeRelease
+> Task :expo-json-utils:lintVitalAnalyzeRelease
+> Task :expo-dev-launcher:lintVitalAnalyzeRelease
+> Task :expo-manifests:lintVitalAnalyzeRelease
+> Task :expo-updates-interface:lintVitalAnalyzeRelease
+> Task :react-native-firebase_app:lintVitalAnalyzeRelease
+> Task :expo-dev-menu:lintVitalAnalyzeRelease
+> Task :react-native-firebase_auth:lintVitalAnalyzeRelease
+> Task :react-native-firebase_messaging:lintVitalAnalyzeRelease
+> Task :react-native-get-random-values:lintVitalAnalyzeRelease
+> Task :react-native-google-signin_google-signin:lintVitalAnalyzeRelease
+> Task :react-native-gesture-handler:lintVitalAnalyzeRelease
+> Task :react-native-masked-view_masked-view:lintVitalAnalyzeRelease
+> Task :react-native-maps:lintVitalAnalyzeRelease
+> Task :react-native-reanimated:lintVitalAnalyzeRelease
+> Task :expo-modules-core:lintVitalAnalyzeRelease
+> Task :react-native-picker_picker:lintVitalAnalyzeRelease
+> Task :react-native-safe-area-context:lintVitalAnalyzeRelease
+> Task :react-native-svg:lintVitalAnalyzeRelease
+> Task :react-native-worklets:lintVitalAnalyzeRelease
+> Task :react-native-screens:lintVitalAnalyzeRelease
+> Task :react-native-webview:lintVitalAnalyzeRelease
 
-Logs for your project will appear below. Press Ctrl+C to exit.
-› Opening on Android...
-› Opening com.choma.app/.MainActivity on SM_G991N
-› Press ? │ show all commands
-Android Bundled 2915ms index.js (2160 modules)
- WARN  [2025-10-10T13:11:03.800Z]  @firebase/analytics: Analytics: Firebase Analytics is not supported in this environment. Wrap initializa
-tion of analytics in analytics.isSupported() to prevent initialization in unsupported environments. Details: (1) Cookies are not available. (analytics/invalid-analytics-context).
- WARN  [2025-10-10T13:11:03.831Z]  @firebase/analytics: Analytics: IndexedDB unavailable or restricted in this environment. Wrap initializa
-tion of analytics in analytics.isSupported() to prevent initialization in unsupported environments. Details: IndexedDB is not available in this environment. (analytics/indexeddb-unavailable).
- WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
- WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
- LOG  📱 Initializing Choma app...
- LOG  🔤 Loading DM Sans fonts...
- LOG  ✅ DM Sans fonts loaded successfully!
- LOG  ✅ Font overrides applied - using DM Sans
- LOG  🔥 Setting up push notifications...
- LOG  🔗 Deep linking initialized
- WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
- LOG  🚀 Navigation performance optimizations initialized
- LOG  ✅ App initialization complete
- WARN  SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
- LOG  🔥 Firebase messaging enabled for all environments
- LOG  🔥 Initializing Firebase app...
- LOG  ✅ Using Firebase app from configuration files
- LOG  🔥 Initializing Firebase messaging
- LOG  📱 Environment: {"appOwnership": null, "executionEnvironment": "bare", "firebaseAvailable": true, "firebaseInitialized": true, "isDev": true}
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as par
-t of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as par
-t of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `getToken`. Please use `getToken()` instead.
- LOG  ℹ️ Loading notifications from backend... 
- LOG  🔍 Checking authentication status...
- LOG  🚀 Initializing API service...
- LOG  ✅ API service initialized with stored token
- LOG  📱 Token found, verifying with backend...
- LOG  🔍 API Service Auth Debug:
- LOG    - Has token: true
- LOG    - Token preview: eyJhbGciOiJIUzI1NiIs...
- LOG    - User ID: 68e7bb413a8616c17bffd6e5
- LOG  🔥 Firebase FCM Token obtained: eNRJMuBkSeGZI898X-QXW6:APA91bEXft27bP8B139ZEXFqhRC...
- LOG  API Request (Attempt 1): GET http://10.55.154.104:5001/api/notifications?_t=1760101867459
- LOG  📋 Cache HIT (storage): authUser
- LOG  🚀 Optimistic loading: returning cached user data
- LOG  ⏱️ Rate limiting: waiting 189ms before next request
- LOG  ✅ User authenticated (cached): eberetesti12@gmail.com
- LOG  ✅ Using Firebase FCM for push notifications
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as par
-t of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
- WARN  This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as par
-t of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `onMessage`. Please use `onMessage()` instead.
- LOG  📱 Registering FCM push token: {"deviceId": "I am Legend", "platform": "android", "token": "eNRJMuBkSeGZI898X-QX...", "tokenType": "fcm"}
- LOG  ⏱️ Rate limiting: waiting 176ms before next request
- LOG  🍽️ Fetching all meal plans from backend... 
- LOG  🔄 Fetching meal plans from backend... 
- LOG  🌐 API URL: http://10.55.154.104:5001/api/mealplans
- LOG  👤 User check: Logged in
- LOG  🔍 Checking for active subscription...
- LOG  � Calling getUserSubscriptions API...
- LOG  📋 Fetching user subscriptions
- LOG  🌐 TagService fetching from: http://10.55.154.104:5001/api/tags?_t=1760101867803
- LOG  🔍 Debug - Token status before request: {"hasToken": true, "tokenLength": 244, "tokenPreview": "eyJhbGciOiJIUzI1NiIs..."}
- LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://10.55.154.104:5001/api/auth/dashboard"}
- LOG  API Request (Attempt 1): GET http://10.55.154.104:5001/api/auth/dashboard
- LOG  📱 Biometric auth initialized
- LOG  Available biometric types: [1, 2]
- LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://10.55.154.104:5001/api/auth/profile"}
- LOG  API Request (Attempt 1): GET http://10.55.154.104:5001/api/auth/profile
- LOG  🔍 Debug - Request headers for auth endpoint: {"authHeaderPreview": "Bearer eyJhbGciOiJIUzI1NiIsInR...", "hasAuthHeader": true, "hasToken": true, "url": "http://10.55.154.104:5001/api/auth/push-token"}
- LOG  API Request (Attempt 1): POST http://10.55.154.104:5001/api/auth/push-token
- LOG  🏥 Backend health check: PASS
- LOG  📋 Cache HIT (storage): mealPlans
- LOG  ✅ Successfully loaded 7 meal plans
- LOG  📋 Meal plan names: Testing, Testing (Copy), Testing (Copy) (Copy), FitFam Fuel, FitFam Fuel (Copy), FitFam Fuel (Copy) (Copy), hh
- LOG  📦 Received 7 meal plans, starting progressive rendering...
- LOG  ✅ Started progressive loading of 7 meal plans
- LOG  📦 TagService API response: {"count": 2, "data": [{"__v": 0, "_id": "68ca9883305a2a9fd6d5e680", "bigPreviewImage": "https://res.cloud
-inary.com/dql0tbyes/image/upload/v1759070793/choma/tag-previews/cwodrxzaaafceau6tr4o.jpg", "createdAt": "2025-09-17T11:16:19.730Z", "descri
-ption": "For Gym enthusaist", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v1759070763/choma/tags/kjqubzd7gsgonnxjx9je.png",
- "isActive": true, "mealPlanCount": 2, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-09-28T14:46:43.040Z"}, {"__v": 0
-, "_id": "68d068513dd82e948d537bc5", "bigPreviewImage": "https://res.cloudinary.com/dql0tbyes/image/upload/v1759070865/choma/tag-previews/z
-q3tyquhy2sryxbrsse9.jpg", "createdAt": "2025-09-21T21:04:17.731Z", "description": "This me", "image": "https://res.cloudinary.com/dql0tbyes
-/image/upload/v1759070845/choma/tags/pzq09wi5tx03jpkax8zi.png", "isActive": true, "mealPlanCount": 2, "name": "James b", "sortOrder": 2, "tagId": "TAG003", "updatedAt": "2025-09-28T14:47:30.416Z"}], "success": true}
- LOG  🔄 Background: updated cached user data
- LOG  📋 Cache SET: authUser (564 bytes)
- LOG  ℹ️ Raw API response structure: {
-  "success": true,
-  "data": {
-    "success": true,
-    "data": {
-      "notifications": [
-        {
-          "_id": "68e8e838931f7faa97c041f0",
-          "userId": "68e7bb413a8616c17bffd6e5",
-          "title": "Order Update - Confirmed",
-          "message": "Your order #ORD-1760092334239-HQWESHSWS has been confirmed and assigned to our chef! 🍳",
-          "type": "order_status_update",
-          "isRead": false,
-          "data": {
-            "orderId": "68e8e0ae931f7faa97c03f63",
-            "orderNumber": "ORD-1760092334239-HQWESHSWS",
-            "oldStatus": "Pending",
-            "newStatus": "Confirmed",
-            "timestamp": "2025-10-10T11:04:24.229Z"
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-11-09T11:04:24.581Z",
-          "createdAt": "2025-10-10T11:04:24.582Z",
-          "updatedAt": "2025-10-10T11:04:25.656Z",
-          "__v": 0,
-          "pushSentAt": "2025-10-10T11:04:25.656Z"
-        },
-        {
-          "_id": "68e8e0b2931f7faa97c03f7c",
-          "userId": "68e7bb413a8616c17bffd6e5",
-          "title": "Payment Successful! 💳",
-          "message": "Your payment of ₦13469 has been processed successfully.",
-          "type": "payment_success",
-          "isRead": false,
-          "data": {
-            "amount": 13469,
-            "reference": "choma-1760092357162-403843",
-            "subscriptionId": "68e8e09a931f7faa97c03f4d"
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-11-09T10:32:18.615Z",
-          "createdAt": "2025-10-10T10:32:18.615Z",
-          "updatedAt": "2025-10-10T10:32:19.014Z",
-          "__v": 0,
-          "pushSentAt": "2025-10-10T10:32:19.014Z"
-        },
-        {
-          "_id": "68e8e0b1931f7faa97c03f71",
-          "userId": "68e7bb413a8616c17bffd6e5",
-          "title": "Subscription Activated! ✅",
-          "message": "Your FitFam Fuel (Copy) subscription is now active. Your meals start on Sat Oct 11 2025 11:31:45 GMT+0100 (West Africa Standard Time).",
-          "type": "subscription_created",
-          "isRead": false,
-          "data": {
-            "planName": "FitFam Fuel (Copy)",
-            "startDate": "2025-10-11T10:31:45.362Z",
-            "frequency": "all",
-            "duration": "1"
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-11-09T10:32:17.520Z",
-          "createdAt": "2025-10-10T10:32:17.520Z",
-          "updatedAt": "2025-10-10T10:32:18.061Z",
-          "__v": 0,
-          "pushSentAt": "2025-10-10T10:32:18.061Z"
-        },
-        {
-          "_id": "68e8e0ae931f7faa97c03f67",
-          "userId": "68e7bb413a8616c17bffd6e5",
-          "title": "Order Confirmed! 📦",
-          "message": "Order #ORD-1760092334239-HQWESHSWS has been confirmed and is being prepared by our chef.",
-          "type": "order_confirmed",
-          "isRead": false,
-          "data": {
-            "orderNumber": "ORD-1760092334239-HQWESHSWS",
-            "planName": "FitFam Fuel (Copy)",
-            "deliveryDate": "2025-10-11T10:31:45.362Z",
-            "totalAmount": 13469
-          },
-          "priority": "high",
-          "pushSent": true,
-          "expiresAt": "2025-11-09T10:32:14.943Z",
-          "createdAt": "2025-10-10T10:32:14.944Z",
-          "updatedAt": "2025-10-10T10:32:16.815Z",
-          "__v": 0,
-          "pushSentAt": "2025-10-10T10:32:16.815Z"
-        }
-      ],
-      "pagination": {
-        "currentPage": 1,
-        "totalPages": 1,
-        "totalNotifications": 4,
-        "hasNext": false,
-        "hasPrev": false,
-        "unreadCount": 4
-      }
-    }
-  }
-}
- LOG  ℹ️ Notification API response: {"actualDataExists": true, "dataExists": true, "notificationsCount": 4, "notificationsExists": true, "responseDataType": "object", "success": true, "unreadCount": 4}
- LOG  📋 Processing notifications: {"firstNotification": {"isRead": false, "title": "Order Update - Confirmed", "type": "order_status_update"}, "notificationArray": true, "notificationCount": 4}
- LOG  ✅ Notifications loaded successfully: 4 Unread count (API/Local/Final): 4 4 4
- LOG  ✅ FCM push token registered with backend: {"data": {"message": "Push token registered successfully", "success": true}, "success": trrue}
- LOG  ✅ User signed in: Testimony Ihechukwu
- LOG  ✅ User signed in: Testimony Ihechukwu
- LOG  ✅ User subscriptions fetched successfully
- LOG  📦 Subscriptions API response: {
-  "success": true,
-  "data": []
-}
- LOG  📦 Found subscriptions array in data
- LOG  📦 Total subscriptions found: 0
- LOG  ℹ️ No subscriptions found, staying on Home screen
- LOG  👤 User check: Logged in
- LOG  ℹ️ Already checked subscription, skipping
+[Incubating] Problems report is available at: file:///C:/dev/choma/user-mobile/android/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:mergeReleaseResources'.
+> A failure occurred while executing com.android.build.gradle.internal.res.Aapt2CompileRunnable
+   > Android resource compilation failed
+     ERROR: C:\dev\choma\user-mobile\android\app\build\generated\res\createBundleReleaseJsAndAssets\drawable-mdpi\assets_icon.png: AAPT: error: file failed to compile.
+         
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.13/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 33m 5s
+1178 actionable tasks: 542 executed, 636 up-to-date

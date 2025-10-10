@@ -30,6 +30,10 @@ export const APP_CONFIG = {
   // Google Maps Configuration
   GOOGLE_MAPS_API_KEY: "AIzaSyBBxkH4OxFvVDJ242aIOl7auZ2F4Lcf9fg", // Add your actual API key
 
+  // Google Sign-In Configuration (SHA-1 fingerprints registered in Firebase)
+  // Debug SHA-1: 5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25
+  // Release SHA-1: 95:2F:6A:8F:8A:CC:C5:9A:23:A8:49:44:FA:BC:7B:59:06:DD:76:97
+
   // App Settings
   CURRENCY: "NGN",
   CURRENCY_SYMBOL: "₦",

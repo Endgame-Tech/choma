@@ -6,11 +6,10 @@ const mongoose = require("mongoose");
 
 const CustomMealSchema = new mongoose.Schema(
   {
-    // Unique identifier
+    // Unique identifier (auto-generated in pre-save hook)
     customMealId: {
       type: String,
       unique: true,
-      required: true,
     },
 
     // Basic Info
@@ -36,7 +35,7 @@ const CustomMealSchema = new mongoose.Schema(
       {
         mealId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "DailyMeal",
+          ref: "Meal",
           required: true,
         },
         quantity: {
@@ -66,20 +65,9 @@ const CustomMealSchema = new mongoose.Schema(
       totalPrice: { type: Number, default: 0 },
     },
 
-    // Aggregated allergens from all constituent meals
+    // Aggregated allergens from all constituent meals (no enum - accepts any string)
     allergens: {
       type: [String],
-      enum: [
-        "dairy",
-        "eggs",
-        "fish",
-        "shellfish",
-        "tree_nuts",
-        "peanuts",
-        "wheat",
-        "soy",
-        "sesame",
-      ],
       default: [],
     },
 

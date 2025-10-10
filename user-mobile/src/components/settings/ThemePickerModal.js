@@ -38,16 +38,17 @@ const ThemePickerModal = ({ isVisible, onClose }) => {
 
   return (
     <Modal
-      animationType="fade" // Changed from "slide" to "fade"
+      animationType="fade"
       transparent={true}
       visible={isVisible}
       onRequestClose={onClose}
     >
-      <TouchableOpacity
-        style={styles(colors).modalOverlay}
-        activeOpacity={1}
-        onPressOut={onClose} // Close modal on overlay press
-      >
+      <View style={styles(colors).modalOverlay}>
+        <TouchableOpacity
+          style={styles(colors).overlayTouchable}
+          activeOpacity={1}
+          onPress={onClose}
+        />
         <View style={styles(colors).modalContainer}>
           <Text style={styles(colors).headerTitle}>Display Theme</Text>
           <View style={styles(colors).optionsContainer}>
@@ -62,7 +63,7 @@ const ThemePickerModal = ({ isVisible, onClose }) => {
               >
                 <CustomIcon
                   name={option.icon}
-                  size={22} // Reduced size
+                  size={22}
                   color={
                     themeMode === option.key ? colors.primary : colors.textSecondary
                   }
@@ -79,7 +80,7 @@ const ThemePickerModal = ({ isVisible, onClose }) => {
             ))}
           </View>
         </View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 };
@@ -92,10 +93,17 @@ const styles = (colors) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
+    overlayTouchable: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+    },
     modalContainer: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.cardBackground,
       borderRadius: 15,
-      padding: 15,
+      padding: 20,
       width: '80%',
       elevation: 10,
       shadowColor: '#000',

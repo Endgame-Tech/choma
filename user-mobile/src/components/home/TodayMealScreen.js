@@ -17,9 +17,10 @@ import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 import apiService from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import ChomaLogo from "../ui/ChomaLogo";
 
 const { width, height } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.75;
+const CARD_WIDTH = width * 0.85;
 const CARD_SPACING = 20;
 
 const TodayMealScreen = ({ navigation, route }) => {
@@ -210,11 +211,7 @@ const TodayMealScreen = ({ navigation, route }) => {
       >
         {/* Logo */}
         <View style={styles(colors).logoContainer}>
-          <Image
-            source={require("../../../assets/icon.png")}
-            style={styles(colors).logo}
-            resizeMode="contain"
-          />
+          <ChomaLogo width={140} height={78} />
         </View>
 
         {/* Title */}
@@ -248,8 +245,9 @@ const TodayMealScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* Buttons */}
+        {/* Buttons - Updated to match reference image */}
         <View style={styles(colors).buttonsContainer}>
+          {/* Primary Button - Explore My Plan */}
           <TouchableOpacity
             style={styles(colors).primaryButton}
             onPress={handleExploreMyPlan}
@@ -260,12 +258,13 @@ const TodayMealScreen = ({ navigation, route }) => {
             </Text>
           </TouchableOpacity>
 
+          {/* Secondary Button - Search (Circular) */}
           <TouchableOpacity
             style={styles(colors).secondaryButton}
             onPress={handleSearch}
             activeOpacity={0.8}
           >
-            <Text style={styles(colors).secondaryButtonText}>Search</Text>
+            <Text style={styles(colors).secondaryButtonText}>🔍</Text>
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -297,18 +296,14 @@ const styles = (colors) =>
     logoContainer: {
       alignItems: "center",
       marginTop: 20,
-      marginBottom: 30,
-    },
-    logo: {
-      width: 100,
-      height: 60,
+      marginBottom: 10,
     },
     title: {
       fontSize: 22,
       fontWeight: "700",
       color: colors.white,
       textAlign: "center",
-      marginBottom: 40,
+      marginBottom: 20,
       // lineHeight: 40,
     },
     carousel: {
@@ -318,11 +313,13 @@ const styles = (colors) =>
     carouselContent: {
       paddingHorizontal: (width - CARD_WIDTH) / 2,
       gap: CARD_SPACING,
+      paddingVertical: 30,
     },
     mealCard: {
       width: CARD_WIDTH,
-      height: height * 0.45,
+      height: height * 0.55,
       borderRadius: 24,
+
       overflow: "hidden",
       backgroundColor: colors.white,
       shadowColor: "#000",
@@ -373,13 +370,17 @@ const styles = (colors) =>
       textAlign: "center",
       opacity: 0.8,
     },
+    // Updated Button Styles
     buttonsContainer: {
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 40,
-      gap: 16,
-      marginTop: "auto",
-      paddingBottom: 40,
+      gap: 12,
+      // marginTop: "auto",
+      paddingBottom: 15,
     },
     primaryButton: {
+      flex: 1,
       backgroundColor: "#E8B44A",
       paddingVertical: 18,
       borderRadius: 30,
@@ -396,15 +397,17 @@ const styles = (colors) =>
       color: "#652815",
     },
     secondaryButton: {
-      backgroundColor: "rgba(255, 255, 255, 0.15)",
-      paddingVertical: 18,
+      width: 60,
+      height: 60,
       borderRadius: 30,
+      backgroundColor: "rgba(255, 255, 255, 0.15)",
       alignItems: "center",
+      justifyContent: "center",
       borderWidth: 1.5,
       borderColor: "rgba(255, 255, 255, 0.3)",
     },
     secondaryButtonText: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: "600",
       color: colors.white,
     },
