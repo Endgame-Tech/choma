@@ -125,7 +125,7 @@ const AdDiscountModal: React.FC<AdDiscountModalProps> = ({
     await onSave(formData);
   };
 
-  const isValidCounterValue = selectedMealPlan && formData.counterValue > (Number(selectedMealPlan.totalPrice) || Number(selectedMealPlan.basePrice) || 0);
+  const isValidCounterValue = selectedMealPlan && (formData.counterValue ?? 0) > (Number(selectedMealPlan.totalPrice) || Number(selectedMealPlan.basePrice) || 0);
 
   if (!isOpen) return null;
 
@@ -239,7 +239,7 @@ const AdDiscountModal: React.FC<AdDiscountModalProps> = ({
                     <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-500 text-white text-xs font-bold mr-2">
                       2
                     </span>
-                    Set "Counter Value" (Fake Higher Price) *
+                    Set &quot;Counter Value&quot; (Fake Higher Price) *
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">₦</span>

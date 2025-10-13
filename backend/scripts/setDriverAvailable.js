@@ -9,8 +9,10 @@ async function setDriverAvailable() {
     console.log("✅ Connected to database\n");
 
     // Find the driver
-    const driver = await Driver.findOne({ email: "legendetestimony@gmail.com" });
-    
+    const driver = await Driver.findOne({
+      email: "legendetestimony@gmail.com",
+    });
+
     if (!driver) {
       console.log("❌ Driver not found");
       return;
@@ -29,7 +31,6 @@ async function setDriverAvailable() {
     console.log("\n✅ Driver availability updated!");
     console.log(`   Is Available: ${driver.isAvailable}`);
     console.log("\n🚚 Driver can now be assigned to orders");
-
   } catch (error) {
     console.error("❌ Error:", error);
   } finally {
