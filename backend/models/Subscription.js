@@ -43,8 +43,14 @@ const SubscriptionSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["active", "paused", "cancelled", "expired"],
-      default: "active",
+      enum: [
+        "pending_first_delivery",
+        "active",
+        "paused",
+        "cancelled",
+        "expired",
+      ],
+      default: "pending_first_delivery",
     },
     startDate: { type: Date, required: true },
     nextDelivery: Date,
@@ -55,6 +61,15 @@ const SubscriptionSchema = new mongoose.Schema(
     paymentReference: String,
     deliveryAddress: String,
     specialInstructions: String,
+
+    // First delivery tracking - NEW
+    firstDeliveryCompleted: { type: Boolean, default: false },
+    firstDeliveryCompletedAt: Date,
+    firstDeliveryOrderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+    },
+    actualStartDate: Date, // When first delivery was completed
 
     // Additional fields for dashboard functionality
     renewalType: {
@@ -208,6 +223,215 @@ const SubscriptionSchema = new mongoose.Schema(
       isActivated: { type: Boolean, default: false },
       activatedAt: Date,
       activationDeliveryCompleted: { type: Boolean, default: false },
+    },
+
+    // ========================================
+    // MEAL PLAN SNAPSHOT - NEW
+    // ========================================
+    // Complete snapshot of meal plan data at subscription time
+    // This ensures data consistency even if the original meal plan is modified
+    mealPlanSnapshot: {
+      // Basic plan information
+      planId: { type: mongoose.Schema.Types.ObjectId, ref: "MealPlan" },
+      planName: String,
+      planDescription: String,
+      targetAudience: String,
+      coverImage: String,
+      tier: String,
+
+      // Subscription period
+      startDate: Date,
+      endDate: Date,
+      durationWeeks: Number,
+
+      // Complete meal schedule with all details
+      mealSchedule: [
+        {
+          // Assignment reference (for tracking)
+          assignmentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "MealPlanAssignment",
+          },
+
+          // Scheduling information
+          weekNumber: { type: Number, min: 1, max: 8 },
+          dayOfWeek: { type: Number, min: 1, max: 7 }, // 1=Monday, 7=Sunday
+          dayName: String, // "Monday", "Tuesday", etc.
+          mealTime: {
+            type: String,
+            enum: ["breakfast", "lunch", "dinner"],
+          },
+
+          // Custom title and description for this meal slot
+          customTitle: String,
+          customDescription: String,
+          imageUrl: String,
+
+          // Individual meal details (can be multiple meals per slot)
+          meals: [
+            {
+              mealId: { type: mongoose.Schema.Types.ObjectId, ref: "Meal" },
+              name: String,
+              image: String,
+              category: String,
+
+              // Nutritional snapshot
+              nutrition: {
+                calories: Number,
+                protein: Number,
+                carbs: Number,
+                fat: Number,
+                fiber: Number,
+                sugar: Number,
+                weight: Number,
+              },
+
+              // Pricing snapshot
+              pricing: {
+                cookingCosts: Number,
+                packaging: Number,
+                platformFee: Number,
+                totalPrice: Number,
+                chefEarnings: Number,
+                chomaEarnings: Number,
+              },
+
+              // Dietary information
+              dietaryTags: [String],
+              healthGoals: [String],
+              allergens: [String],
+              ingredients: String,
+              detailedIngredients: [
+                {
+                  name: String,
+                  category: String,
+                  canOmit: Boolean,
+                },
+              ],
+
+              // Preparation info
+              preparationTime: Number,
+              complexityLevel: String,
+              preparationMethod: String,
+              glycemicIndex: String,
+
+              // Customization options
+              customizationOptions: {
+                canReducePepper: Boolean,
+                canReduceOil: Boolean,
+                canRemoveOnions: Boolean,
+                canMakeVegan: Boolean,
+                canAdjustSpice: Boolean,
+                customizationNotes: String,
+              },
+            },
+          ],
+
+          // Delivery tracking for this specific meal slot
+          scheduledDeliveryDate: Date,
+          deliveryStatus: {
+            type: String,
+            enum: ["pending", "scheduled", "preparing", "out_for_delivery", "delivered", "skipped", "cancelled"],
+            default: "pending",
+          },
+          deliveredAt: Date,
+          skippedReason: String,
+
+          // Slot-specific notes
+          notes: String,
+        },
+      ],
+
+      // Aggregated statistics (pre-calculated for performance)
+      stats: {
+        totalMeals: Number,
+        totalMealSlots: Number, // Number of meal times across all weeks
+        mealsPerWeek: Number,
+        totalDays: Number,
+        daysWithMeals: Number, // Actual days with scheduled meals
+
+        // Nutritional totals and averages
+        totalNutrition: {
+          calories: Number,
+          protein: Number,
+          carbs: Number,
+          fat: Number,
+          fiber: Number,
+        },
+        avgNutritionPerMeal: {
+          calories: Number,
+          protein: Number,
+          carbs: Number,
+          fat: Number,
+        },
+        avgNutritionPerDay: {
+          calories: Number,
+          protein: Number,
+          carbs: Number,
+          fat: Number,
+        },
+
+        // Meal type distribution
+        mealTypeDistribution: {
+          breakfast: Number,
+          lunch: Number,
+          dinner: Number,
+        },
+
+        // Dietary breakdown
+        dietaryDistribution: {
+          vegan: Number,
+          vegetarian: Number,
+          pescatarian: Number,
+          halal: Number,
+          glutenFree: Number,
+          dairyFree: Number,
+        },
+
+        // Complexity distribution
+        complexityDistribution: {
+          low: Number,
+          medium: Number,
+          high: Number,
+        },
+      },
+
+      // Pricing snapshot (captured at subscription time)
+      pricing: {
+        basePlanPrice: Number,
+        totalMealsCost: Number, // Sum of all individual meal prices
+        frequencyMultiplier: Number,
+        durationMultiplier: Number,
+        subtotal: Number,
+
+        // Discount information (if applied)
+        discountApplied: {
+          discountId: mongoose.Schema.Types.ObjectId,
+          discountPercent: Number,
+          discountAmount: Number,
+          reason: String,
+          discountType: String, // "promo", "ad", "referral", etc.
+        },
+
+        totalPrice: Number,
+        pricePerMeal: Number,
+        pricePerWeek: Number,
+
+        // Earnings breakdown
+        totalChefEarnings: Number,
+        totalChomaEarnings: Number,
+      },
+
+      // Plan features snapshot
+      features: [String],
+
+      // Allergen summary (all allergens in the plan)
+      allergensSummary: [String],
+
+      // Metadata
+      snapshotCreatedAt: { type: Date, default: Date.now },
+      lastSyncedAt: Date, // For re-syncing if needed
+      isCustomized: { type: Boolean, default: false }, // If user customized the plan
     },
 
     createdDate: { type: Date, default: Date.now },

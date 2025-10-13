@@ -156,6 +156,8 @@ const ChefWorkloadDashboard: React.FC = () => {
             value={selectedTimeFrame}
             onChange={(e) => setSelectedTimeFrame(e.target.value as 'today' | 'week' | 'month')}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+            aria-label="Time frame"
+            title="Time frame"
           >
             <option value="today">Today</option>
             <option value="week">This Week</option>
@@ -166,6 +168,8 @@ const ChefWorkloadDashboard: React.FC = () => {
             value={selectedArea}
             onChange={(e) => setSelectedArea(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+            aria-label="Area"
+            title="Area"
           >
             <option value="all">All Areas</option>
             <option value="lagos-island">Lagos Island</option>
@@ -178,6 +182,8 @@ const ChefWorkloadDashboard: React.FC = () => {
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'workload' | 'rating' | 'efficiency')}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+            aria-label="Sort by"
+            title="Sort by"
           >
             <option value="workload">Workload</option>
             <option value="rating">Rating</option>

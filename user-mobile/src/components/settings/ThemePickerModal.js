@@ -11,7 +11,7 @@ import { useTheme } from '../../styles/theme';
 import CustomIcon from '../ui/CustomIcon';
 
 const ThemePickerModal = ({ isVisible, onClose }) => {
-  const { themeMode, setThemeMode, colors } = useTheme();
+  const { themeMode, setThemeMode, colors, isDark } = useTheme();
 
   const themeOptions = [
     {
@@ -27,7 +27,8 @@ const ThemePickerModal = ({ isVisible, onClose }) => {
     {
       key: 'system',
       title: 'System',
-      icon: 'settings',
+      icon: 'phone-portrait',
+      subtitle: isDark ? 'Currently: Dark' : 'Currently: Light',
     },
   ];
 
@@ -76,6 +77,11 @@ const ThemePickerModal = ({ isVisible, onClose }) => {
                 >
                   {option.title}
                 </Text>
+                {option.subtitle && themeMode === option.key && (
+                  <Text style={styles(colors).subtitleText}>
+                    {option.subtitle}
+                  </Text>
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -139,6 +145,12 @@ const styles = (colors) =>
     selectedText: {
       color: colors.primary,
       fontWeight: '600',
+    },
+    subtitleText: {
+      fontSize: 10,
+      color: colors.textMuted,
+      marginTop: 4,
+      textAlign: 'center',
     },
   });
 

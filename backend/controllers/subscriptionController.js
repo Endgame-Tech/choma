@@ -5,6 +5,8 @@ const SubscriptionDelivery = require("../models/SubscriptionDelivery");
 const SubscriptionChefAssignment = require("../models/SubscriptionChefAssignment");
 const MealPlanAssignment = require("../models/MealPlanAssignment");
 const mealProgressionService = require("../services/mealProgressionService");
+const mealAssignmentService = require('../services/mealAssignmentService');
+const { compileMealPlanSnapshot } = require("../services/mealPlanSnapshotService");
 
 // Get user's subscriptions
 exports.getUserSubscriptions = async (req, res) => {
@@ -213,7 +215,49 @@ exports.createSubscription = async (req, res) => {
       JSON.stringify(subscriptionData, null, 2)
     );
 
+    // ========================================
+    // COMPILE MEAL PLAN SNAPSHOT
+    // ========================================
+    // Before creating the subscription, compile a complete snapshot of the meal plan
+    // This ensures data consistency even if the meal plan is modified later
+    console.log("📸 Compiling meal plan snapshot...");
+
+    try {
+      // Extract discount information from request if available
+      const discountInfo = req.body.discountInfo || null;
+
+      const mealPlanSnapshot = await compileMealPlanSnapshot(
+        mealPlan,
+        req.user.id,
+        subscriptionStartDate,
+        tentativeEndDate,
+        selectedMealTypes || mealPlanDoc.mealTypes || ["lunch"],
+        discountInfo,
+        {
+          basePlanPrice: basePlanPrice || mealPlanDoc.totalPrice || 0,
+          frequencyMultiplier: frequencyMultiplier || 1,
+          durationMultiplier: durationMultiplier || 1,
+        }
+      );
+
+      // Add the snapshot to subscription data
+      subscriptionData.mealPlanSnapshot = mealPlanSnapshot;
+
+      console.log("✅ Meal plan snapshot compiled successfully:", {
+        totalMeals: mealPlanSnapshot.stats.totalMeals,
+        totalMealSlots: mealPlanSnapshot.stats.totalMealSlots,
+        snapshotPrice: mealPlanSnapshot.pricing.totalPrice,
+      });
+    } catch (snapshotError) {
+      console.error("⚠️ Warning: Failed to compile meal plan snapshot:", snapshotError);
+      // Don't fail subscription creation if snapshot compilation fails
+      // The snapshot can be generated later via migration script
+    }
+
     const subscription = await Subscription.create(subscriptionData);
+
+    // Generate the meal assignments for the new subscription (fire and forget)
+    mealAssignmentService.generateAssignmentsForSubscription(subscription);
 
     // Update user's address if deliveryAddress is provided and different from current
     if (deliveryAddress && deliveryAddress.trim()) {

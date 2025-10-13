@@ -58,6 +58,20 @@ class ApiService {
     try {
       const now = Date.now();
 
+      // CRITICAL FIX: Always check AsyncStorage if we don't have a token in memory
+      // This prevents race conditions where the cache is empty but AsyncStorage has a token
+      if (!this.token) {
+        console.log("⚠️ No token in memory, checking AsyncStorage...");
+        const token = await AsyncStorage.getItem("authToken");
+        if (token) {
+          console.log("✅ Token found in AsyncStorage, updating cache");
+          this.token = token;
+          this.cachedToken = token;
+          this.tokenLastChecked = now;
+          return token;
+        }
+      }
+
       // Return cached token if it's still valid
       if (
         this.cachedToken &&
@@ -364,26 +378,48 @@ class ApiService {
     // Enforce basic rate limiting
     await this.enforceRateLimit();
 
+    // CRITICAL FIX: Ensure token is loaded before building headers
+    // This prevents race conditions where multiple requests try to load the token simultaneously
+    if (!this.token) {
+      await this.getStoredToken();
+    }
+
+    // Build headers with proper priority: Authorization must ALWAYS be included
+    const authHeaders = this.token
+      ? { Authorization: `Bearer ${this.token}` }
+      : {};
+    const apiKeyHeaders = !__DEV__
+      ? { "X-API-Key": APP_CONFIG.PRODUCTION_API_KEY }
+      : {};
+
+    // CRITICAL: Separate options.headers from options to prevent overwriting
+    const { headers: optionHeaders, ...restOptions } = options;
+
     const config = {
+      ...restOptions, // Spread options first (without headers)
       headers: {
         "Content-Type": "application/json",
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        // Add X-API-Key header for production environment
-        ...(!__DEV__ && { "X-API-Key": APP_CONFIG.PRODUCTION_API_KEY }),
-        ...options.headers,
+        ...apiKeyHeaders,
+        ...optionHeaders, // Add custom headers
+        ...authHeaders, // Authorization has highest priority (last)
       },
-      ...options,
     };
 
-    // Debug: Log headers for auth-related requests
-    if (url.includes("/auth/")) {
-      console.log("🔍 Debug - Request headers for auth endpoint:", {
+    // Debug: Log headers for ALL authenticated requests (not just /auth/)
+    const shouldLogHeaders =
+      url.includes("/user/") ||
+      url.includes("/auth/") ||
+      url.includes("/subscriptions/");
+    if (shouldLogHeaders) {
+      console.log("🔍 Debug - Request headers:", {
         url: url,
+        endpoint: endpoint,
         hasAuthHeader: !!config.headers.Authorization,
         authHeaderPreview: config.headers.Authorization
           ? config.headers.Authorization.substring(0, 30) + "..."
           : "none",
         hasToken: !!this.token,
+        tokenPreview: this.token ? this.token.substring(0, 30) + "..." : "none",
       });
     }
 
@@ -857,7 +893,7 @@ class ApiService {
           mealPlanData?.planName || "Unknown"
         }`
       );
-      console.log("📋 Meal plan data:", JSON.stringify(mealPlanData, null, 2));
+      // console.log("📋 Meal plan data:", JSON.stringify(mealPlanData, null, 2));
 
       // Return in consistent format
       return {
@@ -2526,6 +2562,55 @@ class ApiService {
     });
   }
 
+  // ==========================================
+  // UNIFIED MEAL DASHBOARD
+  // ==========================================
+
+  /**
+   * Get all meal dashboard data in a single request
+   * Returns: active subscription, current meal, timeline, and stats
+   * @param {boolean} forceRefresh - Force fresh data (bypass cache)
+   * @returns {Promise} Unified dashboard data
+   */
+  async getMealDashboard(forceRefresh = false) {
+    console.log(
+      "🍽️ Fetching unified meal dashboard",
+      forceRefresh ? "(forced refresh)" : ""
+    );
+
+    // CRITICAL: Ensure token is loaded
+    await this.getStoredToken();
+
+    // DEBUG: Log token status
+    console.log("🔍 Debug - Token status before getMealDashboard request:", {
+      hasToken: !!this.token,
+      tokenLength: this.token ? this.token.length : 0,
+      tokenPreview: this.token ? this.token.substring(0, 30) + "..." : "none",
+    });
+
+    const endpoint = forceRefresh
+      ? `/user/meal-dashboard?_t=${Date.now()}`
+      : "/user/meal-dashboard";
+
+    const result = await this.request(endpoint, {
+      headers: forceRefresh ? { "Cache-Control": "no-cache" } : {},
+    });
+
+    if (result.success) {
+      console.log("✅ Unified meal dashboard loaded successfully");
+      console.log("📊 Dashboard data:", {
+        hasSubscription: result.data?.hasActiveSubscription,
+        currentMeal: result.data?.currentMeal?.customTitle,
+        timelineItems: result.data?.mealTimeline?.length,
+        progress: result.data?.stats?.progress,
+      });
+    } else {
+      console.error("❌ Failed to load unified meal dashboard:", result.error);
+    }
+
+    return result;
+  }
+
   // Maps and Geocoding services
   async reverseGeocode(latitude, longitude, language = "en") {
     console.log("🗺️ Reverse geocoding coordinates:", { latitude, longitude });
@@ -2580,6 +2665,172 @@ class ApiService {
     return this.request(`/maps/place-details?${params}`, {
       method: "GET",
     });
+  }
+
+  // ==========================================
+  // CUSTOM MEAL PLAN API METHODS
+  // ==========================================
+
+  /**
+   * Generate a custom meal plan based on user preferences
+   * @param {Object} preferences - User preferences for meal plan generation
+   * @returns {Promise} Generated custom meal plan
+   */
+  async generateCustomMealPlan(preferences) {
+    console.log(
+      "🎨 Generating custom meal plan with preferences:",
+      preferences
+    );
+    await this.getStoredToken();
+
+    const result = await this.request("/custom-meal-plans/generate", {
+      method: "POST",
+      body: preferences,
+    });
+
+    if (result.success) {
+      console.log("✅ Custom meal plan generated successfully");
+      console.log("📋 Plan ID:", result.data?._id || result.data?.customPlanId);
+    } else {
+      console.error("❌ Failed to generate custom meal plan:", result.error);
+    }
+
+    return result;
+  }
+
+  /**
+   * Get user's custom meal plans
+   * @returns {Promise} List of user's custom meal plans
+   */
+  async getUserCustomMealPlans() {
+    console.log("📋 Fetching user custom meal plans");
+    await this.getStoredToken();
+
+    const result = await this.request("/custom-meal-plans/my-plans");
+
+    if (result.success) {
+      console.log("✅ Custom meal plans fetched successfully");
+      console.log("📊 Total plans:", result.data?.length || 0);
+    } else {
+      console.error("❌ Failed to fetch custom meal plans:", result.error);
+    }
+
+    return result;
+  }
+
+  /**
+   * Get a specific custom meal plan by ID
+   * @param {string} planId - Custom meal plan ID
+   * @returns {Promise} Custom meal plan details
+   */
+  async getCustomMealPlanById(planId) {
+    console.log("🔍 Fetching custom meal plan:", planId);
+    await this.getStoredToken();
+
+    const result = await this.request(`/custom-meal-plans/${planId}`);
+
+    if (result.success) {
+      console.log("✅ Custom meal plan fetched successfully");
+    } else {
+      console.error("❌ Failed to fetch custom meal plan:", result.error);
+    }
+
+    return result;
+  }
+
+  /**
+   * Regenerate a custom meal plan
+   * @param {string} planId - Custom meal plan ID
+   * @param {Object} newPreferences - Optional new preferences
+   * @returns {Promise} Regenerated custom meal plan
+   */
+  async regenerateCustomMealPlan(planId, newPreferences = {}) {
+    console.log("🔄 Regenerating custom meal plan:", planId);
+    await this.getStoredToken();
+
+    const result = await this.request(
+      `/custom-meal-plans/${planId}/regenerate`,
+      {
+        method: "POST",
+        body: newPreferences,
+      }
+    );
+
+    if (result.success) {
+      console.log("✅ Custom meal plan regenerated successfully");
+    } else {
+      console.error("❌ Failed to regenerate custom meal plan:", result.error);
+    }
+
+    return result;
+  }
+
+  /**
+   * Purchase a custom meal plan
+   * @param {string} planId - Custom meal plan ID
+   * @param {Object} paymentData - Payment information
+   * @returns {Promise} Purchase result
+   */
+  async purchaseCustomMealPlan(planId, paymentData) {
+    console.log("💳 Purchasing custom meal plan:", planId);
+    await this.getStoredToken();
+
+    const result = await this.request(`/custom-meal-plans/${planId}/purchase`, {
+      method: "POST",
+      body: paymentData,
+    });
+
+    if (result.success) {
+      console.log("✅ Custom meal plan purchased successfully");
+    } else {
+      console.error("❌ Failed to purchase custom meal plan:", result.error);
+    }
+
+    return result;
+  }
+
+  /**
+   * Delete a draft custom meal plan
+   * @param {string} planId - Custom meal plan ID
+   * @returns {Promise} Deletion result
+   */
+  async deleteCustomMealPlan(planId) {
+    console.log("🗑️ Deleting custom meal plan:", planId);
+    await this.getStoredToken();
+
+    const result = await this.request(`/custom-meal-plans/${planId}`, {
+      method: "DELETE",
+    });
+
+    if (result.success) {
+      console.log("✅ Custom meal plan deleted successfully");
+    } else {
+      console.error("❌ Failed to delete custom meal plan:", result.error);
+    }
+
+    return result;
+  }
+
+  /**
+   * Get current driver location for an order
+   * @param {string} orderId - Order ID
+   * @returns {Promise} Driver location data
+   */
+  async getDriverLocation(orderId) {
+    console.log("📍 Getting driver location for order:", orderId);
+    await this.getStoredToken();
+
+    const result = await this.request(`/driver/location/${orderId}`, {
+      method: "GET",
+    });
+
+    if (result.success) {
+      console.log("✅ Driver location retrieved successfully");
+    } else {
+      console.error("❌ Failed to get driver location:", result.error);
+    }
+
+    return result;
   }
 }
 

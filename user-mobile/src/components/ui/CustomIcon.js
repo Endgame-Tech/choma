@@ -167,6 +167,7 @@ const iconMap = {
   "send-filled": SendFilledIcon,
   settings: SettingsIcon,
   "settings-filled": SettingsFilledIcon,
+  "settings-outline": SettingsIcon,
   share: ShareIcon,
   "share-filled": ShareFilledIcon,
   shield: ShieldIcon,
@@ -190,6 +191,19 @@ const iconMap = {
   "close-circle": CloseIcon,
   "help-circle": DetailsIcon,
 
+  // Chevron aliases
+  "chevron-right": chevronForwardIcon,
+  "chevron-left": chevronBackIcon,
+  "arrow-forward": chevronForwardIcon,
+  "arrow-back": chevronBackIcon,
+  "arrow-left": chevronBackIcon,
+  "arrow-right": chevronForwardIcon,
+
+  // Theme icon aliases
+  sunny: FlameIcon,
+  moon: DarkIcon,
+  "color-palette": SettingsIcon,
+
   // Alert-specific icon mappings
   "checkmark-circle": StarFilledIcon, // Success icon
   warning: notificationIcon, // Warning icon
@@ -200,6 +214,14 @@ const iconMap = {
   success: StarFilledIcon, // Success icon alternative
   alert: ShieldIcon, // Alert icon alternative
   help: DetailsIcon, // Help icon
+
+  // Additional icon mappings for AwaitingFirstDeliveryScreen
+  "clock-outline": ClockIcon,
+  "refresh-cw": ReorderIcon, // Using reorder as a substitute for refresh
+  "message-circle": EmailIcon, // Using email as a substitute for message
+  truck: DeliveryManIcon,
+  "chef-hat": ChefIcon,
+  "check-circle": StarFilledIcon,
 };
 
 const CustomIcon = ({

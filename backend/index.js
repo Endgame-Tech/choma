@@ -207,6 +207,9 @@ app.use("/api/admin/auth", adminLimiter, require("./routes/adminAuth"));
 // Dashboard route - batched API calls for better performance
 app.use("/api/dashboard", require("./routes/dashboard"));
 
+// User dashboard routes - unified meal dashboard endpoint
+app.use("/api/user", require("./routes/userDashboard"));
+
 // API routes (with general rate limiting)
 app.use("/api/meal-plans", require("./routes/mealplans"));
 app.use("/api/mealplans", require("./routes/mealplans"));

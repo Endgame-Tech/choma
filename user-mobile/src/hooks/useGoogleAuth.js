@@ -30,7 +30,15 @@ export const useGoogleAuth = () => {
       // Check if Google Play Services is available
       await GoogleSignin.hasPlayServices();
 
-      // Sign in with Google
+      // Sign out first to clear cached account (forces account picker to show)
+      try {
+        await GoogleSignin.signOut();
+      } catch (signOutError) {
+        // Ignore sign out errors - user might not be signed in
+        console.log("ℹ️ Sign out before login (expected if not signed in)");
+      }
+
+      // Sign in with Google - this will now show the account picker
       const response = await GoogleSignin.signIn();
 
       if (isSuccessResponse(response)) {

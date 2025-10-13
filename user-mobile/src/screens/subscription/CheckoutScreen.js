@@ -824,7 +824,9 @@ const CheckoutScreen = ({ route, navigation }) => {
       return;
     }
 
-    if (!user?.phoneNumber?.trim()) {
+    // Check for phone number - support both 'phone' and 'phoneNumber' fields
+    const userPhone = user?.phone || user?.phoneNumber;
+    if (!userPhone?.trim()) {
       showError(
         "Required Field",
         "Please add your phone number to your profile before proceeding with checkout"
@@ -1546,14 +1548,14 @@ const CheckoutScreen = ({ route, navigation }) => {
           onPress={handleProceedToPayment}
         >
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={["#1b1b1b", "#1b1b1b"]}
             style={styles(colors).proceedGradient}
           >
             <CustomIcon name="card" size={20} color={colors.black} />
             <Text style={styles(colors).proceedButtonText}>
               Proceed to Payment
             </Text>
-            <CustomIcon name="arrow-forward" size={20} color={colors.black} />
+            <CustomIcon name="arrow-forward" size={20} color={colors.primary} />
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -1831,7 +1833,7 @@ const styles = (colors) =>
       gap: 12,
     },
     proceedButtonText: {
-      color: colors.black,
+      color: colors.primary,
       fontSize: 16,
       fontWeight: "600",
     },

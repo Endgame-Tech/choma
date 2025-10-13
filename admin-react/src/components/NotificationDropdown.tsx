@@ -153,7 +153,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
           ${isOpen ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200' : ''}
         `}
         aria-label="Notifications"
-        aria-expanded={!!isOpen}
+        aria-expanded={isOpen}
       >
         <BellIcon className="w-6 h-6" />
 

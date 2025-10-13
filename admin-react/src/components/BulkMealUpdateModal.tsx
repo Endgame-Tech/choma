@@ -537,6 +537,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Category"
                   >
                     <option value="">All Categories</option>
                     {categories.map(category => (
@@ -581,6 +582,7 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
                       className="rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500 mr-3"
                       checked={selectedMeals.includes(meal._id)}
                       onChange={() => handleSelectMeal(meal._id)}
+                      aria-label={`Select ${meal.name}`}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3">
@@ -663,6 +665,8 @@ const BulkMealUpdateModal: React.FC<BulkMealUpdateModalProps> = ({
                     disabled={loading}
                     className="hidden"
                     id="excel-upload"
+                    title="Choose an Excel file to upload"
+                    aria-label="Choose Excel file"
                   />
                   <label
                     htmlFor="excel-upload"

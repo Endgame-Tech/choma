@@ -349,7 +349,7 @@ exports.updateOrderStatus = async (req, res) => {
     const order = await Order.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true,
-    }).populate("subscriptionId");
+    }).populate("subscription");
 
     if (!order) {
       return res.status(404).json({
@@ -358,20 +358,59 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Handle subscription activation for first delivery
-    if (status === "Delivered" && order.subscriptionId) {
+    // Handle first delivery completion and subscription activation
+    if (status === "Delivered" && order.subscription) {
       const Subscription = require("../models/Subscription");
-      const subscription = await Subscription.findById(order.subscriptionId);
+      const subscription = await Subscription.findById(order.subscription);
 
-      if (
-        subscription &&
-        !subscription.recurringDelivery?.isActivated
-      ) {
-        // Activate subscription using the model method (recalculates end date)
-        await subscription.activate();
-        console.log(
-          `🎯 Subscription ${subscription._id} activated by first delivery completion`
-        );
+      if (subscription) {
+        // Check if this is the first delivery
+        const isFirstDelivery = !subscription.firstDeliveryCompleted;
+
+        if (isFirstDelivery) {
+          // Mark first delivery as completed
+          subscription.firstDeliveryCompleted = true;
+          subscription.firstDeliveryCompletedAt = new Date();
+          subscription.firstDeliveryOrderId = order._id;
+          subscription.actualStartDate = new Date();
+          subscription.status = "active"; // Change from pending_first_delivery to active
+          await subscription.save();
+
+          console.log(
+            `🎉 FIRST DELIVERY COMPLETED for subscription ${subscription._id}`
+          );
+          console.log(`   - Order: ${order._id}`);
+          console.log(`   - Subscription now ACTIVE`);
+
+          // Send notification to user
+          try {
+            const notificationService = require("../services/notificationService");
+            await notificationService.sendNotification({
+              userId: order.customer,
+              title: "Your meal plan has started! 🎉",
+              message: `Your first meal has been delivered. Enjoy your ${
+                subscription.mealPlanId?.name || "meal plan"
+              }!`,
+              type: "first_delivery_completed",
+              data: {
+                subscriptionId: subscription._id,
+                orderId: order._id,
+              },
+              priority: "high",
+            });
+          } catch (notifError) {
+            console.error(
+              "Error sending first delivery notification:",
+              notifError
+            );
+          }
+        } else if (!subscription.recurringDelivery?.isActivated) {
+          // Activate subscription using the model method (recalculates end date)
+          await subscription.activate();
+          console.log(
+            `🎯 Subscription ${subscription._id} activated by delivery completion`
+          );
+        }
       }
     }
 
@@ -379,19 +418,24 @@ exports.updateOrderStatus = async (req, res) => {
     if (status === "Delivered" && order.customer) {
       try {
         await ratingPromptService.triggerRatingPrompt({
-          triggerType: 'order_completion',
+          triggerType: "order_completion",
           userId: order.customer,
           relatedOrderId: order._id,
           triggerContext: {
             orderValue: order.total || order.amount || 0,
             isFirstOrder: false, // TODO: Calculate if this is user's first order
-            isRecurringOrder: !!order.subscriptionId,
-            orderRating: order.customerRating // Existing rating if any
-          }
+            isRecurringOrder: !!order.subscription,
+            orderRating: order.customerRating, // Existing rating if any
+          },
         });
-        console.log(`🎯 Rating prompt triggered for order completion: ${order._id}`);
+        console.log(
+          `🎯 Rating prompt triggered for order completion: ${order._id}`
+        );
       } catch (error) {
-        console.error('Error triggering order completion rating prompt:', error);
+        console.error(
+          "Error triggering order completion rating prompt:",
+          error
+        );
         // Don't fail the order update if rating prompt fails
       }
     }
@@ -400,7 +444,7 @@ exports.updateOrderStatus = async (req, res) => {
     if (status === "Delivered" && order.customer) {
       try {
         await ratingPromptService.triggerRatingPrompt({
-          triggerType: 'delivery_completion',
+          triggerType: "delivery_completion",
           userId: order.customer,
           relatedOrderId: order._id,
           relatedDriverId: order.assignedDriver || order.driverId,
@@ -408,12 +452,17 @@ exports.updateOrderStatus = async (req, res) => {
             deliveryDate: order.actualDelivery || new Date(),
             wasOnTime: true, // TODO: Calculate if delivery was on time
             deliveryIssues: [], // TODO: Get delivery issues if any
-            deliveryRating: order.deliveryRating // Existing rating if any
-          }
+            deliveryRating: order.deliveryRating, // Existing rating if any
+          },
         });
-        console.log(`🚚 Delivery rating prompt triggered for order: ${order._id}`);
+        console.log(
+          `🚚 Delivery rating prompt triggered for order: ${order._id}`
+        );
       } catch (error) {
-        console.error('Error triggering delivery completion rating prompt:', error);
+        console.error(
+          "Error triggering delivery completion rating prompt:",
+          error
+        );
         // Don't fail the order update if rating prompt fails
       }
     }

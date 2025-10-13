@@ -11,12 +11,51 @@ class SettingsService {
     LANGUAGE: 'settings_language',
   };
 
+  // Load settings (combines local storage with defaults)
+  static async loadSettings() {
+    try {
+      const storedSettings = await AsyncStorage.getItem('app_settings');
+
+      if (storedSettings) {
+        return JSON.parse(storedSettings);
+      }
+
+      // Return default settings
+      return {
+        notifications: true,
+        biometricAuth: false,
+        autoDownload: true,
+        dataCollection: false,
+      };
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      // Return default settings on error
+      return {
+        notifications: true,
+        biometricAuth: false,
+        autoDownload: true,
+        dataCollection: false,
+      };
+    }
+  }
+
+  // Save settings
+  static async saveSettings(settings) {
+    try {
+      await AsyncStorage.setItem('app_settings', JSON.stringify(settings));
+      return true;
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      return false;
+    }
+  }
+
   // Get all settings from AsyncStorage
   static async getAllSettings() {
     try {
       const keys = Object.values(this.KEYS);
       const values = await AsyncStorage.multiGet(keys);
-      
+
       const settings = {};
       values.forEach(([key, value]) => {
         const settingKey = Object.keys(this.KEYS).find(k => this.KEYS[k] === key);
@@ -24,7 +63,7 @@ class SettingsService {
           settings[settingKey.toLowerCase()] = this.parseValue(value);
         }
       });
-      
+
       return settings;
     } catch (error) {
       console.error('Error loading settings:', error);

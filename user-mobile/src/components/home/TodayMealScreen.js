@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  ImageBackground,
   Dimensions,
   ActivityIndicator,
   ScrollView,
@@ -22,6 +23,7 @@ import ChomaLogo from "../ui/ChomaLogo";
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.85;
 const CARD_SPACING = 20;
+const BACKGROUND_COLOR = "#552111";
 
 const TodayMealScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -42,70 +44,36 @@ const TodayMealScreen = ({ navigation, route }) => {
     try {
       setLoading(true);
 
-      // Get user's active subscriptions
-      const dashboardResult = await apiService.getUserDashboard();
-      console.log("📋 Dashboard result:", dashboardResult);
+      // ✨ NEW: Single unified API call instead of 3 sequential calls
+      const dashboardResult = await apiService.getMealDashboard();
+      console.log("📋 Unified dashboard result:", dashboardResult);
 
       if (dashboardResult?.success && dashboardResult?.data) {
-        // Handle nested data structure: data.data or just data
-        const dashboardData = dashboardResult.data.data || dashboardResult.data;
+        const data = dashboardResult.data;
 
-        console.log("📊 Dashboard data structure:", {
-          hasActiveSubscription: dashboardData.hasActiveSubscription,
-          hasSubscription: !!dashboardData.subscription,
-        });
+        if (data.hasActiveSubscription && data.activeSubscription) {
+          console.log("✅ Setting active subscription:", data.activeSubscription.planName);
+          setActiveSubscription(data.activeSubscription);
 
-        // Try to get active subscription from dashboard (preferred method)
-        let active = null;
-
-        if (dashboardData.hasActiveSubscription && dashboardData.subscription) {
-          active = dashboardData.subscription;
-          console.log("✅ Found subscription from dashboard.subscription");
-        } else {
-          // Fallback: check subscriptions array
-          const subscriptions = dashboardData.subscriptions || [];
-          active = subscriptions.find(
-            (sub) => sub.status === "active" || sub.status === "Active"
-          );
-          console.log("✅ Found subscription from subscriptions array");
-        }
-
-        if (active) {
-          console.log("📦 Setting active subscription:", {
-            id: active._id || active.id,
-            planName: active.planName || active.mealPlanId?.planName,
-          });
-          setActiveSubscription(active);
-
-          // Get current meal for this subscription
-          const currentMealResult = await apiService.getSubscriptionCurrentMeal(
-            active._id || active.id
-          );
-          console.log("🍽️ Current meal result:", currentMealResult);
-
-          if (currentMealResult?.success && currentMealResult?.data) {
-            setCurrentMeal(currentMealResult.data);
+          // Set current meal
+          if (data.currentMeal) {
+            setCurrentMeal(data.currentMeal);
+            console.log("🍽️ Current meal:", data.currentMeal.customTitle);
           }
 
-          // Get meal timeline for adjacent meals
-          const timelineResult = await apiService.getSubscriptionMealTimeline(
-            active._id || active.id,
-            7
-          );
-          console.log("📅 Timeline result:", timelineResult);
+          // Set timeline meals (already transformed by backend)
+          if (data.mealTimeline && data.mealTimeline.length > 0) {
+            setAdjacentMeals(data.mealTimeline);
 
-          if (timelineResult?.success && timelineResult?.data) {
-            const meals = timelineResult.data.meals || [];
-            setAdjacentMeals(meals);
-
-            // Find current meal index in timeline
-            const todayIndex = meals.findIndex((meal) => meal.isToday);
+            // Find current meal index in timeline (today's meal)
+            const todayIndex = data.mealTimeline.findIndex((meal) => meal.isToday);
             if (todayIndex !== -1) {
               setCurrentIndex(todayIndex);
+              console.log("📍 Today's meal index:", todayIndex);
             }
           }
         } else {
-          console.log("❌ No active subscription found in dashboard");
+          console.log("ℹ️ No active subscription found");
         }
       }
     } catch (error) {
@@ -143,22 +111,31 @@ const TodayMealScreen = ({ navigation, route }) => {
     navigation.navigate("SearchScreen");
   };
 
+  const handleGoBack = () => {
+    // Navigate to Home with flag to skip subscription check
+    // This prevents the loop where Home redirects back to TodayMeal
+    navigation.navigate("Home", { skipSubscriptionCheck: true });
+  };
+
   const renderMealCard = (meal, index) => {
     const isCenter = index === currentIndex;
     const isMealToday =
       meal?.isToday || (currentMeal && meal?._id === currentMeal._id);
 
+    // Extract meal data from the backend structure
+    const mealImage = meal?.imageUrl || meal?.meals?.[0]?.image || meal?.image || meal?.mealImage;
+    const mealName = meal?.customTitle || meal?.meals?.[0]?.name || meal?.name || meal?.mealName;
+    const mealCalories = meal?.meals?.[0]?.nutrition?.calories || meal?.calories;
+
     return (
       <View
-        key={meal?._id || index}
+        key={meal?._id || meal?.assignmentId || index}
         style={[styles(colors).mealCard, isCenter && styles(colors).centerCard]}
       >
         <Image
           source={
-            meal?.image
-              ? { uri: meal.image }
-              : meal?.mealImage
-              ? { uri: meal.mealImage }
+            mealImage
+              ? { uri: mealImage }
               : require("../../../assets/authImage.png")
           }
           style={styles(colors).mealImage}
@@ -170,11 +147,11 @@ const TodayMealScreen = ({ navigation, route }) => {
           style={styles(colors).mealInfoOverlay}
         >
           <Text style={styles(colors).mealName}>
-            {meal?.name || meal?.mealName || "Delicious Meal"}
+            {mealName || "Today's Special"}
           </Text>
-          {meal?.calories && (
+          {mealCalories && (
             <Text style={styles(colors).mealCalories}>
-              cal: {meal.calories}
+              {mealCalories} cal
             </Text>
           )}
         </LinearGradient>
@@ -185,7 +162,13 @@ const TodayMealScreen = ({ navigation, route }) => {
   if (loading) {
     return (
       <SafeAreaView style={styles(colors).container}>
-        <StatusBar barStyle="light-content" backgroundColor="#652815" />
+        <StatusBar barStyle="light-content" backgroundColor={BACKGROUND_COLOR} />
+        <ImageBackground
+          source={require("../../../assets/patternchoma.png")}
+          resizeMode="repeat"
+          style={styles(colors).backgroundPattern}
+          imageStyle={styles(colors).backgroundImageStyle}
+        />
         <View style={styles(colors).loadingContainer}>
           <ActivityIndicator size="large" color={colors.white} />
           <Text style={styles(colors).loadingText}>
@@ -202,13 +185,27 @@ const TodayMealScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles(colors).container} edges={["top"]}>
-      <StatusBar barStyle="light-content" backgroundColor="#652815" />
+      <StatusBar barStyle="light-content" backgroundColor={BACKGROUND_COLOR} />
 
-      {/* Background */}
-      <LinearGradient
-        colors={["#652815", "#7A2E18"]}
-        style={styles(colors).background}
-      >
+      {/* Background Pattern */}
+      <ImageBackground
+        source={require("../../../assets/patternchoma.png")}
+        resizeMode="repeat"
+        style={styles(colors).backgroundPattern}
+        imageStyle={styles(colors).backgroundImageStyle}
+      />
+
+      {/* Content */}
+      <View style={styles(colors).background}>
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles(colors).backButton}
+          onPress={handleGoBack}
+          activeOpacity={0.7}
+        >
+          <Text style={styles(colors).backButtonText}>←</Text>
+        </TouchableOpacity>
+
         {/* Logo */}
         <View style={styles(colors).logoContainer}>
           <ChomaLogo width={140} height={78} />
@@ -267,7 +264,7 @@ const TodayMealScreen = ({ navigation, route }) => {
             <Text style={styles(colors).secondaryButtonText}>🔍</Text>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 };
@@ -276,27 +273,58 @@ const styles = (colors) =>
   createStylesWithDMSans({
     container: {
       flex: 1,
-      backgroundColor: "#652815",
+      backgroundColor: BACKGROUND_COLOR,
+      position: "relative",
+    },
+    backgroundPattern: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      opacity: 0.8,
+      backgroundColor: BACKGROUND_COLOR,
+    },
+    backgroundImageStyle: {
+      opacity: 1,
+      transform: [{ scale: 2.5 }],
     },
     background: {
       flex: 1,
-      paddingTop: 20,
+      paddingTop: 0,
     },
     loadingContainer: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: "#652815",
+      backgroundColor: "transparent",
     },
     loadingText: {
       marginTop: 16,
       fontSize: 16,
       color: colors.white,
     },
+    backButton: {
+      position: "absolute",
+      top: 10,
+      left: 20,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 10,
+    },
+    backButtonText: {
+      fontSize: 24,
+      color: colors.white,
+      fontWeight: "600",
+    },
     logoContainer: {
       alignItems: "center",
-      marginTop: 20,
-      marginBottom: 10,
+      marginTop: 10,
+      marginBottom: 5,
     },
     title: {
       fontSize: 22,
@@ -376,12 +404,12 @@ const styles = (colors) =>
       alignItems: "center",
       paddingHorizontal: 40,
       gap: 12,
-      // marginTop: "auto",
+      marginTop: 0,
       paddingBottom: 15,
     },
     primaryButton: {
       flex: 1,
-      backgroundColor: "#E8B44A",
+      backgroundColor: "#F7AE1A",
       paddingVertical: 18,
       borderRadius: 30,
       alignItems: "center",

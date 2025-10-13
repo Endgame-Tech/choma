@@ -1211,7 +1211,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     ]}
                     numberOfLines={1}
                   >
-                    {meal.name}
+                    {meal.description || meal.name}
                   </Text>
                   {meal.image && (
                     <View style={styles(colors).mealPreviewImageContainer}>
@@ -1306,7 +1306,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     [colors]
   );
 
-  const weeklyMealPlan = getWeeklyMealPlan();
+  const weeklyMealPlan = useMemo(() => getWeeklyMealPlan(), [mealPlanDetails]);
 
   useEffect(() => {
     if (weeklyMealPlan && weeklyMealPlan[selectedWeek]) {
@@ -1329,7 +1329,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         }
       });
     }
-  }, [weeklyMealPlan, selectedWeek]);
+  }, [weeklyMealPlan, selectedWeek, animationValues]);
 
   if (loading) {
     return <MealPlanDetailSkeleton />;
@@ -2553,8 +2553,8 @@ const styles = (colors) =>
     dayCard: {
       backgroundColor: colors.cardBackground,
       borderRadius: THEME.borderRadius.large,
-      padding: 16,
-      borderWidth: 1,
+      padding: 10,
+      // borderWidth: 1,
       borderColor: colors.border,
     },
     dayCardExpanded: {
@@ -2658,9 +2658,9 @@ const styles = (colors) =>
       marginLeft: 8,
     },
     mealPreviewImage: {
-      width: 40,
-      height: 30,
-      borderRadius: 4,
+      width: 60, // Increased from 40 to 60 for better visibility
+      height: 45, // Increased from 30 to 45 to maintain aspect ratio
+      borderRadius: 6,
     },
     nutritionSection: {
       padding: 20,
@@ -3017,7 +3017,7 @@ const styles = (colors) =>
     addToCartText: {
       fontSize: width < 375 ? 13 : 16, // Smaller font on small screens
       fontWeight: "bold",
-      color: colors.black,
+      color: "#1b1b1b",
       textAlign: "center",
       numberOfLines: 1, // Prevent text wrapping
       adjustsFontSizeToFit: true, // Auto-adjust font size to fit

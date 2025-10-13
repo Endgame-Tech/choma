@@ -120,7 +120,7 @@ const Contact: React.FC = () => {
                 Phone number
               </label>
               <div className="flex">
-                <select className="px-3 py-3 border border-gray-300 rounded-l-lg bg-white text-choma-black font-medium focus:outline-none focus:ring-2 focus:ring-choma-orange/50 focus:border-choma-orange">
+                <select aria-label="Country code" className="px-3 py-3 border border-gray-300 rounded-l-lg bg-white text-choma-black font-medium focus:outline-none focus:ring-2 focus:ring-choma-orange/50 focus:border-choma-orange">
                   <option value="+234">NG</option>
                   <option value="+1">US</option>
                 </select>

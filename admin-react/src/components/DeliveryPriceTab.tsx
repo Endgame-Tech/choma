@@ -224,10 +224,11 @@ const DeliveryPriceTab: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                            <label htmlFor="country-select" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
                                 Country *
                             </label>
                             <select
+                                id="country-select"
                                 value={form.country}
                                 onChange={(e) => setForm({ ...form, country: e.target.value })}
                                 className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 dark:text-neutral-100"

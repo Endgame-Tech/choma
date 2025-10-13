@@ -844,7 +844,6 @@ class ApiService {
   }
 
   async getMealPlanById(id) {
-    console.log(`🔍 Fetching meal plan details for ID: ${id}`);
     const result = await this.request(`/mealplans/${id}`);
 
     if (result.success) {
@@ -852,12 +851,6 @@ class ApiService {
       const backendResponse = result.data;
       const mealPlanData = backendResponse?.data || backendResponse;
 
-      console.log(
-        `✅ Successfully loaded meal plan: ${
-          mealPlanData?.planName || "Unknown"
-        }`
-      );
-      console.log("📋 Meal plan data:", JSON.stringify(mealPlanData, null, 2));
 
       // Return in consistent format
       return {
@@ -897,7 +890,6 @@ class ApiService {
 
   // Get meal plan customization options
   async getMealCustomization(mealPlanId) {
-    console.log(`🔧 Fetching meal customization for plan ID: ${mealPlanId}`);
     await this.getStoredToken();
     const result = await this.request(`/mealplans/${mealPlanId}/customization`);
 
@@ -916,8 +908,6 @@ class ApiService {
 
   // Get available meals for customization
   async getAvailableMeals(filters = {}) {
-    console.log("🍽️ Fetching available meals with filters:", filters);
-
     const queryParams = new URLSearchParams();
     if (filters.mealType) queryParams.append("mealType", filters.mealType);
     if (filters.dietaryPreferences)

@@ -217,6 +217,7 @@ const Profile: React.FC = () => {
                       name="phone"
                       value={profileData.phone}
                       onChange={handleInputChange}
+                      placeholder="Enter your phone number"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   ) : (
@@ -243,6 +244,7 @@ const Profile: React.FC = () => {
                       name="department"
                       value={profileData.department}
                       onChange={handleInputChange}
+                      placeholder="Enter your department"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   ) : (

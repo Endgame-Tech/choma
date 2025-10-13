@@ -1,5 +1,5 @@
 // src/screens/search/SearchScreen.js - Enhanced search with HomeScreen layout (excluding subscriptions)
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -689,11 +689,11 @@ const SearchScreen = ({ navigation }) => {
     const mixedContent = [];
     const availableTags = tagState.tags || [];
 
-    console.log("🏷️ Random tag debug:", {
-      availableTagsCount: availableTags.length,
-      plansCount: plans.length,
-      tagStateLoading: tagState.loading,
-    });
+    // console.log("🏷️ Random tag debug:", {
+    //   availableTagsCount: availableTags.length,
+    //   plansCount: plans.length,
+    //   tagStateLoading: tagState.loading,
+    // });
 
     // Only add random tags if we have enough tags and meal plans
     if (availableTags.length < 1 || plans.length < 3) {
@@ -771,7 +771,11 @@ const SearchScreen = ({ navigation }) => {
             <Text style={styles(colors).randomTagText}>Explore</Text>
             <Text style={styles(colors).randomTagName}>{tag.name}</Text>
             <View style={styles(colors).randomTagButton}>
-              <CustomIcon name="chevron-forward" size={16} color={colors.white} />
+              <CustomIcon
+                name="chevron-forward"
+                size={16}
+                color={colors.white}
+              />
             </View>
           </View>
         </View>
@@ -1000,7 +1004,7 @@ const SearchScreen = ({ navigation }) => {
               refreshMealPlans();
               loadPublicDashboardData(true);
             }}
-            colors={[colors.primary]}
+            colors={["#1b1b1b"]}
             tintColor={colors.primary}
           />
         }

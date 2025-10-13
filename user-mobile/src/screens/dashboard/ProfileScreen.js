@@ -143,7 +143,6 @@ const ProfileScreen = ({ navigation, route }) => {
         fullName: user.fullName,
         phone: user.phone || "",
         address: user.address || "",
-        city: user.city || "",
         dietaryPreferences: user.dietaryPreferences || [],
         allergies: user.allergies || "",
       });
@@ -1142,7 +1141,6 @@ Your meal plan has been updated with fresh options.`;
           fullName: fullProfile.fullName || user.fullName,
           phone: fullProfile.phone || "",
           address: fullProfile.address || "",
-          city: fullProfile.city || user.city || "",
           dietaryPreferences:
             fullProfile.dietaryPreferences || user.dietaryPreferences || [],
           allergies: fullProfile.allergies || "",
@@ -1153,7 +1151,6 @@ Your meal plan has been updated with fresh options.`;
           fullName: user.fullName,
           phone: user.phone || "",
           address: user.address || "",
-          city: user.city || "",
           dietaryPreferences: user.dietaryPreferences || [],
           allergies: user.allergies || "",
         });
@@ -1272,7 +1269,6 @@ Your meal plan has been updated with fresh options.`;
           fullName: user.fullName,
           phone: user.phone || "",
           address: user.address || "",
-          city: user.city || "",
           dietaryPreferences: user.dietaryPreferences || [],
           allergies: user.allergies || "",
         });
@@ -1547,7 +1543,6 @@ Your meal plan has been updated with fresh options.`;
         fullName: validFullName,
         phone: user?.phone || "",
         address: user?.address || "",
-        city: user?.city || "",
         dietaryPreferences: user?.dietaryPreferences || [],
         allergies: user?.allergies || "",
         profileImage: cloudImageUrl,
@@ -1616,7 +1611,6 @@ Your meal plan has been updated with fresh options.`;
             fullName: validFullName,
             phone: user?.phone || "",
             address: user?.address || "",
-            city: user?.city || "",
             dietaryPreferences: user?.dietaryPreferences || [],
             allergies: user?.allergies || "",
             profileImage: null,
@@ -2487,10 +2481,6 @@ Your meal plan has been updated with fresh options.`;
                     setEditableUser((prev) => ({
                       ...prev,
                       address: addressInfo.formattedAddress,
-                      city:
-                        addressInfo.locality ||
-                        addressInfo.adminArea ||
-                        prev.city,
                     }));
                   }}
                   defaultValue={editableUser.address}
@@ -2507,20 +2497,6 @@ Your meal plan has been updated with fresh options.`;
                   {errors.address}
                 </Text>
               )}
-            </View>
-
-            {/* City */}
-            <View style={styles(colors).editFieldContainer}>
-              <Text style={styles(colors).editFieldLabel}>City</Text>
-              <TextInput
-                style={styles(colors).editInput}
-                value={editableUser.city}
-                onChangeText={(text) =>
-                  setEditableUser((prev) => ({ ...prev, city: text }))
-                }
-                placeholder="Enter your city"
-                placeholderTextColor={colors.textMuted}
-              />
             </View>
 
             {/* Dietary Preferences */}

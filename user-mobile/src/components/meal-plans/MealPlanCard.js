@@ -18,15 +18,34 @@ const MealPlanCard = ({
   const [imageError, setImageError] = useState(false);
   const [discountModalVisible, setDiscountModalVisible] = useState(false);
 
+  // Check multiple possible image field names
+  const planImage = plan.image || plan.coverImage || plan.planImageUrl || plan.imageUrl;
+
+  // Debug logging (remove after testing)
+  if (!planImage) {
+    console.log(`⚠️ No image found for meal plan "${plan.name || plan.planName}":`, {
+      hasImage: !!plan.image,
+      hasCoverImage: !!plan.coverImage,
+      hasPlanImageUrl: !!plan.planImageUrl,
+      hasImageUrl: !!plan.imageUrl,
+      planId: plan.id || plan._id,
+    });
+  }
+
   const imageSource =
-    imageError || !plan.image
+    imageError || !planImage
       ? require("../../assets/images/meal-plans/fitfuel.jpg")
-      : typeof plan.image === "string"
-      ? { uri: plan.image }
-      : plan.image;
+      : typeof planImage === "string"
+      ? { uri: planImage }
+      : planImage;
 
   const handleImageError = () => {
-    console.log(`Failed to load meal plan image for ${plan.name}:`, plan.image);
+    console.log(`Failed to load meal plan image for ${plan.name || plan.planName}:`, {
+      image: plan.image,
+      coverImage: plan.coverImage,
+      planImageUrl: plan.planImageUrl,
+      imageUrl: plan.imageUrl,
+    });
     setImageError(true);
   };
 

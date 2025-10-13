@@ -40,6 +40,8 @@ import MealPlansScreen from "../screens/meal-plans/MealPlansScreen";
 import MealPlanDetailScreen from "../screens/meal-plans/MealPlanDetailScreen";
 import BundleDetailScreen from "../screens/meal-plans/BundleDetailScreen";
 import CustomizeScreen from "../screens/meal-plans/CustomizeScreen";
+import CustomMealPlanScreen from "../screens/meal-plans/CustomMealPlanScreen";
+import CustomMealPlanDetailScreen from "../screens/meal-plans/CustomMealPlanDetailScreen";
 
 // Subscription screens
 import SubscriptionScreen from "../screens/subscription/SubscriptionScreen";
@@ -48,6 +50,7 @@ import PaymentScreen from "../screens/subscription/PaymentScreen";
 import SubscriptionSuccessScreen from "../screens/subscription/SubscriptionSuccessScreen";
 import SubscriptionDetailsScreen from "../screens/subscription/SubscriptionDetailsScreen";
 import SubscriptionTrackingScreen from "../screens/subscription/SubscriptionTrackingScreen";
+import AwaitingFirstDeliveryScreen from "../screens/subscription/AwaitingFirstDeliveryScreen";
 import TodayMealScreen from "../components/home/TodayMealScreen";
 import MyPlanScreen from "../screens/subscription/MyPlanScreen";
 import MealTimelineScreen from "../screens/subscription/MealTimelineScreen";
@@ -335,6 +338,20 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             }}
           />
           <Stack.Screen
+            name="CustomMealPlan"
+            component={CustomMealPlanScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="CustomMealPlanDetail"
+            component={CustomMealPlanDetailScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
             name="Subscription"
             component={SubscriptionScreen}
             options={{
@@ -398,6 +415,13 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
           <Stack.Screen
             name="TodayMeal"
             component={TodayMealScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="AwaitingFirstDelivery"
+            component={AwaitingFirstDeliveryScreen}
             options={{
               headerShown: false,
             }}

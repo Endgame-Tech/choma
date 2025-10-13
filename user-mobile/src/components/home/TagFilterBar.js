@@ -246,11 +246,11 @@ const TagFilterBar = memo(
       );
     };
 
-    console.log("🏷️ TagFilterBar render state:", {
-      loading,
-      tagsLength: tags.length,
-      tags,
-    });
+    // console.log("🏷️ TagFilterBar render state:", {
+    //   loading,
+    //   tagsLength: tags.length,
+    //   tags,
+    // });
 
     // Show loading skeleton while fetching tags
     if (loading && tags.length === 0) {

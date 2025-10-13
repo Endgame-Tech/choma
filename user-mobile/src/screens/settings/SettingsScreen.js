@@ -149,6 +149,17 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
+  const handleResetTheme = async () => {
+    try {
+      await AsyncStorage.removeItem("themeMode");
+      await setThemeMode("system");
+      showInfo("Theme reset to system default");
+    } catch (error) {
+      console.error("Error resetting theme:", error);
+      showError("Failed to reset theme");
+    }
+  };
+
   const renderSettingItem = (iconName, title, subtitle, value, onToggle) => (
     <TouchableOpacity
       style={styles(colors).settingItem}
@@ -224,6 +235,13 @@ const SettingsScreen = ({ navigation }) => {
                 ? `System (${isDark ? 'Dark' : 'Light'})`
                 : themeMode.charAt(0).toUpperCase() + themeMode.slice(1),
               () => setThemePickerVisible(true)
+            )}
+
+            {__DEV__ && renderActionItem(
+              "refresh",
+              "Reset Theme to System",
+              "Debug: Force theme to follow system",
+              handleResetTheme
             )}
 
             {renderSettingItem(

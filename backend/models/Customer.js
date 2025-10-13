@@ -9,7 +9,6 @@ const CustomerSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   phone: String,
   address: String,
-  city: { type: String, enum: ['Lagos', 'Abuja'] },
   dietaryPreferences: [String],
   allergies: String,
   registrationDate: { type: Date, default: Date.now },

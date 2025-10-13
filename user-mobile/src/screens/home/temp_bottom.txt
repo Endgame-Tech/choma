@@ -1,349 +1,3 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Dimensions,
-  StatusBar,
-  TextInput,
-  ActivityIndicator,
-  Platform,
-  PixelRatio,
-} from "react-native";
-import Animated, {
-  Extrapolate,
-  interpolate,
-  useAnimatedStyle,
-  useAnimatedScrollHandler,
-  useSharedValue,
-  useDerivedValue,
-  withRepeat,
-  withTiming,
-  withSpring,
-  Easing,
-  runOnJS,
-} from "react-native-reanimated";
-import { Animated as RNAnimated } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "../../styles/theme";
-import CustomIcon from "../../components/ui/CustomIcon";
-import { createStylesWithDMSans } from "../../utils/fontUtils";
-import { useAuth } from "../../hooks/useAuth";
-import { useMealPlans } from "../../hooks/useMealPlans";
-import tagService from "../../services/tagService";
-import apiService from "../../services/api";
-import { LinearGradient } from "expo-linear-gradient";
-import * as Location from "expo-location";
-import * as Haptics from "expo-haptics";
-import { Svg, Path } from "react-native-svg";
-import MaskedView from "@react-native-masked-view/masked-view";
-
-const { width, height } = Dimensions.get("window");
-
-// Responsive scaling utilities
-const scale = (size) => {
-  const pixelRatio = PixelRatio.get();
-  const deviceScale = width / 375; // Base on iPhone X width
-
-  // Android adjustment factor for varied DPI
-  const androidFactor =
-    Platform.OS === "android" ? Math.min(pixelRatio / 2, 1.2) : 1;
-
-  return size * deviceScale * androidFactor;
-};
-
-const verticalScale = (size) => (height / 812) * size; // Base on iPhone X height
-const moderateScale = (size, factor = 0.5) =>
-  size + (scale(size) - size) * factor;
-
-// Screen size categories
-const isSmallScreen = width < 350;
-const isMediumScreen = width >= 350 && width < 414;
-const isLargeScreen = width >= 414;
-const isTablet = width >= 768;
-const isLandscape = width > height;
-
-// Platform-specific status bar height
-const statusBarHeight =
-  Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0;
-
-// Responsive breakpoints
-const getResponsiveValue = (small, medium, large, tablet = large) => {
-  if (isTablet) return tablet;
-  if (isLargeScreen) return large;
-  if (isMediumScreen) return medium;
-  return small;
-};
-
-// Android-specific responsive values
-const getAndroidResponsiveValue = (small, medium, large, xlarge) => {
-  if (Platform.OS === "android") {
-    if (width < 360) return small;
-    if (width < 400) return medium;
-    if (width < 500) return large;
-    return xlarge;
-  }
-  return getResponsiveValue(small, medium, large, xlarge);
-};
-
-// Shadow utility for cross-platform compatibility
-const getShadowStyle = (shadowProps) => ({
-  ...shadowProps,
-  ...(Platform.OS === "android" && {
-    elevation: shadowProps.shadowOpacity ? shadowProps.shadowOpacity * 10 : 5,
-  }),
-});
-
-// Responsive dimensions - Smaller preview image
-const heroImageSize = getResponsiveValue(220, 260, 300, 360);
-const heroImageBorderRadius = heroImageSize / 2;
-const previewImageSize = heroImageSize - 6; // Account for border
-const previewImageBorderRadius = previewImageSize / 2;
-
-// Circular carousel constants (responsive) - Larger items on bigger screens for better visibility
-const ListItemWidth = getResponsiveValue(
-  width / 4.5, // Smaller items on small screens
-  width / 4, // Medium screens
-  width / 3.2, // Large screens - increased size
-  width / 4.5 // Tablets - increased size
-);
-
-// Clean Circular Carousel Implementation:
-// - Based on animate-with-reanimated reference for maximum smoothness
-// - Removed infinite scroll complexity for better performance
-// - Direct data usage without circular array generation
-// - Simple scroll handler matching reference implementation
-// - Optimized preview image sync for simplified data structure
-
-// Cache tags globally to avoid re-fetching on every render (same as TagFilterBar)
-let cachedTags = [];
-let tagsLastFetched = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-// Export function to refresh tags cache (call when new tags are created)
-export const refreshTagsCache = () => {
-  cachedTags = [];
-  tagsLastFetched = 0;
-};
-
-// Placeholder data with images
-const PLACEHOLDER_PLANS = [
-  {
-    id: "placeholder-1",
-    name: "FitFam",
-    description: "Perfect for gym enthusiasts",
-    image: require("../../../assets/authImage.png"),
-    bigPreviewImage: require("../../../assets/authImage.png"),
-  },
-  {
-    id: "placeholder-2",
-    name: "HealthyChoice",
-    description: "Balanced nutrition daily",
-    image: require("../../../assets/authImage.png"),
-    bigPreviewImage: require("../../../assets/authImage.png"),
-  },
-  {
-    id: "placeholder-3",
-    name: "PowerPlan",
-    description: "High protein meals",
-    image: require("../../../assets/authImage.png"),
-    bigPreviewImage: require("../../../assets/authImage.png"),
-  },
-  {
-    id: "placeholder-4",
-    name: "GreenLife",
-    description: "Fresh vegetables focus",
-    image: require("../../../assets/authImage.png"),
-    bigPreviewImage: require("../../../assets/authImage.png"),
-  },
-  {
-    id: "placeholder-5",
-    name: "ActiveLife",
-    description: "Energy boosting meals",
-    image: require("../../../assets/authImage.png"),
-    bigPreviewImage: require("../../../assets/authImage.png"),
-  },
-];
-
-const HomeScreen = ({ navigation, route }) => {
-  const { colors, isDark } = useTheme();
-  const { user } = useAuth();
-  const { mealPlans } = useMealPlans();
-
-  // Check if we should skip subscription check (prevents redirect loop)
-  const skipSubscriptionCheck = route?.params?.skipSubscriptionCheck || false;
-
-  const flatListRef = useRef(null);
-  const [tags, setTags] = useState(cachedTags || []);
-  const [loading, setLoading] = useState((cachedTags || []).length === 0);
-  const [currentLocation, setCurrentLocation] = useState(
-    user?.address || "My Current Location"
-  );
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-
-  // State for checking active subscription
-  const [checkingSubscription, setCheckingSubscription] = useState(true);
-  const [hasCheckedSubscription, setHasCheckedSubscription] = useState(false);
-  const [userHasActiveSubscription, setUserHasActiveSubscription] = useState(false);
-  const [subscriptionData, setSubscriptionData] = useState(null);
-
-  // Pre-fetch duration data for focused tag
-  const [prefetchedDurations, setPrefetchedDurations] = useState({});
-
-  // Carousel state (simplified)
-  const [previousDescription, setPreviousDescription] = useState("");
-
-  // Circular reveal animation state (like reference animation)
-  const circleAnimation = useRef(new RNAnimated.Value(0)).current;
-
-  // Shared values for all animations (eliminate state-based race conditions)
-  const contentOffset = useSharedValue(0);
-  const spinValue = useSharedValue(0);
-  const descriptionOpacity = useSharedValue(1);
-
-  // Animation shared values for hero transitions
-  const heroImageScale = useSharedValue(1);
-  const heroImageOpacity = useSharedValue(1);
-  const badgeScale = useSharedValue(1);
-  const badgeOpacity = useSharedValue(1);
-  const descriptionTranslateY = useSharedValue(0);
-
-  // Text rotation messages
-  const heroMessages = [
-    "Eat healthy!",
-    "Save Money!",
-    "Stay Fresh!",
-    "Live Better!",
-  ];
-
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-
-  // Check for active subscription and navigate to TodayMeal
-  useEffect(() => {
-    const checkActiveSubscription = async () => {
-      // Only check once per session (unless skipSubscriptionCheck changed)
-      if (hasCheckedSubscription && !skipSubscriptionCheck) {
-        console.log("ℹ️ Already checked subscription, skipping");
-        return;
-      }
-
-      try {
-        console.log("🔍 Checking for active subscription...");
-        setCheckingSubscription(true);
-
-        // Ensure token is loaded before making API call
-        await apiService.getStoredToken();
-
-        // STRATEGY: Call getMealDashboard API for unified meal data (more reliable)
-        console.log("📞 Calling getMealDashboard API...");
-        const subscriptionsResult = await apiService.getMealDashboard();
-        console.log(
-          "📦 Dashboard API response:",
-          JSON.stringify(subscriptionsResult, null, 2)
-        );
-
-        // Handle 401 errors (no token)
-        if (
-          subscriptionsResult?.status === 401 ||
-          subscriptionsResult?.error === "No token provided"
-        ) {
-          console.log("⚠️ No valid token, staying on Home screen");
-          setCheckingSubscription(false);
-          return;
-        }
-
-        // ✨ NEW: Extract data from unified endpoint response
-        if (subscriptionsResult?.success && subscriptionsResult?.data) {
-          // Handle nested data structure: subscriptionsResult.data.data
-          const data =
-            subscriptionsResult.data.data || subscriptionsResult.data;
-
-          console.log("📊 Unified dashboard data:", {
-            hasActiveSubscription: data.hasActiveSubscription,
-            hasSubscription: !!data.activeSubscription,
-            subscriptionState: data.subscriptionState,
-          });
-
-          if (data.hasActiveSubscription && data.activeSubscription) {
-            const subscription = data.activeSubscription;
-            const subscriptionState = data.subscriptionState;
-
-            console.log("✅ Active subscription detected from dashboard!");
-            console.log("📋 Subscription details:", {
-              id: subscription.id,
-              planName: subscription.planName,
-              status: subscription.status,
-              firstDeliveryCompleted: subscription.firstDeliveryCompleted,
-              startDate: subscription.startDate,
-              daysRemaining: subscription.daysRemaining,
-            });
-            console.log("🎯 Subscription state:", subscriptionState);
-
-            // Set subscription state for "Check my Plan" button
-            setUserHasActiveSubscription(true);
-            setSubscriptionData(data);
-
-            // Skip navigation if explicitly requested (prevents redirect loop)
-            if (skipSubscriptionCheck) {
-              console.log("ℹ️ Skip navigation requested, staying on Home with subscription data");
-              setCheckingSubscription(false);
-              return;
-            }
-
-            // Check subscription state to determine which screen to show
-            if (
-              subscriptionState?.screen === "TodayMealScreen" &&
-              subscriptionState?.canAccessTodayMeals
-            ) {
-              console.log("🚀 Navigating to TodayMeal screen...");
-              navigation.replace("TodayMeal", {
-                subscription: subscription,
-                subscriptionId: subscription.id,
-              });
-            } else if (
-              subscriptionState?.screen === "AwaitingFirstDeliveryScreen"
-            ) {
-              console.log("⏳ Navigating to AwaitingFirstDelivery screen...");
-              console.log("📦 Full subscription data:", subscription);
-              navigation.replace("AwaitingFirstDelivery", {
-                subscription: subscription,
-                subscriptionId: subscription.id || subscription._id,
-                estimatedDelivery: subscription.startDate,
-                mealPlanId:
-                  subscription.mealPlanId?._id || subscription.mealPlanId,
-              });
-            } else if (
-              subscriptionState?.screen === "SubscriptionPausedScreen"
-            ) {
-              console.log("⏸️ Subscription is paused, showing pause screen...");
-              // TODO: Create SubscriptionPausedScreen
-              console.log(
-                "⚠️ SubscriptionPausedScreen not implemented yet, staying on Home"
-              );
-              setCheckingSubscription(false);
-            } else {
-              console.log(
-                `ℹ️ Subscription state: ${subscriptionState?.reason}, staying on Home screen`
-              );
-              setCheckingSubscription(false);
-            }
-          } else {
-            console.log(
-              "ℹ️ No active subscription in dashboard, staying on Home screen"
-            );
-            setUserHasActiveSubscription(false);
-            setSubscriptionData(null);
-            setCheckingSubscription(false);
-          }
         } else {
           console.log("⚠️ Dashboard API returned no data");
           setCheckingSubscription(false);
@@ -365,7 +19,7 @@ const HomeScreen = ({ navigation, route }) => {
       console.log("⏩ No user, skipping subscription check");
       setCheckingSubscription(false);
     }
-  }, [user, navigation, hasCheckedSubscription, skipSubscriptionCheck]);
+  }, [user, navigation, hasCheckedSubscription]);
 
   useEffect(() => {
     // Start the spinning animation with physics-based timing
@@ -492,41 +146,6 @@ const HomeScreen = ({ navigation, route }) => {
         }).start();
       }, 100);
     });
-  };
-
-  const handleCheckMyPlan = () => {
-    if (!subscriptionData || !subscriptionData.activeSubscription) {
-      console.log("❌ No subscription data available");
-      return;
-    }
-
-    const subscription = subscriptionData.activeSubscription;
-    const subscriptionState = subscriptionData.subscriptionState;
-
-    console.log("🔘 Check my Plan button pressed");
-    console.log("📋 Subscription state:", subscriptionState);
-
-    // Navigate to the appropriate screen based on subscription state
-    if (
-      subscriptionState?.screen === "TodayMealScreen" &&
-      subscriptionState?.canAccessTodayMeals
-    ) {
-      console.log("🚀 Navigating to TodayMeal screen...");
-      navigation.navigate("TodayMeal", {
-        subscription: subscription,
-        subscriptionId: subscription.id,
-      });
-    } else if (subscriptionState?.screen === "AwaitingFirstDeliveryScreen") {
-      console.log("⏳ Navigating to AwaitingFirstDelivery screen...");
-      navigation.navigate("AwaitingFirstDelivery", {
-        subscription: subscription,
-        subscriptionId: subscription.id || subscription._id,
-        estimatedDelivery: subscription.startDate,
-        mealPlanId: subscription.mealPlanId?._id || subscription.mealPlanId,
-      });
-    } else {
-      console.log("ℹ️ Unknown subscription state, staying on Home");
-    }
   };
 
   const fetchTags = useCallback(async () => {
@@ -798,6 +417,14 @@ const HomeScreen = ({ navigation, route }) => {
       const imageSource = useBigPreview
         ? tag.bigPreviewImage || tag.image
         : tag.image;
+
+      // Debug logging
+      if (useBigPreview) {
+        console.log("🖼️ Getting hero image for tag:", tag.name);
+        console.log("   - bigPreviewImage:", tag.bigPreviewImage || "NOT SET");
+        console.log("   - image:", tag.image || "NOT SET");
+        console.log("   - Using:", imageSource || "PLACEHOLDER");
+      }
 
       // Handle string URLs (remote images)
       if (typeof imageSource === "string" && imageSource.trim()) {
@@ -1143,28 +770,6 @@ const HomeScreen = ({ navigation, route }) => {
                     />
                   )}
                 </TouchableOpacity>
-
-                {/* Check my Plan Button - Conditional */}
-                {userHasActiveSubscription && (
-                  <TouchableOpacity
-                    style={styles(colors).checkPlanButton}
-                    onPress={handleCheckMyPlan}
-                    activeOpacity={0.7}
-                    accessible={true}
-                    accessibilityRole="button"
-                    accessibilityLabel="Check my plan"
-                    accessibilityHint="Double tap to view your active meal plan"
-                  >
-                    <CustomIcon
-                      name="calendar-filled"
-                      size={16}
-                      color={colors.primary}
-                    />
-                    <Text style={styles(colors).checkPlanButtonText}>
-                      My Plan
-                    </Text>
-                  </TouchableOpacity>
-                )}
               </View>
 
               <View
@@ -1304,25 +909,15 @@ const HomeScreen = ({ navigation, route }) => {
               onScroll={scrollHandler}
               onMomentumScrollEnd={(event) => {
                 // Regular React Native handler as fallback
-                const index = Math.round(
-                  event.nativeEvent.contentOffset.x / ListItemWidth
-                );
-                const clampedIndex = Math.max(
-                  0,
-                  Math.min(index, tagData.length - 1)
-                );
+                const index = Math.round(event.nativeEvent.contentOffset.x / ListItemWidth);
+                const clampedIndex = Math.max(0, Math.min(index, tagData.length - 1));
                 console.log("📍 [RN] Momentum ended at index:", clampedIndex);
                 updateFocusedTag(clampedIndex, true);
               }}
               onScrollEndDrag={(event) => {
                 // Regular React Native handler as fallback
-                const index = Math.round(
-                  event.nativeEvent.contentOffset.x / ListItemWidth
-                );
-                const clampedIndex = Math.max(
-                  0,
-                  Math.min(index, tagData.length - 1)
-                );
+                const index = Math.round(event.nativeEvent.contentOffset.x / ListItemWidth);
+                const clampedIndex = Math.max(0, Math.min(index, tagData.length - 1));
                 console.log("📍 [RN] Drag ended at index:", clampedIndex);
                 updateFocusedTag(clampedIndex, true);
               }}
@@ -1531,8 +1126,7 @@ const styles = (colors) =>
     header: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between", // Space between location and plan button
-      paddingHorizontal: scale(10),
+      justifyContent: "center", // Center the location
     },
     locationPill: {
       flexDirection: "row",
@@ -1541,23 +1135,8 @@ const styles = (colors) =>
       paddingHorizontal: scale(16),
       paddingVertical: verticalScale(9),
       borderRadius: moderateScale(20),
-      flex: 1,
-      maxWidth: width * 0.55, // Reduced width to make room for plan button
-    },
-    checkPlanButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "rgba(255, 255, 255, 0.25)",
-      paddingHorizontal: scale(14),
-      paddingVertical: verticalScale(9),
-      borderRadius: moderateScale(20),
-      marginLeft: scale(8),
-      gap: scale(6),
-    },
-    checkPlanButtonText: {
-      fontSize: moderateScale(14),
-      color: colors.white,
-      fontWeight: "600",
+      maxWidth: width * 1.8, // Allow more width for centered location
+      minWidth: width * 0.7, // Ensure minimum width
     },
     locationText: {
       flex: 1,

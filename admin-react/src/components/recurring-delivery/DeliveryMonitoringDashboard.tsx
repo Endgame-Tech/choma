@@ -174,12 +174,14 @@ const DeliveryMonitoringDashboard: React.FC = () => {
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+            title="Select date"
           />
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+            aria-label="Status Filter"
           >
             <option value="all">All Status</option>
             <option value="scheduled">Scheduled</option>
@@ -193,6 +195,7 @@ const DeliveryMonitoringDashboard: React.FC = () => {
             value={areaFilter}
             onChange={(e) => setAreaFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+            aria-label="Area Filter"
           >
             <option value="all">All Areas</option>
             <option value="lagos-island">Lagos Island</option>

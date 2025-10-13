@@ -73,9 +73,31 @@ const getUserDashboard = async (req, res) => {
         data: {
           hasActiveSubscription: false,
           userType: "discovery",
+          subscriptionState: {
+            screen: "HomeScreen",
+            reason: "no_subscription",
+            canAccessTodayMeals: false,
+          },
         },
       });
     }
+
+    // Get subscription state using middleware helper
+    const {
+      getSubscriptionState,
+    } = require("../middleware/subscriptionAccessMiddleware");
+
+    console.log(`🔍 Active subscription before getSubscriptionState:`, {
+      id: activeSubscription._id,
+      status: activeSubscription.status,
+      firstDeliveryCompleted: activeSubscription.firstDeliveryCompleted,
+      paymentStatus: activeSubscription.paymentStatus,
+      pausedAt: activeSubscription.pausedAt,
+    });
+
+    const subscriptionState = getSubscriptionState(activeSubscription);
+
+    console.log(`📱 Subscription state for user:`, subscriptionState);
 
     // Get current meal plan details
     const mealPlan = activeSubscription.mealPlanId;
@@ -153,6 +175,29 @@ const getUserDashboard = async (req, res) => {
       data: {
         hasActiveSubscription: true,
         userType: "subscribed",
+        subscriptionState: {
+          ...subscriptionState,
+          canAccessTodayMeals: subscriptionState.screen === "TodayMealScreen",
+        },
+        activeSubscription: {
+          id: activeSubscription._id,
+          planName: mealPlan.planName || mealPlan.name,
+          planImage: mealPlan.planImageUrl || mealPlan.coverImage,
+          startDate: activeSubscription.startDate,
+          endDate: actualEndDate || activeSubscription.endDate,
+          daysRemaining: daysRemaining,
+          progressPercentage: progressPercentage,
+          status: activeSubscription.status,
+          price: activeSubscription.price,
+          isActivated: isActivated,
+          activationStatus: isActivated ? "active" : "pending_first_delivery",
+          activatedAt: activeSubscription.recurringDelivery?.activatedAt,
+          durationWeeks: activeSubscription.durationWeeks,
+          firstDeliveryCompleted:
+            activeSubscription.firstDeliveryCompleted || false,
+          firstDeliveryCompletedAt: activeSubscription.firstDeliveryCompletedAt,
+          actualStartDate: activeSubscription.actualStartDate,
+        },
         user: {
           name: user.fullName,
           email: user.email,

@@ -516,6 +516,7 @@ const confirmDelivery = async (req, res) => {
         }
 
         // Mark first delivery as completed and activate subscription
+        subscription.firstDeliveryCompleted = true;
         subscription.recurringDelivery.activationDeliveryCompleted = true;
         subscription.recurringDelivery.isActivated = true;
         subscription.recurringDelivery.activatedAt = new Date();

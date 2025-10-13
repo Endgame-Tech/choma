@@ -45,6 +45,9 @@ const LoginScreen = ({ navigation }) => {
   const [errors, setErrors] = useState({});
   const [loginAttempts, setLoginAttempts] = useState(0);
 
+  // NEW: State to toggle between initial view and email form
+  const [showEmailForm, setShowEmailForm] = useState(false);
+
   // Animation for smooth keyboard transitions
   const [keyboardOffset] = useState(new Animated.Value(0));
   const [topSectionOffset] = useState(new Animated.Value(0));
@@ -329,165 +332,244 @@ const LoginScreen = ({ navigation }) => {
           >
             {/* Welcome text */}
             <View style={styles.welcomeContainer}>
-              <Text style={styles.welcomeTitle}>Welcome Back</Text>
-              <Text style={styles.welcomeSubtitle}>It's been a minute!</Text>
+              <Text style={styles.welcomeTitle}>
+                {showEmailForm ? "Welcome Back" : "Welcome to Choma"}
+              </Text>
+              <Text style={styles.welcomeSubtitle}>
+                {showEmailForm
+                  ? "It's been a minute!"
+                  : "Sign in to get started"}
+              </Text>
             </View>
 
-            {/* Continue With Google Button */}
-            <TouchableOpacity
-              style={[
-                styles.googleButton,
-                googleLoading && styles.googleButtonDisabled,
-              ]}
-              onPress={handleGoogleSignIn}
-              disabled={googleLoading}
-            >
-              {googleLoading ? (
-                <ActivityIndicator color="#333" size="small" />
-              ) : (
-                <>
-                  <Image
-                    source={require("../../../assets/Google Icon.png")}
-                    style={styles.googleIcon}
-                  />
-                  <Text style={styles.googleButtonText}>
-                    Continue With Google
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* OR Divider */}
-            <View style={styles.orContainer}>
-              <View style={styles.orLine} />
-              <Text style={styles.orText}>OR</Text>
-              <View style={styles.orLine} />
-            </View>
-
-            {/* Form inputs */}
-            <View style={styles.form}>
-              {/* General error message */}
-              {errors.general && (
-                <View style={styles.errorContainer}>
-                  <Ionicons name="alert-circle" size={16} color="#dc3545" />
-                  <Text style={styles.errorText}>{errors.general}</Text>
-                </View>
-              )}
-
-              <View
-                style={[
-                  styles.inputContainer,
-                  errors.email && styles.inputContainerError,
-                ]}
-              >
-                <Ionicons
-                  name="mail-outline"
-                  size={20}
-                  color={errors.email ? "#dc3545" : "#999"}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email Address"
-                  placeholderTextColor={errors.email ? "#dc3545" : "#999"}
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    if (errors.email) {
-                      setErrors((prev) => ({ ...prev, email: null }));
-                    }
-                  }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-              {errors.email && (
-                <View style={styles.fieldErrorContainer}>
-                  <Text style={styles.fieldErrorText}>{errors.email}</Text>
-                </View>
-              )}
-
-              <View
-                style={[
-                  styles.inputContainer,
-                  errors.password && styles.inputContainerError,
-                ]}
-              >
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={errors.password ? "#dc3545" : "#999"}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Password"
-                  placeholderTextColor={errors.password ? "#dc3545" : "#999"}
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    if (errors.password) {
-                      setErrors((prev) => ({ ...prev, password: null }));
-                    }
-                  }}
-                  secureTextEntry={!showPassword}
-                />
+            {/* Initial View: Google + Email buttons */}
+            {!showEmailForm ? (
+              <>
+                {/* Continue With Google Button */}
                 <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
+                  style={[
+                    styles.googleButton,
+                    googleLoading && styles.googleButtonDisabled,
+                  ]}
+                  onPress={handleGoogleSignIn}
+                  disabled={googleLoading}
+                >
+                  {googleLoading ? (
+                    <ActivityIndicator color="#333" size="small" />
+                  ) : (
+                    <>
+                      <Image
+                        source={require("../../../assets/Google Icon.png")}
+                        style={styles.googleIcon}
+                      />
+                      <Text style={styles.googleButtonText}>
+                        Continue With Google
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                {/* OR Divider */}
+                <View style={styles.orContainer}>
+                  <View style={styles.orLine} />
+                  <Text style={styles.orText}>OR</Text>
+                  <View style={styles.orLine} />
+                </View>
+
+                {/* Continue With Email Button */}
+                <TouchableOpacity
+                  style={styles.emailButton}
+                  onPress={() => setShowEmailForm(true)}
                 >
                   <Ionicons
-                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    name="mail-outline"
                     size={20}
-                    color={errors.password ? "#dc3545" : "#999"}
+                    color="#652815"
+                    style={styles.emailButtonIcon}
                   />
+                  <Text style={styles.emailButtonText}>
+                    Continue With Email
+                  </Text>
                 </TouchableOpacity>
-              </View>
-              {errors.password && (
-                <View style={styles.fieldErrorContainer}>
-                  <Text style={styles.fieldErrorText}>{errors.password}</Text>
+
+                {/* Sign Up Link */}
+                <View style={styles.signupContainer}>
+                  <Text style={styles.signupText}>
+                    I do not have an account?{" "}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("EmailInput")}
+                  >
+                    <Text style={styles.signupLink}>Sign Up</Text>
+                  </TouchableOpacity>
                 </View>
-              )}
 
-              {/* Forgot Password */}
-              <TouchableOpacity
-                style={styles.forgotPasswordContainer}
-                onPress={() => navigation.navigate("ForgotPassword")}
-              >
-                <Text style={styles.forgotPasswordText}>Forgot Password</Text>
-              </TouchableOpacity>
-
-              {/* Sign In Button */}
-              <TouchableOpacity
-                style={[
-                  styles.loginButton,
-                  isLoading && styles.loginButtonDisabled,
-                ]}
-                onPress={handleLogin}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Sign In</Text>
-                )}
-              </TouchableOpacity>
-
-              {/* Sign Up Link */}
-              <View style={styles.signupContainer}>
-                <Text style={styles.signupText}>
-                  I do not have an account?{" "}
-                </Text>
+                <BiometricLogin />
+              </>
+            ) : (
+              <>
+                {/* Back to Initial View Button */}
                 <TouchableOpacity
-                  onPress={() => navigation.navigate("EmailInput")}
+                  style={styles.backToOptionsButton}
+                  onPress={() => {
+                    setShowEmailForm(false);
+                    setErrors({});
+                    setEmail("");
+                    setPassword("");
+                  }}
                 >
-                  <Text style={styles.signupLink}>Sign Up</Text>
+                  <Ionicons name="arrow-back" size={20} color="#652815" />
+                  <Text style={styles.backToOptionsText}>
+                    Back to sign in options
+                  </Text>
                 </TouchableOpacity>
-              </View>
-            </View>
 
-            <BiometricLogin />
+                {/* Email Form View */}
+                <>
+                  {/* Form inputs */}
+                  <View style={styles.form}>
+                    {/* General error message */}
+                    {errors.general && (
+                      <View style={styles.errorContainer}>
+                        <Ionicons
+                          name="alert-circle"
+                          size={16}
+                          color="#dc3545"
+                        />
+                        <Text style={styles.errorText}>{errors.general}</Text>
+                      </View>
+                    )}
+
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        errors.email && styles.inputContainerError,
+                      ]}
+                    >
+                      <Ionicons
+                        name="mail-outline"
+                        size={20}
+                        color={errors.email ? "#dc3545" : "#999"}
+                        style={styles.inputIcon}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Email Address"
+                        placeholderTextColor={errors.email ? "#dc3545" : "#999"}
+                        value={email}
+                        onChangeText={(text) => {
+                          setEmail(text);
+                          if (errors.email) {
+                            setErrors((prev) => ({ ...prev, email: null }));
+                          }
+                        }}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                    </View>
+                    {errors.email && (
+                      <View style={styles.fieldErrorContainer}>
+                        <Text style={styles.fieldErrorText}>
+                          {errors.email}
+                        </Text>
+                      </View>
+                    )}
+
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        errors.password && styles.inputContainerError,
+                      ]}
+                    >
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={20}
+                        color={errors.password ? "#dc3545" : "#999"}
+                        style={styles.inputIcon}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        placeholderTextColor={
+                          errors.password ? "#dc3545" : "#999"
+                        }
+                        value={password}
+                        onChangeText={(text) => {
+                          setPassword(text);
+                          if (errors.password) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              password: null,
+                            }));
+                          }
+                        }}
+                        secureTextEntry={!showPassword}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        style={styles.eyeIcon}
+                      >
+                        <Ionicons
+                          name={
+                            showPassword ? "eye-outline" : "eye-off-outline"
+                          }
+                          size={20}
+                          color={errors.password ? "#dc3545" : "#999"}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    {errors.password && (
+                      <View style={styles.fieldErrorContainer}>
+                        <Text style={styles.fieldErrorText}>
+                          {errors.password}
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Forgot Password */}
+                    <TouchableOpacity
+                      style={styles.forgotPasswordContainer}
+                      onPress={() => navigation.navigate("ForgotPassword")}
+                    >
+                      <Text style={styles.forgotPasswordText}>
+                        Forgot Password
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Sign In Button */}
+                    <TouchableOpacity
+                      style={[
+                        styles.loginButton,
+                        isLoading && styles.loginButtonDisabled,
+                      ]}
+                      onPress={handleLogin}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.loginButtonText}>Sign In</Text>
+                      )}
+                    </TouchableOpacity>
+
+                    {/* Sign Up Link */}
+                    <View style={styles.signupContainer}>
+                      <Text style={styles.signupText}>
+                        I do not have an account?{" "}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => navigation.navigate("EmailInput")}
+                      >
+                        <Text style={styles.signupLink}>Sign Up</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <BiometricLogin />
+                </>
+              </>
+            )}
 
             {/* Add some bottom padding for better scrolling */}
             <View style={styles.bottomPadding} />
@@ -734,6 +816,49 @@ const styles = createStylesWithDMSans({
   },
   bottomPadding: {
     height: Platform.OS === "ios" ? 30 : 50, // Extra space for navigation bar
+  },
+  // NEW: Email button styles
+  emailButton: {
+    backgroundColor: "#fff",
+    borderRadius: 25,
+    height: 50,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 30,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "#652815",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  emailButtonIcon: {
+    marginRight: 12,
+  },
+  emailButtonText: {
+    color: "#652815",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  // NEW: Back to options button
+  backToOptionsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    paddingVertical: 10,
+  },
+  backToOptionsText: {
+    color: "#652815",
+    fontSize: 14,
+    fontWeight: "500",
+    marginLeft: 8,
   },
 });
 

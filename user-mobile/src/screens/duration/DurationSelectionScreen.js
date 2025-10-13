@@ -18,6 +18,7 @@ import Animated, {
   useAnimatedStyle,
   useAnimatedScrollHandler,
   useSharedValue,
+  useDerivedValue,
   withRepeat,
   withTiming,
   Easing,
@@ -308,7 +309,7 @@ const DurationSelectionScreen = ({ navigation, route }) => {
         </Animated.View>
       </TouchableOpacity>
     );
-  });
+  }, (prev, next) => prev.index === next.index && prev.duration === next.duration);
 
   const onSelectDuration = (index) => {
     if (!durationOptions[index]) return;
@@ -337,48 +338,40 @@ const DurationSelectionScreen = ({ navigation, route }) => {
     }
   };
 
+  // Track last centered index for haptic feedback
+  const lastCenteredIndex = useRef(-1);
+
+  // Optimized: Update current duration only when scroll ends (not during scroll)
+  const updateCurrentDuration = useCallback((index, isSnapped = false) => {
+    if (index !== currentDurationIndex) {
+      setCurrentDurationIndex(index);
+
+      // Only trigger haptic when snapped to center AND index changed
+      if (isSnapped && lastCenteredIndex.current !== index) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        lastCenteredIndex.current = index;
+      }
+    }
+  }, [currentDurationIndex]);
+
+  // Optimized scroll handler - updates only on momentum end
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       contentOffset.value = event.contentOffset.x;
     },
+    onScrollEndDrag: (event) => {
+      const index = Math.round(event.contentOffset.x / DurationItemWidth);
+      const clampedIndex = Math.max(0, Math.min(index, durationOptions.length - 1));
+      runOnJS(updateCurrentDuration)(clampedIndex, true);
+    },
+    onMomentumScrollEnd: (event) => {
+      const index = Math.round(event.contentOffset.x / DurationItemWidth);
+      const clampedIndex = Math.max(0, Math.min(index, durationOptions.length - 1));
+      runOnJS(updateCurrentDuration)(clampedIndex, true);
+    },
   });
 
-  // Sync with scroll position for haptic feedback
-  useEffect(() => {
-    if (!durationOptions || durationOptions.length === 0) return;
-
-    const interval = setInterval(() => {
-      try {
-        const currentIndex = Math.round(
-          contentOffset.value / DurationItemWidth
-        );
-        const clampedIndex = Math.max(
-          0,
-          Math.min(currentIndex, durationOptions.length - 1)
-        );
-
-        if (clampedIndex !== currentDurationIndex) {
-          setCurrentDurationIndex(clampedIndex);
-
-          // Haptic feedback only when exactly centered
-          const exactCenterOffset = clampedIndex * DurationItemWidth;
-          const distanceFromCenter = Math.abs(
-            contentOffset.value - exactCenterOffset
-          );
-          const isAtCenter = distanceFromCenter < 5;
-
-          if (isAtCenter && lastHapticIndex.current !== clampedIndex) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            lastHapticIndex.current = clampedIndex;
-          }
-        }
-      } catch (error) {
-        console.warn("Error in duration sync:", error);
-      }
-    }, 33);
-
-    return () => clearInterval(interval);
-  }, [durationOptions, currentDurationIndex, DurationItemWidth]);
+  // REMOVED: setInterval polling - now using onMomentumScrollEnd for better performance
 
   const spinAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -717,6 +710,20 @@ const DurationSelectionScreen = ({ navigation, route }) => {
             keyExtractor={(_, index) => index.toString()}
             scrollEventThrottle={16}
             onScroll={scrollHandler}
+            onMomentumScrollEnd={(event) => {
+              // Regular React Native handler as fallback
+              const index = Math.round(event.nativeEvent.contentOffset.x / DurationItemWidth);
+              const clampedIndex = Math.max(0, Math.min(index, durationOptions.length - 1));
+              console.log("📍 [RN] Momentum ended at index:", clampedIndex);
+              updateCurrentDuration(clampedIndex, true);
+            }}
+            onScrollEndDrag={(event) => {
+              // Regular React Native handler as fallback
+              const index = Math.round(event.nativeEvent.contentOffset.x / DurationItemWidth);
+              const clampedIndex = Math.max(0, Math.min(index, durationOptions.length - 1));
+              console.log("📍 [RN] Drag ended at index:", clampedIndex);
+              updateCurrentDuration(clampedIndex, true);
+            }}
             pagingEnabled
             snapToInterval={DurationItemWidth}
             showsHorizontalScrollIndicator={false}

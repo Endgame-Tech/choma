@@ -214,6 +214,7 @@ const Deliveries: React.FC = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'date' | 'distance' | 'earning')}
+              aria-label="Sort deliveries by"
               className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-choma-orange focus:border-choma-orange font-medium bg-gray-50 hover:bg-white transition-all duration-300"
             >
               <option value="date"><i className="fi fi-rr-calendar"></i> Sort by Date</option>

@@ -266,13 +266,62 @@ const CompactOrderCard = ({
   }, [order?.status, order?.orderStatus, order?.delegationStatus, order?._id]);
 
   const getMealPlanImage = () => {
-    if (order?.image) return { uri: order.image };
-    if (order?.mealPlan?.image) return { uri: order.mealPlan.image };
-    if (order?.orderItems?.image) return { uri: order.orderItems.image };
+    console.log("🖼️ Getting meal plan image for order:", {
+      orderId: order?._id,
+      subscriptionPlanImage: order?.subscription?.planImage,
+      subscriptionMealPlanImage: order?.subscription?.mealPlan?.image,
+      orderImage: order?.image,
+      mealPlanImage: order?.mealPlan?.image,
+      orderItemsImage: order?.orderItems?.image,
+    });
 
+    // Priority 1: Check for subscription-specific images
+    if (order?.subscription?.planImage) {
+      console.log("✅ Using subscription.planImage");
+      return { uri: order.subscription.planImage };
+    }
+    if (order?.subscription?.mealPlan?.image) {
+      console.log("✅ Using subscription.mealPlan.image");
+      return { uri: order.subscription.mealPlan.image };
+    }
+    if (order?.subscription?.mealPlan?.planImageUrl) {
+      console.log("✅ Using subscription.mealPlan.planImageUrl");
+      return { uri: order.subscription.mealPlan.planImageUrl };
+    }
+    if (order?.subscription?.mealPlan?.coverImage) {
+      console.log("✅ Using subscription.mealPlan.coverImage");
+      return { uri: order.subscription.mealPlan.coverImage };
+    }
+
+    // Priority 2: Check for order-specific images
+    if (order?.image) {
+      console.log("✅ Using order.image");
+      return { uri: order.image };
+    }
+    if (order?.mealPlan?.image) {
+      console.log("✅ Using order.mealPlan.image");
+      return { uri: order.mealPlan.image };
+    }
+    if (order?.mealPlan?.planImageUrl) {
+      console.log("✅ Using order.mealPlan.planImageUrl");
+      return { uri: order.mealPlan.planImageUrl };
+    }
+    if (order?.mealPlan?.coverImage) {
+      console.log("✅ Using order.mealPlan.coverImage");
+      return { uri: order.mealPlan.coverImage };
+    }
+    if (order?.orderItems?.image) {
+      console.log("✅ Using order.orderItems.image");
+      return { uri: order.orderItems.image };
+    }
+
+    // Priority 3: Fallback to plan name matching
+    console.log("⚠️ No image found, falling back to plan name matching");
     const planName = (
+      order?.subscription?.planName ||
       order?.orderItems?.planName ||
       order?.mealPlan?.name ||
+      order?.mealPlan?.planName ||
       ""
     ).toLowerCase();
 
@@ -632,9 +681,10 @@ const CompactOrderCard = ({
                 </Text>
 
                 <View style={styles(colors).progressContainer}>
-                  {Array.isArray(orderSteps) && orderSteps.map((step, index) =>
-                    renderProgressStep(step, index)
-                  )}
+                  {Array.isArray(orderSteps) &&
+                    orderSteps.map((step, index) =>
+                      renderProgressStep(step, index)
+                    )}
                 </View>
               </View>
 
@@ -1023,7 +1073,7 @@ const styles = (colors) =>
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
-      justifyContent: "center",
+      justifyContent: "flex-end",
       alignItems: "flex-end",
     },
     modalContainer: {
@@ -1036,8 +1086,8 @@ const styles = (colors) =>
       shadowOffset: { width: 0, height: -5 },
       shadowOpacity: 0.3,
       shadowRadius: 20,
-      elevation: 10,
-      // bottom: 0,
+      // elevation: 10,
+      bottom: 0,
     },
     modalHeader: {
       flexDirection: "row",

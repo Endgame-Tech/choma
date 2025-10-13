@@ -21,10 +21,13 @@ const PopularPlanCard = ({
 }) => {
   const { colors } = useTheme();
 
-  const imageSource = plan.image
-    ? typeof plan.image === "string"
-      ? { uri: plan.image }
-      : plan.image
+  // Check multiple possible image field names
+  const planImage = plan.image || plan.coverImage || plan.planImageUrl || plan.imageUrl;
+
+  const imageSource = planImage
+    ? typeof planImage === "string"
+      ? { uri: planImage }
+      : planImage
     : require("../../assets/images/meal-plans/fitfuel.jpg");
 
   const planDiscount = discountData[plan.id || plan._id];

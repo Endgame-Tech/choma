@@ -202,11 +202,7 @@ const OrdersScreen = ({ navigation }) => {
         return status && !["cancelled", "delivered"].includes(status);
       });
 
-    if (
-      hasActiveOrders &&
-      safeOrders.length > 0 &&
-      selectedTab === "active"
-    ) {
+    if (hasActiveOrders && safeOrders.length > 0 && selectedTab === "active") {
       console.log("🔄 Starting optimized order status updates...");
       const interval = setInterval(async () => {
         // Use cached data first, only fetch if stale
@@ -248,7 +244,9 @@ const OrdersScreen = ({ navigation }) => {
         );
         loadOrders();
       } else {
-        console.log("🔄 Screen focused - using silent update with force refresh");
+        console.log(
+          "🔄 Screen focused - using silent update with force refresh"
+        );
         silentOrderUpdate(true); // Force refresh to get latest order status
       }
     }, [safeOrders.length])
@@ -330,7 +328,7 @@ const OrdersScreen = ({ navigation }) => {
           // Add assigned orders to the list
           allOrders = [
             ...(Array.isArray(allOrders) ? allOrders : []),
-            ...assignedOrders
+            ...assignedOrders,
           ];
         }
       }
@@ -382,7 +380,7 @@ const OrdersScreen = ({ navigation }) => {
         // Ensure both arrays are valid before spreading
         allOrders = [
           ...(Array.isArray(allOrders) ? allOrders : []),
-          ...(Array.isArray(subscriptionOrders) ? subscriptionOrders : [])
+          ...(Array.isArray(subscriptionOrders) ? subscriptionOrders : []),
         ];
       }
 
@@ -686,13 +684,22 @@ const OrdersScreen = ({ navigation }) => {
           }
         }}
         onCancelOrder={(orderId) => {
-          const orderToCancel = safeOrders.find((o) => (o._id || o.id) === orderId);
+          const orderToCancel = safeOrders.find(
+            (o) => (o._id || o.id) === orderId
+          );
           if (orderToCancel) {
             handleCancelOrder(orderToCancel);
           }
         }}
         onRateOrder={(order) => {
           console.log("Rate order:", order._id);
+        }}
+        onTrackDriver={(order) => {
+          console.log("Track driver for order:", order._id);
+          navigation.navigate("EnhancedTracking", {
+            orderId: order._id || order.id,
+            orderNumber: order.orderNumber,
+          });
         }}
         style={{ marginHorizontal: 0, marginBottom: 20 }}
       />
@@ -750,13 +757,22 @@ const OrdersScreen = ({ navigation }) => {
           }
         }}
         onCancelOrder={(orderId) => {
-          const orderToCancel = safeOrders.find((o) => (o._id || o.id) === orderId);
+          const orderToCancel = safeOrders.find(
+            (o) => (o._id || o.id) === orderId
+          );
           if (orderToCancel) {
             handleCancelOrder(orderToCancel);
           }
         }}
         onRateOrder={(order) => {
           console.log("Rate order:", order._id);
+        }}
+        onTrackDriver={(order) => {
+          console.log("Track driver for order:", order._id);
+          navigation.navigate("EnhancedTracking", {
+            orderId: order._id || order.id,
+            orderNumber: order.orderNumber,
+          });
         }}
         style={{ marginHorizontal: 0, marginBottom: 20 }}
       />

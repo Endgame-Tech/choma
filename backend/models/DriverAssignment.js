@@ -546,15 +546,62 @@ driverAssignmentSchema.methods.confirmDelivery = async function (
   // Update the main Order status to notify mobile app users
   const Order = require("./Order");
   const Notification = require("./Notification");
+  const Subscription = require("./Subscription");
   const { cacheService } = require("../config/redis");
 
   try {
     // Update order status
-    const order = await Order.findById(this.orderId);
+    const order = await Order.findById(this.orderId).populate("subscription");
     if (order) {
       order.orderStatus = "Delivered";
       order.actualDelivery = new Date();
       await order.save();
+
+      // CRITICAL: Handle first delivery completion and subscription activation
+      if (order.subscription) {
+        const subscription = await Subscription.findById(order.subscription);
+
+        if (subscription) {
+          // Check if this is the first delivery
+          const isFirstDelivery = !subscription.firstDeliveryCompleted;
+
+          if (isFirstDelivery) {
+            // Mark first delivery as completed
+            subscription.firstDeliveryCompleted = true;
+            subscription.firstDeliveryCompletedAt = new Date();
+            subscription.firstDeliveryOrderId = order._id;
+            subscription.actualStartDate = new Date();
+            subscription.status = "active"; // Change from pending_first_delivery to active
+            await subscription.save();
+
+            console.log(
+              `🎉 FIRST DELIVERY COMPLETED for subscription ${subscription._id}`
+            );
+            console.log(`   - Order: ${order._id}`);
+            console.log(`   - Subscription now ACTIVE`);
+            console.log(`   - User can now access TodayMeal screen`);
+
+            // Send first delivery completion notification
+            await Notification.create({
+              userId: order.customer,
+              type: "first_delivery_completed",
+              title: "Your meal plan has started! 🎉",
+              message: `Your first meal has been delivered. Enjoy your ${
+                subscription.mealPlanId?.name || "meal plan"
+              }!`,
+              data: {
+                subscriptionId: subscription._id,
+                orderId: order._id,
+              },
+              priority: "high",
+            });
+
+            // Invalidate dashboard cache to reflect new subscription state
+            await cacheService.del(`dashboard:${order.customer}`);
+            await cacheService.del(`meal-dashboard:${order.customer}`);
+          }
+        }
+      }
 
       // Invalidate mobile app cache
       await cacheService.del(`orders:${order.customer}`);

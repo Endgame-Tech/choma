@@ -83,49 +83,35 @@ const MyPlanScreen = ({ navigation, route }) => {
       // Use subscription from params or fetch active subscription
       if (subscriptionParam) {
         setActiveSubscription(subscriptionParam);
+        // Still need to fetch meals for param-provided subscription
         await loadTodaysMeals(subscriptionParam);
       } else {
-        // Fetch user's active subscriptions
-        const dashboardResult = await apiService.getUserDashboard();
-        console.log(
-          "📊 Dashboard result in MyPlan:",
-          JSON.stringify(dashboardResult, null, 2)
-        );
+        // ✨ NEW: Use unified meal dashboard endpoint
+        const dashboardResult = await apiService.getMealDashboard();
+        console.log("📋 Unified dashboard result in MyPlan:", dashboardResult);
 
         if (dashboardResult?.success && dashboardResult?.data) {
-          // Handle nested data structure: data.data or just data
-          const dashboardData =
-            dashboardResult.data.data || dashboardResult.data;
+          const data = dashboardResult.data;
 
-          console.log("📋 Dashboard data:", {
-            hasActiveSubscription: dashboardData.hasActiveSubscription,
-            hasSubscription: !!dashboardData.subscription,
-          });
+          if (data.hasActiveSubscription && data.activeSubscription) {
+            console.log("✅ Setting active subscription:", data.activeSubscription.planName);
+            setActiveSubscription(data.activeSubscription);
 
-          // Check if user has active subscription from dashboard
-          if (
-            dashboardData.hasActiveSubscription &&
-            dashboardData.subscription
-          ) {
-            const active = dashboardData.subscription;
-            console.log("✅ Found active subscription:", active.id);
-            setActiveSubscription(active);
-            await loadTodaysMeals(active);
-          } else {
-            // Fallback: check subscriptions array
-            const subscriptions = dashboardData.subscriptions || [];
-            const active = subscriptions.find(
-              (sub) => sub.status === "active" || sub.status === "Active"
-            );
-
-            if (active) {
-              console.log(
-                "✅ Found active subscription from array:",
-                active._id || active.id
-              );
-              setActiveSubscription(active);
-              await loadTodaysMeals(active);
+            // Set current meal (already fetched by unified endpoint)
+            if (data.currentMeal) {
+              setCurrentMeal(data.currentMeal);
+              console.log("🍽️ Current meal:", data.currentMeal.customTitle);
             }
+
+            // Set timeline meals (already fetched by unified endpoint)
+            if (data.mealTimeline && data.mealTimeline.length > 0) {
+              // Filter for today's meals
+              const todayMeals = data.mealTimeline.filter((meal) => meal.isToday);
+              setTodaysMeals(todayMeals);
+              console.log("📅 Today's meals from timeline:", todayMeals.length);
+            }
+          } else {
+            console.log("ℹ️ No active subscription found");
           }
         }
       }
@@ -145,8 +131,12 @@ const MyPlanScreen = ({ navigation, route }) => {
         subscriptionId
       );
 
+      console.log("📋 Current meal result:", currentMealResult);
       if (currentMealResult?.success && currentMealResult?.data) {
-        setCurrentMeal(currentMealResult.data);
+        // Handle nested data structure: data.data or just data
+        const mealData = currentMealResult.data.data || currentMealResult.data;
+        console.log("✅ Current meal data:", JSON.stringify(mealData, null, 2));
+        setCurrentMeal(mealData);
       }
 
       // Get meal timeline for today's meals
@@ -155,9 +145,16 @@ const MyPlanScreen = ({ navigation, route }) => {
         1 // Just get today
       );
 
+      console.log("📅 Timeline result:", timelineResult);
       if (timelineResult?.success && timelineResult?.data) {
-        const meals = timelineResult.data.meals || [];
-        const todayMeals = meals.filter((meal) => meal.isToday);
+        // Handle nested data structure
+        const timelineData = timelineResult.data.data || timelineResult.data;
+        const timeline = Array.isArray(timelineData) ? timelineData : [];
+        console.log("📅 Timeline array:", timeline);
+
+        // Filter for today's meals (dayType === 'current')
+        const todayMeals = timeline.filter((day) => day.dayType === "current");
+        console.log("🍽️ Today's meals:", todayMeals);
         setTodaysMeals(todayMeals);
       }
     } catch (error) {
@@ -246,28 +243,43 @@ const MyPlanScreen = ({ navigation, route }) => {
     if (!activeSubscription) return null;
 
     const highlightedMeal = currentMeal || todaysMeals[0] || {};
+    console.log("🎨 Highlighted meal for hero:", highlightedMeal);
+
     const mealPlan =
       activeSubscription.mealPlanId || activeSubscription.mealPlan || {};
 
+    // Extract image from the backend structure
     const heroImageSource = (() => {
-      if (highlightedMeal?.image) return { uri: highlightedMeal.image };
-      if (highlightedMeal?.mealImage) return { uri: highlightedMeal.mealImage };
-      if (highlightedMeal?.imageUrl)
+      // For currentMeal (from getCurrentMeal API)
+      if (highlightedMeal?.imageUrl) {
         return {
           uri: highlightedMeal.imageUrl?.uri || highlightedMeal.imageUrl,
         };
+      }
+      // For todaysMeals (from timeline API - day object)
+      if (highlightedMeal?.meals?.[0]?.imageUrl) {
+        return { uri: highlightedMeal.meals[0].imageUrl };
+      }
+      // For meal plan fallback
+      if (highlightedMeal?.meals?.[0]?.image) {
+        return { uri: highlightedMeal.meals[0].image };
+      }
       if (mealPlan?.planImageUrl) return { uri: mealPlan.planImageUrl };
       if (mealPlan?.image) return { uri: mealPlan.image };
       if (mealPlan?.coverImage) return { uri: mealPlan.coverImage };
       return require("../../../assets/authImage.png");
     })();
 
+    // Extract meal title from the backend structure
     const mealTitle =
-      highlightedMeal?.name ||
-      highlightedMeal?.mealName ||
-      highlightedMeal?.title ||
-      highlightedMeal?.customTitle ||
-      "Delicious Meal";
+      highlightedMeal?.customTitle || // From getCurrentMeal
+      highlightedMeal?.meals?.[0]?.title || // From timeline day object
+      highlightedMeal?.meals?.[0]?.name || // From timeline day object
+      highlightedMeal?.dayTitle || // From timeline day object
+      "Today's Special";
+
+    console.log("📝 Meal title for hero:", mealTitle);
+    console.log("🖼️ Hero image source:", heroImageSource);
 
     const planName = getPlanDisplayName(activeSubscription);
 
@@ -495,7 +507,7 @@ const MyPlanScreen = ({ navigation, route }) => {
             style={styles(colors).backButton}
             onPress={() => navigation.goBack()}
           >
-            <CustomIcon name="chevron-back" size={24} color={colors.text} />
+            <CustomIcon name="chevron-back" size={20} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles(colors).headerTitle}>My Plan</Text>
           <View style={styles(colors).placeholder} />
@@ -546,25 +558,10 @@ const MyPlanScreen = ({ navigation, route }) => {
               style={styles(colors).backButton}
               onPress={() => navigation.goBack()}
             >
-              <CustomIcon name="chevron-back" size={26} color={RICH_BROWN} />
+              <CustomIcon name="chevron-back" size={20} color={RICH_BROWN} />
             </TouchableOpacity>
             <Text style={styles(colors).heroTitle}>My Meal Plan</Text>
-            <TouchableOpacity
-              style={styles(colors).settingsButton}
-              onPress={() => {
-                navigation.navigate("SubscriptionDetails", {
-                  subscription: activeSubscription,
-                  subscriptionId:
-                    activeSubscription._id || activeSubscription.id,
-                });
-              }}
-            >
-              <CustomIcon
-                name="settings-outline"
-                size={22}
-                color={RICH_BROWN}
-              />
-            </TouchableOpacity>
+            <View style={styles(colors).placeholder} />
           </View>
         </SafeAreaView>
       </LinearGradient>

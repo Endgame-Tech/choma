@@ -33,32 +33,46 @@ export const useMealPlans = () => {
     setProgressiveLoading(true);
     
     // Transform all plans synchronously
-    const transformedPlans = plans.map(plan => ({
-      id: plan._id || plan.planId,
-      planId: plan.planId,
-      name: plan.name || plan.planName,
-      subtitle: plan.subtitle,
-      description: plan.description,
-      price: plan.price || plan.totalPrice,
-      originalPrice: Math.round((plan.price || plan.totalPrice) * 1.2),
-      duration: plan.duration || `${plan.durationWeeks || 1} week(s)`,
-      meals: plan.meals,
-      targetAudience: plan.targetAudience,
-      rating: plan.avgRating || plan.averageRating || null,
-      averageRating: plan.avgRating || plan.averageRating || null,
-      mealType: plan.mealTypes ? plan.mealTypes.join(', ') : null,
-      category: plan.targetAudience,
-      image: plan.image || plan.coverImage || plan.planImageUrl || null,
-      gradient: getGradientByAudience(plan.targetAudience),
-      tag: getTagByAudience(plan.targetAudience),
-      features: plan.features || plan.planFeatures || [],
-      nutrition: plan.nutrition || plan.nutritionInfo || {},
-      weeklyMeals: plan.weeklyMeals || {},
-      mealImages: plan.mealImages || {},
-      isActive: plan.isActive,
-      createdAt: plan.createdAt,
-      durationWeeks: plan.durationWeeks,
-    }));
+    const transformedPlans = plans.map(plan => {
+      const imageUrl = plan.image || plan.coverImage || plan.planImageUrl || plan.imageUrl || null;
+
+      // Debug log if no image is found
+      if (!imageUrl) {
+        console.log(`🖼️ No image found for plan "${plan.name || plan.planName}". Checking fields:`, {
+          image: plan.image,
+          coverImage: plan.coverImage,
+          planImageUrl: plan.planImageUrl,
+          imageUrl: plan.imageUrl,
+        });
+      }
+
+      return {
+        id: plan._id || plan.planId,
+        planId: plan.planId,
+        name: plan.name || plan.planName,
+        subtitle: plan.subtitle,
+        description: plan.description,
+        price: plan.price || plan.totalPrice,
+        originalPrice: Math.round((plan.price || plan.totalPrice) * 1.2),
+        duration: plan.duration || `${plan.durationWeeks || 1} week(s)`,
+        meals: plan.meals,
+        targetAudience: plan.targetAudience,
+        rating: plan.avgRating || plan.averageRating || null,
+        averageRating: plan.avgRating || plan.averageRating || null,
+        mealType: plan.mealTypes ? plan.mealTypes.join(', ') : null,
+        category: plan.targetAudience,
+        image: imageUrl,
+        gradient: getGradientByAudience(plan.targetAudience),
+        tag: getTagByAudience(plan.targetAudience),
+        features: plan.features || plan.planFeatures || [],
+        nutrition: plan.nutrition || plan.nutritionInfo || {},
+        weeklyMeals: plan.weeklyMeals || {},
+        mealImages: plan.mealImages || {},
+        isActive: plan.isActive,
+        createdAt: plan.createdAt,
+        durationWeeks: plan.durationWeeks,
+      };
+    });
     
     // Set all plans at once - no glitching
     setMealPlans(transformedPlans);
