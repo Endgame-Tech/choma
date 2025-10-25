@@ -10,13 +10,13 @@ export const APP_CONFIG = {
   // For future backend integration
   API_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "http://10.96.182.104:5001/api" // Adjust to your local IP
+      ? "http://192.168.1.118:5001/api" // Adjust to your local IP
       : "http://localhost:5001/api"
     : "https://choma.onrender.com/api",
 
   WS_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "ws://10.96.182.104:5001" // Your local development IP
+      ? "ws://192.168.1.118:5001" // Your local development IP
       : "ws://localhost:5001" // Your local development IP
     : "wss://choma.onrender.com", // Production WebSocket URL
 

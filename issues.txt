@@ -1,46 +1,60 @@
-
- LOG  📊 Unified dashboard data: {"hasActiveSubscription": true, "hasSubscr
-iption": true, "subscriptionState": {"canAccessTodayMeals": true, "data": {
-"subscriptionId": "68ec1ca816769342f05e24ad"}, "message": "Active subscript
-ion with delivered meals", "reason": "active", "screen": "TodayMealScreen"}}
- LOG  ✅ Active subscription detected from dashboard!
- LOG  📋 Subscription details: {"daysRemaining": 6, "firstDeliveryCompleted
-": true, "id": "68ec1ca816769342f05e24ad", "planName": "FitFam Fuel", "startDate": "2025-10-12T21:24:50.797Z", "status": "Active"}
- LOG  🎯 Subscription state: {"canAccessTodayMeals": true, "data": {"subscr
-iptionId": "68ec1ca816769342f05e24ad"}, "message": "Active subscription with delivered meals", "reason": "active", "screen": "TodayMealScreen"}       
- LOG  🚀 Navigating to TodayMeal screen...
- LOG  👤 User check: Logged in
- LOG  ℹ️ Already checked subscription, skipping
- LOG  🍽️ Fetching unified meal dashboard
- LOG  🔍 Debug - Token status before getMealDashboard request: {"hasToken":
- true, "tokenLength": 249, "tokenPreview": "eyJhbGciOiJIUzI1NiIsInR5cCI6Ik..."}
- LOG  🔍 Debug - Request headers: {"authHeaderPreview": "Bearer eyJhbGciOiJ
-IUzI1NiIsInR...", "endpoint": "/user/meal-dashboard", "hasAuthHeader": true
-, "hasToken": true, "tokenPreview": "eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...", "url": "http://10.96.182.104:5001/api/user/meal-dashboard"}
- LOG  API Request (Attempt 1): GET http://10.96.182.104:5001/api/user/meal-dashboard
- LOG  ✅ Unified meal dashboard loaded successfully
- LOG  📊 Dashboard data: {"currentMeal": undefined, "hasSubscription": true, "progress": 14, "timelineItems": 0}
- LOG  📋 Unified dashboard result: {"data": {"activeSubscription": {"_id": 
-"68ec1ca816769342f05e24ad", "daysRemaining": 6, "endDate": "2025-10-19T21:2
-4:50.797Z", "firstDeliveryCompleted": true, "id": "68ec1ca816769342f05e24ad
-", "mealPlanId": [Object], "planName": "FitFam Fuel", "startDate": "2025-10
--12T21:24:50.797Z", "status": "Active", "subscriptionId": "68ec1ca816769342
-f05e24ad", "totalPrice": 21880}, "currentMeal": null, "hasActiveSubscriptio
-n": true, "hasSubscription": true, "mealTimeline": [], "stats": {"daysCompl
-eted": 1, "daysRemaining": 6, "mealsRemaining": 6, "progress": 14, "totalDa
-ys": 7}, "subscriptionState": {"canAccessTodayMeals": true, "data": [Object
-], "message": "Active subscription with delivered meals", "reason": "active", "screen": "TodayMealScreen"}}, "success": true}
- LOG  ✅ Setting active subscription: FitFam Fuel
- LOG  📦 TagService API response: {"count": 2, "data": [{"__v": 0, "_id": "
-68ca9883305a2a9fd6d5e680", "bigPreviewImage": "https://res.cloudinary.com/d
-ql0tbyes/image/upload/v1759070793/choma/tag-previews/cwodrxzaaafceau6tr4o.j
-pg", "createdAt": "2025-09-17T11:16:19.730Z", "description": "For Gym enthu
-saist", "image": "https://res.cloudinary.com/dql0tbyes/image/upload/v175907
-0763/choma/tags/kjqubzd7gsgonnxjx9je.png", "isActive": true, "mealPlanCount
-": 2, "name": "gg", "sortOrder": 0, "tagId": "TAG001", "updatedAt": "2025-0
-9-28T14:46:43.040Z"}, {"__v": 0, "_id": "68d068513dd82e948d537bc5", "bigPre
-viewImage": "https://res.cloudinary.com/dql0tbyes/image/upload/v1759070865/
-choma/tag-previews/zq3tyquhy2sryxbrsse9.jpg", "createdAt": "2025-09-21T21:0
-4:17.731Z", "description": "This me", "image": "https://res.cloudinary.com/
-dql0tbyes/image/upload/v1759070845/choma/tags/pzq09wi5tx03jpkax8zi.png", "i
-sActive": true, "mealPlanCount": 2, "name": "James b", "sortOrder": 2, "tagId": "TAG003", "updatedAt": "2025-09-28T14:47:30.416Z"}], "success": true} 
+[{
+	"resource": "/c:/dev/choma/landing-page/src/pages/Contact.tsx",
+	"owner": "eslint5",
+	"severity": 8,
+	"message": "Parsing error: ')' expected.",
+	"source": "eslint",
+	"startLineNumber": 265,
+	"startColumn": 4,
+	"endLineNumber": 265,
+	"endColumn": 4,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/dev/choma/landing-page/src/pages/Contact.tsx",
+	"owner": "typescript",
+	"code": "1005",
+	"severity": 8,
+	"message": "')' expected.",
+	"source": "ts",
+	"startLineNumber": 265,
+	"startColumn": 5,
+	"endLineNumber": 265,
+	"endColumn": 7,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/dev/choma/landing-page/src/pages/Contact.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'div'.",
+	"source": "ts",
+	"startLineNumber": 265,
+	"startColumn": 7,
+	"endLineNumber": 265,
+	"endColumn": 10,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/dev/choma/landing-page/src/pages/Contact.tsx",
+	"owner": "typescript",
+	"code": "1109",
+	"severity": 8,
+	"message": "Expression expected.",
+	"source": "ts",
+	"startLineNumber": 266,
+	"startColumn": 3,
+	"endLineNumber": 266,
+	"endColumn": 4,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/dev/choma/landing-page/src/pages/Contact.tsx",
+	"owner": "typescript",
+	"code": "1128",
+	"severity": 8,
+	"message": "Declaration or statement expected.",
+	"source": "ts",
+	"startLineNumber": 267,
+	"startColumn": 1,
+	"endLineNumber": 267,
+	"endColumn": 2,
+	"origin": "extHost1"
+}]

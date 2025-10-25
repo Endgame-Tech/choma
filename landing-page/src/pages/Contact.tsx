@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Star } from 'phosphor-react'
+import './Contact.css'
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -180,19 +181,10 @@ const Contact: React.FC = () => {
         </div>
 
         {/* Right Side - Abstract Design */}
-        <div className="relative bg-gradient-to-br from-purple-900 via-purple-800 to-orange-500 overflow-hidden">
+        <div className="relative hidden lg:block bg-choma-black">
           {/* Grid Pattern Background */}
           <div className="absolute inset-0 opacity-20">
-            <div
-              className="w-full h-full"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-                `,
-                backgroundSize: '40px 40px'
-              }}
-            />
+            <div className="w-full h-full grid-pattern" />
           </div>
 
           {/* Abstract Curved Elements */}

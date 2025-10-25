@@ -89,11 +89,26 @@ export const twoFactorApi = {
   // Initiate 2FA setup - generates QR code and secret
   async initiateTwoFactorSetup(): Promise<TwoFactorSetupResponse> {
     try {
+      console.log('🔐 Initiating 2FA setup...');
       const response = await api.post<TwoFactorSetupResponse>(`/setup`);
+      console.log('✅ 2FA setup response:', response.data);
       return response.data;
-    } catch (error) {
-      console.error('Error initiating 2FA setup:', error);
-      throw error;
+    } catch (error: unknown) {
+      console.error('❌ 2FA API Error: POST /setup', error);
+      
+      // Extract detailed error message from AxiosError
+      if (axios.isAxiosError(error) && error.response?.data?.message) {
+        const detailedError = new Error(String(error.response.data.message));
+        // Attach response for callers that expect it (typed without using `any`)
+        (detailedError as unknown as { response?: unknown }).response = error.response;
+        throw detailedError;
+      }
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error(String(error));
     }
   },
 

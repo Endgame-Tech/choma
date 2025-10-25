@@ -25,8 +25,8 @@ class EmailService {
       rateLimit: 5, // max 5 emails per rateDelta
       // TLS settings for better compatibility
       tls: {
-        ciphers: "SSLv3",
-        rejectUnauthorized: false,
+        // ciphers: "SSLv3", // Removed for improved security and compatibility
+        rejectUnauthorized: false, // Consider setting to true in production
       },
       // Debug mode in development
       debug: process.env.NODE_ENV === "development",
@@ -75,7 +75,7 @@ class EmailService {
           greetingTimeout: 10000,
           socketTimeout: 60000,
           tls: {
-            rejectUnauthorized: false,
+            rejectUnauthorized: true,
           },
         });
 
