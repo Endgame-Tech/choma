@@ -112,10 +112,6 @@ const TodayMealScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleSearch = () => {
-    navigation.navigate("SearchScreen");
-  };
-
   const handleGoBack = () => {
     // Navigate to Home with flag to skip subscription check
     // This prevents the loop where Home redirects back to TodayMeal
@@ -286,13 +282,13 @@ const TodayMealScreen = ({ navigation, route }) => {
               </Text>
             </TouchableOpacity>
 
-            {/* Secondary Button - Search (Circular) */}
+            {/* Secondary Button - Profile (Circular) */}
             <TouchableOpacity
               style={styles(colors).secondaryButton}
-              onPress={handleSearch}
+              onPress={() => navigation.navigate("Profile")}
               activeOpacity={0.8}
             >
-              <CustomIcon name="search" size={20} color={colors.white} />
+              <CustomIcon name="profile" size={20} color={colors.white} />
             </TouchableOpacity>
           </View>
         </SafeAreaView>

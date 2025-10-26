@@ -4,16 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StatusBar,
-  ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import MealProgressionTimeline from "../../components/subscription/MealProgressionTimeline";
 import CustomIcon from "../../components/ui/CustomIcon";
 import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
-
-const BACKGROUND_COLOR = "#552111";
-const PRIMARY_GOLD = "#F7AE1A";
 
 const MealTimelineScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -30,44 +27,43 @@ const MealTimelineScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={BACKGROUND_COLOR} />
-      <ImageBackground
-        source={require("../../../assets/patternchoma.png")}
-        resizeMode="repeat"
-        style={styles.backgroundPattern}
-        imageStyle={styles.backgroundImageStyle}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
+      <LinearGradient
+        colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+        locations={[0, 0.4, 0.7, 1]}
+        style={styles.backgroundGradient}
+      >
+        <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.85}
+            >
+              <CustomIcon name="chevron-back" size={24} color={colors.white} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: colors.white }]}>Meal Timeline</Text>
+            <View style={styles.headerSpacer} />
+          </View>
 
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.85}
-          >
-            <CustomIcon name="chevron-back" size={24} color={PRIMARY_GOLD} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Meal Timeline</Text>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <View style={styles.content}>
-          {resolvedSubscriptionId ? (
-            <MealProgressionTimeline
-              subscriptionId={resolvedSubscriptionId}
-              onViewFullTimeline={() => {}}
-            />
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No subscription found</Text>
-              <Text style={styles.emptySubtitle}>
-                We couldn't determine which subscription to load. Please try
-                again from your plan details.
-              </Text>
-            </View>
-          )}
-        </View>
-      </SafeAreaView>
+          <View style={styles.content}>
+            {resolvedSubscriptionId ? (
+              <MealProgressionTimeline
+                subscriptionId={resolvedSubscriptionId}
+                onViewFullTimeline={() => {}}
+              />
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>No subscription found</Text>
+                <Text style={styles.emptySubtitle}>
+                  We couldn't determine which subscription to load. Please try
+                  again from your plan details.
+                </Text>
+              </View>
+            )}
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
     </View>
   );
 };
@@ -76,20 +72,9 @@ const createStyles = (colors) =>
   createStylesWithDMSans({
     container: {
       flex: 1,
-      backgroundColor: BACKGROUND_COLOR,
     },
-    backgroundPattern: {
-      position: "absolute",
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      opacity: 0.8,
-      backgroundColor: BACKGROUND_COLOR,
-    },
-    backgroundImageStyle: {
-      opacity: 1,
-      transform: [{ scale: 2.4 }],
+    backgroundGradient: {
+      flex: 1,
     },
     safeArea: {
       flex: 1,
@@ -106,15 +91,14 @@ const createStyles = (colors) =>
       height: 42,
       borderRadius: 21,
       borderWidth: 1,
-      borderColor: "rgba(247, 174, 26, 0.4)",
-      backgroundColor: "rgba(0,0,0,0.25)",
+      borderColor: "rgba(255, 255, 255, 0.3)",
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
       alignItems: "center",
       justifyContent: "center",
     },
     headerTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: PRIMARY_GOLD,
       letterSpacing: 0.4,
     },
     headerSpacer: {

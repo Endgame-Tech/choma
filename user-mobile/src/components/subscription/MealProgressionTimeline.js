@@ -251,16 +251,7 @@ const MealProgressionTimeline = ({
         setTimeline(basicTimelineData);
       } catch (fallbackError) {
         console.error("❌ Fallback timeline generation failed:", fallbackError);
-
-        // Final fallback to mock data for development
-        if (__DEV__) {
-          console.log("🔧 Loading mock timeline data for development");
-          const mockData = getMockTimelineData();
-          const groupedMock = groupMealsByDay(mockData);
-          setTimeline(groupedMock);
-        } else {
-          setTimeline([]);
-        }
+        setTimeline([]);
       }
     } finally {
       // Track last update time for smart refresh
@@ -464,74 +455,10 @@ const MealProgressionTimeline = ({
       return basicData;
     } catch (error) {
       console.error("❌ Error generating basic timeline:", error);
-      return getMockTimelineData();
+      return [];
     }
   };
 
-  const getMockTimelineData = () => {
-    const today = new Date();
-    const mockData = [];
-
-    // Generate 7 days: 2 past, 1 current (today), 4 future
-    for (let i = -2; i < 5; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-
-      const dayType = i < 0 ? "past" : i === 0 ? "current" : "future";
-
-      mockData.push({
-        date: date.toISOString(),
-        dayIndex: i,
-        dayName: date.toLocaleDateString("en-US", { weekday: "long" }),
-        weekNumber: 1,
-        dayOfWeek: date.getDay() || 7, // Convert Sunday=0 to Sunday=7
-        dayType: dayType,
-        mealAssignment: {
-          customTitle: `${
-            dayType === "past"
-              ? "Delivered"
-              : dayType === "current"
-              ? "Ready"
-              : "Upcoming"
-          } Meal`,
-          customDescription: `Delicious ${
-            i < 0 ? "delivered" : "prepared"
-          } meal for ${date.toLocaleDateString()}`,
-          mealTime:
-            i % 3 === 0 ? "breakfast" : i % 3 === 1 ? "lunch" : "dinner",
-          imageUrl:
-            "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
-          meals: [
-            { name: "Grilled Chicken" },
-            { name: "Steamed Vegetables" },
-            { name: "Brown Rice" },
-          ],
-          weekNumber: 1,
-          dayOfWeek: date.getDay() || 7,
-          delivered: dayType === "past",
-          deliveryStatus:
-            dayType === "past"
-              ? "delivered"
-              : dayType === "current"
-              ? "preparing"
-              : "scheduled",
-        },
-        meals: [
-          {
-            mealTime:
-              i % 3 === 0 ? "breakfast" : i % 3 === 1 ? "lunch" : "dinner",
-            title: `Meal ${i + 3}`,
-            description: "Fresh ingredients prepared daily",
-            meals: "Protein + Vegetables + Carbs",
-            imageUrl:
-              "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
-          },
-        ],
-      });
-    }
-
-    return mockData;
-  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -615,32 +542,32 @@ const MealProgressionTimeline = ({
   };
 
   const getMealTypeColor = (mealTime, dayType) => {
-    // Adjust colors based on day type
+    // Use theme colors for consistency
     if (dayType === "past") {
-      return ["#95A5A6", "#7F8C8D"]; // Gray for delivered meals
+      return [colors.textMuted, colors.border]; // Muted for delivered meals
     } else if (dayType === "current") {
       // Bright colors for current meal
       switch (mealTime) {
         case "breakfast":
-          return ["#FFB347", "#FF8C42"];
+          return [colors.primary, "#FF8C42"];
         case "lunch":
-          return ["#4ECDC4", "#44A08D"];
+          return [colors.primary2, "#44A08D"];
         case "dinner":
-          return ["#667eea", "#764ba2"];
+          return [colors.accent, "#764ba2"];
         default:
-          return [COLORS.primary, COLORS.secondary];
+          return [colors.primary, colors.primary2];
       }
     } else {
       // Muted colors for future meals
       switch (mealTime) {
         case "breakfast":
-          return ["#FFD6A3", "#FFB347"];
+          return ["#FFD6A3", colors.primary];
         case "lunch":
-          return ["#A3E4DB", "#4ECDC4"];
+          return ["#A3E4DB", colors.primary2];
         case "dinner":
-          return ["#B3BDF5", "#667eea"];
+          return ["#B3BDF5", colors.accent];
         default:
-          return ["#E8E8E8", "#D0D0D0"];
+          return [colors.border, colors.textMuted];
       }
     }
   };
@@ -654,22 +581,22 @@ const MealProgressionTimeline = ({
         return {
           statusText: "Delivered",
           statusIcon: "checkmark-circle",
-          statusColor: "#27AE60",
-          bgColor: "rgba(39, 174, 96, 0.1)",
+          statusColor: colors.primary2,
+          bgColor: `${colors.primary2}15`, // Add transparency
         };
       case "current":
         return {
           statusText: "Ready Now",
           statusIcon: "time",
-          statusColor: "#F39C12",
-          bgColor: "rgba(243, 156, 18, 0.1)",
+          statusColor: colors.primary,
+          bgColor: `${colors.primary}15`,
         };
       default:
         return {
           statusText: "Scheduled",
           statusIcon: "calendar",
-          statusColor: "#3498DB",
-          bgColor: "rgba(52, 152, 219, 0.1)",
+          statusColor: colors.accent,
+          bgColor: `${colors.accent}15`,
         };
     }
   };
@@ -1053,7 +980,7 @@ const MealProgressionTimeline = ({
                     },
                   ]}
                 >
-                  Use arrows to navigate between meals
+                  {`${allMeals.length - (currentMealIndex[dayIndex] || 0)} more meal${allMeals.length - (currentMealIndex[dayIndex] || 0) !== 1 ? 's' : ''}`}
                 </Text>
               )}
             </View>
@@ -1092,17 +1019,16 @@ const MealProgressionTimeline = ({
         style={[
           styles.progressContainer,
           {
-            backgroundColor: colors.cardBackground,
-            borderBottomColor: colors.border,
+            borderBottomColor: "rgba(255, 255, 255, 0.1)",
           },
         ]}
       >
         <View style={styles.progressHeader}>
-          <Text style={[styles.progressTitle, { color: colors.text }]}>
+          <Text style={[styles.progressTitle, { color: colors.white }]}>
             Meal Progress
           </Text>
           <Text
-            style={[styles.progressSummary, { color: colors.textSecondary }]}
+            style={[styles.progressSummary, { color: "rgba(255, 255, 255, 0.7)" }]}
           >
             {progressInfo.completed} delivered • {progressInfo.remaining}{" "}
             remaining
@@ -1112,7 +1038,7 @@ const MealProgressionTimeline = ({
         <View
           style={[
             styles.progressBar,
-            { backgroundColor: colors.inputBackground },
+            { backgroundColor: "rgba(255, 255, 255, 0.15)" },
           ]}
         >
           <View
@@ -1122,24 +1048,24 @@ const MealProgressionTimeline = ({
 
         <View style={styles.progressStats}>
           <View style={styles.progressStat}>
-            <View style={[styles.statDot, { backgroundColor: "#27AE60" }]} />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>
+            <View style={[styles.statDot, { backgroundColor: colors.primary2 }]} />
+            <Text style={[styles.statText, { color: "rgba(255, 255, 255, 0.8)" }]}>
               {progressInfo.completed} Delivered
             </Text>
           </View>
 
           {progressInfo.current > 0 && (
             <View style={styles.progressStat}>
-              <View style={[styles.statDot, { backgroundColor: "#F39C12" }]} />
-              <Text style={[styles.statText, { color: colors.textSecondary }]}>
+              <View style={[styles.statDot, { backgroundColor: colors.primary }]} />
+              <Text style={[styles.statText, { color: "rgba(255, 255, 255, 0.8)" }]}>
                 {progressInfo.current} Ready
               </Text>
             </View>
           )}
 
           <View style={styles.progressStat}>
-            <View style={[styles.statDot, { backgroundColor: "#3498DB" }]} />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>
+            <View style={[styles.statDot, { backgroundColor: colors.accent }]} />
+            <Text style={[styles.statText, { color: "rgba(255, 255, 255, 0.8)" }]}>
               {progressInfo.remaining} Upcoming
             </Text>
           </View>
@@ -1194,34 +1120,26 @@ const MealProgressionTimeline = ({
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.cardBackground }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Meal Timeline
-        </Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              { backgroundColor: colors.inputBackground },
-            ]}
-            onPress={scrollToToday}
-          >
-            <Ionicons name="today" size={16} color={COLORS.primary} />
-            <Text style={styles.filterText}>Today</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+        locations={[0, 0.4, 0.7, 1]}
+        style={styles.backgroundGradient}
+      >
 
-      {renderProgressBar()}
+        {renderProgressBar()}
 
-      {renderVerticalTimeline()}
+        {renderVerticalTimeline()}
+      </LinearGradient>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  backgroundGradient: {
     flex: 1,
   },
   header: {
@@ -1256,6 +1174,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
   },
   progressHeader: {
     flexDirection: "row",
@@ -1357,17 +1276,17 @@ const styles = StyleSheet.create({
   timelineCard: {
     marginHorizontal: 16,
     marginBottom: 16,
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: "hidden",
     position: "relative",
-    elevation: 3,
+    elevation: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    paddingTop: 16,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    paddingTop: 14,
+    paddingBottom: 16,
+    paddingHorizontal: 14,
   },
 
   // Order Status Section
@@ -1399,8 +1318,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   leftStack: {
-    marginRight: 20,
-    alignItems: "left",
+    marginRight: 14,
+    alignItems: "center",
   },
   rightSection: {
     flex: 1,
@@ -1408,26 +1327,26 @@ const styles = StyleSheet.create({
 
   // Date and Time Section
   todayText: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
-    marginBottom: 4,
-    // textAlign: "center",
+    marginBottom: 2,
+    marginTop: 8,
   },
   dayText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "400",
-    // textAlign: "center",
+    marginBottom: 8,
   },
 
   // Meal Image Container
   verticalImageContainer: {
-    marginBottom: 16,
-    borderRadius: 16,
+    marginBottom: 12,
+    borderRadius: 12,
     overflow: "hidden",
   },
   verticalMealImage: {
     width: "100%",
-    height: 150,
+    height: 120,
     resizeMode: "cover",
   },
 
@@ -1436,29 +1355,29 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   mealTypeText: {
-    fontSize: 14,
-    fontWeight: "400",
-    marginBottom: 4,
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 3,
   },
   mealNameText: {
-    fontSize: 20,
-    fontWeight: "semibold",
+    fontSize: 16,
+    fontWeight: "600",
   },
 
   // Navigation Arrows
   arrowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: 50,
-    marginVertical: 8,
+    width: 48,
+    marginVertical: 6,
   },
 
   // Step Indicator
   stepIndicator: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: 35,
-    marginTop: 8,
+    width: 32,
+    marginTop: 6,
   },
   stepDot: {
     width: 8,

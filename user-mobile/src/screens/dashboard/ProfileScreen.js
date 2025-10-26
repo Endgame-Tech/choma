@@ -1682,7 +1682,7 @@ Your meal plan has been updated with fresh options.`;
               style={styles(colors).subscriptionCard}
             >
               <LinearGradient
-                colors={[colors.primary, colors.primaryDark]}
+                colors={["#00553E", "#003C2A", "#002E22"]}
                 style={styles(colors).subscriptionGradient}
               >
                 {/* Decorative Pattern */}

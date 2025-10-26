@@ -96,7 +96,7 @@ const AuthStack = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: colors.background },
+        cardStyle: { backgroundColor: "#00553E" },
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />

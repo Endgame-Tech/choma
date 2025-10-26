@@ -410,7 +410,7 @@ const SubscriptionManagementModal = ({
                       size={20}
                       color={
                         subscription?.status === "active"
-                          ? "#34C759"
+                          ? colors.primary
                           : "#FF9500"
                       }
                     />
@@ -424,7 +424,7 @@ const SubscriptionManagementModal = ({
                         {
                           color:
                             subscription?.status === "active"
-                              ? "#34C759"
+                              ? colors.primary
                               : "#FF9500",
                         },
                       ]}
@@ -616,7 +616,11 @@ const SubscriptionManagementModal = ({
         return (
           <View style={styles(colors).tabContent}>
             <View style={styles(colors).tabHeader}>
-              <Ionicons name="pause-circle-outline" size={24} color="#FF9500" />
+              <Ionicons
+                name="pause-circle-outline"
+                size={24}
+                color={colors.primary}
+              />
               <Text style={styles(colors).tabTitle}>Pause Subscription</Text>
             </View>
             <Text style={styles(colors).tabDescription}>
@@ -730,7 +734,9 @@ const SubscriptionManagementModal = ({
                 >
                   <LinearGradient
                     colors={
-                      loading ? ["#CCCCCC", "#AAAAAA"] : ["#FF9500", "#FF7700"]
+                      loading
+                        ? ["#CCCCCC", "#AAAAAA"]
+                        : [colors.primary, colors.accent]
                     }
                     style={styles(colors).buttonGradient}
                   >
@@ -756,7 +762,11 @@ const SubscriptionManagementModal = ({
         return (
           <View style={styles(colors).tabContent}>
             <View style={styles(colors).tabHeader}>
-              <Ionicons name="play-forward-outline" size={24} color="#34C759" />
+              <Ionicons
+                name="play-forward-outline"
+                size={24}
+                color={colors.primary}
+              />
               <Text style={styles(colors).tabTitle}>Skip Meal Delivery</Text>
             </View>
             <Text style={styles(colors).tabDescription}>
@@ -820,7 +830,7 @@ const SubscriptionManagementModal = ({
                 >
                   <LinearGradient
                     colors={
-                      loading ? ["#CCCCCC", "#AAAAAA"] : ["#34C759", "#28A745"]
+                      loading ? ["#CCCCCC", "#AAAAAA"] : [colors.primary, colors.accent]
                     }
                     style={styles(colors).buttonGradient}
                   >
@@ -846,7 +856,7 @@ const SubscriptionManagementModal = ({
         return (
           <View style={styles(colors).tabContent}>
             <View style={styles(colors).tabHeader}>
-              <Ionicons name="create-outline" size={24} color="#007AFF" />
+              <Ionicons name="create-outline" size={24} color={colors.primary} />
               <Text style={styles(colors).tabTitle}>Modify Delivery</Text>
             </View>
             <Text style={styles(colors).tabDescription}>
@@ -986,7 +996,7 @@ const SubscriptionManagementModal = ({
                 >
                   <LinearGradient
                     colors={
-                      loading ? ["#CCCCCC", "#AAAAAA"] : ["#007AFF", "#0056CC"]
+                      loading ? ["#CCCCCC", "#AAAAAA"] : [colors.primary, colors.accent]
                     }
                     style={styles(colors).buttonGradient}
                   >
@@ -1012,7 +1022,7 @@ const SubscriptionManagementModal = ({
         return (
           <View style={styles(colors).tabContent}>
             <View style={styles(colors).tabHeader}>
-              <Ionicons name="person-outline" size={24} color="#007AFF" />
+              <Ionicons name="person-outline" size={24} color={colors.primary} />
               <Text style={styles(colors).tabTitle}>Chef Management</Text>
             </View>
             <Text style={styles(colors).tabDescription}>
@@ -1069,7 +1079,7 @@ const SubscriptionManagementModal = ({
                 >
                   <LinearGradient
                     colors={
-                      loading ? ["#CCCCCC", "#AAAAAA"] : ["#007AFF", "#0056CC"]
+                      loading ? ["#CCCCCC", "#AAAAAA"] : [colors.primary, colors.accent]
                     }
                     style={styles(colors).buttonGradient}
                   >
@@ -1139,7 +1149,9 @@ const SubscriptionManagementModal = ({
               <Ionicons name="close" size={24} color={colors.white} />
             </View>
           </TouchableOpacity>
-          <Text style={[styles(colors).headerTitle, { color: colors.white }]}>Manage Subscription</Text>
+          <Text style={[styles(colors).headerTitle, { color: colors.white }]}>
+            Manage Subscription
+          </Text>
           <View style={styles(colors).headerSpacer} />
         </View>
 
@@ -1169,9 +1181,7 @@ const SubscriptionManagementModal = ({
                   <Ionicons
                     name={option.icon}
                     size={20}
-                    color={
-                      activeTab === option.id ? "#FFFFFF" : colors.textSecondary
-                    }
+                    color={activeTab === option.id ? "#FFFFFF" : "#002119"}
                   />
                 </View>
                 <Text
@@ -1200,6 +1210,7 @@ const styles = (colors) =>
   StyleSheet.create({
     container: {
       flex: 1,
+      justifyContent: "flex-start",
     },
     header: {
       flexDirection: "row",
@@ -1614,13 +1625,13 @@ const styles = (colors) =>
       backgroundColor: "rgba(255, 255, 255, 0.1)",
     },
     scheduledBadge: {
-      backgroundColor: "#007AFF20",
+      backgroundColor: colors.primary + "20",
     },
     preparingBadge: {
-      backgroundColor: "#FF950020",
+      backgroundColor: colors.primary + "20",
     },
     deliveredBadge: {
-      backgroundColor: "#34C75920",
+      backgroundColor: colors.primary + "20",
     },
     statusText: {
       fontSize: 12,

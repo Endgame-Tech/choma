@@ -27,7 +27,7 @@ const ProfileTabs = ({ selectedTab, onTabChange }) => {
             <CustomIcon
               name={tab.icon}
               size={18}
-              color={selectedTab === tab.id ? colors.primary : colors.textMuted}
+              color={selectedTab === tab.id ? colors.primary2 : colors.textMuted}
             />
             <Text
               style={[
@@ -57,7 +57,7 @@ const styles = (colors) =>
       flexDirection: "row",
       borderRadius: 30,
       borderWidth: 1,
-      borderColor: `${colors.primary}40`,
+      borderColor: `${colors.primary2}40`,
       padding: 8,
       justifyContent: "space-between",
       width: "100%",
@@ -86,7 +86,7 @@ const styles = (colors) =>
       textAlign: "center",
     },
     activeTabText: {
-      color: colors.primary,
+      color: colors.primary2,
       fontWeight: "600",
     },
   });

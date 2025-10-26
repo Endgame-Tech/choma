@@ -47,7 +47,7 @@ const StandardHeader = ({
             >
               <Ionicons
                 name={rightIcon}
-                size={24}
+                size={20}
                 color={colors.textSecondary}
               />
             </TouchableOpacity>
