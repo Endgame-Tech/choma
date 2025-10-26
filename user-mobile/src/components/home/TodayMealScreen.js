@@ -269,8 +269,11 @@ const TodayMealScreen = ({ navigation, route }) => {
               </Text>
             </View>
           )}
+          </View>
+        </SafeAreaView>
 
-          {/* Buttons - Updated to match reference image */}
+        {/* Buttons - SafeAreaView for bottom */}
+        <SafeAreaView style={styles(colors).safeAreaBottom} edges={["bottom"]}>
           <View style={styles(colors).buttonsContainer}>
             {/* Primary Button - Explore My Plan */}
             <TouchableOpacity
@@ -289,12 +292,12 @@ const TodayMealScreen = ({ navigation, route }) => {
               onPress={handleSearch}
               activeOpacity={0.8}
             >
-              <Text style={styles(colors).secondaryButtonText}>🔍</Text>
+              <CustomIcon name="search" size={20} color={colors.white} />
             </TouchableOpacity>
           </View>
-        </View>
+        </SafeAreaView>
       </LinearGradient>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -319,6 +322,13 @@ const styles = (colors) =>
     backgroundImageStyle: {
       opacity: 1,
       transform: [{ scale: 2.5 }],
+    },
+    safeAreaTop: {
+      flex: 1,
+      position: "relative",
+    },
+    safeAreaBottom: {
+      position: "relative",
     },
     background: {
       flex: 1,
@@ -464,11 +474,6 @@ const styles = (colors) =>
       justifyContent: "center",
       borderWidth: 1.5,
       borderColor: "rgba(255, 255, 255, 0.3)",
-    },
-    secondaryButtonText: {
-      fontSize: 20,
-      fontWeight: "600",
-      color: colors.white,
     },
   });
 
