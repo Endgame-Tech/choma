@@ -373,7 +373,7 @@ const SubscriptionManagementModal = ({
               <Ionicons
                 name="analytics-outline"
                 size={24}
-                color={colors.primary}
+                color={colors.white}
               />
               <Text style={styles(colors).tabTitle}>Subscription Overview</Text>
             </View>
@@ -388,7 +388,7 @@ const SubscriptionManagementModal = ({
                     <Ionicons
                       name="restaurant-outline"
                       size={20}
-                      color={colors.primary}
+                      color={colors.white}
                     />
                   </View>
                   <View style={styles(colors).infoContent}>
@@ -440,7 +440,7 @@ const SubscriptionManagementModal = ({
                     <Ionicons
                       name="calendar-outline"
                       size={20}
-                      color={colors.primary}
+                      color={colors.white}
                     />
                   </View>
                   <View style={styles(colors).infoContent}>
@@ -465,7 +465,7 @@ const SubscriptionManagementModal = ({
                     <Ionicons
                       name="stats-chart-outline"
                       size={20}
-                      color={colors.primary}
+                      color={colors.white}
                     />
                   </View>
                   <View style={styles(colors).infoContent}>
@@ -504,7 +504,7 @@ const SubscriptionManagementModal = ({
               <Ionicons
                 name="calendar-outline"
                 size={24}
-                color={colors.primary}
+                color={colors.white}
               />
               <Text style={styles(colors).tabTitle}>Meal Schedule</Text>
             </View>
@@ -1124,25 +1124,24 @@ const SubscriptionManagementModal = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles(colors).container}>
+      <LinearGradient
+        colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+        locations={[0, 0.4, 0.7, 1]}
+        style={styles(colors).container}
+      >
         {/* Header */}
-        <LinearGradient
-          colors={[colors.primary + "15", "transparent"]}
-          style={styles(colors).headerGradient}
-        >
-          <View style={styles(colors).header}>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles(colors).closeButton}
-            >
-              <View style={styles(colors).closeButtonContainer}>
-                <Ionicons name="close" size={24} color={colors.text} />
-              </View>
-            </TouchableOpacity>
-            <Text style={styles(colors).headerTitle}>Manage Subscription</Text>
-            <View style={styles(colors).headerSpacer} />
-          </View>
-        </LinearGradient>
+        <View style={styles(colors).header}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles(colors).closeButton}
+          >
+            <View style={styles(colors).closeButtonContainer}>
+              <Ionicons name="close" size={24} color={colors.white} />
+            </View>
+          </TouchableOpacity>
+          <Text style={[styles(colors).headerTitle, { color: colors.white }]}>Manage Subscription</Text>
+          <View style={styles(colors).headerSpacer} />
+        </View>
 
         {/* Menu tabs */}
         <View style={styles(colors).menuContainer}>
@@ -1192,7 +1191,7 @@ const SubscriptionManagementModal = ({
         <ScrollView style={styles(colors).contentContainer}>
           {renderTabContent()}
         </ScrollView>
-      </View>
+      </LinearGradient>
     </Modal>
   );
 };
@@ -1201,19 +1200,15 @@ const styles = (colors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
-    },
-    headerGradient: {
-      paddingTop: 10,
     },
     header: {
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 20,
-      backgroundColor: colors.surface,
+      backgroundColor: "rgba(0, 0, 0, 0.2)",
       borderBottomWidth: 1,
-      borderBottomColor: colors.border + "30",
+      borderBottomColor: "rgba(255, 255, 255, 0.1)",
     },
     closeButton: {
       padding: 4,
@@ -1222,7 +1217,7 @@ const styles = (colors) =>
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: colors.border + "20",
+      backgroundColor: "rgba(255, 255, 255, 0.15)",
       justifyContent: "center",
       alignItems: "center",
     },
@@ -1231,38 +1226,37 @@ const styles = (colors) =>
       textAlign: "center",
       fontSize: 20,
       fontWeight: "700",
-      color: colors.text,
       marginHorizontal: 16,
     },
     headerSpacer: {
       width: 44,
     },
     menuContainer: {
-      backgroundColor: colors.surface,
+      backgroundColor: "rgba(0, 0, 0, 0.15)",
       borderBottomWidth: 1,
-      borderBottomColor: colors.border + "30",
-      paddingVertical: 8,
+      borderBottomColor: "rgba(255, 255, 255, 0.1)",
+      paddingVertical: 5,
     },
     menuContent: {
-      paddingHorizontal: 20,
+      paddingHorizontal: 10,
     },
     menuTab: {
       flexDirection: "column",
       alignItems: "center",
       paddingHorizontal: 12,
       paddingVertical: 12,
-      marginRight: 8,
+      marginRight: 2,
       borderRadius: 16,
-      minWidth: 80,
+      // minWidth: 80,
     },
     activeMenuTab: {
       backgroundColor: `transparent`,
     },
     menuIconContainer: {
-      width: 40,
+      width: 70,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.border + "30",
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
       justifyContent: "center",
       alignItems: "center",
       marginBottom: 6,
@@ -1273,11 +1267,11 @@ const styles = (colors) =>
     menuTabText: {
       fontSize: 12,
       fontWeight: "500",
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.6)",
       textAlign: "center",
     },
     activeMenuTabText: {
-      color: colors.primary,
+      color: colors.white,
       fontWeight: "600",
     },
     contentContainer: {
@@ -1294,13 +1288,13 @@ const styles = (colors) =>
     tabTitle: {
       fontSize: 24,
       fontWeight: "700",
-      color: colors.text,
+      color: colors.white,
       marginLeft: 12,
       flex: 1,
     },
     tabDescription: {
       fontSize: 16,
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.7)",
       marginBottom: 24,
       lineHeight: 22,
     },
@@ -1335,12 +1329,12 @@ const styles = (colors) =>
     infoLabel: {
       fontSize: 14,
       fontWeight: "500",
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.6)",
       marginBottom: 4,
     },
     infoValue: {
       fontSize: 16,
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
       fontWeight: "600",
     },
     statusText: {
@@ -1382,24 +1376,24 @@ const styles = (colors) =>
     inputLabel: {
       fontSize: 16,
       fontWeight: "600",
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
       marginBottom: 12,
       flexDirection: "row",
       alignItems: "center",
     },
     textInput: {
       borderWidth: 2,
-      borderColor: colors.border + "40",
+      borderColor: "rgba(255, 255, 255, 0.2)",
       borderRadius: 12,
       padding: 16,
       fontSize: 16,
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
       minHeight: 56,
-      backgroundColor: colors.inputBackground || colors.background,
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
     },
     charCount: {
       fontSize: 12,
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.6)",
       textAlign: "right",
       marginTop: 8,
     },
@@ -1417,9 +1411,9 @@ const styles = (colors) =>
       paddingVertical: 16,
       paddingHorizontal: 12,
       borderWidth: 2,
-      borderColor: colors.border + "40",
+      borderColor: "rgba(255, 255, 255, 0.2)",
       borderRadius: 12,
-      backgroundColor: colors.inputBackground || colors.background,
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
       alignItems: "center",
     },
     selectedOptionCard: {
@@ -1428,7 +1422,7 @@ const styles = (colors) =>
     },
     optionText: {
       fontSize: 14,
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.8)",
       fontWeight: "500",
       marginTop: 8,
       textAlign: "center",
@@ -1446,21 +1440,21 @@ const styles = (colors) =>
       paddingVertical: 20,
       paddingHorizontal: 12,
       borderWidth: 2,
-      borderColor: colors.border + "40",
+      borderColor: "rgba(255, 255, 255, 0.2)",
       borderRadius: 12,
-      backgroundColor: colors.inputBackground || colors.background,
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
       alignItems: "center",
     },
     timeSlotLabel: {
       fontSize: 14,
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
       fontWeight: "600",
       marginTop: 8,
       textAlign: "center",
     },
     timeSlotTime: {
       fontSize: 12,
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.6)",
       marginTop: 4,
       textAlign: "center",
     },
@@ -1471,10 +1465,10 @@ const styles = (colors) =>
       alignItems: "flex-start",
       paddingVertical: 16,
       paddingHorizontal: 16,
-      backgroundColor: colors.primary + "05",
+      backgroundColor: "rgba(255, 255, 255, 0.08)",
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: colors.border + "20",
+      borderColor: "rgba(255, 255, 255, 0.15)",
     },
     checkboxContainer: {
       marginRight: 16,
@@ -1486,12 +1480,12 @@ const styles = (colors) =>
     checkboxLabel: {
       fontSize: 16,
       fontWeight: "600",
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
       marginBottom: 4,
     },
     checkboxDescription: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.7)",
       lineHeight: 20,
     },
 
@@ -1499,7 +1493,7 @@ const styles = (colors) =>
     currentChefCard: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.primary + "10",
+      backgroundColor: "rgba(255, 255, 255, 0.08)",
       borderRadius: 12,
       padding: 16,
       marginBottom: 20,
@@ -1519,13 +1513,13 @@ const styles = (colors) =>
     chefLabel: {
       fontSize: 14,
       fontWeight: "500",
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.6)",
       marginBottom: 4,
     },
     chefName: {
       fontSize: 18,
       fontWeight: "600",
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
     },
 
     // Button styles
@@ -1605,19 +1599,19 @@ const styles = (colors) =>
     mealName: {
       fontSize: 16,
       fontWeight: "600",
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
       marginBottom: 4,
     },
     mealTime: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.6)",
       textTransform: "capitalize",
     },
     statusBadge: {
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 16,
-      backgroundColor: colors.border + "30",
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
     },
     scheduledBadge: {
       backgroundColor: "#007AFF20",
@@ -1631,7 +1625,7 @@ const styles = (colors) =>
     statusText: {
       fontSize: 12,
       fontWeight: "600",
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
     },
 
     // Refresh button
@@ -1659,7 +1653,7 @@ const styles = (colors) =>
     },
     loadingText: {
       fontSize: 16,
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.7)",
       marginTop: 16,
     },
 
@@ -1671,13 +1665,13 @@ const styles = (colors) =>
     emptyStateTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
       marginTop: 16,
       marginBottom: 8,
     },
     emptyStateDescription: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.7)",
       textAlign: "center",
       lineHeight: 20,
       paddingHorizontal: 20,
@@ -1692,7 +1686,7 @@ const styles = (colors) =>
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: colors.border + "20",
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
       justifyContent: "center",
       alignItems: "center",
       marginBottom: 20,
@@ -1700,12 +1694,12 @@ const styles = (colors) =>
     comingSoonTitle: {
       fontSize: 24,
       fontWeight: "700",
-      color: colors.text,
+      color: "rgba(255, 255, 255, 0.9)",
       marginBottom: 12,
     },
     comingSoonDescription: {
       fontSize: 16,
-      color: colors.textSecondary,
+      color: "rgba(255, 255, 255, 0.7)",
       textAlign: "center",
       lineHeight: 22,
       paddingHorizontal: 20,
