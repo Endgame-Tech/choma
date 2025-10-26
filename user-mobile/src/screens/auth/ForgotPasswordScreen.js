@@ -263,9 +263,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.actionButtonText}>
-              Send Reset Code
-            </Text>
+            <Text style={styles.actionButtonText}>Send Reset Code</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -307,13 +305,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
           <Text style={styles.actionButtonText}>Verify Code</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => setStep(1)}
-        >
-          <Text style={styles.linkButtonText}>
-            Change email address
-          </Text>
+        <TouchableOpacity style={styles.linkButton} onPress={() => setStep(1)}>
+          <Text style={styles.linkButtonText}>Change email address</Text>
         </TouchableOpacity>
       </View>
     </>
@@ -392,9 +385,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.actionButtonText}>
-              Reset Password
-            </Text>
+            <Text style={styles.actionButtonText}>Reset Password</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -403,7 +394,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#652815" />
+      <StatusBar barStyle="light-content" backgroundColor="#004432" />
 
       {/* Background with brown color and pattern */}
       <View style={styles.backgroundContainer}>
@@ -492,7 +483,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
 const styles = createStylesWithDMSans({
   container: {
     flex: 1,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
   },
   backgroundContainer: {
     flex: 1,
@@ -504,7 +495,7 @@ const styles = createStylesWithDMSans({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     opacity: 0.8,
   },
   backgroundImageStyle: {
@@ -603,14 +594,14 @@ const styles = createStylesWithDMSans({
     padding: 8,
   },
   actionButton: {
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     borderRadius: 25,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
     marginBottom: 20,
-    shadowColor: "#652815",
+    shadowColor: "#004432",
     shadowOffset: {
       width: 0,
       height: 4,

@@ -230,7 +230,7 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#652815" />
+      <StatusBar barStyle="light-content" backgroundColor="#004432" />
 
       {/* Background with brown color and pattern */}
       <View style={styles.backgroundContainer}>
@@ -284,7 +284,9 @@ const LoginScreen = ({ navigation }) => {
             {/* Welcome text */}
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Welcome Back, Driver</Text>
-              <Text style={styles.welcomeSubtitle}>Ready to start delivering?</Text>
+              <Text style={styles.welcomeSubtitle}>
+                Ready to start delivering?
+              </Text>
             </View>
 
             {/* Form inputs */}
@@ -410,7 +412,6 @@ const LoginScreen = ({ navigation }) => {
               </View>
             </View>
 
-
             {/* Add some bottom padding for better scrolling */}
             <View style={styles.bottomPadding} />
           </ScrollView>
@@ -423,7 +424,7 @@ const LoginScreen = ({ navigation }) => {
 const styles = createStylesWithDMSans({
   container: {
     flex: 1,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
   },
   backgroundContainer: {
     flex: 1,
@@ -435,7 +436,7 @@ const styles = createStylesWithDMSans({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     opacity: 0.8, // Subtle pattern overlay
   },
   backgroundImageStyle: {
@@ -528,14 +529,14 @@ const styles = createStylesWithDMSans({
     padding: 8,
   },
   loginButton: {
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     borderRadius: 25,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
     marginBottom: 20,
-    shadowColor: "#652815",
+    shadowColor: "#004432",
     shadowOffset: {
       width: 0,
       height: 4,

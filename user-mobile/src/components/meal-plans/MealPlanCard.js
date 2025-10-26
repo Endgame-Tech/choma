@@ -1,8 +1,24 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Image, Modal } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  Modal,
+  Platform,
+  Animated,
+} from "react-native";
 import CustomIcon from "../ui/CustomIcon";
 import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+
+// Shadow utility for cross-platform compatibility
+const getShadowStyle = (shadowProps) => ({
+  ...shadowProps,
+  ...(Platform.OS === "android" && {
+    elevation: shadowProps.shadowOpacity ? shadowProps.shadowOpacity * 10 : 5,
+  }),
+});
 
 const MealPlanCard = ({
   plan,
@@ -17,19 +33,54 @@ const MealPlanCard = ({
   const { colors } = useTheme();
   const [imageError, setImageError] = useState(false);
   const [discountModalVisible, setDiscountModalVisible] = useState(false);
+  const heartScale = useRef(new Animated.Value(1)).current;
+  const heartRotation = useRef(new Animated.Value(0)).current;
+
+  const animateHeart = () => {
+    Animated.parallel([
+      Animated.sequence([
+        Animated.spring(heartScale, {
+          toValue: 1.3,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.spring(heartScale, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.spring(heartRotation, {
+          toValue: 0.1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.spring(heartRotation, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  };
 
   // Check multiple possible image field names
-  const planImage = plan.image || plan.coverImage || plan.planImageUrl || plan.imageUrl;
+  const planImage =
+    plan.image || plan.coverImage || plan.planImageUrl || plan.imageUrl;
 
   // Debug logging (remove after testing)
   if (!planImage) {
-    console.log(`⚠️ No image found for meal plan "${plan.name || plan.planName}":`, {
-      hasImage: !!plan.image,
-      hasCoverImage: !!plan.coverImage,
-      hasPlanImageUrl: !!plan.planImageUrl,
-      hasImageUrl: !!plan.imageUrl,
-      planId: plan.id || plan._id,
-    });
+    console.log(
+      `⚠️ No image found for meal plan "${plan.name || plan.planName}":`,
+      {
+        hasImage: !!plan.image,
+        hasCoverImage: !!plan.coverImage,
+        hasPlanImageUrl: !!plan.planImageUrl,
+        hasImageUrl: !!plan.imageUrl,
+        planId: plan.id || plan._id,
+      }
+    );
   }
 
   const imageSource =
@@ -40,17 +91,23 @@ const MealPlanCard = ({
       : planImage;
 
   const handleImageError = () => {
-    console.log(`Failed to load meal plan image for ${plan.name || plan.planName}:`, {
-      image: plan.image,
-      coverImage: plan.coverImage,
-      planImageUrl: plan.planImageUrl,
-      imageUrl: plan.imageUrl,
-    });
+    console.log(
+      `Failed to load meal plan image for ${plan.name || plan.planName}:`,
+      {
+        image: plan.image,
+        coverImage: plan.coverImage,
+        planImageUrl: plan.planImageUrl,
+        imageUrl: plan.imageUrl,
+      }
+    );
     setImageError(true);
   };
 
   const planDiscount = discountData[plan.id || plan._id];
   const hasDiscount = planDiscount && planDiscount.discountPercent > 0;
+
+  // Debug: Log plan data to check isPopular field
+  console.log(`🔍 MealPlan "${plan.name}" - isPopular: ${plan.isPopular}, isNew: ${plan.isNew}`);
 
   return (
     <TouchableOpacity
@@ -67,24 +124,59 @@ const MealPlanCard = ({
           onError={handleImageError}
         />
 
-        {/* Heart Button positioned on top-right of image */}
-        <TouchableOpacity
-          style={styles(colors).mealplanHeartButton}
-          onPress={onBookmarkPress}
-          activeOpacity={0.9}
-        >
-          <CustomIcon
-            name="heart"
-            filled={isBookmarked}
-            size={20}
-            color={isBookmarked ? colors.error : "#FF9A3F"}
-          />
-        </TouchableOpacity>
+        {/* Top action row with heart button and rating */}
+        <View style={styles(colors).topActionRow}>
+          <View style={styles(colors).ratingBadge}>
+            <CustomIcon name="star-filled" size={14} color={colors.primary} />
+            <Text style={styles(colors).ratingBadgeText}>
+              {(plan.rating || plan.averageRating || plan.avgRating || 4.5).toFixed(
+                1
+              )}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles(colors).mealplanHeartButton}
+            onPress={() => {
+              animateHeart();
+              onBookmarkPress();
+            }}
+            activeOpacity={0.9}
+          >
+            <Animated.View
+              style={{
+                transform: [
+                  { scale: heartScale },
+                  {
+                    rotate: heartRotation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0deg", "360deg"],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <CustomIcon
+                name="heart"
+                filled={isBookmarked}
+                size={20}
+                color={isBookmarked ? colors.error : "#FFF"}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
 
         {/* New Badge positioned on top-left of image - only show for new meals */}
         {plan.isNew && (
           <View style={styles(colors).newBadge}>
             <Text style={styles(colors).newBadgeText}>New</Text>
+          </View>
+        )}
+
+        {/* Popular Badge positioned on left side - only show for popular meals */}
+        {plan.isPopular && (
+          <View style={styles(colors).popularBadge}>
+            <Text style={styles(colors).popularBadgeText}>popular</Text>
           </View>
         )}
 
@@ -150,40 +242,43 @@ const MealPlanCard = ({
           )}
         </View>
 
+        {/* Custom Dashed Divider */}
+        <View style={styles(colors).dividerContainer}>
+          {[...Array(20)].map((_, i) => (
+            <View key={i} style={styles(colors).dashItem} />
+          ))}
+        </View>
+
         <View style={styles(colors).mealplanBottomRow}>
           <View style={styles(colors).mealplanPriceContainer}>
             {hasDiscount ? (
               <View style={styles(colors).priceWithDiscountContainer}>
-                {planDiscount.discountType === 'ad' ? (
+                {planDiscount.discountType === "ad" ? (
                   // Ad Discount: Show counter value struck through, original price as current
                   <>
                     <View style={styles(colors).priceRow}>
                       <Text style={styles(colors).strikethroughPrice}>
-                        ₦{planDiscount.counterValue?.toLocaleString() || plan.price?.toLocaleString()}
+                        ₦
+                        {planDiscount.counterValue?.toLocaleString() ||
+                          plan.price?.toLocaleString()}
                       </Text>
                       <TouchableOpacity
                         onPress={() => setDiscountModalVisible(true)}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
-                        <CustomIcon name="info-circle" size={14} color={colors.primary} />
+                        <CustomIcon
+                          name="info-circle"
+                          size={14}
+                          color={colors.primary}
+                        />
                       </TouchableOpacity>
                     </View>
                     <View style={styles(colors).priceRatingRow}>
                       <Text style={styles(colors).mealplanPrice}>
-                        ₦{planDiscount.originalPrice?.toLocaleString() || plan.price?.toLocaleString()}
+                        ₦
+                        {planDiscount.originalPrice?.toLocaleString() ||
+                          plan.price?.toLocaleString()}
                       </Text>
-                      {(plan.rating || plan.averageRating || plan.avgRating) && (
-                        <View style={styles(colors).ratingDisplay}>
-                          <CustomIcon
-                            name="star-filled"
-                            size={12}
-                            color={colors.rating || colors.primary}
-                          />
-                          <Text style={styles(colors).ratingText}>
-                            {(plan.rating || plan.averageRating || plan.avgRating).toFixed(1)}
-                          </Text>
-                        </View>
-                      )}
                     </View>
                   </>
                 ) : (
@@ -191,31 +286,42 @@ const MealPlanCard = ({
                   <>
                     <View style={styles(colors).priceRow}>
                       <Text style={styles(colors).strikethroughPrice}>
-                        ₦{planDiscount.originalPrice?.toLocaleString() || plan.price?.toLocaleString()}
+                        ₦
+                        {planDiscount.originalPrice?.toLocaleString() ||
+                          plan.price?.toLocaleString()}
                       </Text>
                       <TouchableOpacity
                         onPress={() => setDiscountModalVisible(true)}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
-                        <CustomIcon name="info-circle" size={14} color={colors.primary} />
+                        <CustomIcon
+                          name="info-circle"
+                          size={14}
+                          color={colors.primary}
+                        />
                       </TouchableOpacity>
                     </View>
                     <View style={styles(colors).priceRatingRow}>
                       <Text style={styles(colors).mealplanPrice}>
-                        ₦{planDiscount.discountedPrice?.toLocaleString() || plan.price?.toLocaleString()}
+                        ₦
+                        {planDiscount.discountedPrice?.toLocaleString() ||
+                          plan.price?.toLocaleString()}
                       </Text>
-                      {(plan.rating || plan.averageRating || plan.avgRating) && (
-                        <View style={styles(colors).ratingDisplay}>
-                          <CustomIcon
-                            name="star-filled"
-                            size={12}
-                            color={colors.rating || colors.primary}
-                          />
-                          <Text style={styles(colors).ratingText}>
-                            {(plan.rating || plan.averageRating || plan.avgRating).toFixed(1)}
-                          </Text>
-                        </View>
-                      )}
+                      <View style={styles(colors).ratingDisplay}>
+                        <CustomIcon
+                          name="star-filled"
+                          size={12}
+                          color={colors.rating || colors.primary}
+                        />
+                        <Text style={styles(colors).ratingText}>
+                          {(
+                            plan.rating ||
+                            plan.averageRating ||
+                            plan.avgRating ||
+                            4.5
+                          ).toFixed(1)}
+                        </Text>
+                      </View>
                     </View>
                   </>
                 )}
@@ -225,18 +331,6 @@ const MealPlanCard = ({
                 <Text style={styles(colors).mealplanPrice}>
                   ₦{plan.price?.toLocaleString()}
                 </Text>
-                {(plan.rating || plan.averageRating || plan.avgRating) && (
-                  <View style={styles(colors).ratingDisplay}>
-                    <CustomIcon
-                      name="star-filled"
-                      size={12}
-                      color={colors.rating || colors.primary}
-                    />
-                    <Text style={styles(colors).ratingText}>
-                      {(plan.rating || plan.averageRating || plan.avgRating).toFixed(1)}
-                    </Text>
-                  </View>
-                )}
               </View>
             )}
           </View>
@@ -270,15 +364,23 @@ const MealPlanCard = ({
               <View style={styles(colors).modalContent}>
                 <View style={styles(colors).modalHeader}>
                   <CustomIcon name="gift" size={24} color={colors.primary} />
-                  <Text style={styles(colors).modalTitle}>Discount Details</Text>
+                  <Text style={styles(colors).modalTitle}>
+                    Discount Details
+                  </Text>
                 </View>
                 <View style={styles(colors).modalBody}>
-                  <Text style={styles(colors).modalDiscountName}>{planDiscount.reason || 'Special Offer'}</Text>
+                  <Text style={styles(colors).modalDiscountName}>
+                    {planDiscount.reason || "Special Offer"}
+                  </Text>
                   {planDiscount.eligibilityReason && (
-                    <Text style={styles(colors).modalDescription}>{planDiscount.eligibilityReason}</Text>
+                    <Text style={styles(colors).modalDescription}>
+                      {planDiscount.eligibilityReason}
+                    </Text>
                   )}
                   <View style={styles(colors).modalDiscountBadge}>
-                    <Text style={styles(colors).modalDiscountText}>{planDiscount.discountPercent}% OFF</Text>
+                    <Text style={styles(colors).modalDiscountText}>
+                      {planDiscount.discountPercent}% OFF
+                    </Text>
                   </View>
                 </View>
                 <TouchableOpacity
@@ -300,16 +402,25 @@ const styles = (colors) =>
   createStylesWithDMSans({
     mealplanCard: {
       width: "100%",
-      borderRadius: 20,
+      borderRadius: 17,
       overflow: "hidden",
-      marginBottom: 0, // Remove margin as gap handles spacing
+      marginBottom: 10,
+      padding: 5,
+      backgroundColor: colors.cardBackground,
+      ...getShadowStyle({
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 10, height: 12 },
+        shadowOpacity: 0.4,
+        shadowRadius: 0,
+      }),
     },
     mealplanImageContainer: {
       position: "relative",
-      height: 150, // Much larger image height
+      height: 140, // Much larger image height
       width: "100%",
-      borderRadius: 20,
+      borderRadius: 7.5,
       overflow: "hidden",
+      marginBottom: 4,
     },
     mealplanImage: {
       width: "100%",
@@ -317,18 +428,36 @@ const styles = (colors) =>
       resizeMode: "cover",
       borderRadius: 15,
     },
-    mealplanHeartButton: {
+    topActionRow: {
       position: "absolute",
-      top: 16,
-      right: 16,
+      top: 5,
+      right: 5,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      zIndex: 2,
+    },
+    mealplanHeartButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.black,
+      backgroundColor: colors.primary2,
       justifyContent: "center",
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: "#1b1b1b",
+    },
+    ratingBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primary2,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      gap: 4,
+    },
+    ratingBadgeText: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.white,
     },
     newBadge: {
       position: "absolute",
@@ -344,6 +473,28 @@ const styles = (colors) =>
       fontSize: 12,
       fontWeight: "bold",
     },
+    popularBadge: {
+      position: "absolute",
+      top: "50%",
+      left: -5,
+      transform: [{ translateY: -20 }],
+      backgroundColor: "#0F5C4C", // Dark green color from the image
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 50,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+      zIndex: 5,
+    },
+    popularBadgeText: {
+      color: colors.white,
+      fontSize: 14,
+      fontWeight: "bold",
+      letterSpacing: 0.5,
+    },
     // Home Screen Discount Pill
     homeDiscountPill: {
       position: "absolute",
@@ -351,7 +502,7 @@ const styles = (colors) =>
       right: 8,
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#F3E9DF",
+      backgroundColor: "#EFFFFB",
       paddingHorizontal: 8,
       paddingVertical: 7,
       borderRadius: 16,
@@ -367,7 +518,8 @@ const styles = (colors) =>
     },
     mealplanTextContent: {
       paddingHorizontal: 10,
-      paddingVertical: 5,
+      paddingTop: 5,
+      paddingBottom: 5,
     },
     mealplanTitle: {
       fontSize: 18,
@@ -388,15 +540,16 @@ const styles = (colors) =>
     },
     mealplanPriceContainer: {
       flex: 1,
+      alignItems: "flex-end",
     },
     priceRatingRow: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
+      justifyContent: "flex-end",
       gap: 8,
     },
     mealplanPrice: {
-      fontSize: 20,
+      fontSize: 17,
       fontWeight: "bold",
       color: colors.text,
     },
@@ -428,7 +581,7 @@ const styles = (colors) =>
     mealplanMetaRow: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 8,
+      marginBottom: 2,
       gap: 12,
     },
     mealplanMetaItem: {
@@ -443,7 +596,10 @@ const styles = (colors) =>
       fontWeight: "700",
     },
     priceWithDiscountContainer: {
-      gap: 2,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      // gap: 4,
     },
     priceRow: {
       flexDirection: "row",
@@ -451,10 +607,11 @@ const styles = (colors) =>
       gap: 6,
     },
     strikethroughPrice: {
-      fontSize: 14,
+      fontSize: 13,
       color: colors.textSecondary,
       textDecorationLine: "line-through",
       fontWeight: "500",
+      marginRight: 4,
     },
     // Modal styles
     modalOverlay: {
@@ -520,6 +677,18 @@ const styles = (colors) =>
       fontSize: 16,
       fontWeight: "600",
       color: colors.white,
+    },
+    dividerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: 8,
+      marginHorizontal: -15, // Negative margin to counteract card padding
+      justifyContent: "space-between",
+    },
+    dashItem: {
+      width: 8,
+      height: 1,
+      backgroundColor: colors.border,
     },
   });
 export default MealPlanCard;

@@ -3,7 +3,7 @@
 export const lightColors = {
   // Primary Colors
   primary: "#F7AE1A",
-  primary2: "#652815",
+  primary2: "#004432",
   primaryDark: "#D96800",
   primaryDark2: "#F3E9DF",
   primaryLight: "#FF9A3F",
@@ -11,11 +11,13 @@ export const lightColors = {
   // Background Colors
   background: "#FFFFFF",
   cardBackground: "#FFFFFF",
+  cardBackground2: "#F2F2F2",
   modalBackground: "#FFFFFF",
 
   // Text Colors
   text: "#1A1A1A",
   text2: "#FFFFFF",
+  text3: "#004432",
   textSecondary: "#666666",
   textMuted: "#999999",
 
@@ -43,19 +45,21 @@ export const lightColors = {
 export const darkColors = {
   // Primary Colors
   primary: "#F7AE1A", // Orange accent color from the image
-  primary2: "#652815",
+  primary2: "#00553E",
   primaryDark: "#b6c530ff",
   primaryDark2: "#1b1b1b",
   primaryLight: "#f0fb8ee0",
 
   // Background Colors
-  background: "#111111ff", // Dark background
+  background: "#111111", // Dark background
   cardBackground: "#2A2A2A", // Card background
+  cardBackground2: "#2A2A2A", // Card background
   modalBackground: "#333333",
 
   // Text Colors
   text: "#FFFFFF",
   text2: "#FFFFFF",
+  text3: "#E9FFF9",
   textSecondary: "#B0B0B0", // Secondary gray text
   textMuted: "#808080", // Muted text
 

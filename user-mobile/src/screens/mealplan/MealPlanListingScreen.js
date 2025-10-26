@@ -305,7 +305,7 @@ const MealPlanListingScreen = ({ navigation, route }) => {
   const renderFixedBackground = () => (
     <View style={styles(colors).fixedBackground}>
       <LinearGradient
-        colors={[colors.primary2, colors.primary2]}
+        colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
         style={styles(colors).heroBackground}
       >
         {/* Hero Background Image */}
@@ -377,97 +377,97 @@ const MealPlanListingScreen = ({ navigation, route }) => {
     </View>
   );
 
-  const renderPromoBanners = () => {
-    if (bannersLoading) {
-      return (
-        <View style={styles(colors).heroBannerContainer}>
-          <View
-            style={[
-              styles(colors).heroBanner,
-              { justifyContent: "center", alignItems: "center" },
-            ]}
-          >
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text
-              style={[
-                styles(colors).loadingText,
-                { color: colors.white, marginTop: 10 },
-              ]}
-            >
-              Loading banners...
-            </Text>
-          </View>
-        </View>
-      );
-    }
+  // const renderPromoBanners = () => {
+  //   if (bannersLoading) {
+  //     return (
+  //       <View style={styles(colors).heroBannerContainer}>
+  //         <View
+  //           style={[
+  //             styles(colors).heroBanner,
+  //             { justifyContent: "center", alignItems: "center" },
+  //           ]}
+  //         >
+  //           <ActivityIndicator size="large" color={colors.primary} />
+  //           <Text
+  //             style={[
+  //               styles(colors).loadingText,
+  //               { color: colors.white, marginTop: 10 },
+  //             ]}
+  //           >
+  //             Loading banners...
+  //           </Text>
+  //         </View>
+  //       </View>
+  //     );
+  //   }
 
-    if (!banners || banners.length === 0) {
-      return null;
-    }
+  //   if (!banners || banners.length === 0) {
+  //     return null;
+  //   }
 
-    return (
-      <View style={styles(colors).heroBannerContainer}>
-        <ScrollView
-          ref={bannerScrollRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={(event) => {
-            const slideIndex = Math.round(
-              event.nativeEvent.contentOffset.x / width
-            );
-            setCurrentBannerIndex(slideIndex);
-          }}
-          onScrollBeginDrag={() => setIsUserInteracting(true)}
-          onScrollEndDrag={() => setIsUserInteracting(false)}
-        >
-          {(banners || []).map((banner, index) => (
-            <TouchableOpacity
-              key={banner._id || index}
-              style={styles(colors).bannerSlide}
-              onPress={() => {
-                if (banner.actionUrl) {
-                  navigation.navigate(banner.actionUrl);
-                }
-              }}
-            >
-              <View style={styles(colors).promoBannerContainer}>
-                <Image
-                  source={{
-                    uri: banner.imageUrl,
-                    cache: "default",
-                  }}
-                  style={styles(colors).promoBannerImage}
-                  resizeMode="cover"
-                  onLoad={() => {
-                    if (!trackedImpressions.has(banner._id || index)) {
-                      setTrackedImpressions(
-                        (prev) => new Set([...prev, banner._id || index])
-                      );
-                    }
-                  }}
-                />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        {(banners || []).length > 1 && (
-          <View style={styles(colors).bannerIndicators}>
-            {(banners || []).map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles(colors).bannerIndicator,
-                  currentBannerIndex === index &&
-                    styles(colors).bannerIndicatorActive,
-                ]}
-              />
-            ))}
-          </View>
-        )}
-      </View>
-    );
-  };
+  //   return (
+  //     <View style={styles(colors).heroBannerContainer}>
+  //       <ScrollView
+  //         ref={bannerScrollRef}
+  //         horizontal
+  //         pagingEnabled
+  //         showsHorizontalScrollIndicator={false}
+  //         onMomentumScrollEnd={(event) => {
+  //           const slideIndex = Math.round(
+  //             event.nativeEvent.contentOffset.x / width
+  //           );
+  //           setCurrentBannerIndex(slideIndex);
+  //         }}
+  //         onScrollBeginDrag={() => setIsUserInteracting(true)}
+  //         onScrollEndDrag={() => setIsUserInteracting(false)}
+  //       >
+  //         {(banners || []).map((banner, index) => (
+  //           <TouchableOpacity
+  //             key={banner._id || index}
+  //             style={styles(colors).bannerSlide}
+  //             onPress={() => {
+  //               if (banner.actionUrl) {
+  //                 navigation.navigate(banner.actionUrl);
+  //               }
+  //             }}
+  //           >
+  //             <View style={styles(colors).promoBannerContainer}>
+  //               <Image
+  //                 source={{
+  //                   uri: banner.imageUrl,
+  //                   cache: "default",
+  //                 }}
+  //                 style={styles(colors).promoBannerImage}
+  //                 resizeMode="cover"
+  //                 onLoad={() => {
+  //                   if (!trackedImpressions.has(banner._id || index)) {
+  //                     setTrackedImpressions(
+  //                       (prev) => new Set([...prev, banner._id || index])
+  //                     );
+  //                   }
+  //                 }}
+  //               />
+  //             </View>
+  //           </TouchableOpacity>
+  //         ))}
+  //       </ScrollView>
+  //       {(banners || []).length > 1 && (
+  //         <View style={styles(colors).bannerIndicators}>
+  //           {(banners || []).map((_, index) => (
+  //             <View
+  //               key={index}
+  //               style={[
+  //                 styles(colors).bannerIndicator,
+  //                 currentBannerIndex === index &&
+  //                   styles(colors).bannerIndicatorActive,
+  //               ]}
+  //             />
+  //           ))}
+  //         </View>
+  //       )}
+  //     </View>
+  //   );
+  // };
 
   const renderTierFilters = () => {
     // Don't show tier filters if no tiers are available
@@ -686,7 +686,7 @@ const MealPlanListingScreen = ({ navigation, route }) => {
         </View>
 
         {/* Promo Banners */}
-        {renderPromoBanners()}
+        {/* {renderPromoBanners()} */}
 
         {/* Tier Filters */}
         {renderTierFilters()}

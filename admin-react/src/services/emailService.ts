@@ -212,7 +212,7 @@ export const emailService = {
               margin-bottom: 30px;
             }
             .content h1 {
-              color: #652815;
+              color: #004432;
               font-size: 28px;
               margin-bottom: 15px;
             }
@@ -228,7 +228,7 @@ export const emailService = {
               margin: 20px 0;
             }
             .next-steps h3 {
-              color: #652815;
+              color: #004432;
               margin-top: 0;
             }
             .next-steps ul {
@@ -237,7 +237,7 @@ export const emailService = {
             }
             .cta-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 14px 28px;
               text-decoration: none;
@@ -359,7 +359,7 @@ export const emailService = {
               margin-bottom: 20px;
             }
             .content h1 {
-              color: #652815;
+              color: #004432;
               font-size: 24px;
               margin-bottom: 15px;
             }
@@ -713,7 +713,7 @@ export const emailService = {
             }
             .cta-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 14px 28px;
               text-decoration: none;
@@ -839,7 +839,7 @@ export const emailService = {
             }
             .cta-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 14px 28px;
               text-decoration: none;

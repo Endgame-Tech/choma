@@ -408,7 +408,7 @@ const TagScreen = ({ navigation, route }) => {
   const renderHeader = () => (
     <View style={styles(colors).heroWrapper}>
       <LinearGradient
-        colors={["#652815", "#7A2E18"]}
+        colors={["#004432", "#7A2E18"]}
         style={styles(colors).heroBackground}
       >
         {/* Navigation Header */}
@@ -583,7 +583,7 @@ const TagScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles(colors).container}>
-      <StatusBar barStyle="light-content" backgroundColor="#652815" />
+      <StatusBar barStyle="light-content" backgroundColor="#004432" />
 
       {/* Animated Header Overlay */}
       <Animated.View
@@ -945,7 +945,7 @@ const styles = (colors) =>
     },
     heroWrapper: {
       position: "relative",
-      backgroundColor: "#652815",
+      backgroundColor: "#004432",
       height: 250,
       overflow: "hidden",
     },
@@ -970,11 +970,9 @@ const styles = (colors) =>
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.black,
+      backgroundColor: colors.primary2,
       justifyContent: "center",
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: "#1b1b1b",
     },
     headerActions: {
       flexDirection: "row",
@@ -1253,8 +1251,8 @@ const styles = (colors) =>
       minWidth: 80,
     },
     selectedDurationOption: {
-      backgroundColor: colors.text,
-      borderColor: colors.text,
+      backgroundColor: colors.text3,
+      borderColor: colors.text3,
       shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
@@ -1310,7 +1308,7 @@ const styles = (colors) =>
       borderRadius: THEME.borderRadius.medium,
     },
     rateButtonText: {
-      color: colors.white,
+      color: "#004432",
       fontSize: 12,
       fontWeight: "600",
     },
@@ -1420,7 +1418,7 @@ const styles = (colors) =>
       fontWeight: "500",
     },
     bottomPadding: {
-      height: 120,
+      height: 70,
     },
   });
 

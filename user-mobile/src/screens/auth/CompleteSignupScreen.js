@@ -151,7 +151,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
   if (!userData) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#652815" />
+        <StatusBar barStyle="light-content" backgroundColor="#004432" />
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={60} color="#dc3545" />
           <Text style={styles.errorTitle}>Something went wrong</Text>
@@ -172,7 +172,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#652815" />
+      <StatusBar barStyle="light-content" backgroundColor="#004432" />
 
       {/* Background with brown color and pattern */}
       <View style={styles.backgroundContainer}>
@@ -209,10 +209,12 @@ const CompleteSignupScreen = ({ navigation, route }) => {
 
         {/* Curved transition */}
         <Animated.View
-          style={[{
-            transform: [{ translateY: keyboardOffset }],
-            zIndex: 4
-          }]}
+          style={[
+            {
+              transform: [{ translateY: keyboardOffset }],
+              zIndex: 4,
+            },
+          ]}
         >
           <LoginCurve style={{ zIndex: 4 }} />
         </Animated.View>
@@ -237,17 +239,14 @@ const CompleteSignupScreen = ({ navigation, route }) => {
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>Almost Done!</Text>
               <Text style={styles.welcomeSubtitle}>
-                Your email has been verified. Ready to complete your registration?
+                Your email has been verified. Ready to complete your
+                registration?
               </Text>
             </View>
 
             <View style={styles.summaryCard}>
               <View style={styles.summaryHeader}>
-                <Ionicons
-                  name="person-circle"
-                  size={24}
-                  color="#E6B17A"
-                />
+                <Ionicons name="person-circle" size={24} color="#E6B17A" />
                 <Text style={styles.summaryTitle}>Account Summary</Text>
               </View>
 
@@ -261,29 +260,19 @@ const CompleteSignupScreen = ({ navigation, route }) => {
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryLabel}>Email</Text>
                 <View style={styles.emailContainer}>
-                  <Text style={styles.summaryValue}>
-                    {userData.email}
-                  </Text>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={16}
-                    color="#4CAF50"
-                  />
+                  <Text style={styles.summaryValue}>{userData.email}</Text>
+                  <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
                 </View>
               </View>
 
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryLabel}>Phone</Text>
-                <Text style={styles.summaryValue}>
-                  {userData.phone}
-                </Text>
+                <Text style={styles.summaryValue}>{userData.phone}</Text>
               </View>
 
               {userData.deliveryAddress && (
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>
-                    Delivery Address
-                  </Text>
+                  <Text style={styles.summaryLabel}>Delivery Address</Text>
                   <Text style={styles.summaryValue}>
                     {userData.deliveryAddress}
                   </Text>
@@ -313,9 +302,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
                 By completing registration, you agree to our{" "}
               </Text>
               <TouchableOpacity>
-                <Text style={styles.footerLink}>
-                  Terms & Conditions
-                </Text>
+                <Text style={styles.footerLink}>Terms & Conditions</Text>
               </TouchableOpacity>
             </View>
 
@@ -331,7 +318,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
 const styles = createStylesWithDMSans({
   container: {
     flex: 1,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
   },
   backgroundContainer: {
     flex: 1,
@@ -343,7 +330,7 @@ const styles = createStylesWithDMSans({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     opacity: 0.8,
   },
   backgroundImageStyle: {
@@ -442,14 +429,14 @@ const styles = createStylesWithDMSans({
     justifyContent: "space-between",
   },
   completeButton: {
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     borderRadius: 25,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
     marginBottom: 20,
-    shadowColor: "#652815",
+    shadowColor: "#004432",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -485,7 +472,7 @@ const styles = createStylesWithDMSans({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 40,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
   },
   errorTitle: {
     fontSize: 24,

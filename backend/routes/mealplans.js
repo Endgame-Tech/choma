@@ -5,8 +5,8 @@ const discountController = require('../controllers/discountController');
 const auth = require('../middleware/auth');
 const { cacheMiddleware } = require('../middleware/cacheMiddleware');
 
-// GET /api/mealplans - Get all meal plans (cached for 10 minutes)
-router.get('/', cacheMiddleware.mealPlans, mealplanController.getAllMealPlans);
+// GET /api/mealplans - Get all meal plans (cache temporarily disabled for testing)
+router.get('/', mealplanController.getAllMealPlans);
 
 // GET /api/mealplans/popular - Get popular meal plans (no cache for immediate updates)
 router.get('/popular', mealplanController.getPopularMealPlans);

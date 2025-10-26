@@ -288,7 +288,7 @@ const Home: React.FC = () => {
               <div className="lg:hidden">
                 {/* Mobile Image */}
                 <div className="relative mb-6">
-                  <div className="rounded-[16px] overflow-hidden border-4 border-[#652815]">
+                  <div className="rounded-[16px] overflow-hidden border-4 border-[#004432]">
                     <img
                       src={mealPlanImage1}
                       alt="Healthy FitFam Fuel Meal"
@@ -363,7 +363,7 @@ const Home: React.FC = () => {
 
                 {/* Right Image */}
                 <div className="relative h-[38rem] w-1/2 flex items-center justify-center">
-                  <div className="rounded-[16px] overflow-hidden object-cover border-4 border-[#652815]">
+                  <div className="rounded-[16px] overflow-hidden object-cover border-4 border-[#004432]">
 
                     {/* meally */}
                     <div className="absolute flex justify-center top-0 -left-12 z-10">

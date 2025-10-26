@@ -173,7 +173,7 @@ const CompleteSignupScreen = ({ navigation, route }) => {
                 colors={
                   isLoading
                     ? [colors.textMuted, colors.textMuted]
-                    : ["#652815", "#652815"]
+                    : ["#004432", "#004432"]
                 }
                 style={styles(colors).buttonGradient}
               >

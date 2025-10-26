@@ -334,7 +334,7 @@ class EmailService {
               <div class="container">
                 ${this.generateLogoHtml()}
                 
-                <h1 style="color: #652815; text-align: center;">Email Template Test</h1>
+                <h1 style="color: #004432; text-align: center;">Email Template Test</h1>
                 
                 <div class="test-section">
                   <h3>Logo Test Results:</h3>
@@ -511,7 +511,7 @@ class EmailService {
               margin-bottom: 30px;
             }
             .content h1 {
-              color: #652815;
+              color: #004432;
               font-size: 28px;
               margin-bottom: 15px;
             }
@@ -525,7 +525,7 @@ class EmailService {
               margin: 20px 0;
             }
             .next-steps h3 {
-              color: #652815;
+              color: #004432;
               margin-top: 0;
             }
             .next-steps ul {
@@ -534,7 +534,7 @@ class EmailService {
             }
             .cta-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 14px 28px;
               text-decoration: none;
@@ -677,7 +677,7 @@ class EmailService {
               margin-top: 8px;
             }
             .content h1 {
-              color: #652815;
+              color: #004432;
               font-size: 24px;
               margin-bottom: 15px;
             }
@@ -889,7 +889,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             }
             .message {
               font-size: 18px;
-              color: #652815;
+              color: #004432;
               margin-bottom: 20px;
             }
             .instructions {
@@ -922,7 +922,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
               <div class="logo-text">CHOMA</div>
             </div>
             
-            <h1 style="color: #652815; margin-bottom: 10px;">${titles[purpose]}</h1>
+            <h1 style="color: #004432; margin-bottom: 10px;">${titles[purpose]}</h1>
             
             <p class="message">${messages[purpose]}</p>
             
@@ -931,7 +931,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             </div>
             
             <div class="instructions">
-              <h3 style="margin-top: 0; color: #652815;">How to use this code:</h3>
+              <h3 style="margin-top: 0; color: #004432;">How to use this code:</h3>
               <ol style="text-align: left; color: #555;">
                 <li>Return to the Choma registration page</li>
                 <li>Enter this 6-digit verification code</li>
@@ -1219,7 +1219,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             }
             .contact-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 12px 24px;
               text-decoration: none;
@@ -1346,7 +1346,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             }
             .contact-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 12px 24px;
               text-decoration: none;
@@ -1472,7 +1472,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             }
             .cta-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 14px 28px;
               text-decoration: none;
@@ -1592,7 +1592,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             }
             .cta-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 14px 28px;
               text-decoration: none;
@@ -1774,7 +1774,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             }
             .reset-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 16px 32px;
               text-decoration: none;
@@ -1908,7 +1908,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
             }
             .login-button {
               display: inline-block;
-              background: #652815;
+              background: #004432;
               color: white;
               padding: 16px 32px;
               text-decoration: none;

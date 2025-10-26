@@ -23,6 +23,37 @@ exports.getAllMealPlans = async (req, res) => {
       `📱 getAllMealPlans returning ${mealPlans.length} published meal plans out of ${allPlans.length} active plans`
     );
 
+    // Calculate popularity scores to determine top 10 popular plans
+    const plansWithScores = mealPlans.map((plan) => ({
+      id: plan._id.toString(),
+      name: plan.planName,
+      subscriptions: plan.totalSubscriptions,
+      rating: plan.avgRating,
+      score: plan.totalSubscriptions * 0.7 + plan.avgRating * 0.3,
+    }));
+    plansWithScores.sort((a, b) => b.score - a.score);
+
+    console.log("📊 Popularity scores for all plans:");
+    plansWithScores.forEach((p, idx) => {
+      console.log(`  ${idx + 1}. ${p.name}: score=${p.score.toFixed(2)} (subs=${p.subscriptions}, rating=${p.rating})`);
+    });
+
+    // If all scores are 0, use creation date as fallback
+    const hasAnyScore = plansWithScores.some(p => p.score > 0);
+    let popularIds;
+
+    if (hasAnyScore) {
+      popularIds = new Set(plansWithScores.slice(0, 10).map(p => p.id));
+      console.log(`✅ Marking top 10 plans as popular based on score`);
+    } else {
+      // Fallback: Mark newest 5 plans as popular when no scores exist
+      const newestPlans = [...mealPlans]
+        .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate))
+        .slice(0, 5);
+      popularIds = new Set(newestPlans.map(p => p._id.toString()));
+      console.log(`⚠️ No popularity scores found, marking ${popularIds.size} newest plans as popular`);
+    }
+
     // For each meal plan, get assignments and format for frontend compatibility
     const formattedMealPlans = await Promise.all(
       mealPlans.map(async (mealPlan) => {
@@ -54,7 +85,8 @@ exports.getAllMealPlans = async (req, res) => {
             ? mealPlan.totalPrice
             : fallbackPrice;
 
-        return {
+        const isPopularPlan = popularIds.has(mealPlan._id.toString());
+        const formattedPlan = {
           ...mealPlan.toObject(),
           id: mealPlan._id,
           name: mealPlan.planName,
@@ -71,12 +103,19 @@ exports.getAllMealPlans = async (req, res) => {
           features: mealPlan.planFeatures || [],
           gradient: ["#3B82F6", "#8B5CF6"], // Default gradient for card UI
           tag: mealPlan.isPublished ? "Popular" : "Draft",
+          isPopular: isPopularPlan, // Mark if in top 10
           sampleMeals: sampleMeals.map((meal) => ({
             ...meal.toObject(),
             image: meal.mainImageUrl || meal.image,
           })),
           totalMealsAssigned: assignments.length,
         };
+
+        if (isPopularPlan) {
+          console.log(`⭐ Plan "${mealPlan.planName}" marked as popular`);
+        }
+
+        return formattedPlan;
       })
     );
 
@@ -140,6 +179,12 @@ exports.getPopularMealPlans = async (req, res) => {
     // Sort by score and return top 10
     popularMealPlans.sort((a, b) => b.score - a.score);
     const top10 = popularMealPlans.slice(0, 10);
+
+    // Mark the top 10 as popular
+    const popularIds = new Set(top10.map(plan => plan.id.toString()));
+    top10.forEach(plan => {
+      plan.isPopular = true;
+    });
 
     res.json({
       success: true,

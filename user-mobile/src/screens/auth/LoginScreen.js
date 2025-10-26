@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-// import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../../context/AuthContext";
 // import { COLORS, THEME } from "../../utils/colors";
 import { useTheme } from "../../styles/theme";
@@ -28,6 +28,7 @@ import BiometricLogin from "../../components/auth/BiometricLogin";
 
 import ChomaLogo from "../../components/ui/ChomaLogo";
 import LoginCurve from "../../components/ui/LoginCurve";
+import CustomIcon from "../../components/ui/CustomIcon";
 import { useAlert } from "../../contexts/AlertContext";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
 import { useGoogleAuth } from "../../hooks/useGoogleAuth";
@@ -272,10 +273,15 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#652815" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
 
-      {/* Background with brown color and pattern */}
-      <View style={styles.backgroundContainer}>
+      {/* Background with gradient */}
+      <LinearGradient
+        colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+        locations={[0, 0.4, 0.7, 1]}
+        style={styles.backgroundContainer}
+      >
+        {/* Pattern overlay on gradient */}
         <ImageBackground
           source={require("../../../assets/patternchoma.png")}
           style={styles.backgroundPattern}
@@ -311,7 +317,7 @@ const LoginScreen = ({ navigation }) => {
         <Animated.View
           style={[{ transform: [{ translateY: keyboardOffset }] }]}
         >
-          <LoginCurve />
+          <LoginCurve style={styles.loginCurveCustom} />
         </Animated.View>
 
         {/* Bottom white section with form */}
@@ -333,7 +339,7 @@ const LoginScreen = ({ navigation }) => {
             {/* Welcome text */}
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeTitle}>
-                {showEmailForm ? "Welcome Back" : "Welcome to Choma"}
+                {showEmailForm ? "Welcome Back" : "Welcome to \n getChoma"}
               </Text>
               <Text style={styles.welcomeSubtitle}>
                 {showEmailForm
@@ -381,10 +387,10 @@ const LoginScreen = ({ navigation }) => {
                   style={styles.emailButton}
                   onPress={() => setShowEmailForm(true)}
                 >
-                  <Ionicons
-                    name="mail-outline"
+                  <CustomIcon
+                    name="email"
                     size={20}
-                    color="#652815"
+                    color="#004432"
                     style={styles.emailButtonIcon}
                   />
                   <Text style={styles.emailButtonText}>
@@ -418,7 +424,7 @@ const LoginScreen = ({ navigation }) => {
                     setPassword("");
                   }}
                 >
-                  <Ionicons name="arrow-back" size={20} color="#652815" />
+                  <Ionicons name="arrow-back" size={20} color="#004432" />
                   <Text style={styles.backToOptionsText}>
                     Back to sign in options
                   </Text>
@@ -446,8 +452,8 @@ const LoginScreen = ({ navigation }) => {
                         errors.email && styles.inputContainerError,
                       ]}
                     >
-                      <Ionicons
-                        name="mail-outline"
+                      <CustomIcon
+                        name="email"
                         size={20}
                         color={errors.email ? "#dc3545" : "#999"}
                         style={styles.inputIcon}
@@ -575,7 +581,7 @@ const LoginScreen = ({ navigation }) => {
             <View style={styles.bottomPadding} />
           </ScrollView>
         </Animated.View>
-      </View>
+      </LinearGradient>
     </View>
   );
 };
@@ -583,7 +589,7 @@ const LoginScreen = ({ navigation }) => {
 const styles = createStylesWithDMSans({
   container: {
     flex: 1,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
   },
   backgroundContainer: {
     flex: 1,
@@ -595,8 +601,7 @@ const styles = createStylesWithDMSans({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#652815",
-    opacity: 0.8, // Subtle pattern overlay
+    opacity: 0.7, // Subtle pattern overlay
   },
   backgroundImageStyle: {
     opacity: 1,
@@ -624,11 +629,15 @@ const styles = createStylesWithDMSans({
     height: 350,
     borderRadius: 130,
   },
+  loginCurveCustom: {
+    // Push the curve down to reduce white space above the form
+    bottom: -250, // Adjust this value: larger negative = curve goes down more
+  },
   bottomSection: {
-    flex: 0.75,
+    flex: 0.55,
     backgroundColor: "#fff",
     // paddingTop: 30, // More space for overlapping food image
-    minHeight: height * 0.1,
+    // minHeight: height * 0.1,
     zIndex: 5, // Increased zIndex to be above the curve
     position: "relative", // Ensure positioning context
   },
@@ -637,35 +646,38 @@ const styles = createStylesWithDMSans({
   },
   formContent: {
     flexGrow: 1,
-    paddingHorizontal: 30,
-    paddingBottom: Platform.OS === "ios" ? 40 : 60, // Extra padding for navigation bar
-    justifyContent: "center",
+    paddingHorizontal: 25,
+    // paddingBottom: Platform.OS === "ios" ? 20 : 70, // Reduced padding for navigation bar
+    paddingTop: 20,
+    justifyContent: "flex-start", // Changed from center to top
   },
   welcomeContainer: {
     alignItems: "center",
-    marginBottom: 10,
-    marginTop: 10,
+    marginBottom: 8, // Reduced from 10
+    marginTop: 0, // Reduced from 10
   },
   welcomeTitle: {
-    fontSize: 24,
+    fontSize: 22, // Reduced from 24
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 4,
+    lineHeight: 25,
+    marginBottom: 5, // Reduced from 4
   },
   welcomeSubtitle: {
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     color: "#666",
     textAlign: "center",
+    marginBottom: 15,
   },
   googleButton: {
     backgroundColor: "#fff",
     borderRadius: 25,
-    height: 50,
+    height: 48, // Reduced from 50
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    // marginBottom: 20,
-    marginHorizontal: 30,
+    // marginBottom: 12, // Added spacing
+    marginHorizontal: 25, // Reduced from 30
     borderWidth: 1,
     borderColor: "#e8e8e8",
     shadowColor: "#000",
@@ -680,21 +692,21 @@ const styles = createStylesWithDMSans({
   googleIcon: {
     width: 20,
     height: 20,
-    marginRight: 12,
+    marginRight: 10, // Reduced from 12
   },
   googleButtonDisabled: {
     opacity: 0.7,
   },
   googleButtonText: {
     color: "#333",
-    fontSize: 16,
+    fontSize: 15, // Reduced from 16
     fontWeight: "500",
   },
   orContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
-    marginHorizontal: 30,
+    marginVertical: 12, // Reduced from 20
+    marginHorizontal: 25, // Reduced from 30
   },
   orLine: {
     flex: 1,
@@ -738,14 +750,14 @@ const styles = createStylesWithDMSans({
     padding: 8,
   },
   loginButton: {
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     borderRadius: 25,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
     marginBottom: 20,
-    shadowColor: "#652815",
+    shadowColor: "#004432",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -814,21 +826,19 @@ const styles = createStylesWithDMSans({
     fontSize: 12,
     fontWeight: "500",
   },
-  bottomPadding: {
-    height: Platform.OS === "ios" ? 30 : 50, // Extra space for navigation bar
-  },
+
   // NEW: Email button styles
   emailButton: {
     backgroundColor: "#fff",
     borderRadius: 25,
-    height: 50,
+    height: 48, // Reduced from 50
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: 30,
-    marginBottom: 20,
+    marginHorizontal: 25, // Reduced from 30
+    marginBottom: 12, // Reduced from 20
     borderWidth: 2,
-    borderColor: "#652815",
+    borderColor: "#004432",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -839,11 +849,11 @@ const styles = createStylesWithDMSans({
     elevation: 3,
   },
   emailButtonIcon: {
-    marginRight: 12,
+    marginRight: 10, // Reduced from 12
   },
   emailButtonText: {
-    color: "#652815",
-    fontSize: 16,
+    color: "#004432",
+    fontSize: 15, // Reduced from 16
     fontWeight: "600",
   },
   // NEW: Back to options button
@@ -851,14 +861,14 @@ const styles = createStylesWithDMSans({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
-    paddingVertical: 10,
+    marginBottom: 12, // Reduced from 20
+    paddingVertical: 8, // Reduced from 10
   },
   backToOptionsText: {
-    color: "#652815",
-    fontSize: 14,
+    color: "#004432",
+    fontSize: 13, // Reduced from 14
     fontWeight: "500",
-    marginLeft: 8,
+    marginLeft: 6, // Reduced from 8
   },
 });
 

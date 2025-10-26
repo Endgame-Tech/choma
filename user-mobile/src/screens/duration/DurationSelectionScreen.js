@@ -33,6 +33,7 @@ import * as Haptics from "expo-haptics";
 import tagService from "../../services/tagService";
 import { Svg, Path } from "react-native-svg";
 import MaskedView from "@react-native-masked-view/masked-view";
+// import { opacity } from "react-native-reanimated/lib/typescript/Colors";
 
 const { width, height } = Dimensions.get("window");
 
@@ -171,145 +172,144 @@ const DurationSelectionScreen = ({ navigation, route }) => {
     }
   }, []);
 
-  const DurationCarouselItem = React.memo(({ duration, index }) => {
-    const rStyle = useAnimatedStyle(() => {
-      const inputRange = [
-        (index - 2) * DurationItemWidth,
-        (index - 1) * DurationItemWidth,
-        index * DurationItemWidth,
-        (index + 1) * DurationItemWidth,
-        (index + 2) * DurationItemWidth,
-      ];
+  const DurationCarouselItem = React.memo(
+    ({ duration, index }) => {
+      const rStyle = useAnimatedStyle(() => {
+        const inputRange = [
+          (index - 2) * DurationItemWidth,
+          (index - 1) * DurationItemWidth,
+          index * DurationItemWidth,
+          (index + 1) * DurationItemWidth,
+          (index + 2) * DurationItemWidth,
+        ];
 
-      const translateYOutputRange = [
-        0,
-        -DurationItemWidth / 3,
-        -DurationItemWidth / 2,
-        -DurationItemWidth / 3,
-        0,
-      ];
+        const translateYOutputRange = [
+          0,
+          -DurationItemWidth / 3,
+          -DurationItemWidth / 2,
+          -DurationItemWidth / 3,
+          0,
+        ];
 
-      const opacityOutputRange = [0.7, 0.9, 1, 0.9, 0.7];
-      const scaleOutputRange = [0.7, 0.8, 1, 0.8, 0.7];
+        const opacityOutputRange = [0.7, 0.9, 1, 0.9, 0.7];
+        const scaleOutputRange = [0.7, 0.8, 1, 0.8, 0.7];
 
-      const translateY = interpolate(
-        contentOffset.value,
-        inputRange,
-        translateYOutputRange,
-        Extrapolate.CLAMP
-      );
+        const translateY = interpolate(
+          contentOffset.value,
+          inputRange,
+          translateYOutputRange,
+          Extrapolate.CLAMP
+        );
 
-      const opacity = interpolate(
-        contentOffset.value,
-        inputRange,
-        opacityOutputRange,
-        Extrapolate.CLAMP
-      );
+        const opacity = interpolate(
+          contentOffset.value,
+          inputRange,
+          opacityOutputRange,
+          Extrapolate.CLAMP
+        );
 
-      const scale = interpolate(
-        contentOffset.value,
-        inputRange,
-        scaleOutputRange,
-        Extrapolate.CLAMP
-      );
+        const scale = interpolate(
+          contentOffset.value,
+          inputRange,
+          scaleOutputRange,
+          Extrapolate.CLAMP
+        );
 
-      return {
-        opacity,
-        transform: [{ translateY }, { scale }],
-      };
-    });
+        return {
+          opacity,
+          transform: [{ translateY }, { scale }],
+        };
+      });
 
-    // Arrow visibility animation
-    const arrowStyle = useAnimatedStyle(() => {
-      const inputRange = [
-        (index - 1) * DurationItemWidth,
-        index * DurationItemWidth,
-        (index + 1) * DurationItemWidth,
-      ];
+      // Arrow visibility animation
+      const arrowStyle = useAnimatedStyle(() => {
+        const inputRange = [
+          (index - 1) * DurationItemWidth,
+          index * DurationItemWidth,
+          (index + 1) * DurationItemWidth,
+        ];
 
-      const arrowOpacity = interpolate(
-        contentOffset.value,
-        inputRange,
-        [0, 1, 0],
-        Extrapolate.CLAMP
-      );
+        const arrowOpacity = interpolate(
+          contentOffset.value,
+          inputRange,
+          [0, 1, 0],
+          Extrapolate.CLAMP
+        );
 
-      return {
-        opacity: arrowOpacity,
-      };
-    });
+        return {
+          opacity: arrowOpacity,
+        };
+      });
 
-    return (
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => onSelectDuration(index)}
-        accessible={true}
-        accessibilityRole="button"
-        accessibilityLabel={`Select ${duration.label} duration`}
-        accessibilityHint="Double tap to view meal plans with this duration"
-      >
-        <Animated.View
-          style={[
-            {
-              width: DurationItemWidth,
-              height: DurationItemWidth,
-              justifyContent: "center",
-              alignItems: "center",
-              elevation: 5,
-              shadowOpacity: 0.2,
-              shadowOffset: { width: 0, height: 0 },
-              shadowRadius: 20,
-              minWidth: 44,
-              minHeight: 44,
-            },
-            rStyle,
-          ]}
+      return (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => onSelectDuration(index)}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={`Select ${duration.label} duration`}
+          accessibilityHint="Double tap to view meal plans with this duration"
         >
-          {/* Duration disk background image */}
-          <Image
-            source={require("../../../assets/duration-disk.png")}
-            style={{
-              position: "absolute",
-              width: DurationItemWidth,
-              height: DurationItemWidth,
-            }}
-            resizeMode="contain"
-          />
-
-          {/* Content overlay */}
-          <View
-            style={{
-              width: DurationItemWidth,
-              height: DurationItemWidth,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
+          <Animated.View
+            style={[
+              {
+                width: DurationItemWidth,
+                height: DurationItemWidth,
+                justifyContent: "center",
+                alignItems: "center",
+                elevation: 5,
+                shadowOpacity: 0.2,
+                shadowOffset: { width: 0, height: 0 },
+                shadowRadius: 20,
+                minWidth: 44,
+                minHeight: 44,
+              },
+              rStyle,
+            ]}
           >
-            <Text
+            {/* Duration disk background image */}
+            <Image
+              source={require("../../../assets/duration-disk.png")}
               style={{
-                fontSize: moderateScale(18),
-                fontWeight: "700",
-                color: colors.white,
-                textAlign: "center",
+                position: "absolute",
+                width: DurationItemWidth,
+                height: DurationItemWidth,
+              }}
+              resizeMode="contain"
+            />
+
+            {/* Content overlay */}
+            <View
+              style={{
+                width: DurationItemWidth,
+                height: DurationItemWidth,
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              {duration.weeks}
-            </Text>
-            <Text
-              style={{
-                fontSize: moderateScale(10),
-                fontWeight: "600",
-                color: colors.white,
-                textAlign: "center",
-              }}
-            >
-              {duration.weeks === 1 ? "Week" : "Weeks"}
-            </Text>
-          </View>
-        </Animated.View>
-      </TouchableOpacity>
-    );
-  }, (prev, next) => prev.index === next.index && prev.duration === next.duration);
+              <Image
+                source={
+                  duration.weeks === 1
+                    ? require("../../../assets/durationweek1.png")
+                    : duration.weeks === 2
+                    ? require("../../../assets/durationweek2.png")
+                    : duration.weeks === 3
+                    ? require("../../../assets/durationweek3.png")
+                    : require("../../../assets/durationweek4.png")
+                }
+                style={{
+                  width: DurationItemWidth * 0.55,
+                  height: DurationItemWidth * 0.55,
+                  resizeMode: "contain",
+                }}
+              />
+            </View>
+          </Animated.View>
+        </TouchableOpacity>
+      );
+    },
+    (prev, next) => prev.index === next.index && prev.duration === next.duration
+  );
 
   const onSelectDuration = (index) => {
     if (!durationOptions[index]) return;
@@ -342,17 +342,20 @@ const DurationSelectionScreen = ({ navigation, route }) => {
   const lastCenteredIndex = useRef(-1);
 
   // Optimized: Update current duration only when scroll ends (not during scroll)
-  const updateCurrentDuration = useCallback((index, isSnapped = false) => {
-    if (index !== currentDurationIndex) {
-      setCurrentDurationIndex(index);
+  const updateCurrentDuration = useCallback(
+    (index, isSnapped = false) => {
+      if (index !== currentDurationIndex) {
+        setCurrentDurationIndex(index);
 
-      // Only trigger haptic when snapped to center AND index changed
-      if (isSnapped && lastCenteredIndex.current !== index) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        lastCenteredIndex.current = index;
+        // Only trigger haptic when snapped to center AND index changed
+        if (isSnapped && lastCenteredIndex.current !== index) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          lastCenteredIndex.current = index;
+        }
       }
-    }
-  }, [currentDurationIndex]);
+    },
+    [currentDurationIndex]
+  );
 
   // Optimized scroll handler - updates only on momentum end
   const scrollHandler = useAnimatedScrollHandler({
@@ -361,12 +364,18 @@ const DurationSelectionScreen = ({ navigation, route }) => {
     },
     onScrollEndDrag: (event) => {
       const index = Math.round(event.contentOffset.x / DurationItemWidth);
-      const clampedIndex = Math.max(0, Math.min(index, durationOptions.length - 1));
+      const clampedIndex = Math.max(
+        0,
+        Math.min(index, durationOptions.length - 1)
+      );
       runOnJS(updateCurrentDuration)(clampedIndex, true);
     },
     onMomentumScrollEnd: (event) => {
       const index = Math.round(event.contentOffset.x / DurationItemWidth);
-      const clampedIndex = Math.max(0, Math.min(index, durationOptions.length - 1));
+      const clampedIndex = Math.max(
+        0,
+        Math.min(index, durationOptions.length - 1)
+      );
       runOnJS(updateCurrentDuration)(clampedIndex, true);
     },
   });
@@ -443,7 +452,7 @@ const DurationSelectionScreen = ({ navigation, route }) => {
         <View style={styles(colors).mainContent}>
           <View style={styles(colors).heroWrapper}>
             <LinearGradient
-              colors={[colors.primary2, colors.primary2]}
+              colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
               style={styles(colors).heroBackground}
             >
               <View style={styles(colors).header}>
@@ -519,7 +528,7 @@ const DurationSelectionScreen = ({ navigation, route }) => {
                 <CustomIcon
                   name="chevron-back"
                   size={20}
-                  color={colors.primary2}
+                  color={colors.primary}
                 />
               </TouchableOpacity>
 
@@ -614,11 +623,11 @@ const DurationSelectionScreen = ({ navigation, route }) => {
         backgroundColor={colors.primary2}
       />
       <View style={styles(colors).mainContent}>
-        <View style={styles(colors).heroWrapper}>
-          <LinearGradient
-            colors={[colors.primary2, colors.primary2]}
-            style={styles(colors).heroBackground}
-          >
+        <LinearGradient
+          colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+          style={styles(colors).heroBackground}
+        >
+          <View style={styles(colors).heroWrapper}>
             <View style={styles(colors).header}>
               <View style={styles(colors).locationPill}>
                 <CustomIcon
@@ -688,75 +697,85 @@ const DurationSelectionScreen = ({ navigation, route }) => {
             <Text style={styles(colors).chooseHeading}>
               Select meal plan duration
             </Text>
-          </LinearGradient>
 
-          <View style={styles(colors).heroCurve}>
-            <Animated.Image
-              source={
-                isDark
-                  ? require("../../../assets/spin-dish-dark.png")
-                  : require("../../../assets/spin-dish.png")
-              }
-              style={[styles(colors).spinDishBackground, spinAnimatedStyle]}
-              resizeMode="contain"
+            <View style={styles(colors).heroCurve}>
+              <Animated.Image
+                source={
+                  isDark
+                    ? require("../../../assets/spin-dish-dark.png")
+                    : require("../../../assets/spin-dish.png")
+                }
+                style={[styles(colors).spinDishBackground, spinAnimatedStyle]}
+                resizeMode="contain"
+              />
+
+              <View style={styles(colors).durationInfoContainer}>
+                <Text style={styles(colors).durationDescription}>
+                  {durationOptions[currentDurationIndex]?.description || ""}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles(colors).contentSection}>
+            <Animated.FlatList
+              ref={flatListRef}
+              data={durationOptions}
+              keyExtractor={(_, index) => index.toString()}
+              scrollEventThrottle={16}
+              onScroll={scrollHandler}
+              onMomentumScrollEnd={(event) => {
+                // Regular React Native handler as fallback
+                const index = Math.round(
+                  event.nativeEvent.contentOffset.x / DurationItemWidth
+                );
+                const clampedIndex = Math.max(
+                  0,
+                  Math.min(index, durationOptions.length - 1)
+                );
+                console.log("📍 [RN] Momentum ended at index:", clampedIndex);
+                updateCurrentDuration(clampedIndex, true);
+              }}
+              onScrollEndDrag={(event) => {
+                // Regular React Native handler as fallback
+                const index = Math.round(
+                  event.nativeEvent.contentOffset.x / DurationItemWidth
+                );
+                const clampedIndex = Math.max(
+                  0,
+                  Math.min(index, durationOptions.length - 1)
+                );
+                console.log("📍 [RN] Drag ended at index:", clampedIndex);
+                updateCurrentDuration(clampedIndex, true);
+              }}
+              pagingEnabled
+              snapToInterval={DurationItemWidth}
+              showsHorizontalScrollIndicator={false}
+              initialNumToRender={5}
+              maxToRenderPerBatch={3}
+              windowSize={7}
+              removeClippedSubviews={true}
+              style={{
+                position: "absolute",
+                top: "80%",
+                marginTop: -350,
+                height: 300,
+                left: 0,
+                right: 0,
+              }}
+              contentContainerStyle={{
+                justifyContent: "center",
+                alignItems: "center",
+                paddingHorizontal: 1.5 * DurationItemWidth,
+                paddingRight: 1.5 * DurationItemWidth,
+              }}
+              horizontal
+              renderItem={({ item, index }) => (
+                <DurationCarouselItem duration={item} index={index} />
+              )}
             />
           </View>
-        </View>
-
-        <View style={styles(colors).contentSection}>
-          <Animated.FlatList
-            ref={flatListRef}
-            data={durationOptions}
-            keyExtractor={(_, index) => index.toString()}
-            scrollEventThrottle={16}
-            onScroll={scrollHandler}
-            onMomentumScrollEnd={(event) => {
-              // Regular React Native handler as fallback
-              const index = Math.round(event.nativeEvent.contentOffset.x / DurationItemWidth);
-              const clampedIndex = Math.max(0, Math.min(index, durationOptions.length - 1));
-              console.log("📍 [RN] Momentum ended at index:", clampedIndex);
-              updateCurrentDuration(clampedIndex, true);
-            }}
-            onScrollEndDrag={(event) => {
-              // Regular React Native handler as fallback
-              const index = Math.round(event.nativeEvent.contentOffset.x / DurationItemWidth);
-              const clampedIndex = Math.max(0, Math.min(index, durationOptions.length - 1));
-              console.log("📍 [RN] Drag ended at index:", clampedIndex);
-              updateCurrentDuration(clampedIndex, true);
-            }}
-            pagingEnabled
-            snapToInterval={DurationItemWidth}
-            showsHorizontalScrollIndicator={false}
-            initialNumToRender={5}
-            maxToRenderPerBatch={3}
-            windowSize={7}
-            removeClippedSubviews={true}
-            style={{
-              position: "absolute",
-              top: "50%",
-              marginTop: -350,
-              height: 300,
-              left: 0,
-              right: 0,
-            }}
-            contentContainerStyle={{
-              justifyContent: "center",
-              alignItems: "center",
-              paddingHorizontal: 1.5 * DurationItemWidth,
-              paddingRight: 1.5 * DurationItemWidth,
-            }}
-            horizontal
-            renderItem={({ item, index }) => (
-              <DurationCarouselItem duration={item} index={index} />
-            )}
-          />
-
-          <View style={styles(colors).durationInfoContainer}>
-            <Text style={styles(colors).durationDescription}>
-              {durationOptions[currentDurationIndex]?.description || ""}
-            </Text>
-          </View>
-        </View>
+        </LinearGradient>
 
         {/* Bottom Actions - Fixed at bottom */}
         <View style={styles(colors).bottomActionsContainer}>
@@ -769,7 +788,7 @@ const DurationSelectionScreen = ({ navigation, route }) => {
             accessibilityLabel="Go back"
             accessibilityHint="Double tap to go back"
           >
-            <CustomIcon name="chevron-back" size={20} color={colors.primary2} />
+            <CustomIcon name="chevron-back" size={20} color={colors.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -813,14 +832,14 @@ const styles = (colors) =>
     contentSection: {
       height: 380,
       position: "relative",
-      marginTop: verticalScale(40),
+      // marginTop: verticalScale(40),
     },
     heroWrapper: {
       position: "relative",
+      paddingHorizontal: scale(50),
     },
     heroBackground: {
-      paddingHorizontal: scale(50),
-      paddingTop: verticalScale(15),
+      // paddingTop: verticalScale(15),
       paddingBottom: verticalScale(isSmallScreen ? 60 : 80),
     },
     header: {
@@ -836,13 +855,14 @@ const styles = (colors) =>
       paddingVertical: verticalScale(9),
       borderRadius: moderateScale(20),
       maxWidth: width * 1.8,
-      minWidth: width * 0.7,
+      // minWidth: width * 0.7,
     },
     locationText: {
       flex: 1,
       fontSize: moderateScale(14),
       color: colors.white,
       marginHorizontal: scale(8),
+      textAlign: "center",
       fontWeight: "500",
     },
     bottomActionsContainer: {
@@ -854,25 +874,20 @@ const styles = (colors) =>
       justifyContent: "space-between",
       alignItems: "center",
       paddingHorizontal: scale(20),
-      // paddingVertical: verticalScale(20),
       paddingBottom: verticalScale(15), // Extra padding for safe area
     },
     backButtonBadge: {
-      backgroundColor: colors.white,
+      // backgroundColor: colors.primary,
       width: 44,
       height: 44,
       borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.primary,
       justifyContent: "center",
       alignItems: "center",
-      ...getShadowStyle({
-        shadowColor: colors.text,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-      }),
     },
     exploreBadge: {
-      backgroundColor: colors.white,
+      backgroundColor: colors.primary,
       paddingHorizontal: scale(18),
       paddingVertical: verticalScale(12),
       borderRadius: moderateScale(20),
@@ -928,7 +943,7 @@ const styles = (colors) =>
     },
     spinDishBackground: {
       position: "absolute",
-      top: verticalScale(0),
+      top: verticalScale(70),
       left: "50%",
       marginLeft: -scale(300),
       width: scale(600),
@@ -939,19 +954,21 @@ const styles = (colors) =>
       position: "relative",
     },
     durationInfoContainer: {
-      position: "absolute",
-      top: verticalScale(20),
+      // position: "absolute",
+      top: verticalScale(150),
       left: 0,
       right: 0,
       alignItems: "center",
       paddingHorizontal: scale(20),
-      paddingBottom: verticalScale(15),
+      zIndex: 1,
     },
     durationDescription: {
-      fontSize: moderateScale(14),
-      color: colors.textSecondary,
+      fontSize: moderateScale(16),
+      color: colors.text,
       textAlign: "center",
-      lineHeight: moderateScale(20),
+      lineHeight: moderateScale(24),
+      fontWeight: "500",
+      
     },
     loadingContainer: {
       flex: 1,

@@ -19,7 +19,7 @@ const CustomTabBar = () => {
   const circleAnimation = useRef(new Animated.Value(0)).current;
 
   // Get current route name
-  const currentRoute = useNavigationState(state => {
+  const currentRoute = useNavigationState((state) => {
     const route = state.routes[state.index];
     return route.name;
   });
@@ -34,10 +34,10 @@ const CustomTabBar = () => {
 
   // Define tab routes
   const tabs = [
-    { name: 'Home', key: 'home' },
-    { name: 'SearchScreen', key: 'search' },
-    { name: 'Orders', key: 'orders' },
-    { name: 'Profile', key: 'profile' },
+    { name: "Home", key: "home" },
+    // { name: 'SearchScreen', key: 'search' }, // Temporarily disabled
+    { name: "Orders", key: "orders" },
+    { name: "Profile", key: "profile" },
   ];
 
   const handleTabPress = (routeName) => {
@@ -67,7 +67,7 @@ const CustomTabBar = () => {
 
   // Create route object for CustomNavigationIcon compatibility
   const createRouteObject = (tabName) => ({
-    name: tabName === 'SearchScreen' ? 'Search' : tabName,
+    name: tabName === "SearchScreen" ? "Search" : tabName,
   });
 
   return (

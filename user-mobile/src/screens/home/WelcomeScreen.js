@@ -52,7 +52,7 @@ const styles = createStylesWithDMSans({
     marginBottom: 40,
   },
   button: {
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     paddingHorizontal: 40,
     paddingVertical: 15,
     borderRadius: 25,

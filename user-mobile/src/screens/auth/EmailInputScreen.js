@@ -130,7 +130,8 @@ const EmailInputScreen = ({ navigation }) => {
       );
 
       // Handle nested response structure
-      const emailData = emailCheckResponse?.data?.data || emailCheckResponse?.data;
+      const emailData =
+        emailCheckResponse?.data?.data || emailCheckResponse?.data;
 
       // Only process if endpoint exists (not 404)
       if (emailCheckResponse.success && emailData?.exists) {
@@ -211,7 +212,8 @@ const EmailInputScreen = ({ navigation }) => {
       );
 
       // Handle nested response structure
-      const emailData = emailCheckResponse?.data?.data || emailCheckResponse?.data;
+      const emailData =
+        emailCheckResponse?.data?.data || emailCheckResponse?.data;
 
       // Only check if endpoint exists (not 404)
       if (emailCheckResponse.success && emailData?.exists) {
@@ -229,7 +231,9 @@ const EmailInputScreen = ({ navigation }) => {
         );
         return;
       } else if (emailCheckResponse.status === 404) {
-        console.log("Email check endpoint not implemented yet, continuing with verification flow");
+        console.log(
+          "Email check endpoint not implemented yet, continuing with verification flow"
+        );
         // Continue to verification check
       }
 
@@ -334,7 +338,7 @@ const EmailInputScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#652815" />
+      <StatusBar barStyle="light-content" backgroundColor="#004432" />
 
       {/* Background with brown color and pattern */}
       <View style={styles.backgroundContainer}>
@@ -443,7 +447,11 @@ const EmailInputScreen = ({ navigation }) => {
                   </View>
                 ) : isAlreadyRegistered ? (
                   <View style={styles.buttonRow}>
-                    <Ionicons name="information-circle" size={20} color="#fff" />
+                    <Ionicons
+                      name="information-circle"
+                      size={20}
+                      color="#fff"
+                    />
                     <Text style={styles.verifyButtonText}>
                       Already Registered
                     </Text>
@@ -477,7 +485,8 @@ const EmailInputScreen = ({ navigation }) => {
                       </Text>
                     </View>
                     <Text style={styles.infoText}>
-                      This email is already registered. Please sign in to continue.
+                      This email is already registered. Please sign in to
+                      continue.
                     </Text>
                     <TouchableOpacity
                       style={styles.signInButton}
@@ -538,7 +547,7 @@ const EmailInputScreen = ({ navigation }) => {
 const styles = createStylesWithDMSans({
   container: {
     flex: 1,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
   },
   backgroundContainer: {
     flex: 1,
@@ -550,7 +559,7 @@ const styles = createStylesWithDMSans({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     opacity: 0.8,
   },
   backgroundImageStyle: {
@@ -597,6 +606,7 @@ const styles = createStylesWithDMSans({
   welcomeContainer: {
     alignItems: "center",
     marginBottom: 30,
+    marginTop: 30,
   },
   welcomeTitle: {
     fontSize: 24,
@@ -634,13 +644,13 @@ const styles = createStylesWithDMSans({
     fontWeight: "400",
   },
   verifyButton: {
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     borderRadius: 25,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
-    shadowColor: "#652815",
+    shadowColor: "#004432",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -672,7 +682,7 @@ const styles = createStylesWithDMSans({
     alignSelf: "center",
   },
   signInButtonText: {
-    color: "#652815",
+    color: "#004432",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -683,14 +693,14 @@ const styles = createStylesWithDMSans({
   },
   infoContainer: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   infoText: {
     fontSize: 12,
     color: "#666",
     textAlign: "center",
     lineHeight: 16,
-    marginBottom: 4,
+    // marginBottom: 4,
   },
   infoRow: {
     flexDirection: "row",

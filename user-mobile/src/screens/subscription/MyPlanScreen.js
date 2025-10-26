@@ -19,7 +19,6 @@ import SubscriptionManagementModal from "../../components/subscription/Subscript
 
 const PRIMARY_GOLD = "#F7AE1A";
 const PRIMARY_GOLD_DARK = "#D88908";
-const BACKGROUND_COLOR = "#552111";
 const CARD_SURFACE = "rgba(255,255,255,0.06)";
 const RICH_BROWN = "#4A1B0A";
 
@@ -472,18 +471,25 @@ const MyPlanScreen = ({ navigation, route }) => {
       <SafeAreaView style={styles(colors).container}>
         <StatusBar
           barStyle="light-content"
-          backgroundColor={BACKGROUND_COLOR}
+          backgroundColor={colors.primary2}
         />
-        <ImageBackground
-          source={require("../../../assets/patternchoma.png")}
-          resizeMode="repeat"
-          style={styles(colors).backgroundPattern}
-          imageStyle={styles(colors).backgroundImageStyle}
-        />
-        <View style={styles(colors).loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles(colors).loadingText}>Loading your plan...</Text>
-        </View>
+        <LinearGradient
+          colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+          locations={[0, 0.4, 0.7, 1]}
+          style={styles(colors).backgroundGradient}
+        >
+          {/* Pattern overlay on gradient */}
+          <ImageBackground
+            source={require("../../../assets/patternchoma.png")}
+            style={styles(colors).backgroundPattern}
+            resizeMode="repeat"
+            imageStyle={styles(colors).backgroundImageStyle}
+          />
+          <View style={styles(colors).loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles(colors).loadingText}>Loading your plan...</Text>
+          </View>
+        </LinearGradient>
       </SafeAreaView>
     );
   }
@@ -493,16 +499,22 @@ const MyPlanScreen = ({ navigation, route }) => {
       <SafeAreaView style={styles(colors).container}>
         <StatusBar
           barStyle="light-content"
-          backgroundColor={BACKGROUND_COLOR}
+          backgroundColor={colors.primary2}
         />
-        <ImageBackground
-          source={require("../../../assets/patternchoma.png")}
-          resizeMode="repeat"
-          style={styles(colors).backgroundPattern}
-          imageStyle={styles(colors).backgroundImageStyle}
-        />
-        {/* Header */}
-        <View style={styles(colors).header}>
+        <LinearGradient
+          colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+          locations={[0, 0.4, 0.7, 1]}
+          style={styles(colors).backgroundGradient}
+        >
+          {/* Pattern overlay on gradient */}
+          <ImageBackground
+            source={require("../../../assets/patternchoma.png")}
+            style={styles(colors).backgroundPattern}
+            resizeMode="repeat"
+            imageStyle={styles(colors).backgroundImageStyle}
+          />
+          {/* Header */}
+          <View style={styles(colors).header}>
           <TouchableOpacity
             style={styles(colors).backButton}
             onPress={() => navigation.goBack()}
@@ -533,13 +545,20 @@ const MyPlanScreen = ({ navigation, route }) => {
             </Text>
           </TouchableOpacity>
         </View>
+        </LinearGradient>
       </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles(colors).container}>
-      <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GOLD} />
+    <LinearGradient
+      colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+      locations={[0, 0.4, 0.7, 1]}
+      style={styles(colors).container}
+    >
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
+
+      {/* Pattern overlay on gradient */}
       <ImageBackground
         source={require("../../../assets/patternchoma.png")}
         resizeMode="repeat"
@@ -547,7 +566,7 @@ const MyPlanScreen = ({ navigation, route }) => {
         imageStyle={styles(colors).backgroundImageStyle}
       />
 
-      {/* Hero Header with Gradient */}
+      {/* Hero Header with Gold Gradient */}
       <LinearGradient
         colors={[PRIMARY_GOLD, PRIMARY_GOLD_DARK]}
         style={styles(colors).heroHeader}
@@ -558,7 +577,7 @@ const MyPlanScreen = ({ navigation, route }) => {
               style={styles(colors).backButton}
               onPress={() => navigation.goBack()}
             >
-              <CustomIcon name="chevron-back" size={20} color={RICH_BROWN} />
+              <CustomIcon name="chevron-back" size={20} color={colors.primary2} />
             </TouchableOpacity>
             <Text style={styles(colors).heroTitle}>My Meal Plan</Text>
             <View style={styles(colors).placeholder} />
@@ -593,7 +612,7 @@ const MyPlanScreen = ({ navigation, route }) => {
           loadPlanData(); // Refresh data after update
         }}
       />
-    </View>
+    </LinearGradient>
   );
 };
 
@@ -601,7 +620,10 @@ const styles = (colors) =>
   createStylesWithDMSans({
     container: {
       flex: 1,
-      backgroundColor: BACKGROUND_COLOR,
+      position: "relative",
+    },
+    backgroundGradient: {
+      flex: 1,
       position: "relative",
     },
     backgroundPattern: {
@@ -610,8 +632,7 @@ const styles = (colors) =>
       right: 0,
       bottom: 0,
       left: 0,
-      opacity: 0.8,
-      backgroundColor: BACKGROUND_COLOR,
+      opacity: 0.15, // Subtle pattern overlay
     },
     backgroundImageStyle: {
       opacity: 1,
@@ -631,7 +652,7 @@ const styles = (colors) =>
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
+      // justifyContent: "space-between",
       paddingHorizontal: 20,
       paddingVertical: 12,
     },
@@ -642,11 +663,12 @@ const styles = (colors) =>
       backgroundColor: "rgba(0,0,0,0.08)",
       alignItems: "center",
       justifyContent: "center",
+      marginRight: 14,
     },
     heroTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: RICH_BROWN,
+      color: colors.primary2,
       letterSpacing: 0.4,
     },
     settingsButton: {
@@ -762,12 +784,12 @@ const styles = (colors) =>
       paddingHorizontal: 35,
     },
     heroPrimaryButton: {
-      backgroundColor: PRIMARY_GOLD,
+      backgroundColor: colors.primary,
       borderRadius: 28,
       paddingVertical: 16,
       alignItems: "center",
       justifyContent: "center",
-      shadowColor: PRIMARY_GOLD,
+      shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.4,
       shadowRadius: 10,
@@ -777,7 +799,7 @@ const styles = (colors) =>
     heroPrimaryButtonText: {
       fontSize: 14,
       fontWeight: "700",
-      color: RICH_BROWN,
+      color: colors.primary2,
       letterSpacing: 0.2,
       textTransform: "none",
     },

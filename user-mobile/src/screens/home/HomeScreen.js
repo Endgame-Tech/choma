@@ -110,12 +110,7 @@ const previewImageSize = heroImageSize - 6; // Account for border
 const previewImageBorderRadius = previewImageSize / 2;
 
 // Circular carousel constants (responsive) - Larger items on bigger screens for better visibility
-const ListItemWidth = getResponsiveValue(
-  width / 4.5, // Smaller items on small screens
-  width / 4, // Medium screens
-  width / 3.2, // Large screens - increased size
-  width / 4.5 // Tablets - increased size
-);
+const ListItemWidth = width * 0.28; // Use a percentage of the screen width for more consistent sizing
 
 // Clean Circular Carousel Implementation:
 // - Based on animate-with-reanimated reference for maximum smoothness
@@ -193,7 +188,8 @@ const HomeScreen = ({ navigation, route }) => {
   // State for checking active subscription
   const [checkingSubscription, setCheckingSubscription] = useState(true);
   const [hasCheckedSubscription, setHasCheckedSubscription] = useState(false);
-  const [userHasActiveSubscription, setUserHasActiveSubscription] = useState(false);
+  const [userHasActiveSubscription, setUserHasActiveSubscription] =
+    useState(false);
   const [subscriptionData, setSubscriptionData] = useState(null);
 
   // Pre-fetch duration data for focused tag
@@ -294,7 +290,9 @@ const HomeScreen = ({ navigation, route }) => {
 
             // Skip navigation if explicitly requested (prevents redirect loop)
             if (skipSubscriptionCheck) {
-              console.log("ℹ️ Skip navigation requested, staying on Home with subscription data");
+              console.log(
+                "ℹ️ Skip navigation requested, staying on Home with subscription data"
+              );
               setCheckingSubscription(false);
               return;
             }
@@ -764,24 +762,6 @@ const HomeScreen = ({ navigation, route }) => {
               resizeMode="cover"
             />
           </View>
-
-          {/* Down arrow indicator - only visible on centered item */}
-          {/* <Animated.View
-            style={[
-              {
-                position: "absolute",
-                bottom: 8,
-                alignSelf: "center",
-                backgroundColor: colors.primary,
-                borderRadius: 20,
-                padding: 6,
-              },
-              arrowStyle,
-            ]}
-            pointerEvents="none"
-          >
-            <CustomIcon name="chevron-down" size={20} color={colors.white} />
-          </Animated.View> */}
         </Animated.View>
       </TouchableOpacity>
     );
@@ -1103,11 +1083,12 @@ const HomeScreen = ({ navigation, route }) => {
         bounces={false}
       >
         <View style={styles(colors).mainContent}>
-          <View style={styles(colors).heroWrapper}>
-            <LinearGradient
-              colors={[colors.primary2, colors.primary2]}
-              style={styles(colors).heroBackground}
-            >
+          <LinearGradient
+            colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+            locations={[0, 0.4, 0.7, 1]}
+            style={styles(colors).heroBackground}
+          >
+            <View style={styles(colors).heroWrapper}>
               <View style={styles(colors).header}>
                 <TouchableOpacity
                   style={styles(colors).locationPill}
@@ -1273,161 +1254,98 @@ const HomeScreen = ({ navigation, route }) => {
                 </Animated.View>
               )}
               <Text style={styles(colors).chooseHeading}>
-                Choose a category
+                Choose a Meal Plan
               </Text>
-            </LinearGradient>
 
-            <View style={styles(colors).heroCurve}>
-              {/* Spinning Dish Background - Theme aware */}
-              <Animated.Image
-                source={
-                  isDark
-                    ? require("../../../assets/spin-dish-dark.png")
-                    : require("../../../assets/spin-dish.png")
-                }
-                style={[styles(colors).spinDishBackground, spinAnimatedStyle]}
-                resizeMode="contain"
-                // onLoad={() => }
-                onError={(error) =>
-                  console.log("Spin dish image error:", error)
-                }
+              <View style={styles(colors).heroCurve}>
+                {/* Spinning Dish Background - Theme aware */}
+                <Animated.Image
+                  source={
+                    isDark
+                      ? require("../../../assets/spin-dish-dark.png")
+                      : require("../../../assets/spin-dish.png")
+                  }
+                  style={[styles(colors).spinDishBackground, spinAnimatedStyle]}
+                  resizeMode="contain"
+                  // onLoad={() => }
+                  onError={(error) =>
+                    console.log("Spin dish image error:", error)
+                  }
+                />
+              </View>
+            </View>
+
+            <View style={styles(colors).contentSection}>
+              <Animated.FlatList
+                ref={flatListRef}
+                data={tagData || []}
+                keyExtractor={(_, index) => index.toString()}
+                scrollEventThrottle={16}
+                onScroll={scrollHandler}
+                onMomentumScrollEnd={(event) => {
+                  // Regular React Native handler as fallback
+                  const index = Math.round(
+                    event.nativeEvent.contentOffset.x / ListItemWidth
+                  );
+                  const clampedIndex = Math.max(
+                    0,
+                    Math.min(index, tagData.length - 1)
+                  );
+                  console.log("📍 [RN] Momentum ended at index:", clampedIndex);
+                  updateFocusedTag(clampedIndex, true);
+                }}
+                onScrollEndDrag={(event) => {
+                  // Regular React Native handler as fallback
+                  const index = Math.round(
+                    event.nativeEvent.contentOffset.x / ListItemWidth
+                  );
+                  const clampedIndex = Math.max(
+                    0,
+                    Math.min(index, tagData.length - 1)
+                  );
+                  console.log("📍 [RN] Drag ended at index:", clampedIndex);
+                  updateFocusedTag(clampedIndex, true);
+                }}
+                pagingEnabled
+                snapToInterval={ListItemWidth}
+                showsHorizontalScrollIndicator={false}
+                initialNumToRender={5}
+                maxToRenderPerBatch={3}
+                windowSize={7}
+                removeClippedSubviews={true}
+                style={{
+                  position: "absolute",
+                  // top: "50%",
+                  marginTop: -140, // Pushed down from -170
+                  height: 300,
+                  left: 0,
+                  right: 0,
+                }}
+                contentContainerStyle={{
+                  justifyContent: "center",
+                  alignItems: "center",
+                  paddingHorizontal: (width - ListItemWidth) / 2,
+                }}
+                horizontal
+                renderItem={({ item, index }) => {
+                  return <CircularCarouselListItem tag={item} index={index} />;
+                }}
               />
-            </View>
-          </View>
 
-          <View style={styles(colors).contentSection}>
-            <Animated.FlatList
-              ref={flatListRef}
-              data={tagData || []}
-              keyExtractor={(_, index) => index.toString()}
-              scrollEventThrottle={16}
-              onScroll={scrollHandler}
-              onMomentumScrollEnd={(event) => {
-                // Regular React Native handler as fallback
-                const index = Math.round(
-                  event.nativeEvent.contentOffset.x / ListItemWidth
-                );
-                const clampedIndex = Math.max(
-                  0,
-                  Math.min(index, tagData.length - 1)
-                );
-                console.log("📍 [RN] Momentum ended at index:", clampedIndex);
-                updateFocusedTag(clampedIndex, true);
-              }}
-              onScrollEndDrag={(event) => {
-                // Regular React Native handler as fallback
-                const index = Math.round(
-                  event.nativeEvent.contentOffset.x / ListItemWidth
-                );
-                const clampedIndex = Math.max(
-                  0,
-                  Math.min(index, tagData.length - 1)
-                );
-                console.log("📍 [RN] Drag ended at index:", clampedIndex);
-                updateFocusedTag(clampedIndex, true);
-              }}
-              pagingEnabled
-              snapToInterval={ListItemWidth}
-              showsHorizontalScrollIndicator={false}
-              initialNumToRender={5}
-              maxToRenderPerBatch={3}
-              windowSize={7}
-              removeClippedSubviews={true}
-              style={{
-                position: "absolute",
-                // top: "50%",
-                marginTop: -140, // Pushed down from -170
-                height: 300,
-                left: 0,
-                right: 0,
-              }}
-              contentContainerStyle={{
-                justifyContent: "center",
-                alignItems: "center",
-                paddingHorizontal: 1.5 * ListItemWidth,
-                paddingRight: 1.5 * ListItemWidth, // Extra spacing at the end for last item
-              }}
-              horizontal
-              renderItem={({ item, index }) => {
-                return <CircularCarouselListItem tag={item} index={index} />;
-              }}
-            />
-
-            {/* Pagination Dots */}
-            <View style={styles(colors).paginationContainer}>
-              {tagData.map((_, index) => (
-                <View
-                  key={index}
+              <View style={styles(colors).planInfoContainer}>
+                <Animated.Text
                   style={[
-                    styles(colors).paginationDot,
-                    index === currentCarouselIndex &&
-                      styles(colors).paginationDotActive,
+                    styles(colors).planDescription,
+                    descriptionAnimatedStyle,
                   ]}
-                />
-              ))}
-            </View>
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  {getTagDescription(focusedTag)}
+                </Animated.Text>
+              </View>
 
-            <View style={styles(colors).planInfoContainer}>
-              <Animated.Text
-                style={[
-                  styles(colors).planDescription,
-                  descriptionAnimatedStyle,
-                ]}
-                numberOfLines={2}
-                ellipsizeMode="tail"
-              >
-                {getTagDescription(focusedTag)}
-              </Animated.Text>
-
-              <TouchableOpacity
-                style={[
-                  styles(colors).learnMoreButton,
-                  !focusedTag && styles(colors).learnMoreButtonDisabled,
-                ]}
-                onPress={() =>
-                  focusedTag &&
-                  navigation.navigate("TagScreen", {
-                    tagId: focusedTag._id,
-                    tagName: focusedTag.name,
-                  })
-                }
-                activeOpacity={0.7}
-                disabled={!focusedTag}
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel={`Explore ${
-                  focusedTag?.name || "meal"
-                } category`}
-                accessibilityHint="Double tap to view meals in this category"
-              >
-                <Text style={styles(colors).learnMoreText}>Explore meals</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Search Bar */}
-            <View style={styles(colors).searchContainer}>
-              <TouchableOpacity
-                style={styles(colors).searchInputContainer}
-                onPress={handleSearchPress}
-                activeOpacity={0.85}
-                accessible={true}
-                accessibilityRole="search"
-                accessibilityLabel="Search meal plans"
-                accessibilityHint="Double tap to search for meal plans"
-              >
-                <CustomIcon
-                  name="search-filled"
-                  size={20}
-                  color={colors.textMuted}
-                  style={styles(colors).searchIcon}
-                />
-                <Text style={styles(colors).searchPlaceholder}>
-                  Browse meal plans...
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Custom Meal Plan Button
+              {/* Custom Meal Plan Button
             <View style={styles(colors).customPlanContainer}>
               <TouchableOpacity
                 style={styles(colors).customPlanCard}
@@ -1467,28 +1385,63 @@ const HomeScreen = ({ navigation, route }) => {
                 </LinearGradient>
               </TouchableOpacity>
             </View> */}
-          </View>
+            </View>
 
-          {/* Circular Reveal Animation - Reference Style */}
-          <RNAnimated.View
-            pointerEvents="none"
-            style={[
-              styles(colors).circleBackground,
-              {
-                transform: [
-                  {
-                    scale: circleAnimation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 50],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
+            {/* Circular Reveal Animation - Reference Style */}
+            <RNAnimated.View
+              pointerEvents="none"
+              style={[
+                styles(colors).circleBackground,
+                {
+                  transform: [
+                    {
+                      scale: circleAnimation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 50],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+          </LinearGradient>
         </View>
       </ScrollView>
-      <SafeAreaView style={styles(colors).bottomSafeArea} edges={["bottom"]} />
+      <SafeAreaView style={styles(colors).bottomSafeArea} edges={["bottom"]}>
+        {/* Pagination Dots */}
+        <View style={styles(colors).paginationContainer}>
+          {tagData.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles(colors).paginationDot,
+                index === currentCarouselIndex &&
+                  styles(colors).paginationDotActive,
+              ]}
+            />
+          ))}
+        </View>
+        
+        <TouchableOpacity
+          style={[
+            styles(colors).learnMoreButton,
+            !focusedTag && styles(colors).learnMoreButtonDisabled,
+          ]}
+          onPress={() =>
+            navigation.navigate("TagScreen", {
+              tagId: focusedTag?._id,
+              tagName: focusedTag?.name,
+            })
+          }
+          activeOpacity={0.7}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Browse meal plans"
+          accessibilityHint="Double tap to browse meal plans"
+        >
+          <Text style={styles(colors).learnMoreText}>Explore meals</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
     </SafeAreaView>
   );
 };
@@ -1504,27 +1457,29 @@ const styles = (colors) =>
     },
     scrollContent: {
       flexGrow: 1,
-      minHeight: height, // Ensure minimum height equals screen height
+      // minHeight: height, // Ensure minimum height equals screen height
       paddingTop: 0,
       paddingBottom: 0,
     },
     bottomSafeArea: {
       backgroundColor: colors.background,
+      paddingHorizontal: 16,
+      paddingTop: 8,
     },
     mainContent: {
       flex: 1,
-      minHeight: height - statusBarHeight, // Minimum height for fixed layout
+      // minHeight: height - statusBarHeight, // Minimum height for fixed layout
     },
     contentSection: {
       // height: 380,
       position: "relative",
-      marginTop: verticalScale(30),
+      marginTop: verticalScale(40),
     },
     heroWrapper: {
       position: "relative",
+      paddingHorizontal: scale(50),
     },
     heroBackground: {
-      paddingHorizontal: scale(50),
       paddingTop: verticalScale(15),
       paddingBottom: verticalScale(isSmallScreen ? 60 : 80),
     },
@@ -1583,35 +1538,38 @@ const styles = (colors) =>
     },
     heroImageContainer: {
       marginTop: verticalScale(16),
+      // padding: scale(10),
       alignItems: "center",
       justifyContent: "center",
     },
     heroImageWrapper: {
       width: heroImageSize,
       height: heroImageSize,
+      // padding: scale(10),
       alignItems: "center",
       justifyContent: "center",
       ...getShadowStyle({
         shadowColor: colors.shadow,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
+        shadowOffset: { width: 10, height: 8 },
+        shadowOpacity: 0.7,
+        shadowRadius: 0,
       }),
     },
     chooseHeading: {
+      position: "relative",
+      bottom: verticalScale(getResponsiveValue(20, 40, 60, 90)),
       fontSize: moderateScale(getResponsiveValue(12, 14, 16, 18)),
       fontWeight: "700",
       color: colors.white,
       textAlign: "center",
-      paddingTop: verticalScale(12),
+      marginBottom: verticalScale(42),
     },
     planBadge: {
-      position: "absolute",
-      bottom: verticalScale(getResponsiveValue(80, 100, 120, 150)),
+      position: "relative",
+      bottom: verticalScale(getResponsiveValue(20, 40, 60, 90)),
       alignSelf: "center",
       backgroundColor: colors.white,
-      paddingHorizontal: scale(18),
-      paddingVertical: verticalScale(12),
+      // 
       marginBottom: verticalScale(8),
       borderRadius: moderateScale(20),
       ...getShadowStyle({
@@ -1623,12 +1581,14 @@ const styles = (colors) =>
     },
     planBadgeText: {
       fontSize: moderateScale(getResponsiveValue(16, 20, 22, 26)),
+      paddingHorizontal: scale(18),
+      paddingVertical: verticalScale(12),
       fontWeight: "700",
       color: colors.primary2,
     },
     spinDishBackground: {
       position: "absolute",
-      top: verticalScale(0),
+      // top: verticalScale(0),
       left: "50%",
       marginLeft: -scale(300), // Half of responsive width to center
       width: scale(600), // Responsive size
@@ -1636,32 +1596,44 @@ const styles = (colors) =>
       zIndex: 0, // Behind all content
     },
     planInfoContainer: {
-      position: "absolute",
+      // position: "absolute",
       top: verticalScale(30), // Position at top
       left: 0,
       right: 0,
       alignItems: "center",
       paddingHorizontal: scale(20),
-      paddingBottom: verticalScale(15),
+      // paddingBottom: verticalScale(15),
     },
     planDescription: {
       fontSize: moderateScale(14),
-      color: colors.textSecondary,
+      color: colors.text,
       textAlign: "center",
       lineHeight: moderateScale(20),
-      marginBottom: verticalScale(10), // Changed to bottom margin
+      fontWeight: "500",
+      // marginBottom: verticalScale(10), // Changed to bottom margin
     },
     learnMoreButton: {
-      // marginTop: verticalScale(8),
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
     },
     learnMoreButtonDisabled: {
       opacity: 0.5,
     },
     learnMoreText: {
-      fontSize: 14,
-      color: colors.primary,
+      fontSize: 16,
+      color: colors.primary2,
       fontWeight: "600",
-      textDecorationLine: "underline",
     },
     searchContainer: {
       position: "absolute",
@@ -1715,7 +1687,7 @@ const styles = (colors) =>
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
-      bottom: Platform.OS === "android" ? verticalScale(12) : verticalScale(2), // Higher position on Android
+      // bottom: Platform.OS === "android" ? verticalScale(12) : verticalScale(2), // Higher position on Android
       paddingVertical: verticalScale(8),
       paddingBottom:
         Platform.OS === "android" ? verticalScale(15) : verticalScale(8), // Extra padding for navigation buttons

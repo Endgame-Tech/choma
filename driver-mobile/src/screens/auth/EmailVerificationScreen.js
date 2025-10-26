@@ -262,7 +262,7 @@ const EmailVerificationScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#652815" />
+      <StatusBar barStyle="light-content" backgroundColor="#004432" />
 
       {/* Background with brown color and pattern */}
       <View style={styles.backgroundContainer}>
@@ -417,7 +417,7 @@ const EmailVerificationScreen = ({ navigation, route }) => {
 const styles = createStylesWithDMSans({
   container: {
     flex: 1,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
   },
   backgroundContainer: {
     flex: 1,
@@ -429,7 +429,7 @@ const styles = createStylesWithDMSans({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     opacity: 0.8, // Subtle pattern overlay
   },
   backgroundImageStyle: {
@@ -533,13 +533,13 @@ const styles = createStylesWithDMSans({
     backgroundColor: "#E6B17A10",
   },
   verifyButton: {
-    backgroundColor: "#652815",
+    backgroundColor: "#004432",
     borderRadius: 25,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
-    shadowColor: "#652815",
+    shadowColor: "#004432",
     shadowOffset: {
       width: 0,
       height: 4,

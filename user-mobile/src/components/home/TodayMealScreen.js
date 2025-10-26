@@ -19,11 +19,11 @@ import { createStylesWithDMSans } from "../../utils/fontUtils";
 import apiService from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import ChomaLogo from "../ui/ChomaLogo";
+import CustomIcon from "../ui/CustomIcon";
 
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.85;
 const CARD_SPACING = 20;
-const BACKGROUND_COLOR = "#552111";
 
 const TodayMealScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -52,7 +52,10 @@ const TodayMealScreen = ({ navigation, route }) => {
         const data = dashboardResult.data;
 
         if (data.hasActiveSubscription && data.activeSubscription) {
-          console.log("✅ Setting active subscription:", data.activeSubscription.planName);
+          console.log(
+            "✅ Setting active subscription:",
+            data.activeSubscription.planName
+          );
           setActiveSubscription(data.activeSubscription);
 
           // Set current meal
@@ -66,7 +69,9 @@ const TodayMealScreen = ({ navigation, route }) => {
             setAdjacentMeals(data.mealTimeline);
 
             // Find current meal index in timeline (today's meal)
-            const todayIndex = data.mealTimeline.findIndex((meal) => meal.isToday);
+            const todayIndex = data.mealTimeline.findIndex(
+              (meal) => meal.isToday
+            );
             if (todayIndex !== -1) {
               setCurrentIndex(todayIndex);
               console.log("📍 Today's meal index:", todayIndex);
@@ -123,9 +128,18 @@ const TodayMealScreen = ({ navigation, route }) => {
       meal?.isToday || (currentMeal && meal?._id === currentMeal._id);
 
     // Extract meal data from the backend structure
-    const mealImage = meal?.imageUrl || meal?.meals?.[0]?.image || meal?.image || meal?.mealImage;
-    const mealName = meal?.customTitle || meal?.meals?.[0]?.name || meal?.name || meal?.mealName;
-    const mealCalories = meal?.meals?.[0]?.nutrition?.calories || meal?.calories;
+    const mealImage =
+      meal?.imageUrl ||
+      meal?.meals?.[0]?.image ||
+      meal?.image ||
+      meal?.mealImage;
+    const mealName =
+      meal?.customTitle ||
+      meal?.meals?.[0]?.name ||
+      meal?.name ||
+      meal?.mealName;
+    const mealCalories =
+      meal?.meals?.[0]?.nutrition?.calories || meal?.calories;
 
     return (
       <View
@@ -150,9 +164,7 @@ const TodayMealScreen = ({ navigation, route }) => {
             {mealName || "Today's Special"}
           </Text>
           {mealCalories && (
-            <Text style={styles(colors).mealCalories}>
-              {mealCalories} cal
-            </Text>
+            <Text style={styles(colors).mealCalories}>{mealCalories} cal</Text>
           )}
         </LinearGradient>
       </View>
@@ -162,19 +174,26 @@ const TodayMealScreen = ({ navigation, route }) => {
   if (loading) {
     return (
       <SafeAreaView style={styles(colors).container}>
-        <StatusBar barStyle="light-content" backgroundColor={BACKGROUND_COLOR} />
-        <ImageBackground
-          source={require("../../../assets/patternchoma.png")}
-          resizeMode="repeat"
-          style={styles(colors).backgroundPattern}
-          imageStyle={styles(colors).backgroundImageStyle}
-        />
-        <View style={styles(colors).loadingContainer}>
-          <ActivityIndicator size="large" color={colors.white} />
-          <Text style={styles(colors).loadingText}>
-            Loading today's meal...
-          </Text>
-        </View>
+        <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
+        <LinearGradient
+          colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+          locations={[0, 0.4, 0.7, 1]}
+          style={styles(colors).backgroundGradient}
+        >
+          {/* Pattern overlay on gradient */}
+          <ImageBackground
+            source={require("../../../assets/patternchoma.png")}
+            style={styles(colors).backgroundPattern}
+            resizeMode="repeat"
+            imageStyle={styles(colors).backgroundImageStyle}
+          />
+          <View style={styles(colors).loadingContainer}>
+            <ActivityIndicator size="large" color={colors.white} />
+            <Text style={styles(colors).loadingText}>
+              Loading today's meal...
+            </Text>
+          </View>
+        </LinearGradient>
       </SafeAreaView>
     );
   }
@@ -184,87 +203,97 @@ const TodayMealScreen = ({ navigation, route }) => {
     adjacentMeals.length > 0 ? adjacentMeals : currentMeal ? [currentMeal] : [];
 
   return (
-    <SafeAreaView style={styles(colors).container} edges={["top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={BACKGROUND_COLOR} />
+    <View style={styles(colors).container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
 
-      {/* Background Pattern */}
-      <ImageBackground
-        source={require("../../../assets/patternchoma.png")}
-        resizeMode="repeat"
-        style={styles(colors).backgroundPattern}
-        imageStyle={styles(colors).backgroundImageStyle}
-      />
+      {/* Background with gradient */}
+      <LinearGradient
+        colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+        locations={[0, 0.4, 0.7, 1]}
+        style={styles(colors).backgroundGradient}
+      >
+        {/* Pattern overlay on gradient */}
+        <ImageBackground
+          source={require("../../../assets/patternchoma.png")}
+          style={styles(colors).backgroundPattern}
+          resizeMode="repeat"
+          imageStyle={styles(colors).backgroundImageStyle}
+        />
 
-      {/* Content */}
-      <View style={styles(colors).background}>
-        {/* Back Button */}
-        <TouchableOpacity
-          style={styles(colors).backButton}
-          onPress={handleGoBack}
-          activeOpacity={0.7}
-        >
-          <Text style={styles(colors).backButtonText}>←</Text>
-        </TouchableOpacity>
-
-        {/* Logo */}
-        <View style={styles(colors).logoContainer}>
-          <ChomaLogo width={140} height={78} />
-        </View>
-
-        {/* Title */}
-        <Text style={styles(colors).title}>My Today's{"\n"}Meal</Text>
-
-        {/* Meal Carousel */}
-        {mealsToDisplay.length > 0 ? (
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={CARD_WIDTH + CARD_SPACING}
-            decelerationRate="fast"
-            contentContainerStyle={styles(colors).carouselContent}
-            onMomentumScrollEnd={(event) => {
-              const index = Math.round(
-                event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_SPACING)
-              );
-              setCurrentIndex(index);
-            }}
-            style={styles(colors).carousel}
+        {/* SafeAreaView for top content */}
+        <SafeAreaView style={styles(colors).safeAreaTop} edges={["top"]}>
+          {/* Content */}
+          <View style={styles(colors).background}>
+          {/* Back Button */}
+          <TouchableOpacity
+            style={styles(colors).backButton}
+            onPress={handleGoBack}
+            activeOpacity={0.7}
           >
-            {mealsToDisplay.map((meal, index) => renderMealCard(meal, index))}
-          </ScrollView>
-        ) : (
-          <View style={styles(colors).noMealContainer}>
-            <Text style={styles(colors).noMealText}>
-              No meal scheduled for today
-            </Text>
+            <CustomIcon name="chevron-back" size={20} color={colors.white} />
+          </TouchableOpacity>
+
+          {/* Logo */}
+          <View style={styles(colors).logoContainer}>
+            <ChomaLogo width={140} height={78} />
           </View>
-        )}
 
-        {/* Buttons - Updated to match reference image */}
-        <View style={styles(colors).buttonsContainer}>
-          {/* Primary Button - Explore My Plan */}
-          <TouchableOpacity
-            style={styles(colors).primaryButton}
-            onPress={handleExploreMyPlan}
-            activeOpacity={0.8}
-          >
-            <Text style={styles(colors).primaryButtonText}>
-              Explore my plan
-            </Text>
-          </TouchableOpacity>
+          {/* Title */}
+          <Text style={styles(colors).title}>My Today's{"\n"}Meal</Text>
 
-          {/* Secondary Button - Search (Circular) */}
-          <TouchableOpacity
-            style={styles(colors).secondaryButton}
-            onPress={handleSearch}
-            activeOpacity={0.8}
-          >
-            <Text style={styles(colors).secondaryButtonText}>🔍</Text>
-          </TouchableOpacity>
+          {/* Meal Carousel */}
+          {mealsToDisplay.length > 0 ? (
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={CARD_WIDTH + CARD_SPACING}
+              decelerationRate="fast"
+              contentContainerStyle={styles(colors).carouselContent}
+              onMomentumScrollEnd={(event) => {
+                const index = Math.round(
+                  event.nativeEvent.contentOffset.x /
+                    (CARD_WIDTH + CARD_SPACING)
+                );
+                setCurrentIndex(index);
+              }}
+              style={styles(colors).carousel}
+            >
+              {mealsToDisplay.map((meal, index) => renderMealCard(meal, index))}
+            </ScrollView>
+          ) : (
+            <View style={styles(colors).noMealContainer}>
+              <Text style={styles(colors).noMealText}>
+                No meal scheduled for today
+              </Text>
+            </View>
+          )}
+
+          {/* Buttons - Updated to match reference image */}
+          <View style={styles(colors).buttonsContainer}>
+            {/* Primary Button - Explore My Plan */}
+            <TouchableOpacity
+              style={styles(colors).primaryButton}
+              onPress={handleExploreMyPlan}
+              activeOpacity={0.8}
+            >
+              <Text style={styles(colors).primaryButtonText}>
+                Explore my plan
+              </Text>
+            </TouchableOpacity>
+
+            {/* Secondary Button - Search (Circular) */}
+            <TouchableOpacity
+              style={styles(colors).secondaryButton}
+              onPress={handleSearch}
+              activeOpacity={0.8}
+            >
+              <Text style={styles(colors).secondaryButtonText}>🔍</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -273,7 +302,10 @@ const styles = (colors) =>
   createStylesWithDMSans({
     container: {
       flex: 1,
-      backgroundColor: BACKGROUND_COLOR,
+      position: "relative",
+    },
+    backgroundGradient: {
+      flex: 1,
       position: "relative",
     },
     backgroundPattern: {
@@ -282,8 +314,7 @@ const styles = (colors) =>
       right: 0,
       bottom: 0,
       left: 0,
-      opacity: 0.8,
-      backgroundColor: BACKGROUND_COLOR,
+      opacity: 0.15, // Subtle pattern overlay
     },
     backgroundImageStyle: {
       opacity: 1,
@@ -422,7 +453,7 @@ const styles = (colors) =>
     primaryButtonText: {
       fontSize: 18,
       fontWeight: "700",
-      color: "#652815",
+      color: "#004432",
     },
     secondaryButton: {
       width: 60,
