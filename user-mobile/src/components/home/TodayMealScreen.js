@@ -22,17 +22,18 @@ import ChomaLogo from "../ui/ChomaLogo";
 import CustomIcon from "../ui/CustomIcon";
 
 const { width, height } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.85;
-const CARD_SPACING = 20;
+const CARD_WIDTH = width * 0.75;
+const CARD_SPACING = 10;
 
 const TodayMealScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
   const scrollViewRef = useRef(null);
+  const scrollX = useRef(new Animated.Value(0)).current;
 
   const [loading, setLoading] = useState(true);
   const [currentMeal, setCurrentMeal] = useState(null);
-  const [adjacentMeals, setAdjacentMeals] = useState([]);
+  const [todaysMealSlots, setTodaysMealSlots] = useState([]);
   const [activeSubscription, setActiveSubscription] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -40,11 +41,114 @@ const TodayMealScreen = ({ navigation, route }) => {
     loadTodayMeal();
   }, []);
 
+  // ✨ Helper function to extract today's meal slots from mealPlanSnapshot.mealSchedule
+  // Logic: Find the FIRST un-delivered meal, then show all meal slots for that same day
+  const getTodaysMealSlotsFromSnapshot = (subscription) => {
+    try {
+      const snapshot = subscription?.mealPlanSnapshot;
+      if (!snapshot || !snapshot.mealSchedule) {
+        console.log("⚠️ No mealPlanSnapshot.mealSchedule found");
+        return [];
+      }
+
+      const mealSchedule = snapshot.mealSchedule;
+      console.log("📅 mealSchedule items:", mealSchedule.length);
+
+      // STEP 1: Find the FIRST un-delivered meal
+      const firstUndeliveredMeal = mealSchedule.find((slot) => {
+        return slot.deliveryStatus !== "delivered";
+      });
+
+      console.log("🔍 First un-delivered meal search:", {
+        found: !!firstUndeliveredMeal,
+        deliveryStatus: firstUndeliveredMeal?.deliveryStatus,
+        weekNumber: firstUndeliveredMeal?.weekNumber,
+        dayOfWeek: firstUndeliveredMeal?.dayOfWeek,
+        dayName: firstUndeliveredMeal?.dayName,
+        mealTime: firstUndeliveredMeal?.mealTime,
+      });
+
+      if (!firstUndeliveredMeal) {
+        console.log(
+          "⚠️ No un-delivered meals found - all meals have been delivered"
+        );
+        return [];
+      }
+
+      // STEP 2: Get the day identifier from the first un-delivered meal
+      const targetWeekNumber = firstUndeliveredMeal.weekNumber;
+      const targetDayOfWeek = firstUndeliveredMeal.dayOfWeek;
+      const targetDayName = firstUndeliveredMeal.dayName;
+
+      console.log("📅 Looking for all meal slots on this day:", {
+        weekNumber: targetWeekNumber,
+        dayOfWeek: targetDayOfWeek,
+        dayName: targetDayName,
+      });
+
+      // STEP 3: Find ALL meal slots for that same day (breakfast, lunch, dinner)
+      const todaysMealSlots = mealSchedule.filter((slot) => {
+        return (
+          slot.weekNumber === targetWeekNumber &&
+          slot.dayOfWeek === targetDayOfWeek
+        );
+      });
+
+      console.log("📅 Found today's meal slots:", todaysMealSlots.length);
+      todaysMealSlots.forEach((slot, index) => {
+        console.log(`📋 Slot ${index}:`, {
+          mealTime: slot.mealTime,
+          customTitle: slot.customTitle,
+          customDescription: slot.customDescription,
+          imageUrl: slot.imageUrl,
+          deliveryStatus: slot.deliveryStatus,
+          mealsCount: slot.meals?.length || 0,
+        });
+      });
+
+      if (todaysMealSlots.length === 0) {
+        console.log("⚠️ No meal slots found for this day");
+        return [];
+      }
+
+      // STEP 4: Sort meal slots by meal time order (Breakfast → Lunch → Dinner)
+      const mealTimeOrder = {
+        breakfast: 1,
+        lunch: 2,
+        dinner: 3,
+      };
+
+      todaysMealSlots.sort((a, b) => {
+        const timeA = a.mealTime?.toLowerCase() || "";
+        const timeB = b.mealTime?.toLowerCase() || "";
+        return (mealTimeOrder[timeA] || 999) - (mealTimeOrder[timeB] || 999);
+      });
+
+      console.log(
+        "📅 Sorted meal slots:",
+        todaysMealSlots.map((s) => s.mealTime)
+      );
+
+      // STEP 5: Return each slot separately (breakfast, lunch, dinner)
+      // Each slot has its own customTitle, customDescription, imageUrl
+      console.log("✅ getTodaysMealSlotsFromSnapshot returning:", {
+        slotsCount: todaysMealSlots.length,
+        titles: todaysMealSlots.map((s) => s.customTitle),
+        imageUrls: todaysMealSlots.map((s) => s.imageUrl),
+      });
+
+      return todaysMealSlots;
+    } catch (error) {
+      console.error("❌ Error extracting meal slots from snapshot:", error);
+      return [];
+    }
+  };
+
   const loadTodayMeal = async () => {
     try {
       setLoading(true);
 
-      // ✨ NEW: Single unified API call instead of 3 sequential calls
+      // ✨ Single unified API call to get subscription with mealPlanSnapshot
       const dashboardResult = await apiService.getMealDashboard();
       console.log("📋 Unified dashboard result:", dashboardResult);
 
@@ -52,30 +156,46 @@ const TodayMealScreen = ({ navigation, route }) => {
         const data = dashboardResult.data;
 
         if (data.hasActiveSubscription && data.activeSubscription) {
+          const subscription = data.activeSubscription;
           console.log(
             "✅ Setting active subscription:",
-            data.activeSubscription.planName
+            subscription.mealPlanSnapshot?.planName || subscription.planName
           );
-          setActiveSubscription(data.activeSubscription);
 
-          // Set current meal
-          if (data.currentMeal) {
-            setCurrentMeal(data.currentMeal);
-            console.log("🍽️ Current meal:", data.currentMeal.customTitle);
-          }
+          // ✨ DEBUG: Check if mealPlanSnapshot exists
+          console.log("📦 Subscription has mealPlanSnapshot:", {
+            hasMealPlanSnapshot: !!subscription.mealPlanSnapshot,
+            hasMealSchedule: !!subscription.mealPlanSnapshot?.mealSchedule,
+            mealScheduleLength:
+              subscription.mealPlanSnapshot?.mealSchedule?.length || 0,
+            firstSlotCustomTitle:
+              subscription.mealPlanSnapshot?.mealSchedule?.[0]?.customTitle,
+            firstSlotImageUrl:
+              subscription.mealPlanSnapshot?.mealSchedule?.[0]?.imageUrl,
+          });
 
-          // Set timeline meals (already transformed by backend)
-          if (data.mealTimeline && data.mealTimeline.length > 0) {
-            setAdjacentMeals(data.mealTimeline);
+          setActiveSubscription(subscription);
 
-            // Find current meal index in timeline (today's meal)
-            const todayIndex = data.mealTimeline.findIndex(
-              (meal) => meal.isToday
+          // Load meal slots from mealPlanSnapshot.mealSchedule
+          const mealSlots = getTodaysMealSlotsFromSnapshot(subscription);
+          console.log("📥 mealSlots result:", mealSlots.length, "slots");
+
+          if (mealSlots.length > 0) {
+            setTodaysMealSlots(mealSlots);
+            setCurrentMeal(mealSlots[0]); // Set first slot as current
+            console.log(
+              "✅ Today's meal slots loaded from snapshot:",
+              mealSlots.length,
+              "slots"
             );
-            if (todayIndex !== -1) {
-              setCurrentIndex(todayIndex);
-              console.log("📍 Today's meal index:", todayIndex);
-            }
+            console.log("📥 First slot:", {
+              customTitle: mealSlots[0].customTitle,
+              customDescription: mealSlots[0].customDescription,
+              imageUrl: mealSlots[0].imageUrl,
+              mealsCount: mealSlots[0].meals?.length || 0,
+            });
+          } else {
+            console.log("⚠️ No meal slots found in snapshot");
           }
         } else {
           console.log("ℹ️ No active subscription found");
@@ -118,34 +238,61 @@ const TodayMealScreen = ({ navigation, route }) => {
     navigation.navigate("Home", { skipSubscriptionCheck: true });
   };
 
-  const renderMealCard = (meal, index) => {
-    const isCenter = index === currentIndex;
-    const isMealToday =
-      meal?.isToday || (currentMeal && meal?._id === currentMeal._id);
+  const renderMealCard = (mealSlot, index) => {
+    // Extract slot data - these come directly from mealPlanSnapshot.mealSchedule
+    const slotImage = mealSlot?.imageUrl;
+    const slotTitle = mealSlot?.customTitle || "Today's Meal";
+    const slotDescription = mealSlot?.customDescription || "";
 
-    // Extract meal data from the backend structure
-    const mealImage =
-      meal?.imageUrl ||
-      meal?.meals?.[0]?.image ||
-      meal?.image ||
-      meal?.mealImage;
-    const mealName =
-      meal?.customTitle ||
-      meal?.meals?.[0]?.name ||
-      meal?.name ||
-      meal?.mealName;
-    const mealCalories =
-      meal?.meals?.[0]?.nutrition?.calories || meal?.calories;
+    // Calculate total calories from all meals in this slot
+    const totalCalories =
+      mealSlot?.meals?.reduce((sum, meal) => {
+        return sum + (meal?.nutrition?.calories || 0);
+      }, 0) || 0;
+
+    console.log(`🎴 Rendering card ${index}:`, {
+      slotTitle,
+      slotImage,
+      mealsCount: mealSlot?.meals?.length || 0,
+      totalCalories,
+    });
+
+    // Calculate input range for this card
+    const inputRange = [
+      (index - 1) * (CARD_WIDTH + CARD_SPACING),
+      index * (CARD_WIDTH + CARD_SPACING),
+      (index + 1) * (CARD_WIDTH + CARD_SPACING),
+    ];
+
+    // Animate scale: 0.9 when off-center, 1.0 when centered
+    const scale = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.9, 1, 0.9],
+      extrapolate: "clamp",
+    });
+
+    // Animate opacity: 0.7 when off-center, 1.0 when centered
+    const opacity = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.7, 1, 0.7],
+      extrapolate: "clamp",
+    });
 
     return (
-      <View
-        key={meal?._id || meal?.assignmentId || index}
-        style={[styles(colors).mealCard, isCenter && styles(colors).centerCard]}
+      <Animated.View
+        key={mealSlot?._id || mealSlot?.assignmentId || index}
+        style={[
+          styles(colors).mealCard,
+          {
+            transform: [{ scale }],
+            opacity,
+          },
+        ]}
       >
         <Image
           source={
-            mealImage
-              ? { uri: mealImage }
+            slotImage
+              ? { uri: slotImage }
               : require("../../../assets/authImage.png")
           }
           style={styles(colors).mealImage}
@@ -156,14 +303,17 @@ const TodayMealScreen = ({ navigation, route }) => {
           colors={["transparent", "rgba(0,0,0,0.7)"]}
           style={styles(colors).mealInfoOverlay}
         >
-          <Text style={styles(colors).mealName}>
-            {mealName || "Today's Special"}
-          </Text>
-          {mealCalories && (
-            <Text style={styles(colors).mealCalories}>{mealCalories} cal</Text>
+          <Text style={styles(colors).mealName}>{slotTitle}</Text>
+          {slotDescription ? (
+            <Text style={styles(colors).mealDescription}>
+              {slotDescription}
+            </Text>
+          ) : null}
+          {totalCalories > 0 && (
+            <Text style={styles(colors).mealCalories}>{totalCalories} cal</Text>
           )}
         </LinearGradient>
-      </View>
+      </Animated.View>
     );
   };
 
@@ -194,9 +344,8 @@ const TodayMealScreen = ({ navigation, route }) => {
     );
   }
 
-  // Prepare meals array for carousel
-  const mealsToDisplay =
-    adjacentMeals.length > 0 ? adjacentMeals : currentMeal ? [currentMeal] : [];
+  // Prepare meal slots array for carousel (breakfast, lunch, dinner)
+  const mealSlotsToDisplay = todaysMealSlots.length > 0 ? todaysMealSlots : [];
 
   return (
     <View style={styles(colors).container}>
@@ -220,51 +369,70 @@ const TodayMealScreen = ({ navigation, route }) => {
         <SafeAreaView style={styles(colors).safeAreaTop} edges={["top"]}>
           {/* Content */}
           <View style={styles(colors).background}>
-          {/* Back Button */}
-          <TouchableOpacity
-            style={styles(colors).backButton}
-            onPress={handleGoBack}
-            activeOpacity={0.7}
-          >
-            <CustomIcon name="chevron-back" size={20} color={colors.white} />
-          </TouchableOpacity>
-
-          {/* Logo */}
-          <View style={styles(colors).logoContainer}>
-            <ChomaLogo width={140} height={78} />
-          </View>
-
-          {/* Title */}
-          <Text style={styles(colors).title}>My Today's{"\n"}Meal</Text>
-
-          {/* Meal Carousel */}
-          {mealsToDisplay.length > 0 ? (
-            <ScrollView
-              ref={scrollViewRef}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={CARD_WIDTH + CARD_SPACING}
-              decelerationRate="fast"
-              contentContainerStyle={styles(colors).carouselContent}
-              onMomentumScrollEnd={(event) => {
-                const index = Math.round(
-                  event.nativeEvent.contentOffset.x /
-                    (CARD_WIDTH + CARD_SPACING)
-                );
-                setCurrentIndex(index);
-              }}
-              style={styles(colors).carousel}
+            {/* Back Button */}
+            <TouchableOpacity
+              style={styles(colors).backButton}
+              onPress={handleGoBack}
+              activeOpacity={0.7}
             >
-              {mealsToDisplay.map((meal, index) => renderMealCard(meal, index))}
-            </ScrollView>
-          ) : (
-            <View style={styles(colors).noMealContainer}>
-              <Text style={styles(colors).noMealText}>
-                No meal scheduled for today
-              </Text>
+              <CustomIcon name="chevron-back" size={20} color={colors.white} />
+            </TouchableOpacity>
+
+            {/* Logo */}
+            <View style={styles(colors).logoContainer}>
+              <ChomaLogo width={140} height={78} />
             </View>
-          )}
+
+            {/* Title */}
+            <Text style={styles(colors).title}>My Today's{"\n"}Meal</Text>
+
+            {/* Meal Time Badge - Shows current slot (breakfast, lunch, dinner) */}
+            {mealSlotsToDisplay.length > 0 && (
+              <View style={styles(colors).mealTimeBadgeContainer}>
+                <View style={styles(colors).mealTimeBadge}>
+                  <Text style={styles(colors).mealTimeBadgeText}>
+                    {mealSlotsToDisplay[currentIndex]?.mealTime || "Meal"}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Meal Carousel */}
+            {mealSlotsToDisplay.length > 0 ? (
+              <Animated.ScrollView
+                ref={scrollViewRef}
+                horizontal
+                pagingEnabled={false}
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={CARD_WIDTH + CARD_SPACING}
+                snapToAlignment="start"
+                decelerationRate="fast"
+                contentContainerStyle={styles(colors).carouselContent}
+                onScroll={Animated.event(
+                  [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                  { useNativeDriver: true }
+                )}
+                scrollEventThrottle={16}
+                onMomentumScrollEnd={(event) => {
+                  const index = Math.round(
+                    event.nativeEvent.contentOffset.x /
+                      (CARD_WIDTH + CARD_SPACING)
+                  );
+                  setCurrentIndex(index);
+                }}
+                style={styles(colors).carousel}
+              >
+                {mealSlotsToDisplay.map((mealSlot, index) =>
+                  renderMealCard(mealSlot, index)
+                )}
+              </Animated.ScrollView>
+            ) : (
+              <View style={styles(colors).noMealContainer}>
+                <Text style={styles(colors).noMealText}>
+                  No meal scheduled for today
+                </Text>
+              </View>
+            )}
           </View>
         </SafeAreaView>
 
@@ -371,33 +539,48 @@ const styles = (colors) =>
       marginBottom: 20,
       // lineHeight: 40,
     },
+    mealTimeBadgeContainer: {
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    mealTimeBadge: {
+      backgroundColor: "#F7AE1A",
+      paddingHorizontal: 24,
+      paddingVertical: 10,
+      borderRadius: 20,
+      shadowColor: "#F7AE1A",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    mealTimeBadgeText: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: "#004432",
+      textTransform: "capitalize",
+      letterSpacing: 0.5,
+    },
     carousel: {
       flexGrow: 0,
-      marginBottom: 40,
+      // marginBottom: 40,
     },
     carouselContent: {
       paddingHorizontal: (width - CARD_WIDTH) / 2,
       gap: CARD_SPACING,
-      paddingVertical: 30,
+      // paddingVertical: 30,
     },
     mealCard: {
       width: CARD_WIDTH,
       height: height * 0.55,
       borderRadius: 24,
-
       overflow: "hidden",
       backgroundColor: colors.white,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.3,
       shadowRadius: 12,
-      elevation: 8,
-      transform: [{ scale: 0.9 }],
-      opacity: 0.7,
-    },
-    centerCard: {
-      transform: [{ scale: 1 }],
-      opacity: 1,
+      // elevation: 8,
     },
     mealImage: {
       width: "100%",
@@ -409,12 +592,19 @@ const styles = (colors) =>
       left: 0,
       right: 0,
       padding: 20,
-      paddingBottom: 30,
+      // paddingBottom: 30,
     },
     mealName: {
       fontSize: 24,
       fontWeight: "700",
       color: colors.white,
+      marginBottom: 8,
+    },
+    mealDescription: {
+      fontSize: 14,
+      fontWeight: "400",
+      color: colors.white,
+      opacity: 0.85,
       marginBottom: 8,
     },
     mealCalories: {

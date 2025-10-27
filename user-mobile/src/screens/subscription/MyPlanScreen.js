@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   StatusBar,
   Image,
   ImageBackground,
+  Dimensions,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,6 +23,9 @@ const PRIMARY_GOLD = "#F7AE1A";
 const PRIMARY_GOLD_DARK = "#D88908";
 const CARD_SURFACE = "rgba(255,255,255,0.06)";
 const RICH_BROWN = "#4A1B0A";
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const CARD_WIDTH = SCREEN_WIDTH * 0.8; // 80% of screen width
+const CARD_SPACING = 6; // Space between cards
 
 const getPlanDisplayName = (subscription) => {
   if (!subscription) return "Meal Plan";
@@ -63,6 +68,7 @@ const getPlanDisplayName = (subscription) => {
 const MyPlanScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
   const { subscription: subscriptionParam } = route.params || {};
+  const scrollX = useRef(new Animated.Value(0)).current;
 
   const [loading, setLoading] = useState(true);
   const [activeSubscription, setActiveSubscription] = useState(null);
@@ -70,10 +76,149 @@ const MyPlanScreen = ({ navigation, route }) => {
   const [todaysMeals, setTodaysMeals] = useState([]);
   const [showManagementModal, setShowManagementModal] = useState(false);
   const [managementModalTab, setManagementModalTab] = useState("overview");
+  const [selectedMealIndex, setSelectedMealIndex] = useState(0);
 
   useEffect(() => {
     loadPlanData();
   }, []);
+
+  // ✨ Helper function to extract today's meals from mealPlanSnapshot.mealSchedule
+  // Logic: Find the FIRST un-delivered meal, then show all meals for that same day
+  const getTodaysMealsFromSnapshot = (subscription) => {
+    try {
+      const snapshot = subscription?.mealPlanSnapshot;
+      if (!snapshot || !snapshot.mealSchedule) {
+        console.log("⚠️ No mealPlanSnapshot.mealSchedule found");
+        return [];
+      }
+
+      const mealSchedule = snapshot.mealSchedule;
+      console.log("📅 mealSchedule items:", mealSchedule.length);
+
+      // STEP 1: Find the FIRST un-delivered meal
+      // ✨ deliveryStatus tells us if a meal has been delivered
+      const firstUndeliveredMeal = mealSchedule.find((slot) => {
+        return slot.deliveryStatus !== "delivered";
+      });
+
+      console.log("🔍 First un-delivered meal search:", {
+        found: !!firstUndeliveredMeal,
+        deliveryStatus: firstUndeliveredMeal?.deliveryStatus,
+        weekNumber: firstUndeliveredMeal?.weekNumber,
+        dayOfWeek: firstUndeliveredMeal?.dayOfWeek,
+        dayName: firstUndeliveredMeal?.dayName,
+        mealTime: firstUndeliveredMeal?.mealTime,
+      });
+
+      if (!firstUndeliveredMeal) {
+        console.log(
+          "⚠️ No un-delivered meals found - all meals have been delivered"
+        );
+        return [];
+      }
+
+      // STEP 2: Get the day identifier from the first un-delivered meal
+      const targetWeekNumber = firstUndeliveredMeal.weekNumber;
+      const targetDayOfWeek = firstUndeliveredMeal.dayOfWeek;
+      const targetDayName = firstUndeliveredMeal.dayName;
+
+      console.log("📅 Looking for all meals on this day:", {
+        weekNumber: targetWeekNumber,
+        dayOfWeek: targetDayOfWeek,
+        dayName: targetDayName,
+      });
+
+      // STEP 3: Find ALL meals for that same day (same weekNumber and dayOfWeek)
+      // These might include breakfast, lunch, dinner, etc.
+      const todaysMealSlots = mealSchedule.filter((slot) => {
+        return (
+          slot.weekNumber === targetWeekNumber &&
+          slot.dayOfWeek === targetDayOfWeek
+        );
+      });
+
+      console.log("📅 Found today's meal slots:", todaysMealSlots.length);
+      todaysMealSlots.forEach((slot, index) => {
+        console.log(`📋 Slot ${index}:`, {
+          mealTime: slot.mealTime,
+          customTitle: slot.customTitle,
+          deliveryStatus: slot.deliveryStatus,
+          mealsCount: slot.meals?.length || 0,
+        });
+      });
+
+      if (todaysMealSlots.length === 0) {
+        console.log("⚠️ No meals found for this day");
+        return [];
+      }
+
+      // STEP 4: Sort meal slots by meal time order (Breakfast → Lunch → Dinner)
+      const mealTimeOrder = {
+        breakfast: 1,
+        lunch: 2,
+        dinner: 3,
+      };
+
+      todaysMealSlots.sort((a, b) => {
+        const timeA = a.mealTime?.toLowerCase() || "";
+        const timeB = b.mealTime?.toLowerCase() || "";
+        return (mealTimeOrder[timeA] || 999) - (mealTimeOrder[timeB] || 999);
+      });
+
+      console.log(
+        "📅 Sorted meal slots:",
+        todaysMealSlots.map((s) => s.mealTime)
+      );
+
+      // STEP 5: Combine all today's meals into one object for display
+      const allTodaysMeals = todaysMealSlots.flatMap(
+        (slot) => slot.meals || []
+      );
+
+      console.log("🍽️ Total meals for today:", allTodaysMeals.length);
+      console.log("📊 Today's meals structure:", {
+        mealsCount: allTodaysMeals.length,
+        mealTimes: todaysMealSlots.map((s) => s.mealTime),
+        deliveryStatuses: [
+          ...new Set(todaysMealSlots.map((s) => s.deliveryStatus)),
+        ],
+        firstMeal: allTodaysMeals[0]
+          ? {
+              name: allTodaysMeals[0].name,
+              image: allTodaysMeals[0].image,
+              nutrition: allTodaysMeals[0].nutrition,
+            }
+          : null,
+      });
+
+      // STEP 6: Return as array with single object containing all meals for this day
+      const resultObject = {
+        customTitle: todaysMealSlots[0]?.customTitle || "Today's Meals",
+        customDescription: todaysMealSlots[0]?.customDescription || "",
+        imageUrl: todaysMealSlots[0]?.imageUrl || "",
+        mealTime: todaysMealSlots.map((s) => s.mealTime).join(", "),
+        dayName: targetDayName,
+        weekNumber: targetWeekNumber,
+        dayOfWeek: targetDayOfWeek,
+        deliveryStatus: firstUndeliveredMeal.deliveryStatus,
+        meals: allTodaysMeals,
+        isToday: true,
+        allMealSlots: todaysMealSlots, // Include slot info for reference
+      };
+
+      console.log("✅ getTodaysMealsFromSnapshot returning:", {
+        customTitle: resultObject.customTitle,
+        customDescription: resultObject.customDescription,
+        imageUrl: resultObject.imageUrl,
+        mealsCount: resultObject.meals.length,
+      });
+
+      return [resultObject];
+    } catch (error) {
+      console.error("❌ Error extracting meals from snapshot:", error);
+      return [];
+    }
+  };
 
   const loadPlanData = async () => {
     try {
@@ -82,32 +227,76 @@ const MyPlanScreen = ({ navigation, route }) => {
       // Use subscription from params or fetch active subscription
       if (subscriptionParam) {
         setActiveSubscription(subscriptionParam);
-        // Still need to fetch meals for param-provided subscription
-        await loadTodaysMeals(subscriptionParam);
+        // Load meals from mealPlanSnapshot.mealSchedule
+        const mealsFromSnapshot = getTodaysMealsFromSnapshot(subscriptionParam);
+        setTodaysMeals(mealsFromSnapshot);
+        if (mealsFromSnapshot.length > 0) {
+          setCurrentMeal(mealsFromSnapshot[0]);
+          console.log(
+            "✅ Today's meals loaded from snapshot:",
+            mealsFromSnapshot[0].meals.length,
+            "meals"
+          );
+        }
       } else {
-        // ✨ NEW: Use unified meal dashboard endpoint
+        // Fetch active subscription via dashboard
         const dashboardResult = await apiService.getMealDashboard();
-        console.log("📋 Unified dashboard result in MyPlan:", dashboardResult);
+        console.log("📋 Dashboard result in MyPlan:", dashboardResult);
 
         if (dashboardResult?.success && dashboardResult?.data) {
           const data = dashboardResult.data;
 
           if (data.hasActiveSubscription && data.activeSubscription) {
-            console.log("✅ Setting active subscription:", data.activeSubscription.planName);
-            setActiveSubscription(data.activeSubscription);
+            const subscription = data.activeSubscription;
+            console.log(
+              "✅ Setting active subscription:",
+              subscription.mealPlanSnapshot?.planName || subscription.planName
+            );
 
-            // Set current meal (already fetched by unified endpoint)
-            if (data.currentMeal) {
-              setCurrentMeal(data.currentMeal);
-              console.log("🍽️ Current meal:", data.currentMeal.customTitle);
+            // ✨ DEBUG: Check if mealPlanSnapshot exists
+            console.log("📦 Subscription has mealPlanSnapshot:", {
+              hasMealPlanSnapshot: !!subscription.mealPlanSnapshot,
+              hasMealSchedule: !!subscription.mealPlanSnapshot?.mealSchedule,
+              mealScheduleLength:
+                subscription.mealPlanSnapshot?.mealSchedule?.length || 0,
+              firstSlotCustomTitle:
+                subscription.mealPlanSnapshot?.mealSchedule?.[0]?.customTitle,
+              firstSlotImageUrl:
+                subscription.mealPlanSnapshot?.mealSchedule?.[0]?.imageUrl,
+            });
+
+            setActiveSubscription(subscription);
+
+            // Load meals from mealPlanSnapshot.mealSchedule
+            const mealsFromSnapshot = getTodaysMealsFromSnapshot(subscription);
+            console.log(
+              "📥 mealsFromSnapshot result:",
+              mealsFromSnapshot.length,
+              "items"
+            );
+            if (mealsFromSnapshot.length > 0) {
+              console.log("📥 First meal object keys:", {
+                keys: Object.keys(mealsFromSnapshot[0]),
+                customTitle: mealsFromSnapshot[0].customTitle,
+                customDescription: mealsFromSnapshot[0].customDescription,
+                imageUrl: mealsFromSnapshot[0].imageUrl,
+              });
             }
 
-            // Set timeline meals (already fetched by unified endpoint)
-            if (data.mealTimeline && data.mealTimeline.length > 0) {
-              // Filter for today's meals
-              const todayMeals = data.mealTimeline.filter((meal) => meal.isToday);
-              setTodaysMeals(todayMeals);
-              console.log("📅 Today's meals from timeline:", todayMeals.length);
+            setTodaysMeals(mealsFromSnapshot);
+            if (mealsFromSnapshot.length > 0) {
+              setCurrentMeal(mealsFromSnapshot[0]);
+              console.log(
+                "✅ Today's meals loaded from snapshot:",
+                mealsFromSnapshot[0].meals.length,
+                "meals"
+              );
+            } else {
+              console.log(
+                "⚠️ No meals found in snapshot for today, trying API fallback..."
+              );
+              // Fallback to API if snapshot doesn't have meals
+              await loadTodaysMeals(subscription);
             }
           } else {
             console.log("ℹ️ No active subscription found");
@@ -136,12 +325,41 @@ const MyPlanScreen = ({ navigation, route }) => {
         const mealData = currentMealResult.data.data || currentMealResult.data;
         console.log("✅ Current meal data:", JSON.stringify(mealData, null, 2));
         setCurrentMeal(mealData);
-      }
 
+        // ✨ IMPORTANT: Use currentMeal directly as today's meals
+        // The currentMeal already has the meals array with all meals for today
+        if (mealData && mealData.meals && mealData.meals.length > 0) {
+          console.log(
+            "📅 ✅ Setting todaysMeals from currentMeal with:",
+            mealData.meals.length,
+            "meals"
+          );
+          setTodaysMeals([mealData]); // Wrap in array to maintain consistency with mealTimeline structure
+        } else {
+          console.log(
+            "⚠️ Current meal has no meals array, will try timeline endpoint"
+          );
+          // Fallback to timeline if currentMeal doesn't have meals
+          await fetchMealTimeline(subscriptionId);
+        }
+      } else {
+        console.log(
+          "⚠️ Current meal API failed, falling back to timeline endpoint"
+        );
+        // Fallback to timeline if current meal fails
+        await fetchMealTimeline(subscriptionId);
+      }
+    } catch (error) {
+      console.error("Error loading today's meals:", error);
+    }
+  };
+
+  const fetchMealTimeline = async (subscriptionId) => {
+    try {
       // Get meal timeline for today's meals
       const timelineResult = await apiService.getSubscriptionMealTimeline(
         subscriptionId,
-        1 // Just get today
+        7 // Get a week instead of just 1 day
       );
 
       console.log("📅 Timeline result:", timelineResult);
@@ -149,15 +367,23 @@ const MyPlanScreen = ({ navigation, route }) => {
         // Handle nested data structure
         const timelineData = timelineResult.data.data || timelineResult.data;
         const timeline = Array.isArray(timelineData) ? timelineData : [];
-        console.log("📅 Timeline array:", timeline);
+        console.log("📅 Timeline array length:", timeline.length);
 
-        // Filter for today's meals (dayType === 'current')
-        const todayMeals = timeline.filter((day) => day.dayType === "current");
-        console.log("🍽️ Today's meals:", todayMeals);
-        setTodaysMeals(todayMeals);
+        if (timeline.length > 0) {
+          // Find today's meals (dayType === 'current' or isToday === true)
+          const todayMeals = timeline.filter(
+            (day) => day.dayType === "current" || day.isToday
+          );
+          console.log("📅 Today's meals from timeline:", todayMeals.length);
+          setTodaysMeals(todayMeals);
+        } else {
+          console.log("⚠️ Timeline is empty");
+          setTodaysMeals([]);
+        }
       }
     } catch (error) {
-      console.error("Error loading today's meals:", error);
+      console.error("Error fetching meal timeline:", error);
+      setTodaysMeals([]);
     }
   };
 
@@ -241,64 +467,206 @@ const MyPlanScreen = ({ navigation, route }) => {
   const renderHeroSection = () => {
     if (!activeSubscription) return null;
 
-    const highlightedMeal = currentMeal || todaysMeals[0] || {};
-    console.log("🎨 Highlighted meal for hero:", highlightedMeal);
+    // Get all meals for today from todaysMeals
+    const todayMealObject = todaysMeals[0];
+    const allMeals = todayMealObject?.meals || [];
+    const allMealSlots = todayMealObject?.allMealSlots || []; // Get slot info
+
+    // ✨ Use the currently selected slot based on selectedMealIndex
+    const currentSlot =
+      allMealSlots[selectedMealIndex] || allMealSlots[0] || todayMealObject;
+
+    console.log("🎨 renderHeroSection Debug:", {
+      todaysMealsLength: todaysMeals.length,
+      allMealsCount: allMeals.length,
+      allMealSlotsCount: allMealSlots.length,
+      selectedMealIndex,
+      currentSlotMealTime: currentSlot?.mealTime,
+      currentSlotTitle: currentSlot?.customTitle,
+      currentSlotImageUrl: currentSlot?.imageUrl,
+      willRenderSlider: allMealSlots.length > 0,
+    });
 
     const mealPlan =
       activeSubscription.mealPlanId || activeSubscription.mealPlan || {};
 
-    // Extract image from the backend structure
-    const heroImageSource = (() => {
-      // For currentMeal (from getCurrentMeal API)
-      if (highlightedMeal?.imageUrl) {
-        return {
-          uri: highlightedMeal.imageUrl?.uri || highlightedMeal.imageUrl,
-        };
-      }
-      // For todaysMeals (from timeline API - day object)
-      if (highlightedMeal?.meals?.[0]?.imageUrl) {
-        return { uri: highlightedMeal.meals[0].imageUrl };
-      }
-      // For meal plan fallback
-      if (highlightedMeal?.meals?.[0]?.image) {
-        return { uri: highlightedMeal.meals[0].image };
-      }
-      if (mealPlan?.planImageUrl) return { uri: mealPlan.planImageUrl };
-      if (mealPlan?.image) return { uri: mealPlan.image };
-      if (mealPlan?.coverImage) return { uri: mealPlan.coverImage };
-      return require("../../../assets/authImage.png");
-    })();
+    // ✨ Extract meal title from the CURRENT SLOT (changes as you swipe)
+    const mealTitle = currentSlot?.customTitle || "Today's Meal";
 
-    // Extract meal title from the backend structure
-    const mealTitle =
-      highlightedMeal?.customTitle || // From getCurrentMeal
-      highlightedMeal?.meals?.[0]?.title || // From timeline day object
-      highlightedMeal?.meals?.[0]?.name || // From timeline day object
-      highlightedMeal?.dayTitle || // From timeline day object
-      "Today's Special";
+    // Extract meal times - show all slot times
+    const allMealTimes = allMealSlots
+      .map((slot) => slot.mealTime)
+      .filter(Boolean)
+      .join(", ");
+    const timeRange = allMealTimes || "";
 
     console.log("📝 Meal title for hero:", mealTitle);
-    console.log("🖼️ Hero image source:", heroImageSource);
+    console.log("🖼️ Current slot image:", currentSlot?.imageUrl);
 
     const planName = getPlanDisplayName(activeSubscription);
-
     const subscriptionId = activeSubscription._id || activeSubscription.id;
 
     return (
       <View style={styles(colors).heroSection}>
-        <View style={styles(colors).heroCard}>
-          <Image
-            source={heroImageSource}
-            style={styles(colors).heroImage}
-            resizeMode="cover"
-          />
-          <LinearGradient
-            colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.85)"]}
-            style={styles(colors).heroOverlay}
-          >
-            <Text style={styles(colors).heroMealName}>{mealTitle}</Text>
-            <Text style={styles(colors).heroPlanName}>{planName}</Text>
-          </LinearGradient>
+        {/* Header with meal time range */}
+        {timeRange && (
+          <View style={{ paddingHorizontal: 20, marginBottom: 2 }}>
+            <Text style={styles(colors).mealTimeHeader}>
+              Today Meals - {timeRange}
+            </Text>
+          </View>
+        )}
+
+        {/* Meals Slider - Now iterates over SLOTS (breakfast, lunch, dinner) */}
+        {allMealSlots.length > 0 ? (
+          <View style={styles(colors).mealsSliderContainer}>
+            <Animated.ScrollView
+              horizontal
+              pagingEnabled={false}
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              decelerationRate="fast"
+              snapToInterval={CARD_WIDTH + CARD_SPACING}
+              snapToAlignment="start"
+              contentContainerStyle={{
+                paddingHorizontal: (SCREEN_WIDTH - CARD_WIDTH) / 2,
+                gap: CARD_SPACING,
+              }}
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                { useNativeDriver: true }
+              )}
+              onMomentumScrollEnd={(event) => {
+                const index = Math.round(
+                  event.nativeEvent.contentOffset.x /
+                    (CARD_WIDTH + CARD_SPACING)
+                );
+                setSelectedMealIndex(index);
+              }}
+              style={styles(colors).mealsSlider}
+              scrollEnabled={allMealSlots.length > 1}
+            >
+              {allMealSlots.map((slot, index) => {
+                // Calculate input range for this card
+                const inputRange = [
+                  (index - 1) * (CARD_WIDTH + CARD_SPACING),
+                  index * (CARD_WIDTH + CARD_SPACING),
+                  (index + 1) * (CARD_WIDTH + CARD_SPACING),
+                ];
+
+                // Animate scale: 0.9 when off-center, 1.0 when centered
+                const scale = scrollX.interpolate({
+                  inputRange,
+                  outputRange: [0.9, 1, 0.9],
+                  extrapolate: "clamp",
+                });
+
+                // Animate opacity: 0.7 when off-center, 1.0 when centered
+                const opacity = scrollX.interpolate({
+                  inputRange,
+                  outputRange: [0.7, 1, 0.7],
+                  extrapolate: "clamp",
+                });
+
+                return (
+                  <Animated.View
+                    key={index}
+                    style={[
+                      styles(colors).mealSlideContainer,
+                      { width: CARD_WIDTH, transform: [{ scale }], opacity },
+                    ]}
+                  >
+                    <View style={styles(colors).heroCard}>
+                      <Image
+                        source={
+                          slot.imageUrl
+                            ? { uri: slot.imageUrl }
+                            : mealPlan?.planImageUrl
+                            ? { uri: mealPlan.planImageUrl }
+                            : mealPlan?.image
+                            ? { uri: mealPlan.image }
+                            : require("../../../assets/authImage.png")
+                        }
+                        style={styles(colors).heroImage}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  </Animated.View>
+                );
+              })}
+            </Animated.ScrollView>
+
+            {/* Pagination Dots */}
+            {allMealSlots.length > 1 && (
+              <View style={styles(colors).paginationDotsContainer}>
+                {allMealSlots.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles(colors).paginationDot,
+                      index === selectedMealIndex &&
+                        styles(colors).paginationDotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        ) : (
+          // Fallback to single image if no slot data
+          <View style={styles(colors).heroCard}>
+            <Image
+              source={
+                mealPlan?.planImageUrl
+                  ? { uri: mealPlan.planImageUrl }
+                  : mealPlan?.image
+                  ? { uri: mealPlan.image }
+                  : require("../../../assets/authImage.png")
+              }
+              style={styles(colors).heroImage}
+              resizeMode="cover"
+            />
+            <LinearGradient
+              colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.85)"]}
+              style={styles(colors).heroOverlay}
+            >
+              <Text style={styles(colors).heroMealName}>{mealTitle}</Text>
+              <Text style={styles(colors).heroPlanName}>{planName}</Text>
+            </LinearGradient>
+          </View>
+        )}
+
+        {/* Meal Details Below Image */}
+        <View style={styles(colors).mealDetailsContainer}>
+          <Text style={styles(colors).mealDetailTitle} numberOfLines={2}>
+            {mealTitle}
+          </Text>
+          {/* ✨ Show description from the CURRENT SLOT (changes as you swipe) */}
+          {!!currentSlot?.customDescription && (
+            <Text
+              style={styles(colors).mealDetailDescription}
+              numberOfLines={3}
+            >
+              {currentSlot.customDescription}
+            </Text>
+          )}
+          {(() => {
+            // ✨ Calculate TOTAL calories from meals in the CURRENT SLOT
+            const slotMeals = currentSlot?.meals || [];
+            const totalCalories = slotMeals.reduce((sum, meal) => {
+              return sum + (meal.nutrition?.calories || meal.calories || 0);
+            }, 0);
+
+            return totalCalories > 0 ? (
+              <View style={styles(colors).mealDetailMetaRow}>
+                <View style={styles(colors).mealKcalBadge}>
+                  <Text style={styles(colors).mealKcalText}>
+                    {totalCalories} kcal
+                  </Text>
+                </View>
+              </View>
+            ) : null;
+          })()}
         </View>
 
         <View style={styles(colors).heroButtonsGroup}>
@@ -306,8 +674,6 @@ const MyPlanScreen = ({ navigation, route }) => {
             style={styles(colors).heroPrimaryButton}
             activeOpacity={0.9}
             onPress={() => {
-              const subscriptionId =
-                activeSubscription._id || activeSubscription.id;
               navigation.navigate("MealTimeline", {
                 subscriptionId,
                 subscription: activeSubscription,
@@ -469,10 +835,7 @@ const MyPlanScreen = ({ navigation, route }) => {
   if (loading) {
     return (
       <SafeAreaView style={styles(colors).container}>
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor={colors.primary2}
-        />
+        <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
         <LinearGradient
           colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
           locations={[0, 0.4, 0.7, 1]}
@@ -497,10 +860,7 @@ const MyPlanScreen = ({ navigation, route }) => {
   if (!activeSubscription) {
     return (
       <SafeAreaView style={styles(colors).container}>
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor={colors.primary2}
-        />
+        <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
         <LinearGradient
           colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
           locations={[0, 0.4, 0.7, 1]}
@@ -515,88 +875,71 @@ const MyPlanScreen = ({ navigation, route }) => {
           />
           {/* Header */}
           <View style={styles(colors).header}>
-          <TouchableOpacity
-            style={styles(colors).backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <CustomIcon name="chevron-back" size={20} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles(colors).headerTitle}>My Plan</Text>
-          <View style={styles(colors).placeholder} />
-        </View>
+            <TouchableOpacity
+              style={styles(colors).backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <CustomIcon name="chevron-back" size={20} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles(colors).headerTitle}>My Plan</Text>
+            <View style={styles(colors).placeholder} />
+          </View>
 
-        <View style={styles(colors).emptyContainer}>
-          <CustomIcon
-            name="calendar-outline"
-            size={80}
-            color={colors.textMuted}
-          />
-          <Text style={styles(colors).emptyTitle}>No Active Plan</Text>
-          <Text style={styles(colors).emptyText}>
-            You don't have an active meal plan subscription. Browse our meal
-            plans to get started!
-          </Text>
-          <TouchableOpacity
-            style={styles(colors).browseButton}
-            onPress={() => navigation.navigate("Home")}
-          >
-            <Text style={styles(colors).browseButtonText}>
-              Browse Meal Plans
+          <View style={styles(colors).emptyContainer}>
+            <CustomIcon
+              name="calendar-outline"
+              size={80}
+              color={colors.textMuted}
+            />
+            <Text style={styles(colors).emptyTitle}>No Active Plan</Text>
+            <Text style={styles(colors).emptyText}>
+              You don't have an active meal plan subscription. Browse our meal
+              plans to get started!
             </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles(colors).browseButton}
+              onPress={() => navigation.navigate("Home")}
+            >
+              <Text style={styles(colors).browseButtonText}>
+                Browse Meal Plans
+              </Text>
+            </TouchableOpacity>
+          </View>
         </LinearGradient>
       </SafeAreaView>
     );
   }
 
   return (
-    <LinearGradient
-      colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
-      locations={[0, 0.4, 0.7, 1]}
-      style={styles(colors).container}
-    >
+    <View style={styles(colors).container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
 
-      {/* Pattern overlay on gradient */}
-      <ImageBackground
-        source={require("../../../assets/patternchoma.png")}
-        resizeMode="repeat"
-        style={styles(colors).backgroundPattern}
-        imageStyle={styles(colors).backgroundImageStyle}
-      />
-
-      {/* Hero Header with Gold Gradient */}
       <LinearGradient
-        colors={[PRIMARY_GOLD, PRIMARY_GOLD_DARK]}
-        style={styles(colors).heroHeader}
+        colors={[colors.primary2, "#003C2A", "#003527", "#002E22"]}
+        locations={[0, 0.4, 0.7, 1]}
+        style={styles(colors).backgroundGradient}
       >
-        <SafeAreaView edges={["top"]}>
-          <View style={styles(colors).headerRow}>
-            <TouchableOpacity
-              style={styles(colors).backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <CustomIcon name="chevron-back" size={20} color={colors.primary2} />
-            </TouchableOpacity>
-            <Text style={styles(colors).heroTitle}>My Meal Plan</Text>
-            <View style={styles(colors).placeholder} />
-          </View>
-        </SafeAreaView>
+        {/* Pattern overlay on gradient */}
+        <ImageBackground
+          source={require("../../../assets/patternchoma.png")}
+          resizeMode="repeat"
+          style={styles(colors).backgroundPattern}
+          imageStyle={styles(colors).backgroundImageStyle}
+        />
+
+        <ScrollView
+          style={styles(colors).content}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles(colors).scrollContent}
+        >
+          {renderHeroSection()}
+
+          {renderSubscriptionStatus()}
+          {renderPlanDetails()}
+
+          <View style={styles(colors).bottomPadding} />
+        </ScrollView>
       </LinearGradient>
-
-      <ScrollView
-        style={styles(colors).content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles(colors).scrollContent}
-      >
-        {renderHeroSection()}
-
-        {renderSubscriptionStatus()}
-        {renderPlanDetails()}
-
-        <View style={styles(colors).bottomPadding} />
-      </ScrollView>
 
       {/* Subscription Management Modal */}
       <SubscriptionManagementModal
@@ -612,7 +955,30 @@ const MyPlanScreen = ({ navigation, route }) => {
           loadPlanData(); // Refresh data after update
         }}
       />
-    </LinearGradient>
+
+      {/* Sticky Hero Header with Gold Gradient */}
+      <LinearGradient
+        colors={[PRIMARY_GOLD, PRIMARY_GOLD_DARK]}
+        style={styles(colors).stickyHeader}
+      >
+        <SafeAreaView edges={["top"]}>
+          <View style={styles(colors).headerRow}>
+            <TouchableOpacity
+              style={styles(colors).backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <CustomIcon
+                name="chevron-back"
+                size={20}
+                color={colors.primary2}
+              />
+            </TouchableOpacity>
+            <Text style={styles(colors).heroTitle}>My Meal Plan</Text>
+            <View style={styles(colors).placeholder} />
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    </View>
   );
 };
 
@@ -638,9 +1004,13 @@ const styles = (colors) =>
       opacity: 1,
       transform: [{ scale: 2.5 }],
     },
-    // Hero Header Styles
-    heroHeader: {
-      //   paddingBottom: 32,
+    // Sticky Hero Header Styles
+    stickyHeader: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1000,
       borderBottomLeftRadius: 28,
       borderBottomRightRadius: 28,
       shadowColor: "#000",
@@ -670,6 +1040,9 @@ const styles = (colors) =>
       fontWeight: "700",
       color: colors.primary2,
       letterSpacing: 0.4,
+    },
+    placeholder: {
+      width: 42,
     },
     settingsButton: {
       width: 42,
@@ -735,23 +1108,26 @@ const styles = (colors) =>
     },
     scrollContent: {
       paddingBottom: 36,
+      paddingTop: 100, // Add padding for sticky header
     },
     heroSection: {
-      marginTop: 30,
-      paddingHorizontal: 20,
+      marginTop: 28,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
     },
     heroCard: {
-      height: 240,
-      borderRadius: 28,
+      width: "100%",
+      height: 300,
+      borderRadius: 32,
       overflow: "hidden",
-      borderWidth: 2,
-      borderColor: "#fff",
+      borderWidth: 0.5,
+      borderColor: "rgba(255,255,255,0.9)",
       shadowColor: "#000",
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.22,
-      shadowRadius: 14,
-      elevation: 10,
-      backgroundColor: "#000",
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.3,
+      shadowRadius: 18,
+      elevation: 12,
+      backgroundColor: "#1a1a1a",
     },
     heroImage: {
       width: "100%",
@@ -780,36 +1156,36 @@ const styles = (colors) =>
       color: "rgba(255,255,255,0.78)",
     },
     heroButtonsGroup: {
-      marginTop: 20,
-      paddingHorizontal: 35,
+      marginTop: 28,
+      paddingHorizontal: 20,
+      gap: 12,
     },
     heroPrimaryButton: {
       backgroundColor: colors.primary,
-      borderRadius: 28,
+      borderRadius: 30,
       paddingVertical: 16,
+      paddingHorizontal: 24,
       alignItems: "center",
       justifyContent: "center",
       shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.4,
-      shadowRadius: 10,
-      elevation: 6,
-      marginBottom: 12,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.35,
+      shadowRadius: 12,
+      elevation: 8,
     },
     heroPrimaryButtonText: {
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: "700",
       color: colors.primary2,
-      letterSpacing: 0.2,
+      letterSpacing: 0.3,
       textTransform: "none",
     },
     heroSecondaryButton: {
-      flex: 1,
-      borderWidth: 1.5,
+      borderWidth: 2,
       borderColor: PRIMARY_GOLD,
-      borderRadius: 32,
-      paddingVertical: 13,
-      paddingHorizontal: 16,
+      borderRadius: 30,
+      paddingVertical: 14,
+      paddingHorizontal: 24,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: "transparent",
@@ -819,6 +1195,84 @@ const styles = (colors) =>
       fontWeight: "700",
       color: PRIMARY_GOLD,
       letterSpacing: 0.3,
+    },
+    // Meal Time Header
+    mealTimeHeader: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: "rgba(255,255,255,0.75)",
+      marginBottom: 16,
+      letterSpacing: 0.3,
+      textAlign: "center",
+    },
+    // Meal Details under hero
+    mealDetailsContainer: {
+      paddingHorizontal: 20,
+      // marginTop: 12,
+      gap: 8,
+    },
+    mealDetailTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: "#FFFFFF",
+      letterSpacing: 0.3,
+    },
+    mealDetailDescription: {
+      fontSize: 14,
+      color: "rgba(255,255,255,0.75)",
+      lineHeight: 20,
+    },
+    mealDetailMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      // marginTop: 2,
+    },
+    mealKcalBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 14,
+      backgroundColor: "rgba(255,255,255,0.12)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.18)",
+    },
+    mealKcalText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: "#FFFFFF",
+      letterSpacing: 0.2,
+    },
+    // Meals Slider Styles
+    mealsSliderContainer: {
+      marginBottom: 20,
+    },
+    mealsSlider: {
+      width: "100%",
+      height: 330,
+    },
+    mealSlideContainer: {
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    // Pagination Dots
+    paginationDotsContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 10,
+    },
+    paginationDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: "rgba(255,255,255,0.35)",
+      transition: "all 0.3s ease",
+    },
+    paginationDotActive: {
+      backgroundColor: colors.primary,
+      width: 28,
+      height: 10,
+      borderRadius: 5,
     },
     // Section Styles
     section: {

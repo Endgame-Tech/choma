@@ -39,6 +39,7 @@ import {
 } from "../../utils/numberUtils";
 import { THEME } from "../../utils/colors";
 import MealPlanDetailSkeleton from "../../components/meal-plans/MealPlanDetailSkeleton";
+import BlendSvg from "../../../assets/blend.svg";
 import StandardHeader from "../../components/layout/Header";
 import MealDetailModal from "../../components/modals/MealDetailModal";
 import RatingModal from "../../components/rating/RatingModal";
@@ -53,6 +54,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   const { user } = useAuth();
   const { bundle } = route.params;
   const [selectedWeek, setSelectedWeek] = useState(1);
+
+  // Animation for sticky header
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
 
   // Fetch ratings for this meal plan
   const fetchRatings = useCallback(async () => {
@@ -760,7 +769,6 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     return {
       1: [
         {
-          day: "Monday",
           breakfast: "Oatmeal + milk + banana",
           lunch: "Grilled chicken + brown rice + vegetables",
           dinner: "Fish stew + plantain",
@@ -1400,42 +1408,78 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     <SafeAreaView style={styles(colors).container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
 
-      <StandardHeader
-        title="Details"
-        onBackPress={() => navigation.goBack()}
-        showRightIcon={false}
-      />
+      {/* Animated Sticky Header */}
+      <Animated.View
+        style={[styles(colors).animatedHeader, { opacity: headerOpacity }]}
+      >
+        <View style={styles(colors).animatedHeaderContent}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <CustomIcon name="chevron-back" size={20} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles(colors).animatedHeaderTitle} numberOfLines={1}>
+            {mealPlanDetails?.planName || bundle?.planName || "Details"}
+          </Text>
+          <View style={{ width: 20 }} />
+        </View>
+      </Animated.View>
 
-      <ScrollView
+      <Animated.ScrollView
         style={styles(colors).scrollView}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
         keyboardShouldPersistTaps="handled"
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
       >
-        {/* Hero Section */}
-        <View style={styles(colors).heroContainer}>
-          {/* Loading overlay for hero image */}
-          {imageLoadingStates["hero"] === "loading" && (
-            <View style={styles(colors).imageLoadingOverlay}>
-              <ActivityIndicator size="large" color={colors.primary} />
-            </View>
-          )}
+        {/* Hero Section (TagScreen-style) */}
+        <View style={styles(colors).heroWrapper}>
+          <LinearGradient
+            colors={["#004432", "#7A2E18"]}
+            style={styles(colors).heroBackground}
+          >
+            {/* Loading overlay for hero image */}
+            {imageLoadingStates["hero"] === "loading" && (
+              <View style={styles(colors).imageLoadingOverlay}>
+                <ActivityIndicator size="large" color={colors.primary} />
+              </View>
+            )}
 
-          <Image
-            source={
-              mealPlanDetails?.planImageUrl
-                ? { uri: mealPlanDetails.planImageUrl }
-                : require("../../assets/images/meal-plans/fitfuel.jpg")
-            }
-            style={styles(colors).heroImage}
-            defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
-            onLoadStart={() => handleImageLoadStart("hero")}
-            onLoad={() => handleImageLoad("hero")}
-            onError={() => handleImageError("hero")}
-          />
+            {/* Background hero image */}
+            <Image
+              source={
+                mealPlanDetails?.planImageUrl
+                  ? { uri: mealPlanDetails.planImageUrl }
+                  : require("../../assets/images/meal-plans/fitfuel.jpg")
+              }
+              style={styles(colors).heroBackgroundImage}
+              defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+              resizeMode="cover"
+              onLoadStart={() => handleImageLoadStart("hero")}
+              onLoad={() => handleImageLoad("hero")}
+              onError={() => handleImageError("hero")}
+            />
+
+            {/* Blend transition at bottom */}
+            <View style={styles(colors).blendTransition}>
+              <BlendSvg
+                width="100%"
+                height={60}
+                fill={colors.background}
+                preserveAspectRatio="none"
+                style={styles(colors).blendSvg}
+              />
+            </View>
+          </LinearGradient>
 
           {/* Quantity Controls */}
-          <View style={styles(colors).quantityControls}>
+          {/* <View style={styles(colors).quantityControls}>
             <TouchableOpacity
               style={styles(colors).quantityButton}
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
@@ -1465,9 +1509,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             >
               <CustomIcon name="add" size={20} color={"#FFFFFF"} />
             </TouchableOpacity>
-          </View>
+          </View> */}
 
-          <TouchableOpacity
+          {/* Bookmark/Favorite */}
+          {/* <TouchableOpacity
             style={styles(colors).bookmarkButton}
             accessibilityLabel="Add to favorites"
             accessibilityHint="Tap to save this meal plan to your favorites"
@@ -1475,7 +1520,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             accessible={true}
           >
             <CustomIcon name="heart" size={24} color={colors.primary} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Plan Info */}
@@ -1491,13 +1536,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
           <View style={styles(colors).planMeta}>
             <View style={styles(colors).metaItem}>
-              <CustomIcon name="star-filled" size={20} color={colors.rating} />
+              <CustomIcon name="star-filled" size={14} color={colors.rating} />
               <Text style={styles(colors).metaText2}>
                 {mealPlanDetails?.avgRating || bundle?.rating || 4.5}
               </Text>
             </View>
             <View style={styles(colors).metaItem}>
-              <CustomIcon name="time" size={16} color={colors.textSecondary} />
+              <CustomIcon name="time" size={16} color={colors.text} />
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.durationWeeks
                   ? `~${mealPlanDetails.durationWeeks} week${
@@ -1509,7 +1554,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               </Text>
             </View>
             <View style={styles(colors).metaItem}>
-              <CustomIcon name="food" size={16} color={colors.textSecondary} />
+              <CustomIcon name="food" size={16} color={colors.text} />
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.mealTypes
                   ? `${mealPlanDetails.mealTypes.length * 7} meals/week`
@@ -1526,7 +1571,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   <CustomIcon
                     name="list"
                     size={16}
-                    color={colors.textSecondary}
+                    color={colors.text}
                   />
                   <Text style={styles(colors).metaText}>
                     {mealPlanDetails.mealTypes
@@ -2090,7 +2135,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles(colors).bottomPadding} />
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Bottom Action Buttons */}
       <View style={styles(colors).bottomActions}>
@@ -2229,6 +2274,76 @@ const styles = (colors) =>
       flex: 1,
       backgroundColor: colors.background,
     },
+    // Animated Sticky Header
+    animatedHeader: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1000,
+      backgroundColor: colors.background,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    animatedHeaderContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      paddingTop: 55, // Account for status bar
+    },
+    animatedHeaderTitle: {
+      flex: 1,
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      textAlign: "center",
+      marginHorizontal: 20,
+    },
+    // TagScreen-like hero styles
+    heroWrapper: {
+      position: "relative",
+      backgroundColor: "#004432",
+      height: 350,
+      overflow: "hidden",
+    },
+    heroBackground: {
+      paddingTop: 0,
+      paddingBottom: 0,
+      paddingHorizontal: 0,
+      position: "relative",
+      height: "100%",
+      minHeight: 250,
+    },
+    heroBackgroundImage: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: "100%",
+      height: "100%",
+      minHeight: 250,
+    },
+    blendTransition: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      width: "100%",
+      height: 60,
+      zIndex: 2,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 5,
+    },
+    blendSvg: {
+      width: "100%",
+      height: "100%",
+    },
     header: {
       flexDirection: "row",
       alignItems: "center",
@@ -2302,22 +2417,9 @@ const styles = (colors) =>
       margin: 15,
       borderRadius: 30,
       overflow: "hidden",
-      height: 400,
       borderWidth: 1,
       borderColor: colors.border2,
-    },
-    heroImage: {
-      width: "100%",
-      height: "100%",
-    },
-    imageLoadingOverlay: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: colors.cardBackground,
-      justifyContent: "center",
+      // Remove old hero container styles (replaced by heroWrapper)
       alignItems: "center",
       zIndex: 1,
       borderRadius: 30,
@@ -2331,7 +2433,7 @@ const styles = (colors) =>
     },
     quantityControls: {
       position: "absolute",
-      bottom: 15,
+      bottom: 24,
       left: 15,
       flexDirection: "row",
       alignItems: "center",
@@ -2359,7 +2461,7 @@ const styles = (colors) =>
       bottom: 15,
       right: 15,
       width: 40,
-      height: 40,
+      bottom: 24,
       borderRadius: 20,
       backgroundColor: "#1b1b1b",
       justifyContent: "center",
@@ -2369,16 +2471,16 @@ const styles = (colors) =>
       paddingHorizontal: 20,
     },
     planTitle: {
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: "bold",
       color: colors.text,
-      marginBottom: 6,
+      // marginBottom: 6,
     },
     planMeta: {
       flexDirection: "row",
       flexWrap: "wrap",
       alignItems: "center",
-      marginBottom: 16,
+      // marginBottom: 16,
     },
     metaItem: {
       flexDirection: "row",
@@ -2390,17 +2492,17 @@ const styles = (colors) =>
     },
     metaText: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: colors.text,
       marginLeft: 4,
       fontWeight: "500",
       flexShrink: 1,
       minWidth: 0,
     },
     metaText2: {
-      fontSize: 20,
-      color: colors.textSecondary,
+      fontSize: 14,
+      color: colors.rating,
       marginLeft: 4,
-      fontWeight: "500",
+      fontWeight: "bold",
       flexShrink: 1,
       minWidth: 0,
     },
@@ -2408,7 +2510,7 @@ const styles = (colors) =>
       fontSize: 16,
       color: colors.textSecondary,
       lineHeight: 24,
-      marginBottom: 10,
+      marginBottom: 4,
     },
     sizeSection: {
       marginBottom: 20,
@@ -2444,8 +2546,8 @@ const styles = (colors) =>
       color: colors.black,
     },
     priceContainer: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: "column",
+      alignItems: "flex-end",
       marginTop: 20,
     },
     currentPrice: {

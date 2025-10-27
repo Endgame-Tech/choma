@@ -11,74 +11,92 @@ export const useMealPlans = () => {
 
   // Progressive rendering function - adds meal plans one by one
   const addMealPlanProgressively = useCallback((newPlan) => {
-    setMealPlans(prev => {
+    setMealPlans((prev) => {
       // Check if plan already exists to avoid duplicates
-      const exists = prev.some(plan => plan.id === newPlan.id);
+      const exists = prev.some((plan) => plan.id === newPlan.id);
       if (exists) return prev;
-      
+
       return [...prev, newPlan];
     });
   }, []);
 
   // Transform all plans first, then set them all at once (no progressive loading glitch)
-  const processPlansProgressively = useCallback((plans) => {
-    if (!Array.isArray(plans)) {
-      console.warn("❌ processPlansProgressively called with non-array:", plans);
-      setMealPlans([]);
-      setProgressiveLoading(false);
-      setLoading(false);
-      return;
-    }
-    
-    setProgressiveLoading(true);
-    
-    // Transform all plans synchronously
-    const transformedPlans = plans.map(plan => {
-      const imageUrl = plan.image || plan.coverImage || plan.planImageUrl || plan.imageUrl || null;
-
-      // Debug log if no image is found
-      if (!imageUrl) {
-        console.log(`🖼️ No image found for plan "${plan.name || plan.planName}". Checking fields:`, {
-          image: plan.image,
-          coverImage: plan.coverImage,
-          planImageUrl: plan.planImageUrl,
-          imageUrl: plan.imageUrl,
-        });
+  const processPlansProgressively = useCallback(
+    (plans) => {
+      if (!Array.isArray(plans)) {
+        console.warn(
+          "❌ processPlansProgressively called with non-array:",
+          plans
+        );
+        setMealPlans([]);
+        setProgressiveLoading(false);
+        setLoading(false);
+        return;
       }
 
-      return {
-        id: plan._id || plan.planId,
-        planId: plan.planId,
-        name: plan.name || plan.planName,
-        subtitle: plan.subtitle,
-        description: plan.description,
-        price: plan.price || plan.totalPrice,
-        originalPrice: Math.round((plan.price || plan.totalPrice) * 1.2),
-        duration: plan.duration || `${plan.durationWeeks || 1} week(s)`,
-        meals: plan.meals,
-        targetAudience: plan.targetAudience,
-        rating: plan.avgRating || plan.averageRating || null,
-        averageRating: plan.avgRating || plan.averageRating || null,
-        mealType: plan.mealTypes ? plan.mealTypes.join(', ') : null,
-        category: plan.targetAudience,
-        image: imageUrl,
-        gradient: getGradientByAudience(plan.targetAudience),
-        tag: getTagByAudience(plan.targetAudience),
-        features: plan.features || plan.planFeatures || [],
-        nutrition: plan.nutrition || plan.nutritionInfo || {},
-        weeklyMeals: plan.weeklyMeals || {},
-        mealImages: plan.mealImages || {},
-        isActive: plan.isActive,
-        createdAt: plan.createdAt,
-        durationWeeks: plan.durationWeeks,
-      };
-    });
-    
-    // Set all plans at once - no glitching
-    setMealPlans(transformedPlans);
-    setProgressiveLoading(false);
-    setLoading(false);
-  }, [addMealPlanProgressively]);
+      setProgressiveLoading(true);
+
+      // Transform all plans synchronously
+      const transformedPlans = plans.map((plan) => {
+        const imageUrl =
+          plan.image ||
+          plan.coverImage ||
+          plan.planImageUrl ||
+          plan.imageUrl ||
+          null;
+
+        // Debug log if no image is found
+        if (!imageUrl) {
+          console.log(
+            `🖼️ No image found for plan "${
+              plan.name || plan.planName
+            }". Checking fields:`,
+            {
+              image: plan.image,
+              coverImage: plan.coverImage,
+              planImageUrl: plan.planImageUrl,
+              imageUrl: plan.imageUrl,
+            }
+          );
+        }
+
+        return {
+          id: plan._id || plan.planId,
+          planId: plan.planId,
+          name: plan.name || plan.planName,
+          subtitle: plan.subtitle,
+          description: plan.description,
+          price: plan.price || plan.totalPrice,
+          originalPrice: Math.round((plan.price || plan.totalPrice) * 1.2),
+          duration: plan.duration || `${plan.durationWeeks || 1} week(s)`,
+          meals: plan.meals,
+          targetAudience: plan.targetAudience,
+          rating: plan.avgRating || plan.averageRating || null,
+          averageRating: plan.avgRating || plan.averageRating || null,
+          mealType: plan.mealTypes ? plan.mealTypes.join(", ") : null,
+          category: plan.targetAudience,
+          image: imageUrl,
+          gradient: getGradientByAudience(plan.targetAudience),
+          tag: getTagByAudience(plan.targetAudience),
+          features: plan.features || plan.planFeatures || [],
+          nutrition: plan.nutrition || plan.nutritionInfo || {},
+          weeklyMeals: plan.weeklyMeals || {},
+          mealImages: plan.mealImages || {},
+          isActive: plan.isActive,
+          isPopular: plan.isPopular || false,
+          isNew: plan.isNew || false,
+          createdAt: plan.createdAt,
+          durationWeeks: plan.durationWeeks,
+        };
+      });
+
+      // Set all plans at once - no glitching
+      setMealPlans(transformedPlans);
+      setProgressiveLoading(false);
+      setLoading(false);
+    },
+    [addMealPlanProgressively]
+  );
 
   const fetchMealPlans = useCallback(
     async (showRefreshing = false, forceRefresh = false) => {
@@ -97,12 +115,16 @@ export const useMealPlans = () => {
         const response = await apiService.getMealPlans(forceRefresh);
 
         if (response.success) {
-          console.log(`📦 Received ${response.data.length} meal plans, starting progressive rendering...`);
-          
+          console.log(
+            `📦 Received ${response.data.length} meal plans, starting progressive rendering...`
+          );
+
           // Use progressive rendering instead of setting all at once
           processPlansProgressively(response.data);
-          
-          console.log(`✅ Started progressive loading of ${response.data.length} meal plans`);
+
+          console.log(
+            `✅ Started progressive loading of ${response.data.length} meal plans`
+          );
 
           if (response.offline) {
             console.log("📱 Using offline meal plans data");
@@ -160,6 +182,8 @@ export const useMealPlans = () => {
           weeklyMeals: plan.weeklyMeals || {},
           mealImages: plan.mealImages || {}, // Add meal images
           isActive: plan.isActive,
+          isPopular: plan.isPopular || false,
+          isNew: plan.isNew || false,
           createdAt: plan.createdAt,
         };
       } else {

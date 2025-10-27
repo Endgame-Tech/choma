@@ -34,7 +34,7 @@ export const lightColors = {
   info: "#17A2B8",
 
   // Rating/Accent
-  rating: "#FFD700",
+  rating: "#004432",
   accent: "#FF6B35",
 
   // Common

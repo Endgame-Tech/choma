@@ -19,6 +19,7 @@ exports.getMealDashboard = async (req, res) => {
     console.log("🔄 Fetching unified meal dashboard for user:", userId);
 
     // STEP 1: Get active subscription (with populated meal plan data)
+    // ✨ IMPORTANT: Must fetch mealPlanSnapshot which contains all meal details
     const activeSubscription = await Subscription.findOne({
       userId: userId,
       status: { $in: ["active", "Active", "pending_first_delivery"] },
@@ -28,7 +29,7 @@ exports.getMealDashboard = async (req, res) => {
         select:
           "planName description duration totalPrice basePrice mealsPerDay image planFeatures targetAudience",
       })
-      .lean(); // Use lean() for better performance
+      .lean(); // Use lean() for performance - mealPlanSnapshot is embedded, so it's always included
 
     if (!activeSubscription) {
       console.log("ℹ️ No active subscription found for user:", userId);
@@ -46,6 +47,16 @@ exports.getMealDashboard = async (req, res) => {
     }
 
     console.log("✅ Found active subscription:", activeSubscription._id);
+
+    // ✨ DEBUG: Log what we received from the database
+    console.log("📦 mealPlanSnapshot in response:", {
+      hasMealPlanSnapshot: !!activeSubscription.mealPlanSnapshot,
+      keys: activeSubscription.mealPlanSnapshot
+        ? Object.keys(activeSubscription.mealPlanSnapshot)
+        : "MISSING",
+      mealScheduleLength: activeSubscription.mealPlanSnapshot?.mealSchedule
+        ?.length || 0,
+    });
 
     // Get subscription state using middleware helper
     const {
@@ -157,7 +168,14 @@ exports.getMealDashboard = async (req, res) => {
       progress: `${progress}%`,
     });
 
-    // STEP 6: Return unified response
+    // STEP 6: Clear any cached data before returning (to ensure fresh data)
+    // ✨ Clear cache for this user's meal dashboard
+    const { cacheService } = require("../config/redis");
+    const cacheKey = `user:${userId}:/api/user/meal-dashboard:{}`;
+    await cacheService.clearPattern(`user:${userId}:/api/user/meal-dashboard*`);
+
+    // Return unified response
+    // ✨ IMPORTANT: Include mealPlanSnapshot so frontend can access all meal details
     return res.json({
       hasActiveSubscription: true,
       hasSubscription: true,
@@ -183,6 +201,8 @@ exports.getMealDashboard = async (req, res) => {
           activeSubscription.firstDeliveryCompleted || false,
         firstDeliveryCompletedAt: activeSubscription.firstDeliveryCompletedAt,
         actualStartDate: activeSubscription.actualStartDate,
+        // ✨ Include complete mealPlanSnapshot for frontend access to meals
+        mealPlanSnapshot: activeSubscription.mealPlanSnapshot,
       },
       currentMeal: currentMeal,
       mealTimeline: mealTimeline,
