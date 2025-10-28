@@ -1021,13 +1021,6 @@ const styles = (colors) =>
       bottom: -40, // Half of the circle height to position it at the middle-bottom
       left: width / 2 - 40, // Center horizontally
       width: 80,
-      height: 80,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 8,
-      zIndex: 20,
     },
     tagImageCircle: {
       width: 80,
@@ -1302,15 +1295,15 @@ const styles = (colors) =>
       color: colors.text,
     },
     rateButton: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.primary2,
       paddingHorizontal: 16,
       paddingVertical: 8,
-      borderRadius: THEME.borderRadius.medium,
+      borderRadius: THEME.borderRadius.xxl,
     },
     rateButtonText: {
-      color: "#004432",
+      color: "#FFFFFF",
       fontSize: 12,
-      fontWeight: "600",
+      fontWeight: "bold",
     },
     ratingsLoadingContainer: {
       flexDirection: "row",

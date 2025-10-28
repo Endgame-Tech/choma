@@ -88,7 +88,6 @@ import SettingsScreen from "../screens/settings/SettingsScreen";
 import HelpCenterScreen from "../screens/help/HelpCenterScreen";
 
 const Stack = createStackNavigator();
-
 // Auth Stack Navigator
 const AuthStack = () => {
   const { colors } = useTheme();
@@ -306,7 +305,6 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
           </Stack.Screen>
           <Stack.Screen
             name="TagScreen"
-            component={TagScreen}
             options={{
               headerShown: false,
               animationEnabled: true,
@@ -321,7 +319,13 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
               gestureDirection: "horizontal",
               gestureResponseDistance: 150,
             }}
-          />
+          >
+            {(props) => (
+              <ScreenWithTabBar>
+                <TagScreen {...props} />
+              </ScreenWithTabBar>
+            )}
+          </Stack.Screen>
           <Stack.Screen
             name="BundleDetail"
             component={BundleDetailScreen}
@@ -393,11 +397,16 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
           />
           <Stack.Screen
             name="MyPlan"
-            component={MyPlanScreen}
             options={{
               headerShown: false,
             }}
-          />
+          >
+            {(props) => (
+              <ScreenWithTabBar>
+                <MyPlanScreen {...props} />
+              </ScreenWithTabBar>
+            )}
+          </Stack.Screen>
           <Stack.Screen
             name="MealTimeline"
             component={MealTimelineScreen}

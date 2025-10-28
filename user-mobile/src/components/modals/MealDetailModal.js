@@ -172,6 +172,8 @@ const MealDetailModal = ({
       animationType="slide"
       presentationStyle="fullScreen"
       onRequestClose={onClose}
+      statusBarTranslucent
+      transparent={false}
     >
       <View style={styles(colors).container}>
         <PanGestureHandler
@@ -198,9 +200,9 @@ const MealDetailModal = ({
               {/* Title Badge at Bottom */}
               <View style={styles(colors).titleBadge}>
                 <Text style={styles(colors).mealTitle}>
-                  {currentMeal.customTitle ||
-                    currentMeal.name ||
-                    currentMeal.title ||
+                  {currentMeal.label ||
+                    currentMeal.type ||
+                    currentMeal.mealType ||
                     "Meal"}
                 </Text>
               </View>
@@ -222,9 +224,6 @@ const MealDetailModal = ({
 
                 {/* Description Section */}
                 <View style={styles(colors).descriptionSection}>
-                  <Text style={styles(colors).descriptionTitle}>
-                    Description
-                  </Text>
                   <Text style={styles(colors).description}>
                     {currentMeal.description ||
                       "Experience the authentic taste of Nigeria with our carefully crafted meals. From Jollof rice to Suya, we bring your favorite local dishes right to you in under 30 minutes."}
@@ -369,6 +368,7 @@ const styles = (colors) =>
       right: 0,
       height: screenHeight * 0.6,
       width: screenWidth,
+      backgroundColor: "#000",
     },
     mealImage: {
       width: "100%",
@@ -376,7 +376,7 @@ const styles = (colors) =>
     },
     titleBadge: {
       position: "absolute",
-      top: screenHeight * 0.44,
+      top: screenHeight * 0.4,
       left: 30,
       right: 30,
       backgroundColor: "#1b1b1b",
@@ -396,7 +396,7 @@ const styles = (colors) =>
       bottom: 0,
       left: 0,
       right: 0,
-      height: screenHeight * 0.43,
+      height: screenHeight * 0.5,
       backgroundColor: "#1a1a1a",
       borderTopLeftRadius: 30,
       borderTopRightRadius: 30,
@@ -410,25 +410,16 @@ const styles = (colors) =>
       fontSize: 24,
       fontWeight: "bold",
       color: "white",
-      marginBottom: 25,
+      marginBottom: 2,
       textAlign: "left",
     },
     descriptionSection: {
       marginBottom: 30,
     },
-    descriptionTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: "white",
-      marginBottom: 15,
-    },
     description: {
       fontSize: 16,
       lineHeight: 24,
       color: "#cccccc",
-    },
-    statsSection: {
-      marginBottom: 30,
     },
     statsTitle: {
       fontSize: 18,
@@ -468,7 +459,7 @@ const styles = (colors) =>
       textTransform: "capitalize",
     },
     bottomScrollPadding: {
-      height: 100,
+      height: 80,
     },
     navigationContainerParent: {
       width: "100%",
@@ -522,7 +513,7 @@ const styles = (colors) =>
     },
     indicatorContainer: {
       position: "absolute",
-      top: 60,
+      bottom: 40,
       left: 0,
       right: 0,
       flexDirection: "row",

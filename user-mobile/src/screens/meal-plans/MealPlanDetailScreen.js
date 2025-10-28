@@ -306,6 +306,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   // Animation states for smooth expand/collapse
   const animationValues = useRef({}).current;
 
+  // Scroll animation values for meal sliders
+  const mealScrollValues = useRef({}).current;
+
   // Image loading handlers
   const handleImageLoad = (imageKey) => {
     setImageLoadingStates((prev) => ({ ...prev, [imageKey]: "loaded" }));
@@ -975,7 +978,6 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       const getAllAvailableMealTypes = () => {
         const mealTypeMap = {
           breakfast: {
-            icon: "🌅",
             label: "Breakfast",
             name: dayData.breakfast,
             description: dayData.breakfastDescription,
@@ -983,7 +985,6 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             nutrition: dayData.breakfastNutrition,
           },
           lunch: {
-            icon: "☀️",
             label: "Lunch",
             name: dayData.lunch,
             description: dayData.lunchDescription,
@@ -991,7 +992,6 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             nutrition: dayData.lunchNutrition,
           },
           dinner: {
-            icon: "🌙",
             label: "Dinner",
             name: dayData.dinner,
             description: dayData.dinnerDescription,
@@ -999,7 +999,6 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             nutrition: dayData.dinnerNutrition,
           },
           snack: {
-            icon: "🥜",
             label: "Snack",
             name: dayData.snack,
             description: dayData.snackDescription,
@@ -1022,6 +1021,19 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
       // Prepare meal data for horizontal slider (only available meals)
       const meals = getAllAvailableMealTypes();
+
+      // Debug logging
+      console.log(
+        "🍽️ Meals for",
+        dayData.day,
+        ":",
+        meals.map((m) => ({
+          label: m.label,
+          name: m.name,
+          hasImage: !!m.image,
+          image: m.image,
+        }))
+      );
 
       return (
         <View
@@ -1087,96 +1099,143 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <View style={styles(colors).dayContent}>
                 {/* Horizontal Meal Slider */}
                 <View style={styles(colors).mealSliderWrapper}>
-                  <FlatList
-                    horizontal={meals.length > 1}
-                    data={meals}
-                    keyExtractor={(item) => item.label}
-                    renderItem={({ item, index }) => (
-                      <View
-                        style={[
-                          styles(colors).mealCardWrapper,
-                          meals.length === 1 &&
-                            styles(colors).mealCardWrapperSingle,
-                        ]}
-                      >
-                        <TouchableOpacity
-                          style={[
-                            styles(colors).mealSliderCard,
-                            meals.length === 1 &&
-                              styles(colors).mealSliderCardSingle,
-                          ]}
-                          onPress={() => openMealModal(meals, index)}
-                          activeOpacity={1}
-                          accessibilityLabel={`${item.label}: ${item.name}`}
-                          accessibilityHint={`Tap to view details about ${item.label}`}
-                          accessibilityRole="button"
-                          accessible={true}
-                        >
-                          <View style={styles(colors).mealSliderImageContainer}>
-                            <Image
-                              source={
-                                item.image
-                                  ? { uri: item.image }
-                                  : require("../../assets/images/meal-plans/fitfuel.jpg")
-                              }
-                              style={styles(colors).mealSliderImage}
-                              defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
-                            />
-                            {discountInfo &&
-                              discountInfo.discountPercent > 0 && (
-                                <View style={styles(colors).mealDiscountPill}>
-                                  <CustomIcon
-                                    name="gift"
-                                    size={14}
-                                    color="#333"
+                  {(() => {
+                    // Initialize scroll animation value for this day
+                    if (!mealScrollValues[dayData.day]) {
+                      mealScrollValues[dayData.day] = new Animated.Value(0);
+                    }
+                    const scrollX = mealScrollValues[dayData.day];
+                    const CARD_WIDTH = 200;
+                    const CARD_SPACING = 15;
+
+                    return (
+                      <Animated.FlatList
+                        horizontal={meals.length > 1}
+                        data={meals}
+                        keyExtractor={(item) => item.label}
+                        renderItem={({ item, index }) => {
+                          // Calculate animation for this card
+                          const inputRange = [
+                            (index - 1) * (CARD_WIDTH + CARD_SPACING),
+                            index * (CARD_WIDTH + CARD_SPACING),
+                            (index + 1) * (CARD_WIDTH + CARD_SPACING),
+                          ];
+
+                          const scale = scrollX.interpolate({
+                            inputRange,
+                            outputRange: [0.9, 1, 0.9],
+                            extrapolate: "clamp",
+                          });
+
+                          const opacity = scrollX.interpolate({
+                            inputRange,
+                            outputRange: [0.9, 1, 0.9],
+                            extrapolate: "clamp",
+                          });
+
+                          return (
+                            <Animated.View
+                              style={[
+                                styles(colors).mealCardWrapper,
+                                meals.length === 1 &&
+                                  styles(colors).mealCardWrapperSingle,
+                                {
+                                  transform: [{ scale }],
+                                  opacity,
+                                },
+                              ]}
+                            >
+                              <TouchableOpacity
+                                style={[
+                                  styles(colors).mealSliderCard,
+                                  meals.length === 1 &&
+                                    styles(colors).mealSliderCardSingle,
+                                ]}
+                                onPress={() => openMealModal(meals, index)}
+                                activeOpacity={1}
+                                accessibilityLabel={`${item.label}: ${item.name}`}
+                                accessibilityHint={`Tap to view details about ${item.label}`}
+                                accessibilityRole="button"
+                                accessible={true}
+                              >
+                                <View
+                                  style={
+                                    styles(colors).mealSliderImageContainer
+                                  }
+                                >
+                                  <Image
+                                    source={
+                                      item.image
+                                        ? { uri: item.image }
+                                        : require("../../assets/images/meal-plans/fitfuel.jpg")
+                                    }
+                                    style={styles(colors).mealSliderImage}
+                                    defaultSource={require("../../assets/images/meal-plans/fitfuel.jpg")}
+                                    onError={(error) => {
+                                      console.log(
+                                        "Image load error:",
+                                        error.nativeEvent.error
+                                      );
+                                      console.log("Image URI:", item.image);
+                                    }}
+                                    onLoad={() => {
+                                      console.log(
+                                        "Image loaded successfully:",
+                                        item.label
+                                      );
+                                    }}
                                   />
+                                  {/* Meal Type Badge - Top Left */}
+                                  <View style={styles(colors).mealTypeBadge}>
+                                    <Text
+                                      style={styles(colors).mealTypeBadgeText}
+                                    >
+                                      {item.label}
+                                    </Text>
+                                  </View>
+                                </View>
+                                <View style={styles(colors).mealSliderInfo}>
+                                  <Text style={styles(colors).mealSliderLabel}>
+                                    {item.name || item.description}
+                                  </Text>
                                   <Text
-                                    style={styles(colors).mealDiscountPillText}
+                                    style={styles(colors).mealSliderDescription}
+                                    numberOfLines={2}
                                   >
-                                    {discountInfo.discountPercent}% Off
+                                    {item.description}
                                   </Text>
                                 </View>
-                              )}
-                          </View>
-                          <LinearGradient
-                            colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.85)"]}
-                            style={styles(colors).mealSliderContent}
-                          >
-                            <View style={styles(colors).mealSliderInfo}>
-                              <Text style={styles(colors).mealSliderIcon}>
-                                {item.icon}
-                              </Text>
-                              <Text style={styles(colors).mealSliderLabel}>
-                                {item.label}
-                              </Text>
-                              <Text
-                                style={styles(colors).mealSliderDescription}
-                                numberOfLines={2}
-                              >
-                                {item.description}
-                              </Text>
-                            </View>
-                          </LinearGradient>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles(colors).mealSliderContainer}
-                    scrollEventThrottle={16}
-                    decelerationRate="fast"
-                    bounces={true}
-                    pagingEnabled={false}
-                    removeClippedSubviews={true}
-                    initialNumToRender={2}
-                    maxToRenderPerBatch={2}
-                    windowSize={10}
-                    getItemLayout={(data, index) => ({
-                      length: 130,
-                      offset: 130 * index,
-                      index,
-                    })}
-                    nestedScrollEnabled={true}
-                  />
+                              </TouchableOpacity>
+                            </Animated.View>
+                          );
+                        }}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={
+                          styles(colors).mealSliderContainer
+                        }
+                        scrollEventThrottle={16}
+                        decelerationRate="fast"
+                        bounces={true}
+                        snapToInterval={CARD_WIDTH + CARD_SPACING}
+                        snapToAlignment="start"
+                        pagingEnabled={false}
+                        removeClippedSubviews={true}
+                        initialNumToRender={2}
+                        maxToRenderPerBatch={2}
+                        windowSize={10}
+                        getItemLayout={(data, index) => ({
+                          length: CARD_WIDTH + CARD_SPACING,
+                          offset: (CARD_WIDTH + CARD_SPACING) * index,
+                          index,
+                        })}
+                        nestedScrollEnabled={true}
+                        onScroll={Animated.event(
+                          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                          { useNativeDriver: true }
+                        )}
+                      />
+                    );
+                  })()}
                 </View>
                 {/* Note section remains below slider */}
                 {dayData.remark && dayData.remark !== "No remarks" && (
@@ -1210,7 +1269,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     meals.length === 1 && styles(colors).mealPreviewSingle,
                   ]}
                 >
-                  <Text style={styles(colors).mealIcon}>{meal.icon}</Text>
+                  <Text style={styles(colors).mealIcon}>{meal.label}</Text>
                   <Text
                     style={[
                       styles(colors).mealPreviewText,
@@ -1219,7 +1278,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                     ]}
                     numberOfLines={1}
                   >
-                    {meal.description || meal.name}
+                    {meal.name || meal.description}
                   </Text>
                   {meal.image && (
                     <View style={styles(colors).mealPreviewImageContainer}>
@@ -1568,13 +1627,17 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             {mealPlanDetails?.mealTypes &&
               mealPlanDetails.mealTypes.length > 0 && (
                 <View style={styles(colors).metaItem}>
-                  <CustomIcon
-                    name="list"
-                    size={16}
-                    color={colors.text}
-                  />
+                  <CustomIcon name="list" size={16} color={colors.text} />
                   <Text style={styles(colors).metaText}>
                     {mealPlanDetails.mealTypes
+                      .sort((a, b) => {
+                        // Define the correct order
+                        const order = ["breakfast", "lunch", "dinner", "snack"];
+                        return (
+                          order.indexOf(a.toLowerCase()) -
+                          order.indexOf(b.toLowerCase())
+                        );
+                      })
                       .map(
                         (type) => type.charAt(0).toUpperCase() + type.slice(1)
                       )
@@ -1589,71 +1652,33 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <ActivityIndicator size="small" color={colors.primary} />
             ) : discountInfo && discountInfo.discountPercent > 0 ? (
               <>
-                {discountInfo.discountType === "ad" ? (
-                  // Ad Discount: Show counter value struck through, original price as current
-                  <>
-                    <View style={styles(colors).priceRowWithInfo}>
-                      <Text style={styles(colors).originalPrice}>
-                        ₦{discountInfo.counterValue?.toLocaleString()}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => setDiscountModalVisible(true)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      >
-                        <CustomIcon
-                          name="info"
-                          size={18}
-                          color={colors.primary}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                    <Text style={styles(colors).currentPrice}>
-                      ₦{discountInfo.originalPrice?.toLocaleString()}
+                {/* Struck-through price */}
+                <Text style={styles(colors).originalPrice}>
+                  ₦
+                  {discountInfo.discountType === "ad"
+                    ? discountInfo.counterValue?.toLocaleString()
+                    : discountInfo.originalPrice?.toLocaleString()}
+                </Text>
+
+                {/* Current price with discount badge */}
+                <View style={styles(colors).priceRow}>
+                  <Text style={styles(colors).currentPrice}>
+                    ₦
+                    {discountInfo.discountType === "ad"
+                      ? discountInfo.originalPrice?.toLocaleString()
+                      : discountInfo.discountedPrice?.toLocaleString()}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles(colors).discountPill}
+                    onPress={() => setDiscountModalVisible(true)}
+                    activeOpacity={0.7}
+                  >
+                    <CustomIcon name="gift" size={14} color={colors.primary} />
+                    <Text style={styles(colors).discountPillText}>
+                      {discountInfo.discountPercent}% Off
                     </Text>
-                    <View style={styles(colors).discountPill}>
-                      <CustomIcon
-                        name="gift"
-                        size={18}
-                        color={colors.primary}
-                      />
-                      <Text style={styles(colors).discountPillText}>
-                        {discountInfo.discountPercent}% Off
-                      </Text>
-                    </View>
-                  </>
-                ) : (
-                  // Promo Discount: Show original price struck through, discounted price as current
-                  <>
-                    <View style={styles(colors).priceRowWithInfo}>
-                      <Text style={styles(colors).originalPrice}>
-                        ₦{discountInfo.originalPrice?.toLocaleString()}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => setDiscountModalVisible(true)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      >
-                        <CustomIcon
-                          name="info"
-                          size={18}
-                          color={colors.primary}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                    <Text style={styles(colors).currentPrice}>
-                      ₦{discountInfo.discountedPrice?.toLocaleString()}
-                    </Text>
-                    <View style={styles(colors).discountPill}>
-                      <CustomIcon
-                        name="gift"
-                        size={18}
-                        color={colors.primary}
-                      />
-                      <Text style={styles(colors).discountPillText}>
-                        {discountInfo.discountPercent}% Off
-                      </Text>
-                    </View>
-                  </>
-                )}
+                  </TouchableOpacity>
+                </View>
               </>
             ) : (
               <Text style={styles(colors).currentPrice}>
@@ -1678,8 +1703,10 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
         {/* Weekly Meal Plan Section */}
         <View style={styles(colors).mealPlanSection}>
-          <Text style={styles(colors).sectionTitle}>Weekly Meal Plan</Text>
-          {renderWeekTabs()}
+          <View style={styles(colors).mealPlanHeader}>
+            <Text style={styles(colors).sectionTitle}>Weekly Meal Plan</Text>
+          </View>
+          <View style={styles(colors).weekTabsWrapper}>{renderWeekTabs()}</View>
 
           <View style={styles(colors).weekContent}>
             {weeklyMealPlan[selectedWeek]?.map(renderDayCard)}
@@ -2547,17 +2574,23 @@ const styles = (colors) =>
     },
     priceContainer: {
       flexDirection: "column",
-      alignItems: "flex-end",
-      marginTop: 20,
+      alignItems: "flex-start",
+      marginTop: 5,
+      marginBottom: 20,
+    },
+    priceRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
     },
     currentPrice: {
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: "bold",
-      color: colors.text,
-      marginRight: 12,
+      color: colors.rating,
+      marginRight: 0,
     },
     originalPrice: {
-      fontSize: 16,
+      fontSize: 13,
       color: colors.textMuted,
       textDecorationLine: "line-through",
       marginRight: 12,
@@ -2566,19 +2599,19 @@ const styles = (colors) =>
     discountPill: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.primaryDark2,
+      backgroundColor: colors.primary2,
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 25, // Fully rounded pill shape
       alignSelf: "flex-start",
-      marginTop: 8,
+      marginTop: 0,
       borderWidth: 1,
       borderColor: colors.border2,
     },
     discountPillText: {
-      fontSize: 14,
-      fontWeight: "400",
-      color: colors.primary,
+      fontSize: 12,
+      fontWeight: "bold",
+      color: colors.text2,
       marginLeft: 6,
     },
     featuresSection: {
@@ -2590,10 +2623,7 @@ const styles = (colors) =>
     },
     featuresList: {
       gap: 16,
-      padding: 20,
-      borderRadius: THEME.borderRadius.large,
-      borderWidth: 1,
-      borderColor: `${colors.border2}50`,
+      // padding: 20,
       // backgroundColor: "#F3E9DF",
     },
     featureItem: {
@@ -2623,7 +2653,13 @@ const styles = (colors) =>
       color: colors.textSecondary,
     },
     mealPlanSection: {
-      padding: 20,
+      // Remove padding to allow carousel to extend full width
+    },
+    mealPlanHeader: {
+      paddingHorizontal: 20,
+    },
+    weekTabsWrapper: {
+      paddingHorizontal: 20,
     },
     weekTabs: {
       flexDirection: "row",
@@ -2644,20 +2680,19 @@ const styles = (colors) =>
     weekTabText: {
       fontSize: 14,
       fontWeight: "600",
-      color: colors.textSecondary,
+      color: "colors.textSecondary",
     },
     weekTabTextActive: {
-      color: colors.black,
+      fontWeight: "bold",
+      color: "#004432",
     },
     weekContent: {
-      gap: 12,
+      // gap: 12,
     },
     dayCard: {
       backgroundColor: colors.cardBackground,
       borderRadius: THEME.borderRadius.large,
-      padding: 10,
-      // borderWidth: 1,
-      borderColor: colors.border,
+      marginBottom: 12,
     },
     dayCardExpanded: {
       // No special styling for expanded state
@@ -2666,7 +2701,9 @@ const styles = (colors) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 8,
+      // marginBottom: 8,
+      paddingHorizontal: 20,
+      paddingTop: 12,
     },
     dayName: {
       fontSize: 16,
@@ -2697,7 +2734,7 @@ const styles = (colors) =>
       width: 40,
       height: 40,
       borderRadius: 8,
-      marginLeft: 8,
+      // marginLeft: 8,
     },
     mealText: {
       fontSize: 14,
@@ -2725,6 +2762,7 @@ const styles = (colors) =>
     mealPreviewContainer: {
       gap: 8,
       paddingVertical: 4,
+      paddingHorizontal: 20,
       borderRadius: 6,
     },
     mealPreview: {
@@ -2742,12 +2780,14 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     mealIcon: {
-      fontSize: 16,
+      fontSize: 12,
       marginRight: 8,
+      color: colors.textMuted,
     },
     mealPreviewText: {
-      fontSize: 12,
-      color: colors.textMuted,
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: "bold",
       flex: 1,
     },
     mealPreviewTextSingle: {
@@ -2767,7 +2807,6 @@ const styles = (colors) =>
     nutritionSection: {
       padding: 20,
       backgroundColor: colors.cardBackground,
-      marginHorizontal: 20,
       borderRadius: THEME.borderRadius.large,
       marginBottom: 20,
     },
@@ -2944,15 +2983,8 @@ const styles = (colors) =>
       maxWidth: width < 375 ? 140 : 180, // Maximum width to prevent overflow
       flex: 0.4, // Takes 40% of available space
     },
-    aboutSection: {
-      padding: 20,
-      backgroundColor: colors.cardBackground,
-      marginHorizontal: 20,
-      borderRadius: THEME.borderRadius.large,
-      marginBottom: 20,
-    },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "600",
       color: colors.text,
       marginBottom: 12,
@@ -2964,7 +2996,7 @@ const styles = (colors) =>
     },
     // Rating section styles
     ratingsSection: {
-      margin: 15,
+      // margin: 15,
       backgroundColor: colors.cardBackground,
       overflow: "hidden",
       borderRadius: 20,
@@ -2978,7 +3010,7 @@ const styles = (colors) =>
     rateButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.black,
+      backgroundColor: colors.primary2,
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: THEME.borderRadius.xxl,
@@ -3119,7 +3151,7 @@ const styles = (colors) =>
     addToCartText: {
       fontSize: width < 375 ? 13 : 16, // Smaller font on small screens
       fontWeight: "bold",
-      color: "#1b1b1b",
+      color: "#004432",
       textAlign: "center",
       numberOfLines: 1, // Prevent text wrapping
       adjustsFontSizeToFit: true, // Auto-adjust font size to fit
@@ -3273,7 +3305,7 @@ const styles = (colors) =>
       backgroundColor: "transparent",
     },
     mealSliderWrapper: {
-      height: 140, // Fixed height to ensure proper scrolling
+      height: 240, // Fixed height to ensure proper scrolling
       marginVertical: 10,
       width: "100%",
       backgroundColor: "transparent",
@@ -3281,6 +3313,7 @@ const styles = (colors) =>
     mealSliderList: {
       flexGrow: 0,
       height: "100%",
+      width: "100%",
     },
     mealSliderContainer: {
       paddingHorizontal: 15,
@@ -3288,18 +3321,19 @@ const styles = (colors) =>
       alignItems: "center",
     },
     mealCardWrapper: {
-      marginRight: 15,
+      // marginRight: 15,
     },
     mealCardWrapperSingle: {
-      marginRight: 0,
       width: "100%",
+      // marginHorizontal: 22,
     },
     mealSliderCard: {
-      width: 130,
-      height: 140,
-      borderRadius: THEME.borderRadius.large,
+      width: 270,
+      height: 220,
+      borderRadius: 17,
       overflow: "hidden",
       backgroundColor: colors.cardBackground,
+      padding: 5,
       elevation: 4,
       shadowColor: colors.black,
       shadowOffset: { width: 0, height: 2 },
@@ -3307,20 +3341,64 @@ const styles = (colors) =>
       shadowRadius: 4,
     },
     mealSliderCardSingle: {
-      width: "100%",
-      height: 125,
-      flexDirection: "row",
-      // alignItems: "center",
+      width: 320,
+      height: 220,
     },
     mealSliderImageContainer: {
       width: "100%",
-      height: "100%",
+      height: 140,
       position: "relative",
+      borderRadius: 12,
+      overflow: "hidden",
+      marginBottom: 4,
     },
     mealSliderImage: {
       width: "100%",
       height: "100%",
       resizeMode: "cover",
+    },
+    mealTypeBadge: {
+      position: "absolute",
+      bottom: 8,
+      left: 8,
+      backgroundColor: "#004432",
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      elevation: 3,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3,
+    },
+    mealTypeBadgeText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.white,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    mealDiscountPill: {
+      position: "absolute",
+      top: 8,
+      right: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#FFD700",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 20,
+      elevation: 3,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3,
+    },
+    mealDiscountPillText: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: "#333",
+      marginLeft: 4,
     },
     mealSliderContent: {
       position: "absolute",
@@ -3332,27 +3410,24 @@ const styles = (colors) =>
       justifyContent: "flex-end",
     },
     mealSliderInfo: {
-      alignItems: "flex-start",
+      paddingHorizontal: 10,
+      paddingTop: 5,
+      paddingBottom: 8,
     },
     mealSliderIcon: {
       fontSize: 16,
       marginBottom: 2,
     },
     mealSliderLabel: {
-      fontSize: 12,
-      fontWeight: "bold",
-      color: colors.white,
-      flexShrink: 1,
-      minWidth: 0,
-      marginBottom: 1,
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 4,
     },
     mealSliderDescription: {
-      fontSize: 14,
-      color: colors.white,
-      marginTop: 5,
-      fontWeight: 300,
-      flexShrink: 1,
-      minWidth: 0,
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
     },
     priceRowWithInfo: {
       flexDirection: "row",
