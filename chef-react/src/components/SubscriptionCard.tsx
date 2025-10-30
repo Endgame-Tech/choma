@@ -33,6 +33,7 @@ interface SubscriptionAssignment {
     planName: string;
     durationWeeks: number;
     planDescription?: string;
+    isFiveWorkingDays?: boolean;
   };
   assignmentStatus: string;
   assignedAt: string;
@@ -119,11 +120,11 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     }
   };
 
-  const pendingMealIds = assignment.todaysMeals
+  const pendingMealIds = (assignment.todaysMeals || [])
     .filter(meal => ['scheduled', 'chef_assigned'].includes(meal.status))
     .map(meal => meal._id);
 
-  const preparingMealIds = assignment.todaysMeals
+  const preparingMealIds = (assignment.todaysMeals || [])
     .filter(meal => meal.status === 'preparing')
     .map(meal => meal._id);
 
@@ -144,7 +145,9 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             </span>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-            {assignment.mealPlanId.planName} • {assignment.mealPlanId.durationWeeks} weeks
+            {assignment.mealPlanId.planName} • {assignment.mealPlanId.isFiveWorkingDays
+              ? `${assignment.mealPlanId.durationWeeks * 5} Days Plan • 5/week`
+              : `${assignment.mealPlanId.durationWeeks} week(s)`}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Frequency: {assignment.subscriptionId.frequency}
@@ -221,12 +224,12 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       </div>
 
       {/* My Today's Meals */}
-      {assignment.todaysMeals.length > 0 && (
+      {(assignment.todaysMeals?.length || 0) > 0 && (
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
               <ChefHat size={14} />
-              My Today's Meals ({assignment.todaysMeals.length})
+              My Today's Meals ({assignment.todaysMeals?.length || 0})
             </h4>
 
             {/* Quick Actions */}
@@ -254,7 +257,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           </div>
 
           <div className="space-y-2">
-            {assignment.todaysMeals.slice(0, 3).map((meal, index) => (
+            {(assignment.todaysMeals || []).slice(0, 3).map((meal, index) => (
               <div key={index} className="flex items-center justify-between text-sm">
                 <div className="flex-1">
                   <span className="text-gray-900 dark:text-white">
@@ -272,9 +275,9 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               </div>
             ))}
 
-            {assignment.todaysMeals.length > 3 && (
+            {(assignment.todaysMeals?.length || 0) > 3 && (
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                +{assignment.todaysMeals.length - 3} more meals
+                +{(assignment.todaysMeals?.length || 0) - 3} more meals
               </p>
             )}
           </div>
@@ -293,10 +296,10 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       </div>
 
       {/* Dietary Information */}
-      {(assignment.subscriptionId.dietaryPreferences.length > 0 || assignment.subscriptionId.allergens.length > 0) && (
+      {((assignment.subscriptionId.dietaryPreferences?.length || 0) > 0 || (assignment.subscriptionId.allergens?.length || 0) > 0) && (
         <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
           <div className="flex flex-wrap gap-1">
-            {assignment.subscriptionId.dietaryPreferences.slice(0, 2).map((pref, index) => (
+            {assignment.subscriptionId.dietaryPreferences?.slice(0, 2).map((pref, index) => (
               <span
                 key={index}
                 className="px-2 py-1 text-xs bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200 rounded"
@@ -305,7 +308,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               </span>
             ))}
 
-            {assignment.subscriptionId.allergens.slice(0, 2).map((allergen, index) => (
+            {assignment.subscriptionId.allergens?.slice(0, 2).map((allergen, index) => (
               <span
                 key={index}
                 className="px-2 py-1 text-xs bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-200 rounded flex items-center gap-1"
@@ -315,7 +318,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               </span>
             ))}
 
-            {(assignment.subscriptionId.dietaryPreferences.length > 2 || assignment.subscriptionId.allergens.length > 2) && (
+            {((assignment.subscriptionId.dietaryPreferences?.length || 0) > 2 || (assignment.subscriptionId.allergens?.length || 0) > 2) && (
               <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded">
                 +more
               </span>

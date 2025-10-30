@@ -10,13 +10,13 @@ export const APP_CONFIG = {
   // For future backend integration
   API_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "http://192.168.1.118:5001/api" // Your development machine's IP
-      : "http://192.168.1.118:5001/api" // Your development machine's IP
+      ? "http://172.23.187.104:5001/api" // Your development machine's IP
+      : "http://172.23.187.104:5001/api" // Your development machine's IP
     : "https://choma.onrender.com/api",
 
   WS_BASE_URL: __DEV__
     ? Platform.OS === "android"
-      ? "ws://192.168.1.118:5001" // Android Emulator connects to host machine
+      ? "ws://172.23.187.104:5001" // Android Emulator connects to host machine
       : "ws://localhost:5001" // iOS Simulator
     : "wss://choma.onrender.com", // Production WebSocket URL
 

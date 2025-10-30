@@ -372,6 +372,33 @@ export const chefSubscriptionsApi = {
       content
     })
     return handleResponse(response)
+  },
+
+  // Update all meals for a specific day (batch update)
+  async updateDailyMealsStatus(subscriptionId: string, date: string, status: string, notes?: string): Promise<any> {
+    const response = await api.put<ApiResponse<any>>(`/subscriptions/${subscriptionId}/daily-meals/update`, {
+      date,
+      status,
+      notes
+    })
+    return handleResponse(response)
+  },
+
+  // Update individual meal type status (breakfast, lunch, or dinner)
+  async updateMealTypeStatus(
+    subscriptionId: string,
+    date: string,
+    mealType: 'breakfast' | 'lunch' | 'dinner',
+    status: string,
+    notes?: string
+  ): Promise<any> {
+    const response = await api.put<ApiResponse<any>>(`/subscriptions/${subscriptionId}/meal-type/update`, {
+      date,
+      mealType,
+      status,
+      notes
+    })
+    return handleResponse(response)
   }
 }
 

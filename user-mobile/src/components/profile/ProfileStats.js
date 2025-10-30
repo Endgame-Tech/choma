@@ -95,7 +95,7 @@ const styles = (colors) =>
       backgroundColor: colors.background,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "600",
       color: colors.text,
       marginBottom: 16,

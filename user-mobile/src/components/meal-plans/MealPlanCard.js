@@ -214,7 +214,9 @@ const MealPlanCard = ({
               />
               <Text style={styles(colors).mealplanMetaText}>
                 {plan.duration ||
-                  (plan.durationWeeks
+                  (plan.durationWeeks && plan.isFiveWorkingDays
+                    ? `${plan.durationWeeks * 5} Days Plan • 5/week`
+                    : plan.durationWeeks
                     ? `${plan.durationWeeks} week(s)`
                     : plan.durationDays
                     ? `${plan.durationDays} days`

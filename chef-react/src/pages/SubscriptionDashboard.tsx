@@ -194,7 +194,7 @@ const SubscriptionDashboard: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Subscriptions</p>
                 <p className="text-3xl font-semibold text-gray-900 dark:text-white">
-                  {data.summary.totalActiveSubscriptions}
+                  {data.summary?.totalActiveSubscriptions || data.assignments?.length || 0}
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
@@ -208,7 +208,7 @@ const SubscriptionDashboard: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">My Today's Meals</p>
                 <p className="text-3xl font-semibold text-orange-600 dark:text-orange-400">
-                  {data.summary.totalTodaysMeals}
+                  {data.summary?.totalTodaysMeals || 0}
                 </p>
               </div>
               <div className="w-12 h-12 bg-orange-100 dark:bg-orange-800 rounded-full flex items-center justify-center">
@@ -222,7 +222,7 @@ const SubscriptionDashboard: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Performance Score</p>
                 <p className="text-3xl font-semibold text-green-600 dark:text-green-400">
-                  {data.summary.avgPerformanceScore}%
+                  {data.summary?.avgPerformanceScore || 0}%
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">

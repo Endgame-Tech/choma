@@ -133,3 +133,99 @@ export function useOrder(orderId: string) {
 
   return { order, loading, error: error || null }
 }
+
+// Hook for delivery-ready orders (Tab 2)
+export function useDeliveryReadyOrders(filters: OrderFilters = {}): UseOrdersReturn {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [stats, setStats] = useState<OrdersResponse['stats'] | null>(null)
+  const [pagination, setPagination] = useState<Pagination | null>(null)
+
+  // Generate cache key based on filters
+  const cacheKey = `delivery-ready-orders-${JSON.stringify(filters)}`
+
+  // Use cached API for delivery-ready orders fetching
+  const {
+    loading,
+    error,
+    refetch
+  } = useCachedApi(
+    () => ordersApi.getDeliveryReadyOrders(filters),
+    {
+      cacheKey,
+      cacheDuration: CACHE_DURATIONS.ORDERS,
+      immediate: true,
+      onSuccess: (result) => {
+        setOrders(Array.isArray(result.orders) ? result.orders : [])
+        setStats(result.stats || null)
+        const maybePagination = result as unknown as { pagination?: Pagination }
+        setPagination(maybePagination.pagination ?? null)
+      },
+      onError: () => {
+        setOrders([])
+        setStats(null)
+        setPagination(null)
+      }
+    }
+  )
+
+  // Wrapper function for manual refresh
+  const refreshOrders = useCallback(async () => {
+    await refetch()
+  }, [refetch])
+
+  const updateOrderStatus = useCallback(async (orderId: string, status: string, reason?: string) => {
+    try {
+      const updatedOrder = await ordersApi.updateOrderStatus(orderId, status, reason)
+      
+      // Update the local state
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order._id === orderId ? updatedOrder : order
+        )
+      )
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update order status'
+      throw new Error(errorMessage)
+    }
+  }, [])
+
+  const updateOrder = useCallback(async (orderId: string, data: Partial<Order>) => {
+    try {
+      const updatedOrder = await ordersApi.updateOrder(orderId, data)
+      
+      // Update the local state
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order._id === orderId ? updatedOrder : order
+        )
+      )
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update order'
+      throw new Error(errorMessage)
+    }
+  }, [])
+
+  const bulkUpdateOrders = useCallback(async (orderIds: string[], data: Partial<Order>) => {
+    try {
+      await ordersApi.bulkUpdateOrders(orderIds, data)
+      
+      // Refresh orders to get updated data
+      await refreshOrders()
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to bulk update orders'
+      throw new Error(errorMessage)
+    }
+  }, [refreshOrders])
+
+  return {
+    orders,
+    stats,
+    pagination,
+    loading,
+    error,
+    refreshOrders,
+    updateOrderStatus,
+    updateOrder,
+    bulkUpdateOrders
+  }
+}

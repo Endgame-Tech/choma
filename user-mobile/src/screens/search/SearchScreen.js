@@ -1714,7 +1714,7 @@ const styles = (colors) =>
       paddingVertical: 0,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "600",
       fontFamily: DMSansFonts.semiBold,
       marginBottom: 15,

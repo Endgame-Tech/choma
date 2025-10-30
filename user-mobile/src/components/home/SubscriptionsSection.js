@@ -138,7 +138,7 @@ const styles = (colors) =>
       marginBottom: 16,
     },
     sectionTitle: {
-      fontSize: 20,
+      fontSize: 16,
       fontWeight: "700",
       color: colors.text,
     },

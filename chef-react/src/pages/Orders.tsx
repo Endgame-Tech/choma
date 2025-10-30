@@ -75,6 +75,11 @@ const Orders: React.FC = () => {
       setActionLoading(orderId)
       await ordersApi.updateOrderStatus(orderId, 'Accepted')
       await fetchOrders() // Refresh orders
+
+      // Dispatch event to refresh Subscription Management screen
+      window.dispatchEvent(new CustomEvent('refreshSubscriptionData', {
+        detail: { action: 'order_accepted', orderId }
+      }))
     } catch (err) {
       alert(`Failed to accept order: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
@@ -369,26 +374,17 @@ const Orders: React.FC = () => {
                   </div>
                 )}
 
-                {/* Chef Status Display & Control */}
+                {/* Chef Status Display (Read-only) */}
                 {order.orderStatus !== 'Pending' && (
                   <div className="mb-4">
-                    <p className="text-sm text-gray-600">My Cooking Status</p>
-                    <div className="flex items-center justify-between mt-1">
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-gray-900">
-                          {getStatusLabel(order.delegationStatus || 'Assigned')}
-                        </span>
-                        <span className="ml-2">
-                          {React.createElement(getStatusIcon(order.delegationStatus || 'Assigned'), { size: 16 })}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => openStatusModal(order)}
-                        disabled={actionLoading === order._id}
-                        className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 disabled:opacity-50 transition-colors"
-                      >
-                        Update Status
-                      </button>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Current Status</p>
+                    <div className="flex items-center mt-1">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {getStatusLabel(order.delegationStatus || 'Assigned')}
+                      </span>
+                      <span className="ml-2">
+                        {React.createElement(getStatusIcon(order.delegationStatus || 'Assigned'), { size: 16 })}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -403,7 +399,7 @@ const Orders: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="p-4 border-t border-gray-200 bg-gray-50">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                 <div className="flex space-x-2">
                   <button
                     onClick={() => openOrderDetails(order)}
@@ -413,34 +409,26 @@ const Orders: React.FC = () => {
                     View Details
                   </button>
 
-                  {order.orderStatus === 'Pending' && (
-                    <>
-                      <button
-                        onClick={() => handleAcceptOrder(order._id)}
-                        disabled={actionLoading === order._id}
-                        className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-                      >
-                        {actionLoading === order._id ? 'Processing...' : <><CheckCircle size={16} className="mr-1" /> Accept Order</>}
-                      </button>
-                      <button
-                        onClick={() => handleRejectOrder(order._id)}
-                        disabled={actionLoading === order._id}
-                        className="px-3 py-2 border border-red-300 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
-                      >
-                        Reject
-                      </button>
-                    </>
-                  )}
-
-                  {order.orderStatus !== 'Pending' && order.orderStatus !== 'Cancelled' && (
-                    <button
-                      onClick={() => openStatusModal(order)}
-                      disabled={actionLoading === order._id}
-                      className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                    >
-                      Update Cooking Status
-                    </button>
-                  )}
+                  {/* Show Accept/Reject buttons for Pending orders OR orders that haven't been accepted yet */}
+                  {(order.orderStatus === 'Pending' ||
+                    (order.delegationStatus && !['Accepted', 'In Progress', 'Ready', 'Completed'].includes(order.delegationStatus))) && (
+                      <>
+                        <button
+                          onClick={() => handleAcceptOrder(order._id)}
+                          disabled={actionLoading === order._id}
+                          className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center"
+                        >
+                          {actionLoading === order._id ? 'Processing...' : <><CheckCircle size={16} className="mr-1" /> Accept</>}
+                        </button>
+                        <button
+                          onClick={() => handleRejectOrder(order._id)}
+                          disabled={actionLoading === order._id}
+                          className="px-3 py-2 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 text-sm font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
                 </div>
               </div>
             </div>

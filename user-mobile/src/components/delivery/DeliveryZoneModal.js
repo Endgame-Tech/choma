@@ -170,7 +170,7 @@ const DeliveryZoneModal = ({
           {/* User Address Display */}
           {userAddress ? (
             <View style={styles(colors).addressContainer}>
-              <CustomIcon name="home" size={16} color={colors.textSecondary} />
+              <CustomIcon name="location-filled" size={16} color={colors.textSecondary} />
               <Text style={styles(colors).addressText}>
                 Your address: {userAddress}
               </Text>
@@ -322,13 +322,13 @@ const styles = (colors) =>
       alignItems: "center",
       gap: 8,
       backgroundColor: colors.background,
-      margin: 16,
-      padding: 12,
+      marginHorizontal: 16,
+      paddingVertical: 12,
       borderRadius: THEME.borderRadius.medium,
     },
     addressText: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: colors.text,
       flex: 1,
     },
     searchContainer: {
@@ -339,10 +339,13 @@ const styles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.background,
-      borderRadius: THEME.borderRadius.medium,
+      borderRadius: THEME.borderRadius.xxl,
       paddingHorizontal: 12,
       paddingVertical: 8,
       gap: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 8,
     },
     searchInput: {
       flex: 1,
@@ -384,16 +387,13 @@ const styles = (colors) =>
       backgroundColor: colors.background,
       borderRadius: THEME.borderRadius.medium,
       padding: 16,
-      marginVertical: 6,
-      borderWidth: 1,
-      borderColor: colors.border,
+      marginBottom: 6,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
     },
     selectedZoneItem: {
-      borderColor: colors.primary,
-      backgroundColor: `${colors.primary}10`,
+      backgroundColor: `${colors.primary2}10`,
     },
     zoneInfo: {
       flex: 1,
@@ -406,11 +406,12 @@ const styles = (colors) =>
     },
     zoneName: {
       fontSize: 16,
-      fontWeight: "600",
+      fontWeight: "500",
       color: colors.text,
     },
     selectedZoneText: {
-      color: colors.primary,
+      color: colors.text,
+      fontWeight: "bold",
     },
     zoneDetails: {
       fontSize: 14,
@@ -467,6 +468,8 @@ const styles = (colors) =>
     },
     modalFooter: {
       flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       gap: 12,
       paddingHorizontal: 20,
       paddingVertical: 16,
@@ -474,9 +477,8 @@ const styles = (colors) =>
       borderTopColor: colors.border,
     },
     cancelButton: {
-      flex: 1,
-      paddingVertical: 12,
-      borderRadius: THEME.borderRadius.medium,
+      padding: 12,
+      borderRadius: THEME.borderRadius.xxl,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
@@ -487,16 +489,15 @@ const styles = (colors) =>
       color: colors.textSecondary,
     },
     confirmButton: {
-      flex: 1,
-      paddingVertical: 12,
-      borderRadius: THEME.borderRadius.medium,
-      backgroundColor: colors.primary,
+      padding: 12,
+      borderRadius: THEME.borderRadius.xxl,
+      backgroundColor: colors.primary2,
       alignItems: "center",
     },
     confirmButtonText: {
       fontSize: 16,
       fontWeight: "600",
-      color: colors.white,
+      color: colors.text2,
     },
     disabledButton: {
       backgroundColor: colors.textMuted,

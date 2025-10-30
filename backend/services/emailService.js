@@ -2,39 +2,66 @@ const nodemailer = require("nodemailer");
 
 class EmailService {
   constructor() {
-    // Initialize Nodemailer with Gmail SMTP and production-ready settings
-    this.transporter = nodemailer.createTransport({
-      service: "gmail",
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false, // true for port 465, false for other ports
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-      // Production timeout and connection settings
-      connectionTimeout: 30000, // 30 seconds
-      greetingTimeout: 10000, // 10 seconds
-      socketTimeout: 60000, // 60 seconds
-      // Connection pooling for better performance
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-      // Retry configuration
-      rateDelta: 20000, // 20 second rate delta
-      rateLimit: 5, // max 5 emails per rateDelta
-      // TLS settings for better compatibility
-      tls: {
-        // ciphers: "SSLv3", // Removed for improved security and compatibility
-        rejectUnauthorized: false, // Consider setting to true in production
-      },
-      // Debug mode in development
-      debug: process.env.NODE_ENV === "development",
-      logger: process.env.NODE_ENV === "development",
-    });
+    // Use SendGrid as the primary and only email provider
+    this.isSendGrid = true;
 
-    // Verify connection configuration on startup
-    this.verifyConnection();
+    // Initialize SendGrid (API key must be provided in SENDGRID_API_KEY env var)
+    try {
+      const sgMail = require("@sendgrid/mail");
+      if (!process.env.SENDGRID_API_KEY) {
+        console.error(
+          "❌ SENDGRID_API_KEY is not set. Set process.env.SENDGRID_API_KEY to use SendGrid."
+        );
+        throw new Error("SendGrid API key is required");
+      } else {
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        this.sgMail = sgMail;
+        console.log("📧 SendGrid mail client initialized successfully");
+      }
+    } catch (err) {
+      console.error("❌ Failed to initialize SendGrid client:", err.message);
+      throw new Error(`SendGrid initialization failed: ${err.message}`);
+    }
+
+    // Gmail SMTP is now disabled - SendGrid only
+    if (false) {
+      // Initialize Nodemailer with Gmail SMTP and production-ready settings
+      this.transporter = nodemailer.createTransport({
+        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false, // true for port 465, false for other ports
+        auth: {
+          user: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD,
+        },
+        // Production timeout and connection settings
+        connectionTimeout: 30000, // 30 seconds
+        greetingTimeout: 10000, // 10 seconds
+        socketTimeout: 60000, // 60 seconds
+        // Connection pooling for better performance
+        pool: true,
+        maxConnections: 5,
+        maxMessages: 100,
+        // Retry configuration
+        rateDelta: 20000, // 20 second rate delta
+        rateLimit: 5, // max 5 emails per rateDelta
+        // TLS settings for better compatibility
+        tls: {
+          // ciphers: "SSLv3", // Removed for improved security and compatibility
+          rejectUnauthorized: false, // Consider setting to true in production
+        },
+        // Debug mode in development
+        debug: process.env.NODE_ENV === "development",
+        logger: process.env.NODE_ENV === "development",
+      });
+
+      // Verify connection configuration on startup
+      this.verifyConnection();
+    } else {
+      // Gmail SMTP disabled - SendGrid is the only email provider
+      console.log("� Using SendGrid as the only email provider");
+    }
 
     // Logo URL - can be updated to use Cloudinary or other CDN
     this.logoUrl =
@@ -106,60 +133,60 @@ class EmailService {
   }
 
   /**
-   * Send email with retry mechanism and fallback transporter
-   * @param {Object} mailOptions - Nodemailer mail options
+   * Send email using SendGrid only
+   * @param {Object} mailOptions - Mail options
    * @param {number} attempt - Current attempt number
-   * @param {boolean} useFallback - Whether to use fallback transporter
    * @returns {Promise<boolean>} - Success status
    */
-  async sendEmailWithRetry(mailOptions, attempt = 1, useFallback = false) {
+  async sendEmailWithRetry(mailOptions, attempt = 1) {
     try {
-      const transporter =
-        useFallback && this.fallbackTransporter
-          ? this.fallbackTransporter
-          : this.transporter;
+      // Use SendGrid as the only email provider
+      if (!this.sgMail) {
+        throw new Error("SendGrid client not initialized");
+      }
 
-      const transporterName = useFallback ? "fallback" : "primary";
+      const msg = {
+        to: mailOptions.to,
+        from:
+          mailOptions.from?.address ||
+          process.env.SENDGRID_FROM ||
+          process.env.SENDGRID_FROM ||
+          process.env.GMAIL_USER,
+        subject: mailOptions.subject,
+        text: mailOptions.text,
+        html: mailOptions.html,
+      };
 
-      await transporter.sendMail(mailOptions);
+      await this.sgMail.send(msg);
       console.log(
-        `✅ Email sent successfully to ${mailOptions.to} via ${transporterName} (attempt ${attempt})`
+        `✅ Email sent successfully to ${mailOptions.to} via SendGrid (attempt ${attempt})`
       );
       return true;
     } catch (error) {
       console.error(
-        `❌ Email send attempt ${attempt} failed via ${
-          useFallback ? "fallback" : "primary"
-        }:`,
+        `❌ SendGrid email send attempt ${attempt} failed:`,
         error.message
       );
 
-      // If primary failed and we have fallback, try fallback immediately
-      if (!useFallback && this.fallbackTransporter && this.shouldRetry(error)) {
-        console.log(`🔄 Trying fallback SMTP transporter...`);
-        return await this.sendEmailWithRetry(mailOptions, attempt, true);
-      }
-
-      // Check if we should retry with same transporter
+      // Check if we should retry
       if (attempt < this.maxRetryAttempts && this.shouldRetry(error)) {
         console.log(
-          `🔄 Retrying email send in ${this.retryDelay}ms... (${attempt}/${this.maxRetryAttempts})`
+          `🔄 Retrying SendGrid email send in ${this.retryDelay}ms... (${attempt}/${this.maxRetryAttempts})`
         );
 
         // Wait before retry
         await new Promise((resolve) => setTimeout(resolve, this.retryDelay));
 
         // Exponential backoff: increase delay for next retry
-        const nextDelay = this.retryDelay * 1.5;
+        this.retryDelay = this.retryDelay * 1.5;
 
-        return await this.sendEmailWithRetry(
-          mailOptions,
-          attempt + 1,
-          useFallback
-        );
+        return await this.sendEmailWithRetry(mailOptions, attempt + 1);
       }
 
-      console.error(`💥 Email send failed after ${attempt} attempts:`, error);
+      console.error(
+        `💥 SendGrid email send failed after ${attempt} attempts:`,
+        error
+      );
       return false;
     }
   }
@@ -189,47 +216,36 @@ class EmailService {
   }
 
   /**
-   * Test SMTP connection and send test email
+   * Test SendGrid email service
    * @param {string} testEmail - Email to send test to
    * @returns {Promise<Object>} - Test results
    */
   async testEmailService(testEmail) {
     const results = {
-      connectionTest: false,
-      primaryTransporter: false,
-      fallbackTransporter: false,
+      sendGridTest: false,
       testEmailSent: false,
       errors: [],
     };
 
-    // Test primary transporter connection
+    // Test SendGrid connection
     try {
-      await this.transporter.verify();
-      results.connectionTest = true;
-      results.primaryTransporter = true;
-      console.log("✅ Primary SMTP connection test passed");
-    } catch (error) {
-      results.errors.push(`Primary SMTP: ${error.message}`);
-      console.error("❌ Primary SMTP connection test failed:", error.message);
-    }
-
-    // Test fallback transporter if available
-    if (this.fallbackTransporter) {
-      try {
-        await this.fallbackTransporter.verify();
-        results.fallbackTransporter = true;
-        console.log("✅ Fallback SMTP connection test passed");
-      } catch (error) {
-        results.errors.push(`Fallback SMTP: ${error.message}`);
-        console.error(
-          "❌ Fallback SMTP connection test failed:",
-          error.message
-        );
+      if (!this.sgMail) {
+        throw new Error("SendGrid client not initialized");
       }
+
+      if (!process.env.SENDGRID_API_KEY) {
+        throw new Error("SendGrid API key not configured");
+      }
+
+      results.sendGridTest = true;
+      console.log("✅ SendGrid client test passed");
+    } catch (error) {
+      results.errors.push(`SendGrid: ${error.message}`);
+      console.error("❌ SendGrid client test failed:", error.message);
     }
 
-    // Send test email if we have a working transporter
-    if (results.primaryTransporter || results.fallbackTransporter) {
+    // Send test email if SendGrid is working
+    if (results.sendGridTest) {
       try {
         if (testEmail) {
           const testResult = await this.sendTestEmail(testEmail);
@@ -295,7 +311,7 @@ class EmailService {
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: testEmail,
         subject: "🧪 Choma Email Template Test - Logo Visibility Check",
@@ -393,7 +409,7 @@ class EmailService {
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: chefEmail,
         subject:
@@ -431,7 +447,7 @@ class EmailService {
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: chefEmail,
         subject: "Update on Your Choma Chef Application",
@@ -441,7 +457,7 @@ class EmailService {
         } We encourage you to reapply in the future. Best regards, The Choma Team`,
       };
 
-      await this.transporter.sendMail(mailOptions);
+      await this.sendEmailWithRetry(mailOptions);
       console.log(`✅ Chef rejection email sent successfully to ${chefEmail}`);
       return true;
     } catch (error) {
@@ -798,7 +814,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: email,
         subject: "Verify Your Email - Choma Chef Registration",
@@ -970,7 +986,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to,
         subject,
@@ -991,7 +1007,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         text: message.replace(/<[^>]*>/g, ""), // Strip HTML for plain text version
       };
 
-      await this.transporter.sendMail(mailOptions);
+      await this.sendEmailWithRetry(mailOptions);
       console.log(`✅ Notification email sent successfully to ${to}`);
       return true;
     } catch (error) {
@@ -1020,7 +1036,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: chefEmail,
         subject:
@@ -1031,7 +1047,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         }. Please contact support for assistance.`,
       };
 
-      await this.transporter.sendMail(mailOptions);
+      await this.sendEmailWithRetry(mailOptions);
       console.log(`✅ Chef suspension email sent successfully to ${chefEmail}`);
       return true;
     } catch (error) {
@@ -1060,7 +1076,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: chefEmail,
         subject: "Your Choma Chef Account Has Been Deactivated",
@@ -1070,7 +1086,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         }. Contact support if you believe this is an error.`,
       };
 
-      await this.transporter.sendMail(mailOptions);
+      await this.sendEmailWithRetry(mailOptions);
       console.log(
         `✅ Chef deactivation email sent successfully to ${chefEmail}`
       );
@@ -1097,7 +1113,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: chefEmail,
         subject:
@@ -1106,7 +1122,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         text: `Dear ${chefName}, great news! Your Choma chef account has been reactivated. You can now start accepting orders again. Welcome back to the Choma family!`,
       };
 
-      await this.transporter.sendMail(mailOptions);
+      await this.sendEmailWithRetry(mailOptions);
       console.log(
         `✅ Chef reactivation email sent successfully to ${chefEmail}`
       );
@@ -1133,7 +1149,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: chefEmail,
         subject: "Your Choma Chef Account Suspension Has Been Lifted 🎉",
@@ -1141,7 +1157,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         text: `Dear ${chefName}, your Choma chef account suspension has been lifted. You can now resume your chef activities. Thank you for your patience.`,
       };
 
-      await this.transporter.sendMail(mailOptions);
+      await this.sendEmailWithRetry(mailOptions);
       console.log(
         `✅ Chef unsuspension email sent successfully to ${chefEmail}`
       );
@@ -1664,7 +1680,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: email,
         subject: "Reset Your Choma Password 🔐",
@@ -1672,7 +1688,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         text: `Dear ${name}, we received a request to reset your password for your Choma chef account. Click the following link to reset your password: ${resetUrl} This link will expire in 15 minutes for security reasons. If you didn't request this, please ignore this email.`,
       };
 
-      await this.transporter.sendMail(mailOptions);
+      await this.sendEmailWithRetry(mailOptions);
       console.log(`✅ Password reset email sent successfully to ${email}`);
       return true;
     } catch (error) {
@@ -1698,7 +1714,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
       const mailOptions = {
         from: {
           name: "Choma Team",
-          address: process.env.GMAIL_USER,
+          address: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
         },
         to: email,
         subject: "Password Successfully Reset ✅",
@@ -1706,7 +1722,7 @@ Choma - Delicious Home Cooked Meals, Delivered To Your Doorstep
         text: `Dear ${name}, your Choma password has been successfully reset. If you didn't make this change, please contact our support team immediately. For security, you've been logged out of all devices.`,
       };
 
-      await this.transporter.sendMail(mailOptions);
+      await this.sendEmailWithRetry(mailOptions);
       console.log(
         `✅ Password reset confirmation email sent successfully to ${email}`
       );

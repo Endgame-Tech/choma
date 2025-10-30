@@ -337,7 +337,7 @@ const styles = (colors) =>
       paddingVertical: 20,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "600",
       color: colors.text,
       marginBottom: 15,

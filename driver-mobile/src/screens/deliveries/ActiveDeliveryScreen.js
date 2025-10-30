@@ -28,7 +28,7 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
   const { showError, showInfo, showSuccess } = useAlert();
   const { delivery, assignmentId } = route.params || {};
-  
+
   // State
   const [activeDelivery, setActiveDelivery] = useState(delivery || null);
   const [loading, setLoading] = useState(!delivery);
@@ -45,15 +45,15 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
       const response = await driverApiService.getAssignmentDetails(
         assignmentId || activeDelivery?.assignmentId || activeDelivery?._id
       );
-      
+
       if (response.success) {
         setActiveDelivery(response.data);
       } else {
-        showError('Failed to load delivery details');
+        showError("Failed to load delivery details");
       }
     } catch (error) {
-      console.error('Error loading delivery:', error);
-      showError('Failed to load delivery details');
+      console.error("Error loading delivery:", error);
+      showError("Failed to load delivery details");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -85,26 +85,29 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
   };
 
   const isDeliveryCompleted = () => {
-    return activeDelivery?.status === 'delivered' || activeDelivery?.status === 'cancelled';
+    return (
+      activeDelivery?.status === "delivered" ||
+      activeDelivery?.status === "cancelled"
+    );
   };
 
   const getNextStatus = () => {
     const currentStatus = activeDelivery?.status;
     const statusFlow = {
-      'assigned': 'picked_up',
-      'picked_up': 'en_route',
-      'en_route': 'delivered'
+      assigned: "picked_up",
+      picked_up: "en_route",
+      en_route: "delivered",
     };
     return statusFlow[currentStatus];
   };
 
   const getStatusDisplayName = (status) => {
     const statusNames = {
-      'assigned': 'Assigned',
-      'picked_up': 'Picked Up',
-      'en_route': 'En Route to Customer',
-      'delivered': 'Delivered',
-      'cancelled': 'Cancelled'
+      assigned: "Assigned",
+      picked_up: "Picked Up",
+      en_route: "En Route to Customer",
+      delivered: "Delivered",
+      cancelled: "Cancelled",
     };
     return statusNames[status] || status;
   };
@@ -112,17 +115,17 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
   const getNextActionText = () => {
     const currentStatus = activeDelivery?.status;
     const actions = {
-      'assigned': 'Confirm Pickup',
-      'picked_up': 'Start Delivery',
-      'en_route': 'Confirm Delivery'
+      assigned: "Confirm Pickup",
+      picked_up: "Start Delivery",
+      en_route: "Confirm Delivery",
     };
-    return actions[currentStatus] || 'Update Status';
+    return actions[currentStatus] || "Update Status";
   };
 
-  const handleStatusUpdate = async (newStatus, notes = '') => {
+  const handleStatusUpdate = async (newStatus, notes = "") => {
     try {
       setIsUpdatingStatus(true);
-      
+
       const response = await driverApiService.updateDeliveryStatus(
         activeDelivery._id,
         newStatus,
@@ -132,23 +135,23 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
       if (response.success) {
         setActiveDelivery(response.data);
         showSuccess(`Status updated to ${getStatusDisplayName(newStatus)}`);
-        
-        if (newStatus === 'delivered') {
+
+        if (newStatus === "delivered") {
           // Navigate back to deliveries list after completion
           setTimeout(() => {
-            navigation.navigate('AvailableDeliveries');
+            navigation.navigate("AvailableDeliveries");
           }, 2000);
         }
       } else {
-        showError('Failed to update status');
+        showError("Failed to update status");
       }
     } catch (error) {
-      console.error('Error updating status:', error);
-      showError('Failed to update status');
+      console.error("Error updating status:", error);
+      showError("Failed to update status");
     } finally {
       setIsUpdatingStatus(false);
       setShowStatusModal(false);
-      setConfirmationNotes('');
+      setConfirmationNotes("");
       setPendingStatus(null);
     }
   };
@@ -158,21 +161,23 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
     if (!nextStatus) return;
 
     setPendingStatus(nextStatus);
-    
-    if (nextStatus === 'delivered') {
+
+    if (nextStatus === "delivered") {
       // Require confirmation notes for delivery
       setShowStatusModal(true);
     } else {
       // Confirm action for pickup and en route
       Alert.alert(
-        'Confirm Action',
-        `Are you sure you want to mark this delivery as ${getStatusDisplayName(nextStatus)}?`,
+        "Confirm Action",
+        `Are you sure you want to mark this delivery as ${getStatusDisplayName(
+          nextStatus
+        )}?`,
         [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Confirm', 
-            onPress: () => handleStatusUpdate(nextStatus) 
-          }
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Confirm",
+            onPress: () => handleStatusUpdate(nextStatus),
+          },
         ]
       );
     }
@@ -181,27 +186,28 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
   const openMapsNavigation = () => {
     if (!activeDelivery) return;
 
-    const destination = activeDelivery.deliveryLocation?.address || 
-                      activeDelivery.deliveryAddress ||
-                      activeDelivery.customer?.address;
-    
+    const destination =
+      activeDelivery.deliveryLocation?.address ||
+      activeDelivery.deliveryAddress ||
+      activeDelivery.customer?.address;
+
     if (!destination) {
-      showError('Delivery address not available');
+      showError("Delivery address not available");
       return;
     }
 
     const encodedAddress = encodeURIComponent(destination);
     const mapsUrl = `https://maps.google.com/?daddr=${encodedAddress}`;
-    
+
     Alert.alert(
-      'Open Navigation',
-      'This will open Google Maps for turn-by-turn directions.',
+      "Open Navigation",
+      "This will open Google Maps for turn-by-turn directions.",
       [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Open Maps', 
-          onPress: () => Linking.openURL(mapsUrl) 
-        }
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Open Maps",
+          onPress: () => Linking.openURL(mapsUrl),
+        },
       ]
     );
   };
@@ -211,36 +217,36 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
     if (phone) {
       Linking.openURL(`tel:${phone}`);
     } else {
-      showInfo('Customer contact not available');
+      showInfo("Customer contact not available");
     }
   };
 
   const getStatusColor = (status) => {
     const statusColors = {
-      'assigned': colors.warning,
-      'picked_up': colors.primary,
-      'en_route': colors.success,
-      'delivered': colors.success,
-      'cancelled': colors.error,
+      assigned: colors.warning,
+      picked_up: colors.primary,
+      en_route: colors.success,
+      delivered: colors.success,
+      cancelled: colors.error,
     };
     return statusColors[status] || colors.textMuted;
   };
 
   const getStatusIcon = (status) => {
     const icons = {
-      'assigned': 'person-add-outline',
-      'picked_up': 'bag-check-outline',
-      'en_route': 'navigation-outline',
-      'delivered': 'checkmark-circle-outline',
-      'cancelled': 'close-circle-outline',
+      assigned: "person-add-outline",
+      picked_up: "bag-check-outline",
+      en_route: "navigation-outline",
+      delivered: "checkmark-circle-outline",
+      cancelled: "close-circle-outline",
     };
-    return icons[status] || 'ellipse-outline';
+    return icons[status] || "ellipse-outline";
   };
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(timestamp).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -265,7 +271,11 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
     return (
       <SafeAreaView style={styles(colors).container}>
         <View style={styles(colors).errorContainer}>
-          <Ionicons name="alert-circle-outline" size={80} color={colors.error} />
+          <Ionicons
+            name="alert-circle-outline"
+            size={80}
+            color={colors.error}
+          />
           <Text style={styles(colors).errorTitle}>Delivery Not Found</Text>
           <Text style={styles(colors).errorSubtitle}>
             Please check your delivery details and try again
@@ -389,19 +399,25 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
         {/* Route Information */}
         <View style={styles(colors).routeCard}>
           <Text style={styles(colors).sectionTitle}>Route Information</Text>
-          
+
           {/* Pickup Location */}
           <View style={styles(colors).locationItem}>
-            <View style={[styles(colors).locationIcon, { backgroundColor: colors.warning + '20' }]}>
+            <View
+              style={[
+                styles(colors).locationIcon,
+                { backgroundColor: colors.warning + "20" },
+              ]}
+            >
               <Ionicons name="restaurant" size={20} color={colors.warning} />
             </View>
             <View style={styles(colors).locationDetails}>
               <Text style={styles(colors).locationTitle}>Pickup Location</Text>
               <Text style={styles(colors).locationAddress}>
-                {activeDelivery.pickupLocation?.address || activeDelivery.chef?.kitchenAddress}
+                {activeDelivery.pickupLocation?.address ||
+                  activeDelivery.chef?.kitchenAddress}
               </Text>
               <Text style={styles(colors).locationNote}>
-                Chef: {activeDelivery.chef?.name || 'Kitchen Staff'}
+                Chef: {activeDelivery.chef?.name || "Kitchen Staff"}
               </Text>
             </View>
           </View>
@@ -410,16 +426,24 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
 
           {/* Delivery Location */}
           <View style={styles(colors).locationItem}>
-            <View style={[styles(colors).locationIcon, { backgroundColor: colors.success + '20' }]}>
+            <View
+              style={[
+                styles(colors).locationIcon,
+                { backgroundColor: colors.success + "20" },
+              ]}
+            >
               <Ionicons name="location" size={20} color={colors.success} />
             </View>
             <View style={styles(colors).locationDetails}>
-              <Text style={styles(colors).locationTitle}>Delivery Location</Text>
+              <Text style={styles(colors).locationTitle}>
+                Delivery Location
+              </Text>
               <Text style={styles(colors).locationAddress}>
-                {activeDelivery.deliveryLocation?.address || activeDelivery.deliveryAddress}
+                {activeDelivery.deliveryLocation?.address ||
+                  activeDelivery.deliveryAddress}
               </Text>
               <Text style={styles(colors).locationNote}>
-                Customer: {activeDelivery.customer?.name || 'Customer'}
+                Customer: {activeDelivery.customer?.name || "Customer"}
               </Text>
             </View>
             <TouchableOpacity
@@ -438,7 +462,9 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
             <View style={styles(colors).infoRow}>
               <Text style={styles(colors).infoLabel}>Meal Plan:</Text>
               <Text style={styles(colors).infoValue}>
-                {activeDelivery.mealPlan?.name || activeDelivery.orderItems?.planName || 'Delicious Meal'}
+                {activeDelivery.mealPlan?.name ||
+                  activeDelivery.orderItems?.planName ||
+                  "Delicious Meal"}
               </Text>
             </View>
             <View style={styles(colors).infoRow}>
@@ -450,12 +476,14 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
             <View style={styles(colors).infoRow}>
               <Text style={styles(colors).infoLabel}>Distance:</Text>
               <Text style={styles(colors).infoValue}>
-                {activeDelivery.estimatedDistance || '5.2'} km
+                {activeDelivery.estimatedDistance || "5.2"} km
               </Text>
             </View>
             {activeDelivery.instructions && (
               <View style={styles(colors).instructionsSection}>
-                <Text style={styles(colors).instructionsTitle}>Special Instructions:</Text>
+                <Text style={styles(colors).instructionsTitle}>
+                  Special Instructions:
+                </Text>
                 <Text style={styles(colors).instructionsText}>
                   {activeDelivery.instructions}
                 </Text>
@@ -472,10 +500,14 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
               style={styles(colors).actionButton}
               onPress={openMapsNavigation}
             >
-              <Ionicons name="navigate-outline" size={20} color={colors.primary} />
+              <Ionicons
+                name="navigate-outline"
+                size={20}
+                color={colors.primary}
+              />
               <Text style={styles(colors).actionButtonText}>Navigation</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={styles(colors).actionButton}
               onPress={callCustomer}
@@ -497,7 +529,7 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
         <View style={styles(colors).modalOverlay}>
           <View style={styles(colors).modalContent}>
             <Text style={styles(colors).modalTitle}>Confirm Delivery</Text>
-            
+
             <Text style={styles(colors).modalSubtitle}>
               Add any delivery notes or special circumstances:
             </Text>
@@ -514,15 +546,23 @@ const ActiveDeliveryScreen = ({ route, navigation }) => {
 
             <View style={styles(colors).modalButtons}>
               <TouchableOpacity
-                style={[styles(colors).modalButton, styles(colors).cancelButton]}
+                style={[
+                  styles(colors).modalButton,
+                  styles(colors).cancelButton,
+                ]}
                 onPress={() => setShowStatusModal(false)}
               >
                 <Text style={styles(colors).cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles(colors).modalButton, styles(colors).confirmButton]}
-                onPress={() => handleStatusUpdate(pendingStatus, confirmationNotes)}
+                style={[
+                  styles(colors).modalButton,
+                  styles(colors).confirmButton,
+                ]}
+                onPress={() =>
+                  handleStatusUpdate(pendingStatus, confirmationNotes)
+                }
                 disabled={isUpdatingStatus}
               >
                 {isUpdatingStatus ? (
@@ -549,8 +589,8 @@ const styles = (colors) =>
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     loadingText: {
       marginTop: 16,
@@ -559,26 +599,26 @@ const styles = (colors) =>
     },
     errorContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       padding: 20,
     },
     errorTitle: {
       fontSize: 24,
-      fontWeight: '700',
+      fontWeight: "700",
       marginTop: 16,
       color: colors.text,
     },
     errorSubtitle: {
       fontSize: 16,
       color: colors.textMuted,
-      textAlign: 'center',
+      textAlign: "center",
       marginTop: 8,
       marginBottom: 32,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
     },
@@ -590,12 +630,12 @@ const styles = (colors) =>
     },
     headerTitle: {
       fontSize: 20,
-      fontWeight: '700',
-      color: 'white',
+      fontWeight: "700",
+      color: "white",
     },
     deliveryId: {
       fontSize: 14,
-      color: 'rgba(255, 255, 255, 0.8)',
+      color: "rgba(255, 255, 255, 0.8)",
     },
     mapButton: {
       marginLeft: 16,
@@ -613,16 +653,16 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     statusHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       marginBottom: 16,
     },
     statusIcon: {
       width: 50,
       height: 50,
       borderRadius: 25,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       marginRight: 16,
     },
     statusInfo: {
@@ -630,7 +670,7 @@ const styles = (colors) =>
     },
     statusText: {
       fontSize: 18,
-      fontWeight: '700',
+      fontWeight: "700",
       color: colors.text,
     },
     statusTime: {
@@ -639,17 +679,17 @@ const styles = (colors) =>
       marginTop: 4,
     },
     nextActionButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       backgroundColor: colors.success,
       paddingVertical: 12,
       borderRadius: 12,
     },
     nextActionText: {
-      color: 'white',
+      color: "white",
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       marginLeft: 8,
     },
     earningsCard: {
@@ -661,8 +701,8 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     sectionTitle: {
-      fontSize: 18,
-      fontWeight: '700',
+      fontSize: 16,
+      fontWeight: "700",
       color: colors.text,
       marginBottom: 16,
     },
@@ -672,8 +712,8 @@ const styles = (colors) =>
       padding: 16,
     },
     earningsItem: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      justifyContent: "space-between",
       marginBottom: 8,
     },
     earningsLabel: {
@@ -682,12 +722,12 @@ const styles = (colors) =>
     },
     earningsValue: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     earningsTotal: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      justifyContent: "space-between",
       paddingTop: 12,
       borderTopWidth: 1,
       borderTopColor: colors.border,
@@ -695,12 +735,12 @@ const styles = (colors) =>
     },
     totalLabel: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     totalValue: {
       fontSize: 18,
-      fontWeight: '700',
+      fontWeight: "700",
       color: colors.success,
     },
     routeCard: {
@@ -712,15 +752,15 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     locationItem: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
+      flexDirection: "row",
+      alignItems: "flex-start",
     },
     locationIcon: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       marginRight: 12,
     },
     locationDetails: {
@@ -728,7 +768,7 @@ const styles = (colors) =>
     },
     locationTitle: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 4,
     },
@@ -753,8 +793,8 @@ const styles = (colors) =>
       height: 32,
       borderRadius: 16,
       backgroundColor: colors.primary,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       marginLeft: 12,
     },
     orderCard: {
@@ -771,8 +811,8 @@ const styles = (colors) =>
       padding: 16,
     },
     infoRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      justifyContent: "space-between",
       marginBottom: 12,
     },
     infoLabel: {
@@ -783,9 +823,9 @@ const styles = (colors) =>
     infoValue: {
       fontSize: 14,
       color: colors.text,
-      fontWeight: '600',
+      fontWeight: "600",
       flex: 2,
-      textAlign: 'right',
+      textAlign: "right",
     },
     instructionsSection: {
       marginTop: 12,
@@ -795,7 +835,7 @@ const styles = (colors) =>
     },
     instructionsTitle: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 8,
     },
@@ -813,25 +853,25 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     actionButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      justifyContent: "space-between",
     },
     actionButton: {
       flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.primary + '15',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary + "15",
       paddingVertical: 12,
       borderRadius: 12,
       marginHorizontal: 4,
       borderWidth: 1,
-      borderColor: colors.primary + '30',
+      borderColor: colors.primary + "30",
     },
     actionButtonText: {
       color: colors.primary,
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       marginLeft: 6,
     },
     button: {
@@ -839,37 +879,37 @@ const styles = (colors) =>
       borderRadius: 12,
       paddingVertical: 16,
       paddingHorizontal: 32,
-      alignItems: 'center',
+      alignItems: "center",
     },
     buttonText: {
-      color: 'white',
+      color: "white",
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
     },
     modalContent: {
       backgroundColor: colors.cardBackground,
       borderRadius: 16,
       padding: 24,
-      width: '90%',
+      width: "90%",
       maxWidth: 400,
     },
     modalTitle: {
       fontSize: 20,
-      fontWeight: '700',
+      fontWeight: "700",
       color: colors.text,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 16,
     },
     modalSubtitle: {
       fontSize: 14,
       color: colors.textMuted,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 20,
     },
     notesInput: {
@@ -879,20 +919,20 @@ const styles = (colors) =>
       padding: 12,
       fontSize: 16,
       color: colors.text,
-      textAlignVertical: 'top',
+      textAlignVertical: "top",
       marginBottom: 24,
       minHeight: 80,
       backgroundColor: colors.background,
     },
     modalButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      justifyContent: "space-between",
     },
     modalButton: {
       flex: 1,
       paddingVertical: 12,
       borderRadius: 12,
-      alignItems: 'center',
+      alignItems: "center",
     },
     cancelButton: {
       backgroundColor: colors.background,
@@ -907,12 +947,12 @@ const styles = (colors) =>
     cancelButtonText: {
       color: colors.textMuted,
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     confirmButtonText: {
-      color: 'white',
+      color: "white",
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
   });
 

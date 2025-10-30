@@ -32,6 +32,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
     description: '',
     coverImage: '',
     durationWeeks: '4',
+    isFiveWorkingDays: false,
     tier: 'Silver',
     targetAudience: 'Family',
     mealTypes: ['breakfast', 'lunch', 'dinner'],
@@ -113,6 +114,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
         description: typeof mealPlanAny.description === 'string' ? mealPlanAny.description as string : '',
         coverImage: typeof mealPlanAny.coverImage === 'string' ? mealPlanAny.coverImage as string : '',
         durationWeeks: typeof mealPlanAny.durationWeeks === 'number' ? String(mealPlanAny.durationWeeks as number) : (typeof mealPlanAny.durationWeeks === 'string' ? mealPlanAny.durationWeeks as string : '4'),
+        isFiveWorkingDays: typeof mealPlanAny.isFiveWorkingDays === 'boolean' ? mealPlanAny.isFiveWorkingDays as boolean : false,
         tier: typeof mealPlanAny.tier === 'string' ? mealPlanAny.tier as string : 'Silver',
         targetAudience: typeof mealPlanAny.targetAudience === 'string' ? mealPlanAny.targetAudience as string : 'Family',
         mealTypes: Array.isArray(mealPlanAny.mealTypes) && mealPlanAny.mealTypes.length > 0
@@ -173,6 +175,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
         description: formData.description,
         coverImage: formData.coverImage,
         durationWeeks: parseInt(formData.durationWeeks),
+        isFiveWorkingDays: formData.isFiveWorkingDays,
         tier: formData.tier,
         targetAudience: formData.targetAudience,
         mealTypes: formData.mealTypes,
@@ -347,15 +350,48 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                     <option value="4">4 Weeks</option>
                   </select>
                   <div className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
-                    Current: {mealPlan.durationWeeks} week(s) → New: {parseInt(formData.durationWeeks)} week(s)
+                    Total days: {formData.isFiveWorkingDays
+                      ? `${parseInt(formData.durationWeeks) * 5} days (${parseInt(formData.durationWeeks) * 5} Days Plan • 5/week)`
+                      : `${parseInt(formData.durationWeeks) * 7} days`}
                     {parseInt(formData.durationWeeks) !== mealPlan.durationWeeks && (
-                      <span className="text-orange-600 dark:text-orange-400 ml-1">
+                      <span className="text-orange-600 dark:text-orange-400 ml-1 block">
                         ⚠️ Changing duration may affect meal assignments
                       </span>
                     )}
                   </div>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                    5 Working Days Plan
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, isFiveWorkingDays: !prev.isFiveWorkingDays }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        formData.isFiveWorkingDays ? 'bg-blue-600' : 'bg-gray-200 dark:bg-neutral-600'
+                      }`}
+                      role="switch"
+                      aria-checked={formData.isFiveWorkingDays}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          formData.isFiveWorkingDays ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm text-gray-700 dark:text-neutral-200">
+                      {formData.isFiveWorkingDays ? 'Enabled (Mon-Fri only)' : 'Disabled (Full week)'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
+                    For office workers who need meals Monday through Friday only
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
                     Target Audience *

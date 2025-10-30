@@ -1,12 +1,246 @@
 const Subscription = require("../models/Subscription");
 const MealPlan = require("../models/MealPlan");
 const Customer = require("../models/Customer");
+const Order = require("../models/Order");
+const OrderDelegation = require("../models/OrderDelegation");
 const SubscriptionDelivery = require("../models/SubscriptionDelivery");
 const SubscriptionChefAssignment = require("../models/SubscriptionChefAssignment");
 const MealPlanAssignment = require("../models/MealPlanAssignment");
+const Chef = require("../models/Chef");
 const mealProgressionService = require("../services/mealProgressionService");
-const mealAssignmentService = require('../services/mealAssignmentService');
-const { compileMealPlanSnapshot } = require("../services/mealPlanSnapshotService");
+const mealAssignmentService = require("../services/mealAssignmentService");
+const {
+  compileMealPlanSnapshot,
+} = require("../services/mealPlanSnapshotService");
+
+/**
+ * Generate ONE Order and OrderDelegation for entire subscription
+ * Creates daily timeline linking meal schedule dates
+ */
+async function generateOrderForSubscription(subscription) {
+  try {
+    console.log(`📦 Generating order for subscription ${subscription._id}`);
+
+    if (!subscription.mealPlanSnapshot?.mealSchedule) {
+      console.log("⚠️ No meal schedule found, skipping order generation");
+      return null;
+    }
+
+    // Check if order already exists for this subscription
+    const existingOrder = await Order.findOne({
+      "recurringOrder.parentSubscription": subscription._id,
+    });
+
+    if (existingOrder) {
+      console.log(`✓ Order already exists for subscription`);
+      return existingOrder;
+    }
+
+    // Group meal slots by delivery date to create daily timeline
+    const mealsByDate = {};
+    subscription.mealPlanSnapshot.mealSchedule.forEach((slot) => {
+      if (!slot.scheduledDeliveryDate) return;
+
+      const deliveryDate = new Date(slot.scheduledDeliveryDate);
+      deliveryDate.setHours(0, 0, 0, 0);
+      const dateKey = deliveryDate.toISOString().split("T")[0];
+
+      if (!mealsByDate[dateKey]) {
+        mealsByDate[dateKey] = [];
+      }
+
+      mealsByDate[dateKey].push(slot);
+    });
+
+    const uniqueDates = Object.keys(mealsByDate).sort();
+    console.log(`📅 Found ${uniqueDates.length} unique delivery dates`);
+
+    // Calculate total amount from all meals
+    const totalAmount =
+      subscription.mealPlanSnapshot.pricing?.totalPrice ||
+      subscription.totalPrice ||
+      0;
+
+    // Build order items from first day's meals (representative)
+    const firstDateMeals = mealsByDate[uniqueDates[0]] || [];
+    const orderItems = {
+      meals: firstDateMeals.map((slot) => ({
+        mealTime: slot.mealTime,
+        customTitle: slot.customTitle,
+        mealId: slot.meals?.[0]?.mealId,
+        name: slot.meals?.[0]?.name || slot.customTitle,
+        image: slot.meals?.[0]?.image,
+        quantity: 1,
+        price: slot.meals?.[0]?.pricing?.totalPrice || 0,
+        nutrition: slot.meals?.[0]?.nutrition,
+      })),
+    };
+
+    // Get chef assignment if exists
+    const chefAssignment = await SubscriptionChefAssignment.findOne({
+      subscriptionId: subscription._id,
+      assignmentStatus: "active",
+    });
+
+    // Create ONE order for entire subscription
+    const order = await Order.create({
+      orderNumber: subscription.subscriptionId, // Already has SUB- prefix
+      customer: subscription.userId,
+      subscription: subscription._id,
+
+      // Order details
+      orderItems: orderItems,
+      orderStatus: "Pending",
+      delegationStatus: chefAssignment ? "Assigned" : "Not Assigned",
+
+      // Payment (already paid via subscription)
+      totalAmount: totalAmount,
+      paymentMethod: subscription.paymentInfo?.method || "Card",
+      paymentStatus: "Paid",
+      paymentReference: subscription.paymentInfo?.reference,
+
+      // Delivery details (first delivery date)
+      deliveryAddress: subscription.deliveryAddress || "No address provided",
+      deliveryDate: new Date(uniqueDates[0]),
+      estimatedDelivery: new Date(uniqueDates[0]),
+      deliveryNotes: `Subscription order - ${uniqueDates.length} deliveries`,
+
+      // Chef assignment (if exists)
+      assignedChef: chefAssignment?.chefId || null,
+
+      // Priority
+      priority: "Medium",
+
+      // Recurring order metadata
+      recurringOrder: {
+        orderType: "subscription-recurring",
+        parentSubscription: subscription._id,
+      },
+
+      adminNotes: `Subscription order covering ${uniqueDates.length} delivery dates`,
+      specialInstructions: subscription.specialInstructions || "",
+    });
+
+    console.log(`✅ Created order ${order.orderNumber}`);
+
+    // Create OrderDelegation with daily timeline
+    const dailyTimeline = uniqueDates.map((dateKey, index) => ({
+      date: new Date(dateKey),
+      timelineId: `TL-${subscription.subscriptionId}-${index + 1}`,
+      status: "pending",
+    }));
+
+    const orderDelegation = await OrderDelegation.create({
+      subscriptionId: subscription._id,
+      orderId: order._id,
+      chefId: chefAssignment?.chefId || null,
+      driverId: null,
+      dailyTimeline: dailyTimeline,
+    });
+
+    console.log(
+      `✅ Created OrderDelegation with ${dailyTimeline.length} daily entries`
+    );
+
+    // Update meal schedule slots with timelineId
+    const timelineIdsByDate = {};
+    dailyTimeline.forEach((entry) => {
+      const dateKey = new Date(entry.date).toISOString().split("T")[0];
+      timelineIdsByDate[dateKey] = entry.timelineId;
+    });
+
+    subscription.mealPlanSnapshot.mealSchedule.forEach((slot) => {
+      if (slot.scheduledDeliveryDate) {
+        const slotDate = new Date(slot.scheduledDeliveryDate);
+        slotDate.setHours(0, 0, 0, 0);
+        const dateKey = slotDate.toISOString().split("T")[0];
+        slot.timelineId = timelineIdsByDate[dateKey];
+      }
+    });
+
+    await subscription.save();
+    console.log(`✅ Updated meal schedule with timelineIds`);
+
+    return { order, orderDelegation };
+  } catch (error) {
+    console.error("❌ Error generating order:", error);
+    throw error;
+  }
+}
+
+/**
+ * Auto-assign an available chef to a new subscription
+ * This ensures subscriptions appear in chef dashboards immediately
+ */
+async function autoAssignChefToSubscription(subscription) {
+  try {
+    console.log(`🍳 Auto-assigning chef to subscription ${subscription._id}`);
+
+    // Check if already assigned
+    const existingAssignment = await SubscriptionChefAssignment.findOne({
+      subscriptionId: subscription._id,
+      assignmentStatus: "active",
+    });
+
+    if (existingAssignment) {
+      console.log(
+        `✅ Subscription ${subscription._id} already has chef assignment`
+      );
+      return existingAssignment;
+    }
+
+    // Find available chefs (active, verified, with capacity)
+    const availableChefs = await Chef.find({
+      isActive: true,
+      isVerified: true,
+      status: { $in: ["Active", "Available"] },
+      // You can add more criteria here like location, specialty, capacity
+    }).limit(10); // Limit for performance
+
+    if (availableChefs.length === 0) {
+      console.log("⚠️ No available chefs found for auto-assignment");
+      return null;
+    }
+
+    // Simple round-robin assignment (pick first available chef)
+    // In production, you might want more sophisticated logic like:
+    // - Workload balancing
+    // - Location-based assignment
+    // - Specialty matching
+    const selectedChef = availableChefs[0];
+
+    // Create chef assignment
+    const chefAssignment = new SubscriptionChefAssignment({
+      subscriptionId: subscription._id,
+      chefId: selectedChef._id,
+      customerId: subscription.userId,
+      mealPlanId: subscription.mealPlanId,
+      assignmentStatus: "active",
+      assignedAt: new Date(),
+      startDate: subscription.startDate || new Date(),
+      endDate:
+        subscription.endDate ||
+        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      assignmentDetails: {
+        assignedBy: "system", // Indicate this was auto-assigned
+        assignmentReason: "auto_assignment_on_subscription_creation",
+        priority: "normal",
+        adminNotes: "Auto-assigned during subscription creation",
+      },
+    });
+
+    await chefAssignment.save();
+
+    console.log(
+      `✅ Auto-assigned chef ${selectedChef._id} (${selectedChef.fullName}) to subscription ${subscription._id}`
+    );
+
+    return chefAssignment;
+  } catch (error) {
+    console.error("❌ Error in auto-assignment:", error);
+    throw error;
+  }
+}
 
 // Get user's subscriptions
 exports.getUserSubscriptions = async (req, res) => {
@@ -237,7 +471,8 @@ exports.createSubscription = async (req, res) => {
           basePlanPrice: basePlanPrice || mealPlanDoc.totalPrice || 0,
           frequencyMultiplier: frequencyMultiplier || 1,
           durationMultiplier: durationMultiplier || 1,
-        }
+        },
+        weeksToAdd // Pass the user-selected duration weeks
       );
 
       // Add the snapshot to subscription data
@@ -249,7 +484,10 @@ exports.createSubscription = async (req, res) => {
         snapshotPrice: mealPlanSnapshot.pricing.totalPrice,
       });
     } catch (snapshotError) {
-      console.error("⚠️ Warning: Failed to compile meal plan snapshot:", snapshotError);
+      console.error(
+        "⚠️ Warning: Failed to compile meal plan snapshot:",
+        snapshotError
+      );
       // Don't fail subscription creation if snapshot compilation fails
       // The snapshot can be generated later via migration script
     }
@@ -258,6 +496,28 @@ exports.createSubscription = async (req, res) => {
 
     // Generate the meal assignments for the new subscription (fire and forget)
     mealAssignmentService.generateAssignmentsForSubscription(subscription);
+
+    // Auto-assign an available chef to the new subscription
+    try {
+      await autoAssignChefToSubscription(subscription);
+    } catch (chefAssignmentError) {
+      console.error(
+        "⚠️ Warning: Failed to auto-assign chef to subscription:",
+        chefAssignmentError
+      );
+      // Don't fail subscription creation if chef assignment fails
+    }
+
+    // Generate ONE order and delegation for entire subscription
+    try {
+      await generateOrderForSubscription(subscription);
+    } catch (orderGenerationError) {
+      console.error(
+        "⚠️ Warning: Failed to generate order:",
+        orderGenerationError
+      );
+      // Don't fail subscription creation if order generation fails
+    }
 
     // Update user's address if deliveryAddress is provided and different from current
     if (deliveryAddress && deliveryAddress.trim()) {

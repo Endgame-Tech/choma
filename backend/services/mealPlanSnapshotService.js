@@ -14,6 +14,7 @@ const Meal = require("../models/DailyMeal");
  * @param {Array<String>} selectedMealTypes - Meal types user selected (breakfast, lunch, dinner)
  * @param {Object} discountInfo - Discount information if applied
  * @param {Object} pricingOverrides - Custom pricing overrides
+ * @param {Number} userSelectedDurationWeeks - Duration in weeks selected by user (optional, defaults to meal plan duration)
  * @returns {Promise<Object>} Complete meal plan snapshot
  */
 async function compileMealPlanSnapshot(
@@ -23,7 +24,8 @@ async function compileMealPlanSnapshot(
   endDate,
   selectedMealTypes = ["lunch"],
   discountInfo = null,
-  pricingOverrides = {}
+  pricingOverrides = {},
+  userSelectedDurationWeeks = null
 ) {
   try {
     console.log(`📸 Starting meal plan snapshot compilation...`, {
@@ -331,7 +333,7 @@ async function compileMealPlanSnapshot(
       // Subscription period
       startDate,
       endDate,
-      durationWeeks: mealPlan.durationWeeks,
+      durationWeeks: userSelectedDurationWeeks || mealPlan.durationWeeks,
 
       // Complete meal schedule
       mealSchedule,

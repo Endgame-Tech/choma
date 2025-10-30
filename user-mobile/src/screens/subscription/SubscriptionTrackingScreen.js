@@ -93,7 +93,8 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
 
       const completedMeals = subscription.metrics.completedMeals || 0;
       const totalMeals = subscription.metrics.totalMeals || 0;
-      const completionPercentage = totalMeals > 0 ? (completedMeals / totalMeals) * 100 : 0;
+      const completionPercentage =
+        totalMeals > 0 ? (completedMeals / totalMeals) * 100 : 0;
 
       // Get meal plan details
       const mealPlan = subscription.mealPlanId;
@@ -101,14 +102,17 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
       const weeksCompleted = Math.floor(completedMeals / 7); // Assuming 7 meals per week
 
       // Trigger rating prompts at specific milestones
-      const shouldTrigger = (
+      const shouldTrigger =
         weeksCompleted === 1 || // First week complete
         completionPercentage >= 50 || // Halfway complete
-        completionPercentage >= 100 // Fully complete
-      );
+        completionPercentage >= 100; // Fully complete
 
       if (shouldTrigger) {
-        console.log(`🍽️ Checking meal plan milestone: ${completionPercentage.toFixed(1)}% complete`);
+        console.log(
+          `🍽️ Checking meal plan milestone: ${completionPercentage.toFixed(
+            1
+          )}% complete`
+        );
 
         await ratingPromptManager.triggerMealPlanMilestone({
           userId: subscription.userId,
@@ -119,7 +123,7 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
           totalMeals,
           weeksCompleted,
           totalWeeks: durationWeeks,
-          existingRating: null // Could fetch existing rating if needed
+          existingRating: null, // Could fetch existing rating if needed
         });
       }
     } catch (error) {
@@ -389,19 +393,19 @@ const SubscriptionTrackingScreen = ({ route, navigation }) => {
           image: assignment.imageUrl
             ? { uri: assignment.imageUrl }
             : mealPlan?.planImageUrl || mealPlan?.image || mealPlan?.coverImage
-              ? {
-                  uri:
-                    mealPlan.planImageUrl ||
-                    mealPlan.image ||
-                    mealPlan.coverImage,
-                }
-              : require("../../assets/images/meal-plans/fitfuel.jpg"),
+            ? {
+                uri:
+                  mealPlan.planImageUrl ||
+                  mealPlan.image ||
+                  mealPlan.coverImage,
+              }
+            : require("../../assets/images/meal-plans/fitfuel.jpg"),
           time:
             mealType === "breakfast"
               ? "8:00 AM"
               : mealType === "lunch"
-                ? "1:00 PM"
-                : "7:00 PM",
+              ? "1:00 PM"
+              : "7:00 PM",
           calories: assignment.calories || null,
         };
       }
@@ -827,7 +831,7 @@ const styles = (colors) =>
       padding: 20,
     },
     sectionTitle: {
-      fontSize: 20,
+      fontSize: 16,
       fontWeight: "700",
       color: colors.text,
       marginBottom: 15,

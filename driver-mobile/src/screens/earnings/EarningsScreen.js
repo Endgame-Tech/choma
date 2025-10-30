@@ -1,5 +1,5 @@
 // src/screens/earnings/EarningsScreen.js - Driver earnings and financial overview
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,20 +8,20 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../styles/theme';
-import { useDriverAuth } from '../../contexts/DriverAuthContext';
-import CustomText from '../../components/ui/CustomText';
-import EarningsCard from '../../components/delivery/EarningsCard';
-import StatusMessage from '../../components/ui/StatusMessage';
-import { createStylesWithDMSans } from '../../utils/fontUtils';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../styles/theme";
+import { useDriverAuth } from "../../contexts/DriverAuthContext";
+import CustomText from "../../components/ui/CustomText";
+import EarningsCard from "../../components/delivery/EarningsCard";
+import StatusMessage from "../../components/ui/StatusMessage";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 const EarningsScreen = ({ navigation }) => {
   const { colors } = useTheme();
   const { driver } = useDriverAuth();
-  const [selectedPeriod, setSelectedPeriod] = useState('week');
+  const [selectedPeriod, setSelectedPeriod] = useState("week");
   const [earningsData, setEarningsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,24 +40,29 @@ const EarningsScreen = ({ navigation }) => {
         averagePerDelivery: 4464,
         bonusEarnings: 15000,
         weeklyBreakdown: [
-          { day: 'Mon', amount: 18000 },
-          { day: 'Tue', amount: 22000 },
-          { day: 'Wed', amount: 15000 },
-          { day: 'Thu', amount: 25000 },
-          { day: 'Fri', amount: 28000 },
-          { day: 'Sat', amount: 12000 },
-          { day: 'Sun', amount: 5000 },
+          { day: "Mon", amount: 18000 },
+          { day: "Tue", amount: 22000 },
+          { day: "Wed", amount: 15000 },
+          { day: "Thu", amount: 25000 },
+          { day: "Fri", amount: 28000 },
+          { day: "Sat", amount: 12000 },
+          { day: "Sun", amount: 5000 },
         ],
         recentDeliveries: [
-          { id: '1', amount: 3500, date: '2024-01-15', customer: 'John Doe' },
-          { id: '2', amount: 4200, date: '2024-01-15', customer: 'Jane Smith' },
-          { id: '3', amount: 2800, date: '2024-01-14', customer: 'Mike Johnson' },
-        ]
+          { id: "1", amount: 3500, date: "2024-01-15", customer: "John Doe" },
+          { id: "2", amount: 4200, date: "2024-01-15", customer: "Jane Smith" },
+          {
+            id: "3",
+            amount: 2800,
+            date: "2024-01-14",
+            customer: "Mike Johnson",
+          },
+        ],
       };
-      
+
       setEarningsData(mockData);
     } catch (error) {
-      console.error('Error loading earnings:', error);
+      console.error("Error loading earnings:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -70,9 +75,9 @@ const EarningsScreen = ({ navigation }) => {
   };
 
   const periods = [
-    { key: 'week', title: 'This Week' },
-    { key: 'month', title: 'This Month' },
-    { key: 'year', title: 'This Year' },
+    { key: "week", title: "This Week" },
+    { key: "month", title: "This Month" },
+    { key: "year", title: "This Year" },
   ];
 
   const formatCurrency = (amount) => {
@@ -86,17 +91,19 @@ const EarningsScreen = ({ navigation }) => {
         key={period.key}
         style={[
           styles(colors).periodButton,
-          { 
-            backgroundColor: isActive ? colors.primary : 'transparent',
-            borderColor: colors.primary 
-          }
+          {
+            backgroundColor: isActive ? colors.primary : "transparent",
+            borderColor: colors.primary,
+          },
         ]}
         onPress={() => setSelectedPeriod(period.key)}
       >
-        <CustomText style={[
-          styles(colors).periodText,
-          { color: isActive ? 'white' : colors.primary }
-        ]}>
+        <CustomText
+          style={[
+            styles(colors).periodText,
+            { color: isActive ? "white" : colors.primary },
+          ]}
+        >
           {period.title}
         </CustomText>
       </TouchableOpacity>
@@ -148,19 +155,23 @@ const EarningsScreen = ({ navigation }) => {
           <View style={styles(colors).totalHeader}>
             <Ionicons name="wallet" size={32} color={colors.primary} />
             <View style={styles(colors).totalInfo}>
-              <CustomText style={styles(colors).totalLabel}>Total Earnings</CustomText>
+              <CustomText style={styles(colors).totalLabel}>
+                Total Earnings
+              </CustomText>
               <CustomText style={styles(colors).totalAmount}>
                 {formatCurrency(earningsData?.totalEarnings)}
               </CustomText>
             </View>
           </View>
-          
+
           <View style={styles(colors).statsRow}>
             <View style={styles(colors).statItem}>
               <CustomText style={styles(colors).statValue}>
                 {earningsData?.deliveryCount || 0}
               </CustomText>
-              <CustomText style={styles(colors).statLabel}>Deliveries</CustomText>
+              <CustomText style={styles(colors).statLabel}>
+                Deliveries
+              </CustomText>
             </View>
             <View style={styles(colors).statItem}>
               <CustomText style={styles(colors).statValue}>
@@ -179,7 +190,9 @@ const EarningsScreen = ({ navigation }) => {
 
         {/* Weekly Breakdown */}
         <View style={styles(colors).breakdownCard}>
-          <CustomText style={styles(colors).sectionTitle}>Weekly Breakdown</CustomText>
+          <CustomText style={styles(colors).sectionTitle}>
+            Weekly Breakdown
+          </CustomText>
           <View style={styles(colors).chartContainer}>
             {earningsData?.weeklyBreakdown?.map((day, index) => (
               <View key={index} style={styles(colors).chartBar}>
@@ -189,10 +202,12 @@ const EarningsScreen = ({ navigation }) => {
                     {
                       height: Math.max((day.amount / 30000) * 80, 10),
                       backgroundColor: colors.primary,
-                    }
+                    },
                   ]}
                 />
-                <CustomText style={styles(colors).dayLabel}>{day.day}</CustomText>
+                <CustomText style={styles(colors).dayLabel}>
+                  {day.day}
+                </CustomText>
                 <CustomText style={styles(colors).dayAmount}>
                   ₦{(day.amount / 1000).toFixed(0)}k
                 </CustomText>
@@ -204,12 +219,16 @@ const EarningsScreen = ({ navigation }) => {
         {/* Recent Deliveries */}
         <View style={styles(colors).recentCard}>
           <View style={styles(colors).sectionHeader}>
-            <CustomText style={styles(colors).sectionTitle}>Recent Deliveries</CustomText>
-            <TouchableOpacity onPress={() => navigation.navigate('Deliveries')}>
-              <CustomText style={styles(colors).viewAllText}>View All</CustomText>
+            <CustomText style={styles(colors).sectionTitle}>
+              Recent Deliveries
+            </CustomText>
+            <TouchableOpacity onPress={() => navigation.navigate("Deliveries")}>
+              <CustomText style={styles(colors).viewAllText}>
+                View All
+              </CustomText>
             </TouchableOpacity>
           </View>
-          
+
           {earningsData?.recentDeliveries?.map((delivery, index) => (
             <View key={delivery.id} style={styles(colors).deliveryItem}>
               <View style={styles(colors).deliveryIcon}>
@@ -232,14 +251,22 @@ const EarningsScreen = ({ navigation }) => {
 
         {/* Payout Information */}
         <View style={styles(colors).payoutCard}>
-          <CustomText style={styles(colors).sectionTitle}>💳 Payout Information</CustomText>
+          <CustomText style={styles(colors).sectionTitle}>
+            💳 Payout Information
+          </CustomText>
           <View style={styles(colors).payoutContent}>
             <View style={styles(colors).payoutRow}>
-              <CustomText style={styles(colors).payoutLabel}>Next Payout</CustomText>
-              <CustomText style={styles(colors).payoutValue}>Friday, Jan 19</CustomText>
+              <CustomText style={styles(colors).payoutLabel}>
+                Next Payout
+              </CustomText>
+              <CustomText style={styles(colors).payoutValue}>
+                Friday, Jan 19
+              </CustomText>
             </View>
             <View style={styles(colors).payoutRow}>
-              <CustomText style={styles(colors).payoutLabel}>Pending Amount</CustomText>
+              <CustomText style={styles(colors).payoutLabel}>
+                Pending Amount
+              </CustomText>
               <CustomText style={styles(colors).payoutValue}>
                 {formatCurrency(earningsData?.totalEarnings)}
               </CustomText>
@@ -265,8 +292,8 @@ const styles = (colors) =>
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     loadingText: {
       marginTop: 16,
@@ -274,9 +301,9 @@ const styles = (colors) =>
       color: colors.textSecondary,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       paddingHorizontal: 20,
       paddingVertical: 16,
       backgroundColor: colors.surface,
@@ -288,7 +315,7 @@ const styles = (colors) =>
     },
     headerTitle: {
       fontSize: 24,
-      fontWeight: '700',
+      fontWeight: "700",
       color: colors.text,
     },
     headerSubtitle: {
@@ -296,7 +323,7 @@ const styles = (colors) =>
       color: colors.textSecondary,
     },
     periodContainer: {
-      flexDirection: 'row',
+      flexDirection: "row",
       paddingHorizontal: 20,
       paddingVertical: 16,
       gap: 12,
@@ -309,7 +336,7 @@ const styles = (colors) =>
     },
     periodText: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     content: {
       flex: 1,
@@ -324,8 +351,8 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     totalHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       marginBottom: 20,
     },
     totalInfo: {
@@ -339,19 +366,19 @@ const styles = (colors) =>
     },
     totalAmount: {
       fontSize: 28,
-      fontWeight: '700',
+      fontWeight: "700",
       color: colors.text,
     },
     statsRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      justifyContent: "space-between",
     },
     statItem: {
-      alignItems: 'center',
+      alignItems: "center",
     },
     statValue: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 4,
     },
@@ -368,31 +395,31 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     sectionTitle: {
-      fontSize: 18,
-      fontWeight: '700',
+      fontSize: 16,
+      fontWeight: "700",
       color: colors.text,
       marginBottom: 16,
     },
     sectionHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 16,
     },
     viewAllText: {
       fontSize: 14,
       color: colors.primary,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     chartContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-end',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
       height: 120,
       paddingBottom: 20,
     },
     chartBar: {
-      alignItems: 'center',
+      alignItems: "center",
       flex: 1,
     },
     bar: {
@@ -408,7 +435,7 @@ const styles = (colors) =>
     dayAmount: {
       fontSize: 10,
       color: colors.text,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     recentCard: {
       backgroundColor: colors.surface,
@@ -419,8 +446,8 @@ const styles = (colors) =>
       borderColor: colors.border,
     },
     deliveryItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingVertical: 12,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
@@ -429,9 +456,9 @@ const styles = (colors) =>
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.primary + '15',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: colors.primary + "15",
+      justifyContent: "center",
+      alignItems: "center",
       marginRight: 12,
     },
     deliveryInfo: {
@@ -439,7 +466,7 @@ const styles = (colors) =>
     },
     deliveryCustomer: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 2,
     },
@@ -449,7 +476,7 @@ const styles = (colors) =>
     },
     deliveryAmount: {
       fontSize: 16,
-      fontWeight: '700',
+      fontWeight: "700",
       color: colors.primary,
     },
     payoutCard: {
@@ -466,9 +493,9 @@ const styles = (colors) =>
       padding: 16,
     },
     payoutRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 12,
     },
     payoutLabel: {
@@ -477,14 +504,14 @@ const styles = (colors) =>
     },
     payoutValue: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     payoutButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.primary + '15',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary + "15",
       paddingVertical: 12,
       borderRadius: 8,
       marginTop: 8,
@@ -492,7 +519,7 @@ const styles = (colors) =>
     payoutButtonText: {
       color: colors.primary,
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       marginLeft: 6,
     },
   });

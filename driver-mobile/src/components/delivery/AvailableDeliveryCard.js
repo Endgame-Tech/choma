@@ -55,7 +55,8 @@ const AvailableDeliveryCard = ({
   const getDeliveryDistance = () => {
     // Calculate distance from current location to pickup/delivery
     // This would use actual GPS calculation in production
-    const distance = delivery?.estimatedDistance || Math.floor(Math.random() * 15) + 1;
+    const distance =
+      delivery?.estimatedDistance || Math.floor(Math.random() * 15) + 1;
     return `${distance} km away`;
   };
 
@@ -68,11 +69,19 @@ const AvailableDeliveryCard = ({
   };
 
   const getPickupLocation = () => {
-    return delivery?.pickupLocation || delivery?.chef?.kitchenAddress || "Kitchen Location";
+    return (
+      delivery?.pickupLocation ||
+      delivery?.chef?.kitchenAddress ||
+      "Kitchen Location"
+    );
   };
 
   const getDeliveryLocation = () => {
-    return delivery?.deliveryAddress || delivery?.customer?.address || "Customer Location";
+    return (
+      delivery?.deliveryAddress ||
+      delivery?.customer?.address ||
+      "Customer Location"
+    );
   };
 
   const handleAcceptDelivery = async () => {
@@ -80,7 +89,7 @@ const AvailableDeliveryCard = ({
     try {
       await onAcceptDelivery?.(delivery._id || delivery.id);
     } catch (error) {
-      console.error('Failed to accept delivery:', error);
+      console.error("Failed to accept delivery:", error);
     } finally {
       setIsAccepting(false);
     }
@@ -105,9 +114,7 @@ const AvailableDeliveryCard = ({
           <Text style={styles(colors).orderNumber}>
             #{delivery?.orderNumber || delivery?.id?.slice(-6) || "CHM001"}
           </Text>
-          <Text style={styles(colors).distance}>
-            {getDeliveryDistance()}
-          </Text>
+          <Text style={styles(colors).distance}>{getDeliveryDistance()}</Text>
         </View>
 
         <View style={styles(colors).earningsContainer}>
@@ -136,7 +143,11 @@ const AvailableDeliveryCard = ({
 
         <View style={styles(colors).routeItem}>
           <View style={styles(colors).routeIcon}>
-            <CustomIcon name="location-filled" size={16} color={colors.success} />
+            <CustomIcon
+              name="location-filled"
+              size={16}
+              color={colors.success}
+            />
           </View>
           <View style={styles(colors).routeDetails}>
             <Text style={styles(colors).routeLabel}>Deliver to</Text>
@@ -166,7 +177,11 @@ const AvailableDeliveryCard = ({
             <ActivityIndicator size="small" color={colors.white} />
           ) : (
             <>
-              <CustomIcon name="checkmark-circle" size={16} color={colors.white} />
+              <CustomIcon
+                name="checkmark-circle"
+                size={16}
+                color={colors.white}
+              />
               <Text style={styles(colors).acceptButtonText}>Accept</Text>
             </>
           )}
@@ -198,19 +213,31 @@ const AvailableDeliveryCard = ({
             >
               {/* Order Information */}
               <View style={styles(colors).orderSection}>
-                <Text style={styles(colors).sectionTitle}>📦 Order Information</Text>
-                
+                <Text style={styles(colors).sectionTitle}>
+                  📦 Order Information
+                </Text>
+
                 <View style={styles(colors).detailsGrid}>
                   <View style={styles(colors).detailCard}>
-                    <Ionicons name="restaurant-outline" size={16} color={colors.primary} />
+                    <Ionicons
+                      name="restaurant-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
                     <Text style={styles(colors).detailLabel}>Meal Plan</Text>
                     <Text style={styles(colors).detailValue}>
-                      {delivery?.orderItems?.planName || delivery?.mealPlan?.name || "Delicious Meal"}
+                      {delivery?.orderItems?.planName ||
+                        delivery?.mealPlan?.name ||
+                        "Delicious Meal"}
                     </Text>
                   </View>
 
                   <View style={styles(colors).detailCard}>
-                    <Ionicons name="card-outline" size={16} color={colors.primary} />
+                    <Ionicons
+                      name="card-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
                     <Text style={styles(colors).detailLabel}>Order Value</Text>
                     <Text style={styles(colors).detailValue}>
                       ₦{(delivery?.totalAmount || 25000).toLocaleString()}
@@ -218,7 +245,11 @@ const AvailableDeliveryCard = ({
                   </View>
 
                   <View style={styles(colors).detailCard}>
-                    <Ionicons name="time-outline" size={16} color={colors.primary} />
+                    <Ionicons
+                      name="time-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
                     <Text style={styles(colors).detailLabel}>Prep Time</Text>
                     <Text style={styles(colors).detailValue}>
                       {delivery?.estimatedPrepTime || "30"} mins
@@ -226,9 +257,20 @@ const AvailableDeliveryCard = ({
                   </View>
 
                   <View style={styles(colors).detailCard}>
-                    <Ionicons name="cash-outline" size={16} color={colors.primary} />
-                    <Text style={styles(colors).detailLabel}>Your Earnings</Text>
-                    <Text style={[styles(colors).detailValue, { color: colors.success }]}>
+                    <Ionicons
+                      name="cash-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
+                    <Text style={styles(colors).detailLabel}>
+                      Your Earnings
+                    </Text>
+                    <Text
+                      style={[
+                        styles(colors).detailValue,
+                        { color: colors.success },
+                      ]}
+                    >
                       ₦{getEstimatedEarnings().toLocaleString()}
                     </Text>
                   </View>
@@ -237,30 +279,62 @@ const AvailableDeliveryCard = ({
 
               {/* Route Information */}
               <View style={styles(colors).routeSection}>
-                <Text style={styles(colors).sectionTitle}>🗺️ Route Information</Text>
-                
+                <Text style={styles(colors).sectionTitle}>
+                  🗺️ Route Information
+                </Text>
+
                 <View style={styles(colors).routeCard}>
                   <View style={styles(colors).routeStep}>
-                    <View style={[styles(colors).stepIcon, { backgroundColor: colors.warning + "20" }]}>
-                      <Ionicons name="restaurant" size={20} color={colors.warning} />
+                    <View
+                      style={[
+                        styles(colors).stepIcon,
+                        { backgroundColor: colors.warning + "20" },
+                      ]}
+                    >
+                      <Ionicons
+                        name="restaurant"
+                        size={20}
+                        color={colors.warning}
+                      />
                     </View>
                     <View style={styles(colors).stepDetails}>
-                      <Text style={styles(colors).stepTitle}>Pickup Location</Text>
-                      <Text style={styles(colors).stepAddress}>{getPickupLocation()}</Text>
-                      <Text style={styles(colors).stepNote}>Chef: {delivery?.chef?.name || "Kitchen Staff"}</Text>
+                      <Text style={styles(colors).stepTitle}>
+                        Pickup Location
+                      </Text>
+                      <Text style={styles(colors).stepAddress}>
+                        {getPickupLocation()}
+                      </Text>
+                      <Text style={styles(colors).stepNote}>
+                        Chef: {delivery?.chef?.name || "Kitchen Staff"}
+                      </Text>
                     </View>
                   </View>
 
                   <View style={styles(colors).routeConnector} />
 
                   <View style={styles(colors).routeStep}>
-                    <View style={[styles(colors).stepIcon, { backgroundColor: colors.success + "20" }]}>
-                      <Ionicons name="location" size={20} color={colors.success} />
+                    <View
+                      style={[
+                        styles(colors).stepIcon,
+                        { backgroundColor: colors.success + "20" },
+                      ]}
+                    >
+                      <Ionicons
+                        name="location"
+                        size={20}
+                        color={colors.success}
+                      />
                     </View>
                     <View style={styles(colors).stepDetails}>
-                      <Text style={styles(colors).stepTitle}>Delivery Location</Text>
-                      <Text style={styles(colors).stepAddress}>{getDeliveryLocation()}</Text>
-                      <Text style={styles(colors).stepNote}>Customer: {delivery?.customer?.name || "Customer"}</Text>
+                      <Text style={styles(colors).stepTitle}>
+                        Delivery Location
+                      </Text>
+                      <Text style={styles(colors).stepAddress}>
+                        {getDeliveryLocation()}
+                      </Text>
+                      <Text style={styles(colors).stepNote}>
+                        Customer: {delivery?.customer?.name || "Customer"}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -269,7 +343,9 @@ const AvailableDeliveryCard = ({
               {/* Special Instructions */}
               {delivery?.instructions && (
                 <View style={styles(colors).instructionsSection}>
-                  <Text style={styles(colors).sectionTitle}>📝 Special Instructions</Text>
+                  <Text style={styles(colors).sectionTitle}>
+                    📝 Special Instructions
+                  </Text>
                   <View style={styles(colors).instructionsCard}>
                     <Text style={styles(colors).instructionsText}>
                       {delivery.instructions}
@@ -292,9 +368,14 @@ const AvailableDeliveryCard = ({
                     <ActivityIndicator size="small" color={colors.white} />
                   ) : (
                     <>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.white} />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={18}
+                        color={colors.white}
+                      />
                       <Text style={styles(colors).modalAcceptButtonText}>
-                        Accept Delivery - ₦{getEstimatedEarnings().toLocaleString()}
+                        Accept Delivery - ₦
+                        {getEstimatedEarnings().toLocaleString()}
                       </Text>
                     </>
                   )}
@@ -495,7 +576,7 @@ const styles = (colors) =>
       marginBottom: 20,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "700",
       color: colors.text,
       marginBottom: 16,

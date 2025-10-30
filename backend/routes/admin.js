@@ -107,6 +107,10 @@ router.get("/export/users", adminController.exportUsers);
 
 // ============= ORDER MANAGEMENT ROUTES =============
 router.get("/orders", adminOrderController.getAllOrders);
+router.get(
+  "/orders/delivery-ready",
+  adminOrderController.getDeliveryReadyOrders
+); // NEW: Orders ready for driver assignment
 router.get("/orders/:id", adminOrderController.getOrderDetails);
 router.put("/orders/:id/status", adminOrderController.updateOrderStatus);
 router.put("/orders/bulk/status", adminOrderController.bulkUpdateOrderStatus);

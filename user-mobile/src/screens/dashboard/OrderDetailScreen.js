@@ -76,8 +76,8 @@ const OrderDetailScreen = ({ route, navigation }) => {
                     order.status === "paid"
                       ? "checkmark-circle"
                       : order.status === "processing"
-                        ? "time"
-                        : "hourglass"
+                      ? "time"
+                      : "hourglass"
                   }
                   size={40}
                   color={colors.white}
@@ -143,12 +143,12 @@ const OrderDetailScreen = ({ route, navigation }) => {
                     (order.orderNumber
                       ? order.orderNumber.toString().slice(-6).toUpperCase()
                       : order.id
-                        ? order.id
-                            .toString()
-                            .slice(-6)
-                            .toUpperCase()
-                            .padStart(6, "0")
-                        : "N/A")}
+                      ? order.id
+                          .toString()
+                          .slice(-6)
+                          .toUpperCase()
+                          .padStart(6, "0")
+                      : "N/A")}
                 </Text>
               </View>
               <Text style={styles(colors).confirmationText}>
@@ -566,7 +566,7 @@ const styles = (colors) =>
       marginBottom: 20,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "600",
       color: colors.text,
       marginBottom: 15,

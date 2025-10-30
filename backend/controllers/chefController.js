@@ -23,64 +23,77 @@ if (!process.env.JWT_SECRET) {
 async function createSubscriptionChefAssignment(order, chefId) {
   try {
     const subscription = order.subscription;
-    
-    console.log(`🍳 Creating subscription chef assignment for subscription ${subscription._id} and chef ${chefId}`);
-    
+
+    console.log(
+      `🍳 Creating subscription chef assignment for subscription ${subscription._id} and chef ${chefId}`
+    );
+
     // Check if assignment already exists for this subscription
     const existingAssignment = await SubscriptionChefAssignment.findOne({
       subscriptionId: subscription._id,
       chefId: chefId,
-      assignmentStatus: 'active'
+      assignmentStatus: "active",
     });
-    
+
     if (existingAssignment) {
-      console.log(`✅ Chef assignment already exists for subscription ${subscription._id}`);
+      console.log(
+        `✅ Chef assignment already exists for subscription ${subscription._id}`
+      );
       return existingAssignment;
     }
-    
+
     // Check if there's another chef assigned to this subscription
     const otherChefAssignment = await SubscriptionChefAssignment.findOne({
       subscriptionId: subscription._id,
-      assignmentStatus: 'active'
+      assignmentStatus: "active",
     });
-    
-    if (otherChefAssignment && otherChefAssignment.chefId.toString() !== chefId.toString()) {
-      console.log(`⚠️ Another chef (${otherChefAssignment.chefId}) is already assigned to subscription ${subscription._id}. Reassigning...`);
-      
+
+    if (
+      otherChefAssignment &&
+      otherChefAssignment.chefId.toString() !== chefId.toString()
+    ) {
+      console.log(
+        `⚠️ Another chef (${otherChefAssignment.chefId}) is already assigned to subscription ${subscription._id}. Reassigning...`
+      );
+
       // Deactivate the other chef's assignment
-      otherChefAssignment.assignmentStatus = 'reassigned';
+      otherChefAssignment.assignmentStatus = "reassigned";
       otherChefAssignment.endDate = new Date();
-      otherChefAssignment.reassignmentReason = 'Chef changed due to order acceptance';
+      otherChefAssignment.reassignmentReason =
+        "Chef changed due to order acceptance";
       await otherChefAssignment.save();
     }
-    
+
     // Create new chef assignment for the entire subscription
     const chefAssignment = new SubscriptionChefAssignment({
       subscriptionId: subscription._id,
       chefId: chefId,
       customerId: subscription.userId,
       mealPlanId: subscription.mealPlanId,
-      assignmentStatus: 'active',
+      assignmentStatus: "active",
       assignedAt: new Date(),
       acceptedAt: new Date(),
       startDate: new Date(),
-      endDate: subscription.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year if no end date
+      endDate:
+        subscription.endDate ||
+        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year if no end date
       assignmentDetails: {
         assignedBy: chefId, // Using chef ID as fallback for required admin field
-        assignmentReason: 'new_subscription',
-        priority: 'normal',
-        adminNotes: 'Auto-assigned when chef accepted subscription order'
-      }
+        assignmentReason: "new_subscription",
+        priority: "normal",
+        adminNotes: "Auto-assigned when chef accepted subscription order",
+      },
     });
-    
+
     await chefAssignment.save();
-    
-    console.log(`✅ Created subscription chef assignment ${chefAssignment._id} for chef ${chefId} and subscription ${subscription._id}`);
-    
+
+    console.log(
+      `✅ Created subscription chef assignment ${chefAssignment._id} for chef ${chefId} and subscription ${subscription._id}`
+    );
+
     return chefAssignment;
-    
   } catch (error) {
-    console.error('❌ Error creating subscription chef assignment:', error);
+    console.error("❌ Error creating subscription chef assignment:", error);
     throw error;
   }
 }
@@ -90,37 +103,47 @@ async function createSubscriptionChefAssignment(order, chefId) {
 exports.getRegistrationStatus = async (req, res) => {
   try {
     const { email } = req.params;
-    
+
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'Email is required'
+        message: "Email is required",
       });
     }
 
     // Check if chef exists
-    const chef = await Chef.findOne({ email: email.toLowerCase() }).select('-password');
-    
+    const chef = await Chef.findOne({ email: email.toLowerCase() }).select(
+      "-password"
+    );
+
     if (!chef) {
       return res.json({
         success: true,
         data: {
           chefExists: false,
-          registrationComplete: false
-        }
+          registrationComplete: false,
+        },
       });
     }
 
     // Check if registration is complete by verifying required fields
     const isRegistrationComplete = !!(
-      chef.fullName && 
-      chef.email && 
-      chef.phone && 
+      chef.fullName &&
+      chef.email &&
+      chef.phone &&
       chef.dateOfBirth &&
-      chef.specialties && chef.specialties.length > 0 &&
-      chef.location && chef.location.streetAddress && chef.location.city && chef.location.state &&
-      chef.emergencyContact && chef.emergencyContact.name && chef.emergencyContact.phone &&
-      chef.bankDetails && chef.bankDetails.accountName && chef.bankDetails.accountNumber
+      chef.specialties &&
+      chef.specialties.length > 0 &&
+      chef.location &&
+      chef.location.streetAddress &&
+      chef.location.city &&
+      chef.location.state &&
+      chef.emergencyContact &&
+      chef.emergencyContact.name &&
+      chef.emergencyContact.phone &&
+      chef.bankDetails &&
+      chef.bankDetails.accountName &&
+      chef.bankDetails.accountNumber
     );
 
     res.json({
@@ -130,27 +153,27 @@ exports.getRegistrationStatus = async (req, res) => {
         registrationComplete: isRegistrationComplete,
         approvalStatus: chef.approvalStatus,
         isActive: chef.isActive,
-        chefData: isRegistrationComplete ? {
-          fullName: chef.fullName,
-          email: chef.email,
-          phone: chef.phone,
-          approvalStatus: chef.approvalStatus,
-          isActive: chef.isActive
-        } : null
-      }
+        chefData: isRegistrationComplete
+          ? {
+              fullName: chef.fullName,
+              email: chef.email,
+              phone: chef.phone,
+              approvalStatus: chef.approvalStatus,
+              isActive: chef.isActive,
+            }
+          : null,
+      },
     });
-
   } catch (error) {
-    console.error('Get registration status error:', error);
+    console.error("Get registration status error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to check registration status',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: "Failed to check registration status",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
 exports.registerChef = async (req, res) => {
-
   try {
     const {
       // Personal Information
@@ -627,7 +650,6 @@ exports.getChefOrders = async (req, res) => {
     const chefId = req.chef.chefId;
     const { status, page = 1, limit = 20 } = req.query;
 
-
     const skip = (page - 1) * limit;
 
     // Build query - ensure chefId is treated as ObjectId
@@ -653,46 +675,50 @@ exports.getChefOrders = async (req, res) => {
       .limit(parseInt(limit));
 
     // Enhance orders with delegation pricing information for chef transparency
-    const enhancedOrders = await Promise.all(orders.map(async (order) => {
-      const delegation = await OrderDelegation.findOne({ 
-        order: order._id, 
-        chef: new mongoose.Types.ObjectId(chefId) 
-      });
+    const enhancedOrders = await Promise.all(
+      orders.map(async (order) => {
+        const delegation = await OrderDelegation.findOne({
+          order: order._id,
+          chef: new mongoose.Types.ObjectId(chefId),
+        });
 
-      if (delegation) {
-        // Always include delegation status for debugging
-        const orderObj = order.toObject();
-        orderObj.actualDelegationStatus = delegation.status; // Current delegation status
-        orderObj.delegationStatusMismatch = orderObj.delegationStatus !== delegation.status;
+        if (delegation) {
+          // Always include delegation status for debugging
+          const orderObj = order.toObject();
+          orderObj.actualDelegationStatus = delegation.status; // Current delegation status
+          orderObj.delegationStatusMismatch =
+            orderObj.delegationStatus !== delegation.status;
 
-        if (delegation.payment) {
-          // Calculate detailed breakdown for chef transparency
-          const chefFee = delegation.payment.chefFee || 0;
-          const ingredientsCost = delegation.payment.ingredientsCost || 0;
-          const totalCost = delegation.payment.totalCost || 0;
-          
-          // Calculate cooking cost (chefFee - ingredientsCost - profit share)
-          // Based on your formula: chefEarnings = ingredients + cookingCosts + (profit * 0.5)
-          // We need to reverse-engineer this for transparency
-          const totalMealCosts = ingredientsCost + (totalCost - ingredientsCost); // ingredients + cooking + packaging
-          const totalProfit = totalMealCosts * 0.4; // 40% profit
-          const chefProfitShare = totalProfit * 0.5; // Chef gets 50% of profit
-          const cookingCost = chefFee - ingredientsCost - chefProfitShare; // Remaining is cooking cost
+          if (delegation.payment) {
+            // Calculate detailed breakdown for chef transparency
+            const chefFee = delegation.payment.chefFee || 0;
+            const ingredientsCost = delegation.payment.ingredientsCost || 0;
+            const totalCost = delegation.payment.totalCost || 0;
 
-          orderObj.chefEarning = chefFee;
-          orderObj.pricingBreakdown = {
-            ingredientsCost,
-            cookingCost: Math.max(0, cookingCost), // Ensure non-negative
-            chefProfitShare,
-            totalChefEarning: chefFee
-          };
+            // Calculate cooking cost (chefFee - ingredientsCost - profit share)
+            // Based on your formula: chefEarnings = ingredients + cookingCosts + (profit * 0.5)
+            // We need to reverse-engineer this for transparency
+            const totalMealCosts =
+              ingredientsCost + (totalCost - ingredientsCost); // ingredients + cooking + packaging
+            const totalProfit = totalMealCosts * 0.4; // 40% profit
+            const chefProfitShare = totalProfit * 0.5; // Chef gets 50% of profit
+            const cookingCost = chefFee - ingredientsCost - chefProfitShare; // Remaining is cooking cost
+
+            orderObj.chefEarning = chefFee;
+            orderObj.pricingBreakdown = {
+              ingredientsCost,
+              cookingCost: Math.max(0, cookingCost), // Ensure non-negative
+              chefProfitShare,
+              totalChefEarning: chefFee,
+            };
+          }
+
+          return orderObj;
         }
 
-        return orderObj;
-      }
-
-      return order.toObject();
-    }));
+        return order.toObject();
+      })
+    );
 
     const total = await Order.countDocuments(query);
 
@@ -729,8 +755,10 @@ exports.acceptOrder = async (req, res) => {
     const { orderId } = req.params;
     const chefId = req.chef.chefId;
 
-    const order = await Order.findOne({ _id: orderId, assignedChef: chefId })
-      .populate('subscription');
+    const order = await Order.findOne({
+      _id: orderId,
+      assignedChef: chefId,
+    }).populate("subscription");
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -759,20 +787,23 @@ exports.acceptOrder = async (req, res) => {
     try {
       const { cacheService } = require("../config/redis");
       const customerId = order.customer;
-      
+
       if (customerId && cacheService) {
         const cacheKeys = [
           `user:${customerId}:/api/orders/assigned:{}`,
           `user-orders:${customerId}:1:20:`,
           `user:${customerId}:/api/orders:{}`,
         ];
-        
+
         for (const key of cacheKeys) {
           await cacheService.del(key);
         }
       }
     } catch (cacheError) {
-      console.warn("⚠️ Failed to invalidate cache after chef acceptOrder:", cacheError.message);
+      console.warn(
+        "⚠️ Failed to invalidate cache after chef acceptOrder:",
+        cacheError.message
+      );
     }
 
     // Update chef's current capacity without triggering validation
@@ -827,20 +858,23 @@ exports.startOrder = async (req, res) => {
     try {
       const { cacheService } = require("../config/redis");
       const customerId = order.customer;
-      
+
       if (customerId && cacheService) {
         const cacheKeys = [
           `user:${customerId}:/api/orders/assigned:{}`,
           `user-orders:${customerId}:1:20:`,
           `user:${customerId}:/api/orders:{}`,
         ];
-        
+
         for (const key of cacheKeys) {
           await cacheService.del(key);
         }
       }
     } catch (cacheError) {
-      console.warn("⚠️ Failed to invalidate cache after chef startOrder:", cacheError.message);
+      console.warn(
+        "⚠️ Failed to invalidate cache after chef startOrder:",
+        cacheError.message
+      );
     }
 
     res.json({
@@ -890,34 +924,48 @@ exports.completeOrder = async (req, res) => {
     try {
       const { cacheService } = require("../config/redis");
       const customerId = order.customer;
-      
+
       if (customerId && cacheService) {
         const cacheKeys = [
           `user:${customerId}:/api/orders/assigned:{}`,
           `user-orders:${customerId}:1:20:`,
           `user:${customerId}:/api/orders:{}`,
         ];
-        
+
         for (const key of cacheKeys) {
           await cacheService.del(key);
         }
       }
     } catch (cacheError) {
-      console.warn("⚠️ Failed to invalidate cache after chef completeOrder:", cacheError.message);
+      console.warn(
+        "⚠️ Failed to invalidate cache after chef completeOrder:",
+        cacheError.message
+      );
     }
 
     // Auto-assign driver for delivery
     let driverAssignmentResult = null;
     try {
-      driverAssignmentResult = await driverAssignmentService.autoAssignDriverForCompletedOrder(order, chefId);
-      
-      if (driverAssignmentResult.success && driverAssignmentResult.isNewAssignment) {
-        console.log(`🚚 Driver ${driverAssignmentResult.driver.fullName} automatically assigned to order ${orderId}`);
+      driverAssignmentResult =
+        await driverAssignmentService.autoAssignDriverForCompletedOrder(
+          order,
+          chefId
+        );
+
+      if (
+        driverAssignmentResult.success &&
+        driverAssignmentResult.isNewAssignment
+      ) {
+        console.log(
+          `🚚 Driver ${driverAssignmentResult.driver.fullName} automatically assigned to order ${orderId}`
+        );
       } else if (!driverAssignmentResult.success) {
-        console.warn(`⚠️ Could not auto-assign driver to order ${orderId}: ${driverAssignmentResult.message}`);
+        console.warn(
+          `⚠️ Could not auto-assign driver to order ${orderId}: ${driverAssignmentResult.message}`
+        );
       }
     } catch (driverError) {
-      console.error('❌ Error in driver auto-assignment:', driverError);
+      console.error("❌ Error in driver auto-assignment:", driverError);
       // Don't fail the order completion if driver assignment fails
     }
 
@@ -938,16 +986,21 @@ exports.completeOrder = async (req, res) => {
       message: "Order completed successfully",
       data: {
         order,
-        driverAssignment: driverAssignmentResult?.success ? {
-          assigned: true,
-          driverName: driverAssignmentResult.driver?.fullName,
-          confirmationCode: driverAssignmentResult.assignment?.confirmationCode,
-          estimatedPickupTime: driverAssignmentResult.assignment?.estimatedPickupTime
-        } : {
-          assigned: false,
-          reason: driverAssignmentResult?.message || 'Driver assignment failed'
-        }
-      }
+        driverAssignment: driverAssignmentResult?.success
+          ? {
+              assigned: true,
+              driverName: driverAssignmentResult.driver?.fullName,
+              confirmationCode:
+                driverAssignmentResult.assignment?.confirmationCode,
+              estimatedPickupTime:
+                driverAssignmentResult.assignment?.estimatedPickupTime,
+            }
+          : {
+              assigned: false,
+              reason:
+                driverAssignmentResult?.message || "Driver assignment failed",
+            },
+      },
     });
   } catch (error) {
     console.error("Complete order error:", error);
@@ -996,6 +1049,122 @@ exports.rejectOrder = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to reject order",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+/**
+ * Update order status (generic status update for orders)
+ * Maps to specific order states and handles transitions
+ */
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status, chefNotes } = req.body;
+    const chefId = req.chef.chefId;
+
+    const order = await Order.findOne({ _id: orderId, assignedChef: chefId }).populate("subscription");
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found or not assigned to you",
+      });
+    }
+
+    // Map frontend status to backend status
+    // Frontend sends: 'Pending', 'Accepted', 'Preparing', 'Ready', 'Completed', 'Cancelled'
+    // Backend uses: delegationStatus for chef workflow
+    let newDelegationStatus;
+
+    switch (status) {
+      case "Accepted":
+        newDelegationStatus = "Accepted";
+        if (order.delegationStatus !== "Assigned") {
+          return res.status(400).json({
+            success: false,
+            message: "Order can only be accepted when in 'Assigned' state",
+          });
+        }
+        order.chefAcceptedDate = new Date();
+        break;
+
+      case "Preparing":
+      case "In Progress":
+        newDelegationStatus = "In Progress";
+        break;
+
+      case "Ready":
+        newDelegationStatus = "Ready";
+        break;
+
+      case "Completed":
+        newDelegationStatus = "Completed";
+        order.orderStatus = "Completed";
+        order.deliveredDate = new Date();
+        break;
+
+      case "Cancelled":
+        newDelegationStatus = "Cancelled";
+        order.orderStatus = "Cancelled";
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: `Invalid status: ${status}`,
+        });
+    }
+
+    // Update the order
+    order.delegationStatus = newDelegationStatus;
+    if (chefNotes) {
+      order.chefNotes = chefNotes;
+    }
+    await order.save();
+
+    // If this is an "Accepted" status and order is part of a subscription,
+    // create/update chef assignment for entire subscription
+    if (status === "Accepted" && order.subscription) {
+      console.log(`✅ Order ${orderId} accepted - Creating subscription chef assignment`);
+      await createSubscriptionChefAssignment(order, chefId);
+    } else if (status === "Accepted" && !order.subscription) {
+      console.log(`ℹ️ Order ${orderId} accepted but not linked to subscription - skipping chef assignment creation`);
+    }
+
+    // Invalidate mobile app cache
+    try {
+      const { cacheService } = require("../config/redis");
+      const customerId = order.customer;
+
+      if (customerId && cacheService) {
+        const cacheKeys = [
+          `user:${customerId}:/api/orders/assigned:{}`,
+          `user-orders:${customerId}:1:20:`,
+          `user:${customerId}:/api/orders:{}`,
+        ];
+
+        for (const key of cacheKeys) {
+          await cacheService.del(key);
+        }
+      }
+    } catch (cacheError) {
+      console.warn(
+        "⚠️ Failed to invalidate cache after order status update:",
+        cacheError.message
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `Order status updated to ${status}`,
+      data: order,
+    });
+  } catch (error) {
+    console.error("Update order status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update order status",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -1131,7 +1300,8 @@ exports.getChefAnalytics = async (req, res) => {
           .reduce((sum, o) => sum + o.chefRating, 0) /
           orders.filter((o) => o.chefRating).length || 0,
       totalEarnings:
-        orders.filter((o) => o.delegationStatus === "Completed").length * (process.env.PER_ORDER_EARNING || 500), // Use env variable or default
+        orders.filter((o) => o.delegationStatus === "Completed").length *
+        (process.env.PER_ORDER_EARNING || 500), // Use env variable or default
       completionRate:
         orders.length > 0
           ? (
@@ -1161,7 +1331,6 @@ exports.getChefNotifications = async (req, res) => {
   try {
     const chefId = req.chef.chefId;
     const { page = 1, limit = 20, unreadOnly = false } = req.query;
-
 
     const skip = (page - 1) * limit;
     const query = { userId: chefId };
@@ -1212,7 +1381,6 @@ exports.markNotificationAsRead = async (req, res) => {
     const chefId = req.chef.chefId;
     const { notificationId } = req.params;
 
-
     const Notification = require("../models/Notification");
 
     const notification = await Notification.findOne({
@@ -1253,7 +1421,6 @@ exports.updateChefStatus = async (req, res) => {
     const { orderId } = req.params;
     const { chefStatus } = req.body;
 
-
     // Validate chef status (must match OrderDelegation enum)
     const validStatuses = [
       "Assigned",
@@ -1291,40 +1458,40 @@ exports.updateChefStatus = async (req, res) => {
     // IMPORTANT: Also update the Order.delegationStatus field so it syncs properly
     const orderUpdate = {
       delegationStatus: chefStatus,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // When chef marks as completed, set status to Quality Check before delivery
-    if (chefStatus === 'Completed') {
+    if (chefStatus === "Completed") {
       orderUpdate.orderStatus = "Quality Check";
     }
 
     await Order.findByIdAndUpdate(orderId, orderUpdate);
 
     // Track chef earnings when order is completed
-    if (chefStatus === 'Completed') {
+    if (chefStatus === "Completed") {
       try {
         const ChefEarning = require("../models/ChefEarning");
-        
+
         // Check if earnings already recorded for this order
         const existingEarning = await ChefEarning.findOne({
           chef: chefId,
-          order: orderId
+          order: orderId,
         });
-        
+
         if (!existingEarning) {
           // Get the order to calculate earnings
           const orderDoc = await Order.findById(orderId);
-          
+
           // Calculate chef earnings (85% of order total, 15% platform fee)
           const orderTotal = orderDoc?.totalAmount || delegation.chefFee || 0;
           const chefPercentage = delegation.chefFeePercentage || 85;
           const cookingFee = (orderTotal * chefPercentage) / 100;
-          
+
           const currentDate = new Date();
           const weekStart = ChefEarning.getWeekStart(currentDate);
           const weekEnd = ChefEarning.getWeekEnd(currentDate);
-          
+
           await ChefEarning.create({
             chef: chefId,
             order: orderId,
@@ -1334,9 +1501,8 @@ exports.updateChefStatus = async (req, res) => {
             weekStartDate: weekStart,
             weekEndDate: weekEnd,
             completedDate: currentDate,
-            status: 'pending' // Will be paid on Friday
+            status: "pending", // Will be paid on Friday
           });
-          
         }
       } catch (earningError) {
         console.warn("⚠️ Failed to record chef earning:", earningError.message);
@@ -1360,11 +1526,11 @@ exports.updateChefStatus = async (req, res) => {
     // Send notification to admin and customer about status change
     try {
       const NotificationService = require("../services/notificationService");
-      
+
       // Send notification to admin
       const Notification = require("../models/Notification");
       await Notification.create({
-        userId: new require('mongoose').Types.ObjectId(), // Valid ObjectId for admin notifications
+        userId: new require("mongoose").Types.ObjectId(), // Valid ObjectId for admin notifications
         type: "chef_status_update",
         title: "Chef Status Updated",
         message: `Chef has updated status to "${chefStatus}" for order #${order?.orderNumber}`,
@@ -1379,17 +1545,22 @@ exports.updateChefStatus = async (req, res) => {
       // Send real-time notification to customer
       if (order && order.customer) {
         const statusMessages = {
-          "Assigned": "Your order has been assigned to a chef and will begin preparation soon!",
-          "Accepted": "Great news! Your chef has accepted your order and will start cooking shortly.",
+          Assigned:
+            "Your order has been assigned to a chef and will begin preparation soon!",
+          Accepted:
+            "Great news! Your chef has accepted your order and will start cooking shortly.",
           "In Progress": "🍳 Your chef is now preparing your delicious meal!",
-          "Ready": "🍽️ Your meal is ready! It will be delivered to you soon.",
-          "Completed": "✅ Your order has been completed successfully! Enjoy your meal!"
+          Ready: "🍽️ Your meal is ready! It will be delivered to you soon.",
+          Completed:
+            "✅ Your order has been completed successfully! Enjoy your meal!",
         };
 
         await NotificationService.createNotification({
           userId: order.customer._id,
           title: "Order Status Update",
-          message: statusMessages[chefStatus] || `Your order status has been updated to ${chefStatus}`,
+          message:
+            statusMessages[chefStatus] ||
+            `Your order status has been updated to ${chefStatus}`,
           type: "order_status_update",
           data: {
             orderId,
@@ -1410,19 +1581,21 @@ exports.updateChefStatus = async (req, res) => {
     try {
       const { cacheService } = require("../config/redis");
       const customerId = order?.customer?._id;
-      
+
       if (customerId && cacheService) {
         // Invalidate the specific cache keys that mobile app uses
         const cacheKeys = [
-          `user:${customerId}:/api/orders/assigned:{}`,  // User's assigned orders
-          `user-orders:${customerId}:1:20:`,              // User's general orders  
-          `user:${customerId}:/api/orders:{}`,            // User's orders endpoint
+          `user:${customerId}:/api/orders/assigned:{}`, // User's assigned orders
+          `user-orders:${customerId}:1:20:`, // User's general orders
+          `user:${customerId}:/api/orders:{}`, // User's orders endpoint
         ];
-        
+
         for (const key of cacheKeys) {
           await cacheService.del(key);
         }
-        console.log(`🔄 Cache invalidated for customer ${customerId} after chef status update to "${chefStatus}"`)
+        console.log(
+          `🔄 Cache invalidated for customer ${customerId} after chef status update to "${chefStatus}"`
+        );
       }
     } catch (cacheError) {
       console.warn("⚠️ Failed to invalidate cache:", cacheError.message);
@@ -1431,14 +1604,18 @@ exports.updateChefStatus = async (req, res) => {
 
     // Send real-time update to customer via WebSocket
     try {
-      const socketService = require('../services/socketService');
+      const socketService = require("../services/socketService");
       if (order && order.customer) {
-        socketService.sendToCustomer(order.customer._id, 'order:status_update', {
-          orderId: order._id,
-          delegationStatus: order.delegationStatus,
-          orderStatus: order.orderStatus,
-          chefNotes: order.chefNotes
-        });
+        socketService.sendToCustomer(
+          order.customer._id,
+          "order:status_update",
+          {
+            orderId: order._id,
+            delegationStatus: order.delegationStatus,
+            orderStatus: order.orderStatus,
+            chefNotes: order.chefNotes,
+          }
+        );
       }
     } catch (socketError) {
       console.warn("⚠️ Failed to send socket update:", socketError.message);
@@ -1469,7 +1646,7 @@ exports.forgotPassword = async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'Email is required'
+        message: "Email is required",
       });
     }
 
@@ -1479,13 +1656,14 @@ exports.forgotPassword = async (req, res) => {
       // For security, don't reveal if email exists or not
       return res.json({
         success: true,
-        message: 'If an account with that email exists, a reset link has been sent.'
+        message:
+          "If an account with that email exists, a reset link has been sent.",
       });
     }
 
     // Generate reset token
-    const crypto = require('crypto');
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    const crypto = require("crypto");
+    const resetToken = crypto.randomBytes(32).toString("hex");
     const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Store reset token
@@ -1494,23 +1672,27 @@ exports.forgotPassword = async (req, res) => {
     await chef.save();
 
     // Send reset email
-    const EmailService = require('../services/emailService');
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(chef.email)}`;
-    
+    const EmailService = require("../services/emailService");
+    const resetUrl = `${
+      process.env.FRONTEND_URL || "http://localhost:3000"
+    }/reset-password?token=${resetToken}&email=${encodeURIComponent(
+      chef.email
+    )}`;
+
     try {
       await EmailService.sendPasswordResetEmail({
         email: chef.email,
         name: chef.fullName,
-        resetUrl: resetUrl
+        resetUrl: resetUrl,
       });
 
       res.json({
         success: true,
-        message: 'Password reset link sent to your email address.'
+        message: "Password reset link sent to your email address.",
       });
     } catch (emailError) {
-      console.error('Failed to send reset email:', emailError);
-      
+      console.error("Failed to send reset email:", emailError);
+
       // Clear the reset token if email failed
       chef.resetPasswordToken = undefined;
       chef.resetPasswordExpires = undefined;
@@ -1518,16 +1700,15 @@ exports.forgotPassword = async (req, res) => {
 
       return res.status(500).json({
         success: false,
-        message: 'Failed to send reset email. Please try again.'
+        message: "Failed to send reset email. Please try again.",
       });
     }
-
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error("Forgot password error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to process password reset request.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: "Failed to process password reset request.",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -1540,7 +1721,7 @@ exports.verifyResetToken = async (req, res) => {
     if (!token || !email) {
       return res.status(400).json({
         success: false,
-        message: 'Token and email are required'
+        message: "Token and email are required",
       });
     }
 
@@ -1548,27 +1729,26 @@ exports.verifyResetToken = async (req, res) => {
     const chef = await Chef.findOne({
       email: email.toLowerCase(),
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() }
+      resetPasswordExpires: { $gt: new Date() },
     });
 
     if (!chef) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token'
+        message: "Invalid or expired reset token",
       });
     }
 
     res.json({
       success: true,
-      message: 'Reset token is valid'
+      message: "Reset token is valid",
     });
-
   } catch (error) {
-    console.error('Verify reset token error:', error);
+    console.error("Verify reset token error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to verify reset token',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: "Failed to verify reset token",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -1581,7 +1761,7 @@ exports.resetPassword = async (req, res) => {
     if (!token || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Token, email, and password are required'
+        message: "Token, email, and password are required",
       });
     }
 
@@ -1589,7 +1769,7 @@ exports.resetPassword = async (req, res) => {
     if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters long'
+        message: "Password must be at least 8 characters long",
       });
     }
 
@@ -1597,18 +1777,18 @@ exports.resetPassword = async (req, res) => {
     const chef = await Chef.findOne({
       email: email.toLowerCase(),
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() }
+      resetPasswordExpires: { $gt: new Date() },
     });
 
     if (!chef) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token'
+        message: "Invalid or expired reset token",
       });
     }
 
     // Hash new password
-    const bcrypt = require('bcryptjs');
+    const bcrypt = require("bcryptjs");
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -1617,32 +1797,31 @@ exports.resetPassword = async (req, res) => {
     chef.resetPasswordToken = undefined;
     chef.resetPasswordExpires = undefined;
     chef.passwordChangedAt = new Date();
-    
+
     await chef.save();
 
     // Send confirmation email
-    const EmailService = require('../services/emailService');
+    const EmailService = require("../services/emailService");
     try {
       await EmailService.sendPasswordResetConfirmation({
         email: chef.email,
-        name: chef.fullName
+        name: chef.fullName,
       });
     } catch (emailError) {
-      console.error('Failed to send confirmation email:', emailError);
+      console.error("Failed to send confirmation email:", emailError);
       // Don't fail the request if confirmation email fails
     }
 
     res.json({
       success: true,
-      message: 'Password has been reset successfully'
+      message: "Password has been reset successfully",
     });
-
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error("Reset password error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to reset password',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: "Failed to reset password",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -1653,63 +1832,71 @@ exports.resetPassword = async (req, res) => {
 exports.getChefEarnings = async (req, res) => {
   try {
     const chefId = req.chef.chefId;
-    const { period = 'current_week' } = req.query;
-    
+    const { period = "current_week" } = req.query;
+
     const ChefEarning = require("../models/ChefEarning");
     const currentDate = new Date();
-    
+
     let startDate, endDate;
-    
+
     switch (period) {
-      case 'current_week':
+      case "current_week":
         startDate = ChefEarning.getWeekStart(currentDate);
         endDate = ChefEarning.getWeekEnd(currentDate);
         break;
-      case 'last_week':
+      case "last_week":
         const lastWeek = new Date(currentDate);
         lastWeek.setDate(currentDate.getDate() - 7);
         startDate = ChefEarning.getWeekStart(lastWeek);
         endDate = ChefEarning.getWeekEnd(lastWeek);
         break;
-      case 'current_month':
-        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      case "current_month":
+        startDate = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          1
+        );
+        endDate = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() + 1,
+          0
+        );
         break;
       default:
         startDate = ChefEarning.getWeekStart(currentDate);
         endDate = ChefEarning.getWeekEnd(currentDate);
     }
-    
+
     // Get earnings for the period
     const earnings = await ChefEarning.find({
       chef: chefId,
-      completedDate: { $gte: startDate, $lte: endDate }
-    }).populate('order', 'totalAmount deliveryDate'); // Removed orderNumber for privacy
-    
+      completedDate: { $gte: startDate, $lte: endDate },
+    }).populate("order", "totalAmount deliveryDate"); // Removed orderNumber for privacy
+
     // Calculate totals
     const totalPending = earnings
-      .filter(e => e.status === 'pending')
+      .filter((e) => e.status === "pending")
       .reduce((sum, e) => sum + e.cookingFee, 0);
-      
+
     const totalPaid = earnings
-      .filter(e => e.status === 'paid')
+      .filter((e) => e.status === "paid")
       .reduce((sum, e) => sum + e.cookingFee, 0);
-      
+
     const totalEarnings = totalPending + totalPaid;
-    
+
     // Get next payout date (next Friday)
     const nextPayoutDate = ChefEarning.getNextFridayPayout(currentDate);
-    
+
     // Group earnings by day for weekly view
     const dailyEarnings = {};
-    earnings.forEach(earning => {
-      const day = earning.completedDate.toISOString().split('T')[0];
+    earnings.forEach((earning) => {
+      const day = earning.completedDate.toISOString().split("T")[0];
       if (!dailyEarnings[day]) {
         dailyEarnings[day] = {
           date: day,
           totalEarnings: 0,
           completedOrders: 0,
-          orders: []
+          orders: [],
         };
       }
       dailyEarnings[day].totalEarnings += earning.cookingFee;
@@ -1717,10 +1904,10 @@ exports.getChefEarnings = async (req, res) => {
       dailyEarnings[day].orders.push({
         orderId: earning.order._id,
         cookingFee: earning.cookingFee,
-        status: earning.status
+        status: earning.status,
       });
     });
-    
+
     res.json({
       success: true,
       data: {
@@ -1732,26 +1919,28 @@ exports.getChefEarnings = async (req, res) => {
           totalPending,
           totalPaid,
           completedOrders: earnings.length,
-          nextPayoutDate
+          nextPayoutDate,
         },
-        dailyEarnings: Object.values(dailyEarnings).sort((a, b) => new Date(a.date) - new Date(b.date)),
-        earnings: earnings.map(e => ({
+        dailyEarnings: Object.values(dailyEarnings).sort(
+          (a, b) => new Date(a.date) - new Date(b.date)
+        ),
+        earnings: earnings.map((e) => ({
           id: e._id,
           cookingFee: e.cookingFee,
           orderTotal: e.orderTotal,
           status: e.status,
           completedDate: e.completedDate,
           payoutDate: e.payoutDate,
-          chefPercentage: e.chefPercentage
-        }))
-      }
+          chefPercentage: e.chefPercentage,
+        })),
+      },
     });
   } catch (error) {
     console.error("Get chef earnings error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to get earnings data",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -1762,85 +1951,96 @@ exports.getMealPlan = async (req, res) => {
     const { orderId } = req.params;
     const chefId = req.chef.chefId;
 
-
     // Verify the order belongs to this chef
-    const order = await Order.findOne({ 
-      _id: orderId, 
-      assignedChef: new mongoose.Types.ObjectId(chefId) 
+    const order = await Order.findOne({
+      _id: orderId,
+      assignedChef: new mongoose.Types.ObjectId(chefId),
     }).populate({
-      path: 'subscription',
+      path: "subscription",
       populate: {
-        path: 'mealPlanId',
-        model: 'MealPlan',
-        select: 'planName description durationWeeks nutritionInfo'
-      }
+        path: "mealPlanId",
+        model: "MealPlan",
+        select: "planName description durationWeeks nutritionInfo",
+      },
     });
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found or not assigned to you'
+        message: "Order not found or not assigned to you",
       });
     }
 
     // Get the delegation to access special notes
-    const delegation = await OrderDelegation.findOne({ 
-      order: orderId, 
-      chef: new mongoose.Types.ObjectId(chefId) 
+    const delegation = await OrderDelegation.findOne({
+      order: orderId,
+      chef: new mongoose.Types.ObjectId(chefId),
     });
 
     // Get meal plan assignments (daily meals)
-    const MealPlanAssignment = require('../models/MealPlanAssignment');
-    const DailyMeal = require('../models/DailyMeal');
-    
+    const MealPlanAssignment = require("../models/MealPlanAssignment");
+    const DailyMeal = require("../models/DailyMeal");
+
     const mealPlan = order.subscription?.mealPlanId;
-    
+
     if (!mealPlan) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found for this order'
+        message: "Meal plan not found for this order",
       });
     }
 
     // Get meal assignments for this meal plan
-    const assignments = await MealPlanAssignment.find({ 
-      mealPlanId: mealPlan._id 
-    }).populate('mealIds').sort({ weekNumber: 1, dayOfWeek: 1, mealTime: 1 });
+    const assignments = await MealPlanAssignment.find({
+      mealPlanId: mealPlan._id,
+    })
+      .populate("mealIds")
+      .sort({ weekNumber: 1, dayOfWeek: 1, mealTime: 1 });
 
-    console.log('🔍 Found assignments:', assignments.length);
+    console.log("🔍 Found assignments:", assignments.length);
 
     // Group meals by day (combine week and day into single day number)
     const dailyMeals = {};
     let totalCalories = 0;
     let totalMeals = 0;
 
-    assignments.forEach(assignment => {
+    assignments.forEach((assignment) => {
       // Calculate day number: week 1 day 1 = day 1, week 2 day 1 = day 8, etc.
-      const dayNumber = ((assignment.weekNumber - 1) * 7) + assignment.dayOfWeek;
+      const dayNumber = (assignment.weekNumber - 1) * 7 + assignment.dayOfWeek;
       const mealType = assignment.mealTime; // breakfast, lunch, dinner
-      
+
       if (!dailyMeals[dayNumber]) {
         dailyMeals[dayNumber] = { day: dayNumber, meals: {} };
       }
-      
+
       if (!dailyMeals[dayNumber].meals[mealType]) {
         dailyMeals[dayNumber].meals[mealType] = [];
       }
 
       // Process each meal in the assignment (mealIds is an array)
       if (assignment.mealIds && assignment.mealIds.length > 0) {
-        assignment.mealIds.forEach(meal => {
+        assignment.mealIds.forEach((meal) => {
           if (meal) {
             dailyMeals[dayNumber].meals[mealType].push({
               _id: meal._id,
               name: meal.name,
               ingredients: meal.ingredients,
-              instructions: meal.adminNotes || meal.chefNotes || assignment.notes || 'No specific instructions provided.',
+              instructions:
+                meal.adminNotes ||
+                meal.chefNotes ||
+                assignment.notes ||
+                "No specific instructions provided.",
               preparationTime: meal.preparationTime || 30,
-              complexityLevel: meal.complexityLevel || 'medium',
-              nutrition: meal.nutrition || { calories: 0, protein: 0, carbs: 0, fat: 0, weight: 0 },
+              complexityLevel: meal.complexityLevel || "medium",
+              nutrition: meal.nutrition || {
+                calories: 0,
+                protein: 0,
+                carbs: 0,
+                fat: 0,
+                weight: 0,
+              },
               allergens: meal.allergens || [],
-              category: meal.category || 'main'
+              category: meal.category || "main",
             });
 
             // Add to totals
@@ -1854,20 +2054,27 @@ exports.getMealPlan = async (req, res) => {
     });
 
     // Convert dailyMeals object to array
-    const dailyMealsArray = Object.values(dailyMeals).sort((a, b) => a.day - b.day);
+    const dailyMealsArray = Object.values(dailyMeals).sort(
+      (a, b) => a.day - b.day
+    );
 
     // Calculate nutrition info
     const totalNutrition = {
       totalCalories,
-      avgCaloriesPerDay: dailyMealsArray.length > 0 ? Math.round(totalCalories / dailyMealsArray.length) : 0,
-      avgCaloriesPerMeal: totalMeals > 0 ? Math.round(totalCalories / totalMeals) : 0
+      avgCaloriesPerDay:
+        dailyMealsArray.length > 0
+          ? Math.round(totalCalories / dailyMealsArray.length)
+          : 0,
+      avgCaloriesPerMeal:
+        totalMeals > 0 ? Math.round(totalCalories / totalMeals) : 0,
     };
 
     // Prepare special notes
     const specialNotes = {
       customerRequests: order.specialInstructions || null,
-      adminInstructions: delegation?.adminNotes || delegation?.specialInstructions || null,
-      dietaryRestrictions: []
+      adminInstructions:
+        delegation?.adminNotes || delegation?.specialInstructions || null,
+      dietaryRestrictions: [],
     };
 
     // Extract dietary restrictions from customer requests
@@ -1875,39 +2082,40 @@ exports.getMealPlan = async (req, res) => {
       const restrictions = order.specialInstructions
         .toLowerCase()
         .split(/[,;]/)
-        .map(r => r.trim())
-        .filter(r => r.length > 0)
-        .map(r => r.charAt(0).toUpperCase() + r.slice(1));
-      
+        .map((r) => r.trim())
+        .filter((r) => r.length > 0)
+        .map((r) => r.charAt(0).toUpperCase() + r.slice(1));
+
       specialNotes.dietaryRestrictions = restrictions;
     }
 
     const mealPlanData = {
-      planName: mealPlan.planName || 'Meal Preparation Service',
+      planName: mealPlan.planName || "Meal Preparation Service",
       duration: mealPlan.durationWeeks || dailyMealsArray.length,
       dailyMeals: dailyMealsArray,
       specialNotes,
-      totalNutrition
+      totalNutrition,
     };
 
-    console.log('✅ Meal plan data prepared:', {
+    console.log("✅ Meal plan data prepared:", {
       planName: mealPlanData.planName,
       daysCount: dailyMealsArray.length,
       totalMeals: totalMeals,
-      hasSpecialNotes: !!(specialNotes.customerRequests || specialNotes.adminInstructions)
+      hasSpecialNotes: !!(
+        specialNotes.customerRequests || specialNotes.adminInstructions
+      ),
     });
 
     res.json({
       success: true,
-      data: mealPlanData
+      data: mealPlanData,
     });
-
   } catch (error) {
-    console.error('❌ Get meal plan error:', error);
+    console.error("❌ Get meal plan error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch meal plan',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: "Failed to fetch meal plan",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -1918,24 +2126,29 @@ exports.getOrderEarningsBreakdown = async (req, res) => {
     const { orderId } = req.params;
     const chefId = req.chef.chefId;
 
-    console.log('🧮 Getting earnings breakdown for order:', orderId, 'chef:', chefId);
+    console.log(
+      "🧮 Getting earnings breakdown for order:",
+      orderId,
+      "chef:",
+      chefId
+    );
 
     // Verify the order belongs to this chef
-    const order = await Order.findOne({ 
-      _id: orderId, 
-      assignedChef: new mongoose.Types.ObjectId(chefId) 
+    const order = await Order.findOne({
+      _id: orderId,
+      assignedChef: new mongoose.Types.ObjectId(chefId),
     }).populate({
-      path: 'subscription',
+      path: "subscription",
       populate: {
-        path: 'mealPlanId',
-        model: 'MealPlan'
-      }
+        path: "mealPlanId",
+        model: "MealPlan",
+      },
     });
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found or not assigned to you'
+        message: "Order not found or not assigned to you",
       });
     }
 
@@ -1943,17 +2156,22 @@ exports.getOrderEarningsBreakdown = async (req, res) => {
     if (!mealPlan) {
       return res.status(404).json({
         success: false,
-        message: 'Meal plan not found for this order'
+        message: "Meal plan not found for this order",
       });
     }
 
     // Get meal assignments for this meal plan
-    const MealPlanAssignment = require('../models/MealPlanAssignment');
-    const assignments = await MealPlanAssignment.find({ 
-      mealPlanId: mealPlan._id 
-    }).populate('mealIds').sort({ weekNumber: 1, dayOfWeek: 1, mealTime: 1 });
+    const MealPlanAssignment = require("../models/MealPlanAssignment");
+    const assignments = await MealPlanAssignment.find({
+      mealPlanId: mealPlan._id,
+    })
+      .populate("mealIds")
+      .sort({ weekNumber: 1, dayOfWeek: 1, mealTime: 1 });
 
-    console.log('📊 Found assignments for earnings calculation:', assignments.length);
+    console.log(
+      "📊 Found assignments for earnings calculation:",
+      assignments.length
+    );
 
     // Calculate totals from actual meal data
     let totalIngredientsCost = 0;
@@ -1961,9 +2179,9 @@ exports.getOrderEarningsBreakdown = async (req, res) => {
     let totalChefProfitShare = 0;
     let totalMealsCount = 0;
 
-    assignments.forEach(assignment => {
+    assignments.forEach((assignment) => {
       if (assignment.mealIds && assignment.mealIds.length > 0) {
-        assignment.mealIds.forEach(meal => {
+        assignment.mealIds.forEach((meal) => {
           if (meal && meal.pricing) {
             // Sum up the individual components that the chef gets
             const mealIngredients = meal.pricing.ingredients || 0;
@@ -1976,14 +2194,17 @@ exports.getOrderEarningsBreakdown = async (req, res) => {
             totalChefProfitShare += chefProfitShare;
             totalMealsCount += 1;
 
-            console.log(`💰 Meal ${meal.mealId}: ingredients=${mealIngredients}, cooking=${mealCooking}, profit_share=${chefProfitShare}`);
+            console.log(
+              `💰 Meal ${meal.mealId}: ingredients=${mealIngredients}, cooking=${mealCooking}, profit_share=${chefProfitShare}`
+            );
           }
         });
       }
     });
 
     // Total chef earnings is the sum of all three components
-    const totalChefEarnings = totalIngredientsCost + totalCookingCost + totalChefProfitShare;
+    const totalChefEarnings =
+      totalIngredientsCost + totalCookingCost + totalChefProfitShare;
 
     const earningsBreakdown = {
       totalChefEarnings,
@@ -1992,22 +2213,21 @@ exports.getOrderEarningsBreakdown = async (req, res) => {
       totalChefProfitShare,
       totalMealsCount,
       planName: mealPlan.planName,
-      planDuration: mealPlan.durationWeeks
+      planDuration: mealPlan.durationWeeks,
     };
 
-    console.log('✅ Earnings breakdown calculated:', earningsBreakdown);
+    console.log("✅ Earnings breakdown calculated:", earningsBreakdown);
 
     res.json({
       success: true,
-      data: earningsBreakdown
+      data: earningsBreakdown,
     });
-
   } catch (error) {
-    console.error('❌ Get earnings breakdown error:', error);
+    console.error("❌ Get earnings breakdown error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch earnings breakdown',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: "Failed to fetch earnings breakdown",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };

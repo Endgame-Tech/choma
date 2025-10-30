@@ -1172,7 +1172,7 @@ const CheckoutScreen = ({ route, navigation }) => {
 
         {/* Delivery Information */}
         <View style={styles(colors).section}>
-          <Text style={styles(colors).sectionTitle}>Delivery Information</Text>
+          {/* <Text style={styles(colors).sectionTitle}>Delivery Information</Text> */}
 
           {/* Delivery Schedule Options */}
           <View style={styles(colors).inputContainer}>
@@ -1472,12 +1472,7 @@ const CheckoutScreen = ({ route, navigation }) => {
                 )}
               </View>
             </View>
-            {/* <View style={styles(colors).summaryRow}>
-              <Text style={styles(colors).summaryLabel}>Subtotal</Text>
-              <Text style={styles(colors).summaryValue}>
-                ₦{subtotal.toLocaleString()}
-              </Text>
-            </View> */}
+
             <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).summaryLabel}>
                 Delivery Fee (
@@ -1516,9 +1511,6 @@ const CheckoutScreen = ({ route, navigation }) => {
                       )} consolidated deliveries`
                     : `₦${selectedZone.price.toLocaleString()} × ${deliveryCount} daily deliveries`}
                 </Text>
-                {/* <Text style={[styles(colors).summaryValue, { fontSize: 14 }]}>
-                  = ₦{validDeliveryFee.toLocaleString()}
-                </Text> */}
               </View>
             )}
             <View style={styles(colors).summaryDivider} />
@@ -1536,26 +1528,20 @@ const CheckoutScreen = ({ route, navigation }) => {
 
       {/* Proceed Button */}
       <View style={styles(colors).footer}>
-        {/* <View style={styles(colors).totalSummary}>
-          <Text style={styles(colors).totalSummaryLabel}>Total Amount</Text>
-          <Text style={styles(colors).totalSummaryValue}>
-            ₦{totalPrice.toLocaleString()}
-          </Text>
-        </View> */}
 
         <TouchableOpacity
           style={styles(colors).proceedButton}
           onPress={handleProceedToPayment}
         >
           <LinearGradient
-            colors={["#1b1b1b", "#1b1b1b"]}
+            colors={["#F7AE1A", "#F7AE1A"]}
             style={styles(colors).proceedGradient}
           >
-            <CustomIcon name="card" size={20} color={colors.black} />
+            <CustomIcon name="wallet" size={20} color="#004432" />
             <Text style={styles(colors).proceedButtonText}>
               Proceed to Payment
             </Text>
-            <CustomIcon name="arrow-forward" size={20} color={colors.primary} />
+            <CustomIcon name="arrow-forward" size={18} color="#004432" />
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -1612,7 +1598,7 @@ const styles = (colors) =>
       marginBottom: 30,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "600",
       color: colors.text,
       marginBottom: 8,
@@ -1664,18 +1650,16 @@ const styles = (colors) =>
       gap: 12,
     },
     optionCard: {
-      backgroundColor: colors.cardBackground,
+      // backgroundColor: colors.cardBackground,
       borderRadius: THEME.borderRadius.large,
-      padding: 20,
+      padding: 15,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
     },
     selectedOption: {
       borderColor: colors.primary,
-      backgroundColor: `${colors.primaryLight}10`,
+      backgroundColor: `${colors.primary2}10`,
     },
     optionContent: {
       flex: 1,
@@ -1762,11 +1746,11 @@ const styles = (colors) =>
     },
     discountedPrice: {
       fontSize: 16,
-      color: colors.success,
+      color: colors.primary2,
       fontWeight: "600",
     },
     discountBadge: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.primary2,
       borderRadius: 8,
       paddingHorizontal: 6,
       paddingVertical: 2,
@@ -1775,7 +1759,7 @@ const styles = (colors) =>
     },
     discountText: {
       fontSize: 10,
-      color: colors.background,
+      color: colors.text2,
       fontWeight: "600",
     },
     freeText: {
@@ -1795,7 +1779,7 @@ const styles = (colors) =>
     totalValue: {
       fontSize: 20,
       fontWeight: "bold",
-      color: colors.primary,
+      color: colors.primary2,
     },
     bottomPadding: {
       height: 100, // Increased from 20 to provide more space for scrolling
@@ -1833,7 +1817,7 @@ const styles = (colors) =>
       gap: 12,
     },
     proceedButtonText: {
-      color: colors.primary,
+      color: "#004432",
       fontSize: 16,
       fontWeight: "600",
     },
@@ -1917,17 +1901,15 @@ const styles = (colors) =>
       color: colors.primary,
     },
     addressOptionCard: {
-      backgroundColor: colors.cardBackground,
+      // backgroundColor: colors.cardBackground,
       borderRadius: THEME.borderRadius.medium,
-      padding: 16,
+      padding: 15,
       flexDirection: "row",
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
     },
     selectedAddressOption: {
       borderColor: colors.primary,
-      backgroundColor: `${colors.primary}10`,
+      backgroundColor: `${colors.primary2}10`,
     },
     addressOptionContent: {
       flex: 1,
@@ -1952,17 +1934,15 @@ const styles = (colors) =>
       gap: 12,
     },
     deliveryOptionCard: {
-      backgroundColor: colors.cardBackground,
+      // backgroundColor: colors.cardBackground,
       borderRadius: THEME.borderRadius.medium,
-      padding: 16,
+      padding: 15,
       flexDirection: "row",
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
     },
     selectedDeliveryOption: {
       borderColor: colors.primary,
-      backgroundColor: `${colors.primary}10`,
+      backgroundColor: `${colors.primary2}10`,
     },
     deliveryOptionContent: {
       flex: 1,

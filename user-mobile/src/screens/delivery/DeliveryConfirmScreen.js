@@ -381,7 +381,7 @@ const styles = (colors) =>
       marginBottom: 32,
     },
     sectionTitle: {
-      fontSize: 20,
+      fontSize: 16,
       fontWeight: "bold",
       color: colors.text,
       marginBottom: 16,

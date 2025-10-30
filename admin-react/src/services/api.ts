@@ -172,6 +172,28 @@ export const ordersApi = {
     return { data: { orders: [], stats: { orderStatus: {}, paymentStatus: {} } }, pagination: {} as Pagination }
   },
 
+  // Get delivery-ready orders (Tab 2: for driver assignment)
+  async getDeliveryReadyOrders(filters: OrderFilters = {}): Promise<{ data: OrdersResponse; pagination: Pagination }> {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '' && value !== null) {
+        params.append(key, value.toString())
+      }
+    })
+    const response = await api.get(`/orders/delivery-ready?${params.toString()}`)
+    const data = response.data as ApiResponse<OrdersResponse> & { pagination?: Pagination }
+    if (data.success && data.data) {
+      return {
+        data: {
+          orders: data.data.orders,
+          stats: data.data.stats
+        },
+        pagination: data.pagination as Pagination
+      }
+    }
+    return { data: { orders: [], stats: { orderStatus: {}, paymentStatus: {} } }, pagination: {} as Pagination }
+  },
+
   // Get single order
   async getOrder(orderId: string): Promise<Order> {
     const response = await api.get<ApiResponse<Order>>(`/orders/${orderId}`)

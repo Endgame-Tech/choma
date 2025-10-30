@@ -58,6 +58,12 @@ const OrdersScreen = ({ navigation }) => {
   const { user } = useAuth();
   const [realTimeUpdateInterval, setRealTimeUpdateInterval] = useState(null);
 
+  // Initial load when component mounts
+  useEffect(() => {
+    console.log("🚀 OrdersScreen mounted - loading initial orders");
+    loadOrders();
+  }, []);
+
   // Silent update function that only updates status without refreshing UI
   const silentOrderUpdate = async (forceRefresh = false) => {
     try {
@@ -231,25 +237,12 @@ const OrdersScreen = ({ navigation }) => {
     };
   }, [safeOrders.length, selectedTab]); // Add selectedTab to dependencies
 
-  // Reduced focus refresh - only for major updates
+  // Focus effect - always load fresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      // Only refresh after significant time away or if orders are empty
-      const lastUpdate = Date.now() - (global.lastOrderUpdate || 0);
-      const shouldRefresh = safeOrders.length === 0 || lastUpdate > 300000; // 5 minutes
-
-      if (shouldRefresh) {
-        console.log(
-          "🔄 Screen focused - loading orders with cache optimization"
-        );
-        loadOrders();
-      } else {
-        console.log(
-          "🔄 Screen focused - using silent update with force refresh"
-        );
-        silentOrderUpdate(true); // Force refresh to get latest order status
-      }
-    }, [safeOrders.length])
+      console.log("🔄 Screen focused - loading fresh orders");
+      loadOrders(true); // Always force refresh when screen is focused
+    }, [])
   );
 
   // Cleanup intervals on unmount

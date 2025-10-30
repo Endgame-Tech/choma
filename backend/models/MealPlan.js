@@ -53,6 +53,12 @@ const MealPlanSchema = new mongoose.Schema({
     default: 4,
   },
 
+  // Five working days toggle (Mon-Fri only delivery for office workers)
+  isFiveWorkingDays: {
+    type: Boolean,
+    default: false,
+  },
+
   // Tier system for plan categorization
   tier: {
     type: String,
@@ -182,7 +188,10 @@ MealPlanSchema.virtual("pricePerMeal").get(function () {
 
 // Method to calculate total days in plan
 MealPlanSchema.methods.getTotalDays = function () {
-  return this.durationWeeks * 7;
+  if (this.isFiveWorkingDays) {
+    return this.durationWeeks * 5; // Mon-Fri only
+  }
+  return this.durationWeeks * 7; // Full week
 };
 
 // Method to publish/unpublish plan

@@ -380,8 +380,8 @@ function PaymentScreen({ route, navigation }) {
                     ? { uri: mealPlan.image }
                     : mealPlan.image
                   : mealPlan.planImageUrl
-                    ? { uri: mealPlan.planImageUrl }
-                    : require("../../assets/images/meal-plans/fitfuel.jpg")
+                  ? { uri: mealPlan.planImageUrl }
+                  : require("../../assets/images/meal-plans/fitfuel.jpg")
               }
               style={styles(colors).mealPlanImage}
               resizeMode="cover"
@@ -478,13 +478,13 @@ function PaymentScreen({ route, navigation }) {
             </View>
           ) : (
             <View style={styles(colors).appliedDiscountContainer}>
-              <View style={styles(colors).discountBadge}>
+              <View style={styles(colors).appliedDiscountBadge}>
                 <Ionicons
                   name="checkmark-circle"
                   size={16}
                   color={colors.success}
                 />
-                <Text style={styles(colors).discountBadgeText}>
+                <Text style={styles(colors).appliedDiscountBadgeText}>
                   {appliedDiscount.discountPercent}% off applied
                 </Text>
               </View>
@@ -502,44 +502,48 @@ function PaymentScreen({ route, navigation }) {
           <View style={styles(colors).summaryCard}>
             <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).summaryLabel}>Plan Base Price</Text>
-              <Text style={styles(colors).summaryValue}>
-                ₦{originalPrice.toLocaleString()}
-              </Text>
+              <View style={styles(colors).priceContainer}>
+                {discount && discount.discountPercent > 0 ? (
+                  <>
+                    {discount.discountType === "ad" ? (
+                      <>
+                        {/* Ad Discount: Show counter value struck through, actual price as current */}
+                        <Text style={styles(colors).originalPrice}>
+                          ₦{originalPrice.toLocaleString()}
+                        </Text>
+                        <Text style={styles(colors).discountedPrice}>
+                          ₦{discountedPrice.toLocaleString()}
+                        </Text>
+                        <View style={styles(colors).discountBadge}>
+                          <Text style={styles(colors).badgeDiscountText}>
+                            {discount.discountPercent}% OFF
+                          </Text>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        {/* Promo Discount: Show original price struck through, discounted price as current */}
+                        <Text style={styles(colors).originalPrice}>
+                          ₦{originalPrice.toLocaleString()}
+                        </Text>
+                        <Text style={styles(colors).discountedPrice}>
+                          ₦{discountedPrice.toLocaleString()}
+                        </Text>
+                        <View style={styles(colors).discountBadge}>
+                          <Text style={styles(colors).badgeDiscountText}>
+                            {discount.discountPercent}% OFF
+                          </Text>
+                        </View>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <Text style={styles(colors).summaryValue}>
+                    ₦{originalPrice.toLocaleString()}
+                  </Text>
+                )}
+              </View>
             </View>
-
-            {/* Show discount from CheckoutScreen if available */}
-            {discount && discount.discountPercent > 0 && (
-              <View style={styles(colors).summaryRow}>
-                <Text
-                  style={[
-                    styles(colors).summaryLabel,
-                    styles(colors).discountText,
-                  ]}
-                >
-                  {discount.reason} ({discount.discountPercent}% OFF)
-                </Text>
-                <Text
-                  style={[
-                    styles(colors).summaryValue,
-                    styles(colors).discountText,
-                  ]}
-                >
-                  -₦{discount.discountAmount.toLocaleString()}
-                </Text>
-              </View>
-            )}
-
-            {/* Show discounted price if discount exists */}
-            {discount && discount.discountPercent > 0 && (
-              <View style={styles(colors).summaryRow}>
-                <Text style={styles(colors).summaryLabel}>
-                  Discounted Price
-                </Text>
-                <Text style={styles(colors).summaryValue}>
-                  ₦{discountedPrice.toLocaleString()}
-                </Text>
-              </View>
-            )}
 
             <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).summaryLabel}>
@@ -560,7 +564,23 @@ function PaymentScreen({ route, navigation }) {
               </Text>
             </View>
 
-            <View style={[styles(colors).summaryRow, styles(colors).totalRow]}>
+            {/* Show delivery fee breakdown if zone is selected */}
+            {subscriptionData.selectedDeliveryZone && deliveryFee > 0 && (
+              <View style={styles(colors).summaryRow}>
+                <Text
+                  style={[
+                    styles(colors).summaryLabel,
+                    { fontSize: 14, fontStyle: "italic" },
+                  ]}
+                >
+                  ₦{subscriptionData.selectedDeliveryZone.price.toLocaleString()} per delivery
+                </Text>
+              </View>
+            )}
+
+            <View style={styles(colors).summaryDivider} />
+
+            <View style={styles(colors).summaryRow}>
               <Text style={styles(colors).totalLabel}>Total</Text>
               <Text style={styles(colors).totalValue}>
                 ₦{totalPrice.toLocaleString()}
@@ -630,10 +650,10 @@ function PaymentScreen({ route, navigation }) {
                 <Ionicons
                   name="shield-checkmark"
                   size={20}
-                  color={colors.black}
+                  color={"#004432"}
                 />
                 <Text style={styles(colors).payButtonText}>Pay Securely</Text>
-                <Ionicons name="lock-closed" size={16} color={colors.black} />
+                <Ionicons name="lock-closed" size={16} color={"#004432"} />
               </>
             )}
           </LinearGradient>
@@ -682,7 +702,7 @@ const styles = (colors) =>
       marginBottom: 25,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "600",
       color: colors.text,
       marginBottom: 15,
@@ -787,6 +807,21 @@ const styles = (colors) =>
       color: colors.text,
       fontWeight: "500",
     },
+    priceContainer: {
+      alignItems: "flex-end",
+    },
+    originalPrice: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textDecorationLine: "line-through",
+      marginBottom: 2,
+    },
+    discountedPrice: {
+      fontSize: 16,
+      color: colors.primary2,
+      fontWeight: "600",
+      marginBottom: 4,
+    },
     freeText: {
       color: colors.success,
       fontWeight: "600",
@@ -795,11 +830,21 @@ const styles = (colors) =>
       color: colors.success,
       fontWeight: "600",
     },
+    badgeDiscountText: {
+      color: colors.white,
+      fontSize: 10,
+      fontWeight: "600",
+    },
+    summaryDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 15,
+    },
     // Discount styles
     discountInputContainer: {
       flexDirection: "row",
       backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.medium,
+      borderRadius: THEME.borderRadius.xxl,
       borderWidth: 1,
       borderColor: colors.border,
       padding: 2,
@@ -815,13 +860,13 @@ const styles = (colors) =>
       backgroundColor: colors.primary,
       paddingHorizontal: 20,
       paddingVertical: 12,
-      borderRadius: THEME.borderRadius.medium,
+      borderRadius: THEME.borderRadius.xxl,
       justifyContent: "center",
       alignItems: "center",
       minWidth: 80,
     },
     applyButtonText: {
-      color: colors.white,
+      color: "#004432",
       fontWeight: "600",
       fontSize: 16,
     },
@@ -835,15 +880,23 @@ const styles = (colors) =>
       borderWidth: 1,
       borderColor: colors.success,
     },
-    discountBadge: {
+    appliedDiscountBadge: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
     },
-    discountBadgeText: {
+    appliedDiscountBadgeText: {
       color: colors.success,
       fontWeight: "600",
       fontSize: 16,
+    },
+    discountBadge: {
+      backgroundColor: colors.primary2,
+      borderRadius: 8,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      marginTop: 4,
+      alignSelf: "flex-end",
     },
     totalRow: {
       borderTopWidth: 1,
@@ -860,7 +913,7 @@ const styles = (colors) =>
     totalValue: {
       fontSize: 20,
       fontWeight: "bold",
-      color: colors.primary,
+      color: colors.primary2,
     },
     paymentMethodCard: {
       backgroundColor: colors.cardBackground,
@@ -917,7 +970,7 @@ const styles = (colors) =>
     totalSummaryValue: {
       fontSize: 20,
       fontWeight: "bold",
-      color: colors.text,
+      color: colors.primary2,
     },
     payButton: {
       borderRadius: THEME.borderRadius.large,
@@ -934,7 +987,7 @@ const styles = (colors) =>
       gap: 10,
     },
     payButtonText: {
-      color: colors.black,
+      color: "#004432",
       fontSize: 16,
       fontWeight: "600",
     },

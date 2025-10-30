@@ -1280,7 +1280,7 @@ const styles = (colors) =>
       marginTop: 32,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "700",
       color: PRIMARY_GOLD,
       marginBottom: 18,

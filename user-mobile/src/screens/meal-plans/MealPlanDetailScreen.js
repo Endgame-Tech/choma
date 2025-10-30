@@ -354,9 +354,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
     try {
       const planName = mealPlanDetails?.planName || bundle?.name || "Meal Plan";
       const duration = mealPlanDetails?.durationWeeks
-        ? `${mealPlanDetails.durationWeeks} week${
-            mealPlanDetails.durationWeeks !== 1 ? "s" : ""
-          }`
+        ? mealPlanDetails.isFiveWorkingDays
+          ? `${mealPlanDetails.durationWeeks * 5} Days Plan • 5/week`
+          : `${mealPlanDetails.durationWeeks} week${
+              mealPlanDetails.durationWeeks !== 1 ? "s" : ""
+            }`
         : "4 weeks";
       const price = mealPlanDetails?.basePrice || bundle?.price || 25000;
       const calories = mealPlanDetails?.nutritionInfo?.avgCaloriesPerDay
@@ -364,11 +366,13 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
             mealPlanDetails.nutritionInfo.avgCaloriesPerDay
           )
         : "N/A";
+      const totalDays = mealPlanDetails?.isFiveWorkingDays
+        ? mealPlanDetails.durationWeeks * 5
+        : mealPlanDetails.durationWeeks * 7;
       const protein = mealPlanDetails?.nutritionInfo?.totalProtein
         ? formatApproximateNutritionValue(
             Math.round(
-              mealPlanDetails.nutritionInfo.totalProtein /
-                (mealPlanDetails.durationWeeks * 7)
+              mealPlanDetails.nutritionInfo.totalProtein / totalDays
             ),
             "g"
           )
@@ -1375,6 +1379,14 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
 
   const weeklyMealPlan = useMemo(() => getWeeklyMealPlan(), [mealPlanDetails]);
 
+  // Calculate total days based on 5-day or full week plan
+  const totalPlanDays = useMemo(() => {
+    if (!mealPlanDetails?.durationWeeks) return 28; // Default 4 weeks
+    return mealPlanDetails.isFiveWorkingDays
+      ? mealPlanDetails.durationWeeks * 5
+      : mealPlanDetails.durationWeeks * 7;
+  }, [mealPlanDetails?.durationWeeks, mealPlanDetails?.isFiveWorkingDays]);
+
   useEffect(() => {
     if (weeklyMealPlan && weeklyMealPlan[selectedWeek]) {
       const allDaysInWeek = weeklyMealPlan[selectedWeek]
@@ -1604,9 +1616,11 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <CustomIcon name="time" size={16} color={colors.text} />
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.durationWeeks
-                  ? `~${mealPlanDetails.durationWeeks} week${
-                      mealPlanDetails.durationWeeks !== 1 ? "s" : ""
-                    }`
+                  ? mealPlanDetails.isFiveWorkingDays
+                    ? `${mealPlanDetails.durationWeeks * 5} Days Plan • 5/week`
+                    : `~${mealPlanDetails.durationWeeks} week${
+                        mealPlanDetails.durationWeeks !== 1 ? "s" : ""
+                      }`
                   : mealPlanDetails?.planDuration ||
                     bundle?.duration ||
                     "4 weeks"}
@@ -1793,7 +1807,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                       ? formatApproximateNutritionValue(
                           Math.round(
                             mealPlanDetails.nutritionInfo.totalProtein /
-                              (mealPlanDetails.durationWeeks * 7)
+                              totalPlanDays
                           ),
                           "g"
                         )
@@ -1818,7 +1832,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                       ? formatApproximateNutritionValue(
                           Math.round(
                             mealPlanDetails.nutritionInfo.totalCarbs /
-                              (mealPlanDetails.durationWeeks * 7)
+                              totalPlanDays
                           ),
                           "g"
                         )
@@ -1843,7 +1857,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                       ? formatApproximateNutritionValue(
                           Math.round(
                             mealPlanDetails.nutritionInfo.totalFat /
-                              (mealPlanDetails.durationWeeks * 7)
+                              totalPlanDays
                           ),
                           "g"
                         )

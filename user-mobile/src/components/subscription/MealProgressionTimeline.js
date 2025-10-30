@@ -191,9 +191,106 @@ const MealProgressionTimeline = ({
         return;
       }
 
+      // ✨ FIRST: Try to get subscription with mealPlanSnapshot (like MyPlanScreen)
+      const subscriptionResult = await apiService.getSubscriptionById(
+        subscriptionId
+      );
+      console.log("📊 Subscription result:", subscriptionResult);
+
+      if (subscriptionResult.success && subscriptionResult.data) {
+        const subscription =
+          subscriptionResult.data.data || subscriptionResult.data;
+
+        // Check if subscription has mealPlanSnapshot (the CORRECT source)
+        if (subscription.mealPlanSnapshot?.mealSchedule) {
+          console.log(
+            "✅ Found mealPlanSnapshot with",
+            subscription.mealPlanSnapshot.mealSchedule.length,
+            "meal slots"
+          );
+
+          // Convert mealSchedule to timeline format (CORRECT approach)
+          const timelineFromSnapshot =
+            subscription.mealPlanSnapshot.mealSchedule.map((slot, index) => {
+              // ✨ CRITICAL: Use slot.deliveryStatus to determine actual status
+              const isDelivered = slot.deliveryStatus === "delivered";
+
+              // Calculate actual date from scheduledDeliveryDate
+              const slotDate = new Date(
+                slot.scheduledDeliveryDate || subscription.startDate
+              );
+              const today = new Date();
+              const isToday = slotDate.toDateString() === today.toDateString();
+              const isPast = slotDate < today && !isToday;
+
+              // ✨ CORRECT dayType logic: Based on delivery status FIRST, then date
+              let dayType;
+              if (isDelivered) {
+                dayType = "past"; // Delivered meals are always past
+              } else if (isToday) {
+                dayType = "current"; // Today's undelivered meals are current
+              } else if (isPast) {
+                dayType = "past"; // Past undelivered meals (missed/skipped)
+              } else {
+                dayType = "future"; // Future scheduled meals
+              }
+
+              return {
+                date: slot.scheduledDeliveryDate || slotDate.toISOString(),
+                dayIndex: index,
+                dayName:
+                  slot.dayName ||
+                  slotDate.toLocaleDateString("en-US", { weekday: "long" }),
+                weekNumber: slot.weekNumber || 1,
+                dayOfWeek: slot.dayOfWeek || 1,
+                dayType: dayType,
+                deliveryStatus: slot.deliveryStatus || "scheduled",
+                isDelivered: isDelivered,
+                // Include the full slot data as mealAssignment
+                mealAssignment: {
+                  ...slot,
+                  delivered: isDelivered,
+                },
+                meals: [
+                  {
+                    mealTime: slot.mealTime || "lunch",
+                    title: slot.customTitle || slot.title || "Meal",
+                    customTitle: slot.customTitle,
+                    description: slot.customDescription || "",
+                    meals: slot.meals || [],
+                    imageUrl: slot.imageUrl,
+                    deliveryStatus: slot.deliveryStatus,
+                  },
+                ],
+                order: slot.order || null,
+              };
+            });
+
+          console.log("✅ Timeline from mealPlanSnapshot:", {
+            totalSlots: timelineFromSnapshot.length,
+            delivered: timelineFromSnapshot.filter((item) => item.isDelivered)
+              .length,
+            current: timelineFromSnapshot.filter(
+              (item) => item.dayType === "current"
+            ).length,
+            future: timelineFromSnapshot.filter(
+              (item) => item.dayType === "future"
+            ).length,
+          });
+
+          setTimeline(timelineFromSnapshot);
+          return;
+        } else {
+          console.log(
+            "⚠️ No mealPlanSnapshot found, falling back to API timeline"
+          );
+        }
+      }
+
+      // FALLBACK: Use the original API approach
       const result = await apiService.getSubscriptionMealTimeline(
         subscriptionId,
-        14 // Show 2 weeks instead of 7 days
+        14 // Show 2 weeks
       );
 
       console.log("📊 Timeline API result:", result);
@@ -220,7 +317,6 @@ const MealProgressionTimeline = ({
           groupedByDay.length,
           "days"
         );
-        console.log("📋 Grouped timeline:", groupedByDay);
 
         // If no timeline data from API, try to generate timeline from subscription details
         if (groupedByDay.length === 0) {
@@ -332,20 +428,27 @@ const MealProgressionTimeline = ({
         0
       );
 
-      // Recalculate dayType based on current date
-      const today = new Date();
-      const dayDate = new Date(day.date);
-      const isToday = dayDate.toDateString() === today.toDateString();
-      const isPast = dayDate < today && !isToday;
-      const calculatedDayType = isPast
-        ? "past"
-        : isToday
-        ? "current"
-        : "future";
+      // ✨ CORRECT: Use delivery status to determine actual dayType
+      const isDelivered = day.meals.some(
+        (meal) =>
+          meal.deliveryStatus === "delivered" ||
+          meal.mealAssignment?.deliveryStatus === "delivered"
+      );
 
+      let calculatedDayType;
+      if (isDelivered) {
+        calculatedDayType = "past"; // Any delivered meal makes the day "past"
+      } else {
+        const today = new Date();
+        const dayDate = new Date(day.date);
+        const isToday = dayDate.toDateString() === today.toDateString();
+        const isPast = dayDate < today && !isToday;
+        calculatedDayType = isPast ? "past" : isToday ? "current" : "future";
+      }
       return {
         ...day,
-        dayType: calculatedDayType, // Use recalculated dayType
+        dayType: calculatedDayType, // Use corrected dayType calculation
+        isDelivered: isDelivered, // Add delivery status flag
         organizedMeals,
         availableMealTimes,
         totalMealItems,
@@ -458,7 +561,6 @@ const MealProgressionTimeline = ({
       return [];
     }
   };
-
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -573,23 +675,33 @@ const MealProgressionTimeline = ({
   };
 
   const getMealStatusInfo = (item) => {
+    // ✨ CORRECT: Use actual delivery status from the item
+    const isDelivered = item.isDelivered || item.deliveryStatus === "delivered";
     const dayType = item.dayType || "future";
-    const mealAssignment = item.mealAssignment || item.meals?.[0];
+
+    if (isDelivered) {
+      return {
+        statusText: "Delivered",
+        statusIcon: "checkmark-circle",
+        statusColor: colors.primary2,
+        bgColor: `${colors.primary2}15`, // Add transparency
+      };
+    }
 
     switch (dayType) {
-      case "past":
-        return {
-          statusText: "Delivered",
-          statusIcon: "checkmark-circle",
-          statusColor: colors.primary2,
-          bgColor: `${colors.primary2}15`, // Add transparency
-        };
       case "current":
         return {
           statusText: "Ready Now",
           statusIcon: "time",
           statusColor: colors.primary,
           bgColor: `${colors.primary}15`,
+        };
+      case "past":
+        return {
+          statusText: "Missed",
+          statusIcon: "alert-circle",
+          statusColor: colors.error || "#FF6B6B",
+          bgColor: `${colors.error || "#FF6B6B"}15`,
         };
       default:
         return {
@@ -670,27 +782,22 @@ const MealProgressionTimeline = ({
     if (safeTimeline.length === 0)
       return { completed: 0, total: 0, remaining: 0, current: 0 };
 
-    const today = new Date();
     let completed = 0;
     let current = 0;
     let remaining = 0;
 
     safeTimeline.forEach((item) => {
-      const itemDate = new Date(item.date);
-      const isToday = itemDate.toDateString() === today.toDateString();
-      const isPast = itemDate < today && !isToday;
+      // ✨ CORRECT logic: Use actual delivery status, not just date comparison
+      const isDelivered =
+        item.isDelivered || item.deliveryStatus === "delivered";
+      const dayType = item.dayType;
 
-      // Get actual delivery status if available
-      const mealAssignment = item.mealAssignment || item.meals?.[0];
-      const deliveryStatus =
-        mealAssignment?.deliveryStatus || mealAssignment?.status || item.status;
-
-      if (isPast || deliveryStatus === "delivered") {
-        completed++;
-      } else if (isToday) {
-        current++;
+      if (isDelivered) {
+        completed++; // Actually delivered meals
+      } else if (dayType === "current") {
+        current++; // Today's undelivered meals
       } else {
-        remaining++;
+        remaining++; // Future scheduled meals
       }
     });
 
@@ -980,7 +1087,13 @@ const MealProgressionTimeline = ({
                     },
                   ]}
                 >
-                  {`${allMeals.length - (currentMealIndex[dayIndex] || 0)} more meal${allMeals.length - (currentMealIndex[dayIndex] || 0) !== 1 ? 's' : ''}`}
+                  {`${
+                    allMeals.length - (currentMealIndex[dayIndex] || 0)
+                  } more meal${
+                    allMeals.length - (currentMealIndex[dayIndex] || 0) !== 1
+                      ? "s"
+                      : ""
+                  }`}
                 </Text>
               )}
             </View>
@@ -1028,7 +1141,10 @@ const MealProgressionTimeline = ({
             Meal Progress
           </Text>
           <Text
-            style={[styles.progressSummary, { color: "rgba(255, 255, 255, 0.7)" }]}
+            style={[
+              styles.progressSummary,
+              { color: "rgba(255, 255, 255, 0.7)" },
+            ]}
           >
             {progressInfo.completed} delivered • {progressInfo.remaining}{" "}
             remaining
@@ -1048,24 +1164,36 @@ const MealProgressionTimeline = ({
 
         <View style={styles.progressStats}>
           <View style={styles.progressStat}>
-            <View style={[styles.statDot, { backgroundColor: colors.primary2 }]} />
-            <Text style={[styles.statText, { color: "rgba(255, 255, 255, 0.8)" }]}>
+            <View
+              style={[styles.statDot, { backgroundColor: colors.primary2 }]}
+            />
+            <Text
+              style={[styles.statText, { color: "rgba(255, 255, 255, 0.8)" }]}
+            >
               {progressInfo.completed} Delivered
             </Text>
           </View>
 
           {progressInfo.current > 0 && (
             <View style={styles.progressStat}>
-              <View style={[styles.statDot, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.statText, { color: "rgba(255, 255, 255, 0.8)" }]}>
+              <View
+                style={[styles.statDot, { backgroundColor: colors.primary }]}
+              />
+              <Text
+                style={[styles.statText, { color: "rgba(255, 255, 255, 0.8)" }]}
+              >
                 {progressInfo.current} Ready
               </Text>
             </View>
           )}
 
           <View style={styles.progressStat}>
-            <View style={[styles.statDot, { backgroundColor: colors.accent }]} />
-            <Text style={[styles.statText, { color: "rgba(255, 255, 255, 0.8)" }]}>
+            <View
+              style={[styles.statDot, { backgroundColor: colors.accent }]}
+            />
+            <Text
+              style={[styles.statText, { color: "rgba(255, 255, 255, 0.8)" }]}
+            >
               {progressInfo.remaining} Upcoming
             </Text>
           </View>
@@ -1126,7 +1254,6 @@ const MealProgressionTimeline = ({
         locations={[0, 0.4, 0.7, 1]}
         style={styles.backgroundGradient}
       >
-
         {renderProgressBar()}
 
         {renderVerticalTimeline()}

@@ -754,7 +754,7 @@ const styles = (colors) =>
       elevation: 3,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "bold",
       color: colors.text,
       marginBottom: 16,

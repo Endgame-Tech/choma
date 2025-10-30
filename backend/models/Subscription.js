@@ -8,6 +8,11 @@ const SubscriptionSchema = new mongoose.Schema(
       ref: "Customer",
       required: true,
     },
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      // This is an alias for userId for compatibility
+    },
     mealPlanId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "MealPlan",
@@ -61,6 +66,24 @@ const SubscriptionSchema = new mongoose.Schema(
     paymentReference: String,
     deliveryAddress: String,
     specialInstructions: String,
+
+    // Enhanced delivery schedule with coordinates and area (from RecurringSubscription)
+    deliverySchedule: {
+      timeSlot: {
+        start: { type: String }, // "12:00"
+        end: { type: String }, // "14:00"
+      },
+      address: String,
+      coordinates: {
+        lat: Number,
+        lng: Number,
+      },
+      area: String,
+      specialInstructions: String,
+    },
+
+    // Next delivery date (unified field)
+    nextDeliveryDate: Date,
 
     // First delivery tracking - NEW
     firstDeliveryCompleted: { type: Boolean, default: false },
@@ -116,6 +139,11 @@ const SubscriptionSchema = new mongoose.Schema(
         default: "morning", // morning, afternoon, evening
       },
       deliveryInstructions: String,
+      contactPreference: {
+        type: String,
+        enum: ["phone", "whatsapp", "sms"],
+        default: "phone",
+      },
     },
 
     // Customization options
@@ -134,6 +162,20 @@ const SubscriptionSchema = new mongoose.Schema(
       },
     },
 
+    // Root-level meal preferences (for easier access)
+    dietaryPreferences: [String],
+    allergens: [String],
+    spiceLevel: {
+      type: String,
+      enum: ["mild", "medium", "hot"],
+      default: "medium",
+    },
+    portionSize: {
+      type: String,
+      enum: ["small", "medium", "large"],
+      default: "medium",
+    },
+
     // Feedback and ratings
     feedback: [
       {
@@ -144,6 +186,9 @@ const SubscriptionSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "MealPlan",
         },
+        deliveryId: mongoose.Schema.Types.ObjectId, // Added from RecurringSubscription
+        responseToFeedback: String, // Added from RecurringSubscription
+        respondedAt: Date, // Added from RecurringSubscription
       },
     ],
 
@@ -151,8 +196,15 @@ const SubscriptionSchema = new mongoose.Schema(
     metrics: {
       totalMealsDelivered: { type: Number, default: 0 },
       totalMealsMissed: { type: Number, default: 0 },
+      totalMealsSkipped: { type: Number, default: 0 }, // Added from RecurringSubscription
       averageRating: { type: Number, default: 0 },
+      totalRatings: { type: Number, default: 0 }, // Added from RecurringSubscription
+      onTimeDeliveries: { type: Number, default: 0 }, // Added from RecurringSubscription
+      lateDeliveries: { type: Number, default: 0 }, // Added from RecurringSubscription
       consecutiveDays: { type: Number, default: 0 },
+      consecutiveDeliveryDays: { type: Number, default: 0 }, // Added from RecurringSubscription
+      lastDeliveryDate: Date, // Added from RecurringSubscription
+      customerSatisfactionScore: { type: Number, default: 0 }, // Added from RecurringSubscription
       totalSpent: { type: Number, default: 0 },
     },
 
@@ -224,6 +276,48 @@ const SubscriptionSchema = new mongoose.Schema(
       activatedAt: Date,
       activationDeliveryCompleted: { type: Boolean, default: false },
     },
+
+    // Comprehensive skip tracking (from RecurringSubscription)
+    skippedDeliveries: [
+      {
+        date: Date,
+        reason: String,
+        skippedBy: {
+          type: String,
+          enum: ["customer", "chef", "admin", "system"],
+        },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+
+    // Notification settings (from RecurringSubscription)
+    notificationSettings: {
+      smsReminders: { type: Boolean, default: true },
+      whatsappReminders: { type: Boolean, default: true },
+      emailNotifications: { type: Boolean, default: true },
+      deliveryUpdates: { type: Boolean, default: true },
+      reminderMinutesBeforeDelivery: { type: Number, default: 60 },
+    },
+
+    // Admin notes (from RecurringSubscription)
+    adminNotes: [
+      {
+        date: { type: Date, default: Date.now },
+        note: String,
+        addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
+        category: {
+          type: String,
+          enum: [
+            "general",
+            "complaint",
+            "compliment",
+            "payment_issue",
+            "delivery_issue",
+          ],
+          default: "general",
+        },
+      },
+    ],
 
     // ========================================
     // MEAL PLAN SNAPSHOT - NEW
@@ -331,7 +425,18 @@ const SubscriptionSchema = new mongoose.Schema(
           scheduledDeliveryDate: Date,
           deliveryStatus: {
             type: String,
-            enum: ["pending", "scheduled", "preparing", "out_for_delivery", "delivered", "skipped", "cancelled"],
+            enum: [
+              "pending",
+              "scheduled",
+              "chef_assigned",
+              "preparing",
+              "prepared",
+              "ready",
+              "out_for_delivery",
+              "delivered",
+              "skipped",
+              "cancelled",
+            ],
             default: "pending",
           },
           deliveredAt: Date,
@@ -445,6 +550,11 @@ const SubscriptionSchema = new mongoose.Schema(
 SubscriptionSchema.index({ userId: 1, status: 1 });
 SubscriptionSchema.index({ endDate: 1 });
 SubscriptionSchema.index({ status: 1 });
+SubscriptionSchema.index({ subscriptionId: 1 });
+SubscriptionSchema.index({ status: 1, nextDeliveryDate: 1 }); // Added from RecurringSubscription
+SubscriptionSchema.index({ mealPlanId: 1, status: 1 }); // Added from RecurringSubscription
+SubscriptionSchema.index({ createdAt: -1 }); // Added from RecurringSubscription
+SubscriptionSchema.index({ "deliverySchedule.area": 1 }); // Added from RecurringSubscription
 
 // Virtual for calculating days remaining
 SubscriptionSchema.virtual("daysRemaining").get(function () {
@@ -460,6 +570,28 @@ SubscriptionSchema.virtual("progressPercentage").get(function () {
   );
   const daysCompleted = totalDays - this.daysRemaining;
   return Math.round((daysCompleted / totalDays) * 100);
+});
+
+// Virtual for subscription duration (from RecurringSubscription)
+SubscriptionSchema.virtual("subscriptionDuration").get(function () {
+  if (!this.endDate) return null;
+  return Math.ceil((this.endDate - this.startDate) / (1000 * 60 * 60 * 24));
+});
+
+// Virtual for days active (from RecurringSubscription)
+SubscriptionSchema.virtual("daysActive").get(function () {
+  const endDate = this.endDate || new Date();
+  return Math.ceil((endDate - this.startDate) / (1000 * 60 * 60 * 24));
+});
+
+// Virtual for completion rate (from RecurringSubscription)
+SubscriptionSchema.virtual("completionRate").get(function () {
+  const totalExpected =
+    this.metrics.totalMealsDelivered +
+    this.metrics.totalMealsMissed +
+    this.metrics.totalMealsSkipped;
+  if (totalExpected === 0) return 0;
+  return Math.round((this.metrics.totalMealsDelivered / totalExpected) * 100);
 });
 
 // Method to check if subscription is active
@@ -510,11 +642,143 @@ SubscriptionSchema.methods.resume = function () {
   return this.save();
 };
 
+// Method to cancel subscription (enhanced from RecurringSubscription)
+SubscriptionSchema.methods.cancel = function (reason) {
+  this.status = "cancelled";
+  this.cancelledAt = new Date();
+  this.cancellationReason = reason || "No reason provided";
+  return this.save();
+};
+
+// Method to skip next delivery (from RecurringSubscription)
+SubscriptionSchema.methods.skipNextDelivery = function (
+  reason,
+  skippedBy = "customer"
+) {
+  this.skippedDeliveries.push({
+    date: this.nextDeliveryDate || this.nextDelivery,
+    reason: reason || "No reason provided",
+    skippedBy,
+  });
+
+  // Update metrics
+  this.metrics.totalMealsSkipped += 1;
+
+  // Calculate next delivery date based on frequency
+  this.calculateNextDeliveryDate();
+
+  return this.save();
+};
+
+// Method to calculate next delivery date (from RecurringSubscription)
+SubscriptionSchema.methods.calculateNextDeliveryDate = function () {
+  const current = this.nextDeliveryDate || this.nextDelivery || new Date();
+  let nextDate = new Date(current);
+  const frequency =
+    this.deliveryPreferences?.frequency || this.frequency || "daily";
+
+  switch (frequency) {
+    case "daily":
+      nextDate.setDate(nextDate.getDate() + 1);
+      break;
+    case "weekly":
+      nextDate.setDate(nextDate.getDate() + 7);
+      break;
+    case "bi-weekly":
+      nextDate.setDate(nextDate.getDate() + 14);
+      break;
+    case "monthly":
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    default:
+      nextDate.setDate(nextDate.getDate() + 1);
+  }
+
+  this.nextDeliveryDate = nextDate;
+  this.nextDelivery = nextDate; // Keep both fields in sync
+};
+
+// Method to add feedback (enhanced from RecurringSubscription)
+SubscriptionSchema.methods.addFeedback = function (
+  rating,
+  comment,
+  deliveryId
+) {
+  this.feedback.push({
+    rating,
+    comment,
+    deliveryId,
+  });
+
+  // Update metrics
+  this.metrics.totalRatings += 1;
+  this.metrics.averageRating =
+    (this.metrics.averageRating * (this.metrics.totalRatings - 1) + rating) /
+    this.metrics.totalRatings;
+
+  return this.save();
+};
+
+// Method to update delivery metrics (from RecurringSubscription)
+SubscriptionSchema.methods.updateDeliveryMetrics = function (
+  delivered,
+  onTime = true
+) {
+  if (delivered) {
+    this.metrics.totalMealsDelivered += 1;
+    if (onTime) {
+      this.metrics.onTimeDeliveries += 1;
+    } else {
+      this.metrics.lateDeliveries += 1;
+    }
+    this.metrics.lastDeliveryDate = new Date();
+
+    // Update consecutive days if daily frequency
+    const frequency = this.deliveryPreferences?.frequency || this.frequency;
+    if (frequency === "daily") {
+      this.metrics.consecutiveDeliveryDays += 1;
+      this.metrics.consecutiveDays += 1; // Keep both fields updated
+    }
+  } else {
+    this.metrics.totalMealsMissed += 1;
+    // Reset consecutive days on missed delivery
+    this.metrics.consecutiveDeliveryDays = 0;
+    this.metrics.consecutiveDays = 0;
+  }
+};
+
 // Static method to find active subscriptions
-SubscriptionSchema.statics.findActiveSubscriptions = function () {
+SubscriptionSchema.statics.findActiveSubscriptions = function (filters = {}) {
   return this.find({
     status: "active",
     endDate: { $gte: new Date() },
+    ...filters,
+  })
+    .populate("userId", "fullName email phone")
+    .populate("mealPlanId", "planName price");
+};
+
+// Static method to find subscriptions due for delivery (from RecurringSubscription)
+SubscriptionSchema.statics.findDueForDelivery = function (date) {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  return this.find({
+    status: "active",
+    nextDeliveryDate: {
+      $gte: startOfDay,
+      $lte: endOfDay,
+    },
+  }).populate("userId mealPlanId");
+};
+
+// Static method to get subscriptions by area (from RecurringSubscription)
+SubscriptionSchema.statics.findByArea = function (area) {
+  return this.find({
+    "deliverySchedule.area": { $regex: area, $options: "i" },
+    status: "active",
   });
 };
 
@@ -613,5 +877,49 @@ SubscriptionSchema.methods.activate = function () {
 
   return this.save();
 };
+
+// Pre-save middleware to calculate next delivery date (from RecurringSubscription)
+SubscriptionSchema.pre("save", function (next) {
+  // Sync userId and customerId
+  if (this.userId && !this.customerId) {
+    this.customerId = this.userId;
+  } else if (this.customerId && !this.userId) {
+    this.userId = this.customerId;
+  }
+
+  if (
+    this.isNew ||
+    this.isModified("frequency") ||
+    this.isModified("nextDeliveryDate") ||
+    this.isModified("deliveryPreferences.frequency")
+  ) {
+    if (!this.nextDeliveryDate && !this.nextDelivery) {
+      this.nextDeliveryDate = this.startDate || new Date();
+      this.nextDelivery = this.nextDeliveryDate;
+    }
+  }
+  next();
+});
+
+// Pre-save middleware to update area from address (from RecurringSubscription)
+SubscriptionSchema.pre("save", function (next) {
+  if (
+    this.isModified("deliverySchedule.address") &&
+    !this.deliverySchedule?.area
+  ) {
+    // Extract area from address (simple extraction)
+    const address = this.deliverySchedule?.address || this.deliveryAddress;
+    if (address) {
+      const parts = address.split(",");
+      if (parts.length >= 2) {
+        if (!this.deliverySchedule) {
+          this.deliverySchedule = {};
+        }
+        this.deliverySchedule.area = parts[parts.length - 2].trim();
+      }
+    }
+  }
+  next();
+});
 
 module.exports = mongoose.model("Subscription", SubscriptionSchema);

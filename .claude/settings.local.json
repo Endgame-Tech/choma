@@ -19,7 +19,11 @@
       "WebFetch(domain:docs.expo.dev)",
       "WebFetch(domain:reactnavigation.org)",
       "WebFetch(domain:docs.swmansion.com)",
-      "Bash(npx react-native bundle:*)"
+      "Bash(npx react-native bundle:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }

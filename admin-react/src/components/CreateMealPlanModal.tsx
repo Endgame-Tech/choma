@@ -29,6 +29,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
     description: '',
     coverImage: '',
     durationWeeks: '4',
+    isFiveWorkingDays: false, // 5 working days toggle
     tier: 'Silver', // Default tier
     targetAudience: 'Family',
     mealTypes: ['breakfast', 'lunch', 'dinner'], // Default to all three meals
@@ -76,6 +77,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
         description: formData.description,
         coverImage: formData.coverImage,
         durationWeeks: parseInt(formData.durationWeeks),
+        isFiveWorkingDays: formData.isFiveWorkingDays,
         tier: formData.tier,
         targetAudience: formData.targetAudience,
         mealTypes: formData.mealTypes,
@@ -93,6 +95,7 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
         description: '',
         coverImage: '',
         durationWeeks: '4',
+        isFiveWorkingDays: false,
         tier: 'Silver',
         targetAudience: 'Family',
         mealTypes: ['breakfast', 'lunch', 'dinner'],
@@ -213,27 +216,58 @@ export default function CreateMealPlanModal({ isOpen, onClose, onSubmit }: Creat
                     <option value="4">4 Weeks</option>
                   </select>
                   <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
-                    Total days: {parseInt(formData.durationWeeks) * 7}
+                    Total days: {formData.isFiveWorkingDays
+                      ? `${parseInt(formData.durationWeeks) * 5} days (${parseInt(formData.durationWeeks) * 5} Days Plan • 5/week)`
+                      : `${parseInt(formData.durationWeeks) * 7} days`}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
-                    Target Audience *
+                    5 Working Days Plan
                   </label>
-                  <select
-                    name="targetAudience"
-                    value={formData.targetAudience}
-                    onChange={handleInputChange}
-                    required
-                    title="Select target audience"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {targetAudiences.map(audience => (
-                      <option key={audience} value={audience}>{audience}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, isFiveWorkingDays: !prev.isFiveWorkingDays }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        formData.isFiveWorkingDays ? 'bg-blue-600' : 'bg-gray-200 dark:bg-neutral-600'
+                      }`}
+                      role="switch"
+                      aria-checked={formData.isFiveWorkingDays}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          formData.isFiveWorkingDays ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm text-gray-700 dark:text-neutral-200">
+                      {formData.isFiveWorkingDays ? 'Enabled (Mon-Fri only)' : 'Disabled (Full week)'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
+                    For office workers who need meals Monday through Friday only
+                  </p>
                 </div>
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-2">
+                  Target Audience *
+                </label>
+                <select
+                  name="targetAudience"
+                  value={formData.targetAudience}
+                  onChange={handleInputChange}
+                  required
+                  title="Select target audience"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {targetAudiences.map(audience => (
+                    <option key={audience} value={audience}>{audience}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Tier Selection */}

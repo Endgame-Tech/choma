@@ -139,7 +139,7 @@ const SubscriptionSuccessScreen = ({ route, navigation }) => {
 
         <TouchableOpacity style={styles(colors).button} onPress={handleGoHome}>
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[colors.primary, colors.primary]}
             style={styles(colors).buttonGradient}
           >
             <Text style={styles(colors).buttonText}>Go to Home</Text>
@@ -251,7 +251,7 @@ const styles = (colors) =>
       gap: 10,
     },
     button: {
-      borderRadius: THEME.borderRadius.large,
+      borderRadius: THEME.borderRadius.xxl,
       overflow: "hidden",
     },
     buttonGradient: {
@@ -259,7 +259,7 @@ const styles = (colors) =>
       alignItems: "center",
     },
     buttonText: {
-      color: colors.white,
+      color: "#004432",
       fontSize: 16,
       fontWeight: "600",
       textAlign: "center",

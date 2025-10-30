@@ -26,61 +26,13 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
 
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
-  const [mealPlan, setMealPlan] = useState(null);
   const [error, setError] = useState(null);
-
-  // Resolve various shapes for mealPlan.image so <Image> receives a valid source
-  const resolveImageSource = (img) => {
-    console.log("🔍 Resolving image source:", img, typeof img);
-    if (!img) return null;
-    if (typeof img === "string") {
-      console.log("✅ String image source:", { uri: img });
-      return { uri: img };
-    }
-    if (typeof img === "object") {
-      if (img.uri) {
-        console.log("✅ Object with uri:", { uri: img.uri });
-        return { uri: img.uri };
-      }
-      if (img.url) {
-        console.log("✅ Object with url:", { uri: img.url });
-        return { uri: img.url };
-      }
-    }
-    console.log("❌ Could not resolve image source");
-    return null;
-  };
 
   useEffect(() => {
     // If a full subscription object was provided via navigation, use it directly.
     if (subscriptionParam) {
-      console.log(
-        "🚀 Subscription data from params:",
-        JSON.stringify(subscriptionParam, null, 2)
-      );
-      console.log("🔍 Subscription keys:", Object.keys(subscriptionParam));
-      console.log("🔍 Subscription status:", subscriptionParam.status);
-      console.log("🔍 Subscription frequency:", subscriptionParam.frequency);
-      console.log("🔍 Subscription duration:", subscriptionParam.duration);
       setSubscription(subscriptionParam);
       setLoading(false);
-
-      // If meal plan is embedded as an object, use it; if it's an id, fetch it.
-      if (subscriptionParam.mealPlan || subscriptionParam.mealPlanId) {
-        const mealPlanData =
-          subscriptionParam.mealPlan || subscriptionParam.mealPlanId;
-        console.log("🍽️ Meal plan data type:", typeof mealPlanData);
-        console.log("🍽️ Meal plan data:", mealPlanData);
-        if (typeof mealPlanData === "object" && mealPlanData !== null) {
-          console.log("🍽️ Using embedded meal plan:", mealPlanData);
-          setMealPlan(mealPlanData);
-        } else {
-          // string id
-          console.log("🔍 Fetching meal plan by ID:", mealPlanData);
-          fetchMealPlanById(mealPlanData);
-        }
-      }
-
       return;
     }
 
@@ -94,8 +46,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
   }, [subscriptionId, subscriptionParam]);
 
   const fetchSubscriptionDetails = async () => {
-    const idToFetch = subscriptionId;
-    if (!idToFetch) {
+    if (!subscriptionId) {
       setError("Subscription ID is missing");
       setLoading(false);
       return;
@@ -103,48 +54,14 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
     try {
       setLoading(true);
 
-      // Fetch subscription details
+      // Fetch subscription details with mealPlanSnapshot
       const result = await apiService.getSubscriptionById(subscriptionId);
-      console.log(
-        "🚀 API Response from getSubscriptionById:",
-        JSON.stringify(result, null, 2)
-      );
 
       if (result.success && result.data) {
-        console.log(
-          "🚀 Subscription data from API:",
-          JSON.stringify(result.data, null, 2)
-        );
-        setSubscription(result.data);
-
-        // Fetch meal plan details if available
-        if (result.data.mealPlan || result.data.mealPlanId) {
-          const mealPlanData = result.data.mealPlan || result.data.mealPlanId;
-          const mealPlanId =
-            typeof mealPlanData === "object"
-              ? mealPlanData._id || mealPlanData.id
-              : mealPlanData;
-
-          console.log("🔍 Fetching meal plan details for ID:", mealPlanId);
-          const mealPlanResult = await apiService.getMealPlanById(mealPlanId);
-          console.log(
-            "🍽️ Meal plan result:",
-            JSON.stringify(mealPlanResult, null, 2)
-          );
-
-          if (mealPlanResult.success && mealPlanResult.data) {
-            setMealPlan(mealPlanResult.data);
-          } else if (typeof mealPlanData === "object") {
-            // Use the embedded meal plan data if API fetch fails
-            console.log("📦 Using embedded meal plan data");
-            setMealPlan(mealPlanData);
-          }
-        }
+        // Check if result.data has nested structure
+        const actualSubscriptionData = result.data.data || result.data;
+        setSubscription(actualSubscriptionData);
       } else {
-        console.error(
-          "❌ Failed to load subscription details:",
-          result.message || "Unknown error"
-        );
         setError("Failed to load subscription details");
       }
     } catch (err) {
@@ -152,18 +69,6 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
       setError("An error occurred while loading subscription details");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchMealPlanById = async (mealPlanId) => {
-    if (!mealPlanId) return;
-    try {
-      const mealPlanResult = await apiService.getMealPlanById(mealPlanId);
-      if (mealPlanResult.success && mealPlanResult.data) {
-        setMealPlan(mealPlanResult.data);
-      }
-    } catch (err) {
-      console.error("Error fetching meal plan:", err);
     }
   };
 
@@ -222,7 +127,11 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return null;
+
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return null;
+
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -362,131 +271,66 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
             </Text>
             <Text style={styles(colors).subscriptionIdValue}>
               {subscription.subscriptionId ||
-                subscription._id?.substring(0, 10).toUpperCase() ||
-                subscription.id?.substring(0, 10).toUpperCase() ||
-                "ACTIVE"}
+                subscription._id ||
+                subscription.id ||
+                "Auto-generated"}
             </Text>
           </View>
         </View>
 
         {/* Meal Plan Details */}
-        {(() => {
-          const hasMealPlan =
-            mealPlan || subscription.mealPlanId || subscription.mealPlan;
-          console.log("🍽️ Has meal plan?", !!hasMealPlan);
-          console.log("🍽️ mealPlan state:", mealPlan);
-          console.log("🍽️ subscription.mealPlanId:", subscription.mealPlanId);
-          console.log("🍽️ subscription.mealPlan:", subscription.mealPlan);
+        {subscription.mealPlanSnapshot && (
+          <View style={styles(colors).section}>
+            <Text style={styles(colors).sectionTitle}>Meal Plan</Text>
 
-          return hasMealPlan ? (
-            <View style={styles(colors).section}>
-              <Text style={styles(colors).sectionTitle}>Meal Plan</Text>
-
-              <View style={styles(colors).mealPlanCard}>
-                {(() => {
-                  // Try multiple image field names used across the app
-                  const planData =
-                    mealPlan ||
-                    subscription.mealPlanId ||
-                    subscription.mealPlan ||
-                    {};
-
-                  console.log("🖼️ Plan data for image:", planData);
-                  console.log("🖼️ Cover image:", planData.coverImage);
-
-                  // Try direct coverImage first since that's what the API returns
-                  let src = null;
-                  if (planData.coverImage) {
-                    src = { uri: planData.coverImage };
-                    console.log("🖼️ Using coverImage:", src);
-                  } else {
-                    // Fallback to other possible image fields
-                    src =
-                      resolveImageSource(planData.planImageUrl) ||
-                      resolveImageSource(planData.image) ||
-                      resolveImageSource(planData.imageUrl) ||
-                      (planData.images &&
-                        resolveImageSource(planData.images[0]));
-                  }
-
-                  console.log("🖼️ Final resolved image source:", src);
-
-                  if (src) {
-                    return (
-                      <Image
-                        source={src}
-                        style={styles(colors).mealPlanImage}
-                        resizeMode="cover"
-                        onError={(e) => {
-                          console.log(
-                            "❌ Meal plan image failed to load:",
-                            e.nativeEvent.error
-                          );
-                        }}
-                        onLoad={() => {
-                          // console.log("✅ Meal plan image loaded successfully");
-                        }}
-                      />
-                    );
-                  }
-
-                  // Fallback placeholder when no image is available
-                  return (
-                    <View
-                      style={[
-                        styles(colors).mealPlanImage,
-                        {
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor: colors.cardBackground,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="restaurant-outline"
-                        size={48}
-                        color={colors.textMuted}
-                      />
-                    </View>
-                  );
-                })()}
-                <LinearGradient
-                  colors={["transparent", "rgba(0,0,0,0.7)"]}
-                  style={styles(colors).imageGradient}
+            <View style={styles(colors).mealPlanCard}>
+              {subscription.mealPlanSnapshot.coverImage ? (
+                <Image
+                  source={{ uri: subscription.mealPlanSnapshot.coverImage }}
+                  style={styles(colors).mealPlanImage}
+                  resizeMode="cover"
                 />
-                <View style={styles(colors).mealPlanOverlay}>
-                  <Text style={styles(colors).mealPlanName}>
-                    {(
-                      mealPlan ||
-                      subscription.mealPlanId ||
-                      subscription.mealPlan
-                    )?.planName ||
-                      (
-                        mealPlan ||
-                        subscription.mealPlanId ||
-                        subscription.mealPlan
-                      )?.name ||
-                      subscription.mealPlan?.name ||
-                      "Healthy Meal Plan"}
-                  </Text>
-                  <Text style={styles(colors).mealPlanSubtitle}>
-                    {(
-                      mealPlan ||
-                      subscription.mealPlanId ||
-                      subscription.mealPlan
-                    )?.description ||
-                      (
-                        mealPlan ||
-                        subscription.mealPlanId ||
-                        subscription.mealPlan
-                      )?.subtitle ||
-                      "Delicious meals delivered to you"}
-                  </Text>
+              ) : (
+                <View
+                  style={[
+                    styles(colors).mealPlanImage,
+                    {
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: colors.cardBackground,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="restaurant-outline"
+                    size={48}
+                    color={colors.textMuted}
+                  />
                 </View>
+              )}
+              <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.7)"]}
+                style={styles(colors).imageGradient}
+              />
+              <View style={styles(colors).mealPlanOverlay}>
+                <Text style={styles(colors).mealPlanName}>
+                  {subscription.mealPlanSnapshot?.planName ||
+                    subscription.planName ||
+                    subscription.mealPlanName ||
+                    subscription.subscriptionName ||
+                    subscription.plan?.name ||
+                    "Healthy Meal Plan"}
+                </Text>
+                <Text style={styles(colors).mealPlanSubtitle}>
+                  {subscription.mealPlanSnapshot?.planDescription ||
+                    subscription.planDescription ||
+                    subscription.description ||
+                    "Delicious meals delivered to you"}
+                </Text>
               </View>
             </View>
-          ) : null;
-        })()}
+          </View>
+        )}
 
         {/* Subscription Details */}
         <View style={styles(colors).section}>
@@ -494,17 +338,15 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
 
           <View style={styles(colors).detailsCard}>
             <View style={styles(colors).detailRow}>
-              <Text style={styles(colors).detailLabel}>Frequency</Text>
+              <Text style={styles(colors).detailLabel}>Meal Selection</Text>
               <Text style={styles(colors).detailValue}>
                 {(() => {
-                  const freq =
-                    subscription.deliveryPreferences?.frequency ||
-                    subscription.frequency ||
-                    subscription.selectedFrequency ||
-                    "weekly";
-                  return freq === "all"
-                    ? "Daily"
-                    : freq.charAt(0).toUpperCase() + freq.slice(1);
+                  const mealTypes = subscription.selectedMealTypes || ["lunch"];
+                  if (mealTypes.includes("all"))
+                    return "Breakfast, Lunch & Dinner";
+                  return mealTypes
+                    .map((type) => type.charAt(0).toUpperCase() + type.slice(1))
+                    .join(", ");
                 })()}
               </Text>
             </View>
@@ -512,32 +354,29 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
               <Text style={styles(colors).detailLabel}>Duration</Text>
               <Text style={styles(colors).detailValue}>
                 {subscription.durationWeeks
-                  ? `${subscription.durationWeeks} ${
-                      subscription.durationWeeks === 1 ? "week" : "weeks"
-                    }`
-                  : subscription.duration
-                  ? subscription.duration
-                  : "4 weeks"}
+                  ? subscription.isFiveWorkingDays
+                    ? `${subscription.durationWeeks * 5} Days Plan • 5/week`
+                    : `${subscription.durationWeeks} ${
+                        subscription.durationWeeks === 1 ? "week" : "weeks"
+                      }`
+                  : "N/A"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Start Date</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.startDate
-                  ? formatDate(subscription.startDate)
-                  : subscription.createdAt
-                  ? formatDate(subscription.createdAt)
-                  : "Today"}
+                {(subscription.startDate &&
+                  formatDate(subscription.startDate)) ||
+                  (subscription.createdAt &&
+                    formatDate(subscription.createdAt)) ||
+                  "Recently Started"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
-              <Text style={styles(colors).detailLabel}>Next Delivery</Text>
+              <Text style={styles(colors).detailLabel}>End Date</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.nextDelivery
-                  ? formatDate(subscription.nextDelivery)
-                  : subscription.endDate
-                  ? formatDate(subscription.endDate)
-                  : "Soon"}
+                {(subscription.endDate && formatDate(subscription.endDate)) ||
+                  (subscription.status === "Active" ? "Ongoing" : "N/A")}
               </Text>
             </View>
           </View>
@@ -562,39 +401,26 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
-              <Text style={styles(colors).detailLabel}>Payment Date</Text>
+              <Text style={styles(colors).detailLabel}>Subscription ID</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.paymentDate
-                  ? formatDate(subscription.paymentDate)
-                  : subscription.createdAt || subscription.createdDate
-                  ? formatDate(
-                      subscription.createdAt || subscription.createdDate
-                    )
-                  : "Recently"}
+                {subscription.subscriptionId ||
+                  subscription._id ||
+                  subscription.id ||
+                  "Auto-generated"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
-              <Text style={styles(colors).detailLabel}>Reference</Text>
+              <Text style={styles(colors).detailLabel}>Transaction ID</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.paymentReference ||
-                  subscription.reference ||
-                  subscription.transactionId ||
-                  subscription.transactionRef ||
-                  (subscription._id &&
-                    subscription._id.substring(0, 8).toUpperCase()) ||
-                  "PAID"}
+                {subscription.transactionId ||
+                  subscription.paymentReference ||
+                  "N/A"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Amount Paid</Text>
               <Text style={styles(colors).detailValue}>
-                ₦
-                {(
-                  subscription.totalPrice ||
-                  subscription.price ||
-                  subscription.amount ||
-                  25000
-                ).toLocaleString()}
+                ₦{(subscription.totalPrice || 0).toLocaleString()}
               </Text>
             </View>
           </View>
@@ -611,6 +437,8 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
                 {subscription.deliveryAddress ||
                   subscription.address ||
                   subscription.shippingAddress ||
+                  subscription.location ||
+                  subscription.deliveryLocation ||
                   "Home delivery"}
               </Text>
             </View>
@@ -759,7 +587,7 @@ const styles = (colors) =>
       marginBottom: 25,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "600",
       color: colors.text,
       marginBottom: 15,

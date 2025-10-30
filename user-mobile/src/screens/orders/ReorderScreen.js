@@ -73,7 +73,9 @@ const ReorderScreen = ({ navigation }) => {
         quantity: order.quantity || 1,
         customizations: order.customizations || [],
         deliveryAddress: order.deliveryAddress,
-        notes: `Reorder from ${new Date(order.createdAt || order.orderDate).toLocaleDateString()}`,
+        notes: `Reorder from ${new Date(
+          order.createdAt || order.orderDate
+        ).toLocaleDateString()}`,
       };
 
       const result = await apiService.createOrder(reorderData);
@@ -276,7 +278,7 @@ const styles = (colors) =>
       paddingTop: 20,
     },
     sectionTitle: {
-      fontSize: 20,
+      fontSize: 16,
       fontWeight: "bold",
       color: colors.text,
       marginBottom: 8,

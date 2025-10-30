@@ -1,6 +1,6 @@
 import React from 'react'
 import { useState, useMemo, useEffect } from 'react'
-import { useOrders } from '../hooks/useOrders'
+import { useOrders, useDeliveryReadyOrders } from '../hooks/useOrders'
 import { useAvailableChefs } from '../hooks/useChefs'
 import { delegationApi } from '../services/api'
 import ChefAssignmentModal from '../components/ChefAssignmentModal'
@@ -8,6 +8,7 @@ import DriverAssignmentModal from '../components/DriverAssignmentModal'
 import type { OrderFilters } from '../types'
 
 const Orders: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'chef-assignment' | 'delivery-assignment'>('chef-assignment')
   const [filter, setFilter] = useState('all')
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -64,6 +65,24 @@ const Orders: React.FC = () => {
     updateOrderStatus,
     updateOrder
   } = useOrders(filters)
+
+  // Hook for delivery-ready orders (Tab 2)
+  const {
+    orders: deliveryOrders,
+    loading: deliveryLoading,
+    error: deliveryError,
+    refreshOrders: refreshDeliveryOrders,
+    updateOrderStatus: updateDeliveryOrderStatus,
+    updateOrder: updateDeliveryOrder
+  } = useDeliveryReadyOrders(filters)
+
+  // Use appropriate data based on active tab
+  const currentOrders = activeTab === 'chef-assignment' ? orders : deliveryOrders
+  const currentLoading = activeTab === 'chef-assignment' ? loading : deliveryLoading
+  const currentError = activeTab === 'chef-assignment' ? error : deliveryError
+  const currentRefresh = activeTab === 'chef-assignment' ? refreshOrders : refreshDeliveryOrders
+  const currentUpdateStatus = activeTab === 'chef-assignment' ? updateOrderStatus : updateDeliveryOrderStatus
+  const currentUpdateOrder = activeTab === 'chef-assignment' ? updateOrder : updateDeliveryOrder
 
   const { chefs: availableChefs, loading: chefsLoading, error: chefsError } = useAvailableChefs()
 
@@ -197,7 +216,7 @@ const Orders: React.FC = () => {
   // Handle order status change
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      await updateOrderStatus(orderId, newStatus)
+      await currentUpdateStatus(orderId, newStatus)
     } catch (error) {
       console.error('Failed to update order status:', error)
     }
@@ -206,7 +225,7 @@ const Orders: React.FC = () => {
   // Handle priority change
   const handlePriorityChange = async (orderId: string, newPriority: string) => {
     try {
-      await updateOrder(orderId, { priority: newPriority as 'Low' | 'Medium' | 'High' | 'Urgent' })
+      await currentUpdateOrder(orderId, { priority: newPriority as 'Low' | 'Medium' | 'High' | 'Urgent' })
     } catch (error) {
       console.error('Failed to update order priority:', error)
     }
@@ -223,7 +242,7 @@ const Orders: React.FC = () => {
 
   const handleSelectAll = () => {
     setSelectedOrders(
-      selectedOrders.length === orders.length ? [] : orders.map(order => order._id)
+      selectedOrders.length === currentOrders.length ? [] : currentOrders.map(order => order._id)
     )
   }
 
@@ -231,7 +250,7 @@ const Orders: React.FC = () => {
   const handleBulkStatusUpdate = async (newStatus: string) => {
     try {
       for (const orderId of selectedOrders) {
-        await updateOrderStatus(orderId, newStatus)
+        await currentUpdateStatus(orderId, newStatus)
       }
       setSelectedOrders([])
     } catch (error) {
@@ -304,7 +323,7 @@ const Orders: React.FC = () => {
     }
   }
 
-  if (loading) {
+  if (currentLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -315,14 +334,14 @@ const Orders: React.FC = () => {
     )
   }
 
-  if (error) {
+  if (currentError) {
     return (
       <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-4">
         <div className="flex items-center">
           <div className="text-red-400 dark:text-red-300 mr-3"><i className="fi fi-sr-warning"></i></div>
           <div>
             <h3 className="text-red-800 dark:text-red-300 font-medium">Error loading orders</h3>
-            <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
+            <p className="text-red-600 dark:text-red-300 text-sm">{currentError}</p>
             <details className="mt-2 text-xs text-red-500 dark:text-red-300">
               <summary className="cursor-pointer">Debug info</summary>
               <div className="mt-1">
@@ -331,7 +350,7 @@ const Orders: React.FC = () => {
               </div>
             </details>
             <button
-              onClick={refreshOrders}
+              onClick={currentRefresh}
               className="mt-2 text-red-600 dark:text-red-300 hover:text-red-800 dark:hover:text-red-400 text-sm font-medium"
             >
               Try again
@@ -345,8 +364,43 @@ const Orders: React.FC = () => {
   return (
     <div className="">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-neutral-100">Orders</h1>
-        <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-200">Manage all customer orders ({orders.length} orders)</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-neutral-100">Orders Management</h1>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-200">Manage chef and delivery assignments</p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="flex gap-2 sm:gap-4 bg-gray-100 dark:bg-neutral-800/50 p-1 rounded-lg mb-6">
+        <button
+          onClick={() => setActiveTab('chef-assignment')}
+          className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 text-sm sm:text-base font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'chef-assignment'
+            ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-md'
+            : 'text-gray-600 dark:text-neutral-300 hover:text-gray-900 dark:hover:text-neutral-100'
+            }`}
+        >
+          <i className="fi fi-sr-hat-chef text-lg"></i>
+          <span>Chef Assignment</span>
+          {activeTab === 'chef-assignment' && (
+            <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+              {orders.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('delivery-assignment')}
+          className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 text-sm sm:text-base font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'delivery-assignment'
+            ? 'bg-white dark:bg-neutral-700 text-green-600 dark:text-green-400 shadow-md'
+            : 'text-gray-600 dark:text-neutral-300 hover:text-gray-900 dark:hover:text-neutral-100'
+            }`}
+        >
+          <i className="fi fi-sr-truck-side text-lg"></i>
+          <span>Delivery Assignment</span>
+          {activeTab === 'delivery-assignment' && (
+            <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
+              {deliveryOrders.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Search and Filter Section */}
@@ -364,7 +418,7 @@ const Orders: React.FC = () => {
             />
           </div>
           <button
-            onClick={refreshOrders}
+            onClick={currentRefresh}
             className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
           >
             <i className="fi fi-sr-refresh"></i>
@@ -505,7 +559,7 @@ const Orders: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white/90 dark:bg-neutral-800/90 divide-y divide-gray-200 dark:divide-neutral-700">
-              {orders.length === 0 ? (
+              {currentOrders.length === 0 ? (
                 <tr>
                   <td colSpan={12} className="px-6 py-12 text-center text-gray-500 dark:text-neutral-200">
                     <div className="text-4xl mb-2"><i className="fi fi-sr-order"></i></div>
@@ -513,7 +567,7 @@ const Orders: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
+                currentOrders.map((order) => (
                   <tr key={order._id} className="hover:bg-gray-100 dark:hover:bg-neutral-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input

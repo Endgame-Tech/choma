@@ -11,6 +11,7 @@ import {
   ScrollView,
   StatusBar,
   Animated,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -36,6 +37,7 @@ const TodayMealScreen = ({ navigation, route }) => {
   const [todaysMealSlots, setTodaysMealSlots] = useState([]);
   const [activeSubscription, setActiveSubscription] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showFirstDeliveryPopup, setShowFirstDeliveryPopup] = useState(false);
 
   useEffect(() => {
     loadTodayMeal();
@@ -175,6 +177,24 @@ const TodayMealScreen = ({ navigation, route }) => {
           });
 
           setActiveSubscription(subscription);
+
+          // Check if first delivery is completed - show popup if not
+          const firstDeliveryCompleted = subscription.firstDeliveryCompleted;
+          const hasDeliveredMeals =
+            subscription.mealPlanSnapshot?.mealSchedule?.some(
+              (slot) => slot.deliveryStatus === "delivered"
+            );
+
+          console.log("🚚 First delivery status:", {
+            firstDeliveryCompleted,
+            hasDeliveredMeals,
+            shouldShowPopup: !firstDeliveryCompleted && !hasDeliveredMeals,
+          });
+
+          // Show popup if first delivery hasn't been completed
+          if (!firstDeliveryCompleted && !hasDeliveredMeals) {
+            setShowFirstDeliveryPopup(true);
+          }
 
           // Load meal slots from mealPlanSnapshot.mealSchedule
           const mealSlots = getTodaysMealSlotsFromSnapshot(subscription);
@@ -350,6 +370,83 @@ const TodayMealScreen = ({ navigation, route }) => {
   return (
     <View style={styles(colors).container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary2} />
+
+      {/* First Delivery Information Popup */}
+      <Modal
+        visible={showFirstDeliveryPopup}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowFirstDeliveryPopup(false)}
+      >
+        <View style={styles(colors).modalOverlay}>
+          <View style={styles(colors).modalContainer}>
+            <View style={styles(colors).modalHeader}>
+              <CustomIcon name="info" size={24} color={colors.primary} />
+              <Text style={styles(colors).modalTitle}>
+                Your First Meal is On Its Way!
+              </Text>
+            </View>
+
+            <ScrollView style={styles(colors).modalScrollContent}>
+              <Text style={styles(colors).modalSubtitle}>
+                What happens next?
+              </Text>
+
+              <View style={styles(colors).statusSteps}>
+                <View style={styles(colors).statusStep}>
+                  <View style={styles(colors).stepNumber}>
+                    <Text style={styles(colors).stepNumberText}>1</Text>
+                  </View>
+                  <View style={styles(colors).stepContent}>
+                    <Text style={styles(colors).stepTitle}>
+                      Chef Prepares Your Meal
+                    </Text>
+                    <Text style={styles(colors).stepDescription}>
+                      Our chef is carefully preparing your delicious meal
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles(colors).statusStep}>
+                  <View style={styles(colors).stepNumber}>
+                    <Text style={styles(colors).stepNumberText}>2</Text>
+                  </View>
+                  <View style={styles(colors).stepContent}>
+                    <Text style={styles(colors).stepTitle}>
+                      Driver Picks Up Order
+                    </Text>
+                    <Text style={styles(colors).stepDescription}>
+                      Your meal is packaged and ready for delivery
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles(colors).statusStep}>
+                  <View style={styles(colors).stepNumber}>
+                    <Text style={styles(colors).stepNumberText}>3</Text>
+                  </View>
+                  <View style={styles(colors).stepContent}>
+                    <Text style={styles(colors).stepTitle}>
+                      First Delivery Complete
+                    </Text>
+                    <Text style={styles(colors).stepDescription}>
+                      Your meal plan starts and you'll see today's meals
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles(colors).modalButton}
+              onPress={() => setShowFirstDeliveryPopup(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles(colors).modalButtonText}>Got it!</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Background with gradient */}
       <LinearGradient
@@ -660,6 +757,98 @@ const styles = (colors) =>
       justifyContent: "center",
       borderWidth: 1.5,
       borderColor: "rgba(255, 255, 255, 0.3)",
+    },
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    modalContainer: {
+      backgroundColor: colors.white,
+      borderRadius: 40,
+      padding: 24,
+      maxHeight: "85%",
+      width: "90%",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    modalHeader: {
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.text,
+      textAlign: "center",
+      marginTop: 8,
+    },
+    modalScrollContent: {
+      maxHeight: 300,
+    },
+    modalContent: {
+      flex: 1,
+    },
+    modalSubtitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 16,
+      textAlign: "center",
+    },
+    statusSteps: {
+      marginBottom: 24,
+    },
+    statusStep: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 16,
+    },
+    stepNumber: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    stepNumberText: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: "#004432",
+    },
+    stepContent: {
+      flex: 1,
+    },
+    stepTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#004432",
+      marginBottom: 4,
+    },
+    stepDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    modalButton: {
+      backgroundColor: "#004432",
+      paddingVertical: 16,
+      borderRadius: 32,
+      alignItems: "center",
+      marginTop: 8,
+    },
+    modalButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#FFF",
     },
   });
 

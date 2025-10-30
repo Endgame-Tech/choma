@@ -310,14 +310,13 @@ const HomeScreen = ({ navigation, route }) => {
             } else if (
               subscriptionState?.screen === "AwaitingFirstDeliveryScreen"
             ) {
-              console.log("⏳ Navigating to AwaitingFirstDelivery screen...");
-              console.log("📦 Full subscription data:", subscription);
-              navigation.replace("AwaitingFirstDelivery", {
+              // Skip AwaitingFirstDelivery screen and go directly to TodayMeal
+              console.log(
+                "⏭️ Skipping AwaitingFirstDelivery, going to TodayMeal..."
+              );
+              navigation.replace("TodayMeal", {
                 subscription: subscription,
-                subscriptionId: subscription.id || subscription._id,
-                estimatedDelivery: subscription.startDate,
-                mealPlanId:
-                  subscription.mealPlanId?._id || subscription.mealPlanId,
+                subscriptionId: subscription.id,
               });
             } else if (
               subscriptionState?.screen === "SubscriptionPausedScreen"
@@ -515,12 +514,11 @@ const HomeScreen = ({ navigation, route }) => {
         subscriptionId: subscription.id,
       });
     } else if (subscriptionState?.screen === "AwaitingFirstDeliveryScreen") {
-      console.log("⏳ Navigating to AwaitingFirstDelivery screen...");
-      navigation.navigate("AwaitingFirstDelivery", {
+      // Skip AwaitingFirstDelivery screen and go directly to TodayMeal
+      console.log("⏭️ Skipping AwaitingFirstDelivery, going to TodayMeal...");
+      navigation.navigate("TodayMeal", {
         subscription: subscription,
-        subscriptionId: subscription.id || subscription._id,
-        estimatedDelivery: subscription.startDate,
-        mealPlanId: subscription.mealPlanId?._id || subscription.mealPlanId,
+        subscriptionId: subscription.id,
       });
     } else {
       console.log("ℹ️ Unknown subscription state, staying on Home");
@@ -1421,7 +1419,7 @@ const HomeScreen = ({ navigation, route }) => {
             />
           ))}
         </View>
-        
+
         <TouchableOpacity
           style={[
             styles(colors).learnMoreButton,
@@ -1569,7 +1567,7 @@ const styles = (colors) =>
       bottom: verticalScale(getResponsiveValue(20, 40, 60, 90)),
       alignSelf: "center",
       backgroundColor: colors.white,
-      // 
+      //
       marginBottom: verticalScale(8),
       borderRadius: moderateScale(20),
       ...getShadowStyle({
