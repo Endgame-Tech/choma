@@ -69,13 +69,12 @@ const styles = (colors) =>
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: 12,
-      paddingHorizontal: 12, 
+      paddingHorizontal: 12,
       borderRadius: 25,
-      // flex: 1,
       minWidth: 0, // Allow flex shrinking
     },
     activeTab: {
-      paddingHorizontal: 8,
+      paddingHorizontal: 18,
       backgroundColor: colors.primary2,
     },
     tabText: {

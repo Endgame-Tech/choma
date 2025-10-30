@@ -299,14 +299,14 @@ const EmailInputScreen = ({ navigation }) => {
       } else {
         console.error("Verification failed:", verificationResponse);
 
-        // TEMPORARY: For development/testing - navigate anyway
-        console.log(
-          "API failed, but navigating to EmailVerification for testing"
-        );
-        showError(
-          "Development Mode",
-          "Email service not available, but proceeding for testing"
-        );
+        // // TEMPORARY: For development/testing - navigate anyway
+        // console.log(
+        //   "API failed, but navigating to EmailVerification for testing"
+        // );
+        // showError(
+        //   "Development Mode",
+        //   "Email service not available, but proceeding for testing"
+        // );
 
         navigation.navigate("EmailVerification", {
           email: email.trim(),

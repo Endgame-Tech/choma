@@ -108,7 +108,9 @@ export const useGoogleAuth = () => {
               success: true,
               data: { customer: userData },
             });
-            console.log("📋 User data cached after Google Sign-In for faster auth");
+            console.log(
+              "📋 User data cached after Google Sign-In for faster auth"
+            );
           }
 
           const userDetails = {
@@ -119,19 +121,41 @@ export const useGoogleAuth = () => {
             photoURL: userData.profileImage || firebaseUser.photoURL,
           };
 
-          // Update the main AuthContext state
-          setUser(userDetails);
-          setIsAuthenticated(true);
-
           console.log(
             "✅ Complete authentication successful:",
             userDetails.displayName
           );
 
+          // Check if phone number is missing
+          const needsPhoneNumber = !userData.phoneNumber && !userData.phone;
+
+          console.log("📱 Phone number check:", {
+            hasPhoneNumber: !!userData.phoneNumber,
+            hasPhone: !!userData.phone,
+            needsPhoneNumber,
+            userData: {
+              phoneNumber: userData.phoneNumber,
+              phone: userData.phone,
+            },
+          });
+
+          // Only update auth state if phone number exists
+          // This prevents auto-navigation to main app when phone is needed
+          if (!needsPhoneNumber) {
+            setUser(userDetails);
+            setIsAuthenticated(true);
+            console.log("✅ Auth state updated - user has phone number");
+          } else {
+            console.log(
+              "⏸️ Auth state NOT updated - phone number required first"
+            );
+          }
+
           return {
             success: true,
             user: userDetails,
             token: appToken,
+            needsPhoneNumber, // Flag to indicate phone number is required
           };
         } else {
           throw new Error(

@@ -245,13 +245,34 @@ const LoginScreen = ({ navigation }) => {
       console.log("🔘 Starting Google Sign-In...");
       const result = await signInWithGoogle();
 
+      console.log("🔍 Google Sign-In result:", {
+        success: result?.success,
+        needsPhoneNumber: result?.needsPhoneNumber,
+        hasUser: !!result?.user,
+        userPhone: result?.user?.phoneNumber || result?.user?.phone,
+      });
+
       if (result?.success) {
         console.log("✅ Google Sign-In successful");
-        showSuccess(
-          "Welcome!",
-          `Signed in as ${result.user?.displayName || result.user?.email}`
-        );
-        // Navigation will be handled by the auth context after token is stored
+
+        // Check if phone number is needed
+        if (result.needsPhoneNumber) {
+          console.log(
+            "📱 Phone number required, navigating to AddPhoneNumber screen"
+          );
+          navigation.navigate("AddPhoneNumber", {
+            userData: result.user,
+            skipable: false, // Make it mandatory for new Google users
+          });
+          return; // Important: prevent further navigation
+        } else {
+          console.log("📱 Phone number exists, proceeding to main app");
+          showSuccess(
+            "Welcome!",
+            `Signed in as ${result.user?.displayName || result.user?.email}`
+          );
+          // Navigation to main app will be handled by auth context
+        }
       } else if (result?.cancelled) {
         console.log("🚫 Google Sign-In cancelled by user");
         // Don't show error for user cancellation

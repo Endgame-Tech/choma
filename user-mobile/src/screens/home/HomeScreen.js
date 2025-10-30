@@ -171,7 +171,7 @@ const PLACEHOLDER_PLANS = [
 
 const HomeScreen = ({ navigation, route }) => {
   const { colors, isDark } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { mealPlans } = useMealPlans();
 
   // Check if we should skip subscription check (prevents redirect loop)
@@ -254,6 +254,17 @@ const HomeScreen = ({ navigation, route }) => {
         ) {
           console.log("⚠️ No valid token, staying on Home screen");
           setCheckingSubscription(false);
+          return;
+        }
+
+        // Handle 404 errors (user not found) - Log out the user
+        if (
+          subscriptionsResult?.status === 404 ||
+          subscriptionsResult?.error === "User not found"
+        ) {
+          console.log("❌ User not found in database, logging out...");
+          setCheckingSubscription(false);
+          await logout();
           return;
         }
 

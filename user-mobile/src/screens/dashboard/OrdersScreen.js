@@ -280,31 +280,104 @@ const OrdersScreen = ({ navigation }) => {
       setLoading(true);
       setError(null);
 
-      // Try to get regular orders, assigned orders, and subscription-based orders
-      const [ordersResult, assignedOrdersResult, subscriptionsResult] =
-        await Promise.all([
-          apiService
-            .getUserOrders(forceRefresh)
-            .catch((err) => ({ success: false, error: err })),
-          apiService
-            .get("/orders/assigned")
-            .catch((err) => ({ success: false, error: err })),
-          apiService
-            .getUserSubscriptions()
-            .catch((err) => ({ success: false, error: err })),
-        ]);
+      // Try to get regular orders and assigned orders (both include dailyTimeline for subscriptions)
+      const [ordersResult, assignedOrdersResult] = await Promise.all([
+        apiService
+          .getUserOrders(forceRefresh)
+          .catch((err) => ({ success: false, error: err })),
+        apiService
+          .get("/orders/assigned")
+          .catch((err) => ({ success: false, error: err })),
+      ]);
 
       let allOrders = [];
 
-      // Process regular orders
+      // Process regular orders (including subscription orders with dailyTimeline)
       if (ordersResult.success) {
         const orders =
           ordersResult.data?.data ||
           ordersResult.data ||
           ordersResult.orders ||
           [];
+
         if (Array.isArray(orders)) {
-          allOrders = [...orders];
+          // Separate subscription orders from regular orders
+          const regularOrders = [];
+          const subscriptionOrders = [];
+
+          orders.forEach((order) => {
+            const isSubscription =
+              order.isSubscriptionOrder ||
+              order.subscription ||
+              order.orderNumber?.startsWith("SUB");
+
+            if (
+              isSubscription &&
+              order.dailyTimeline &&
+              Array.isArray(order.dailyTimeline) &&
+              order.dailyTimeline.length > 0
+            ) {
+              // Create virtual orders from dailyTimeline
+              order.dailyTimeline.forEach((dayEntry, index) => {
+                const dayNumber = index + 1;
+                const planName =
+                  order.orderItems?.planName ||
+                  order.mealPlan?.name ||
+                  order.subscription?.mealPlanId?.planName ||
+                  "Meal Plan";
+
+                // Get image from subscription's mealPlanId
+                const mealPlanImage =
+                  order.subscription?.mealPlanId?.coverImage ||
+                  order.subscription?.mealPlanId?.planImageUrl ||
+                  order.subscription?.mealPlanId?.image ||
+                  order.orderItems?.image ||
+                  order.mealPlan?.image ||
+                  order.image;
+
+                subscriptionOrders.push({
+                  ...order,
+                  _id: dayEntry.subDayId || `${order._id}_day${dayNumber}`,
+                  subDayId: dayEntry.subDayId,
+                  timelineId: dayEntry.timelineId,
+                  deliveryDate: dayEntry.date,
+                  estimatedDelivery: dayEntry.date,
+                  status: dayEntry.status || "pending",
+                  delegationStatus: dayEntry.status || order.delegationStatus,
+                  image: mealPlanImage, // Add image to order level
+                  orderItems: {
+                    ...(order.orderItems || {}),
+                    planName: `${planName} - Day ${dayNumber}`,
+                    image: mealPlanImage, // Add image here too
+                  },
+                  mealPlan: {
+                    ...(order.mealPlan || {}),
+                    name: `${planName} - Day ${dayNumber}`,
+                    image: mealPlanImage, // And here
+                    coverImage: mealPlanImage,
+                    planImageUrl: mealPlanImage,
+                  },
+                  subscription: {
+                    ...(order.subscription || {}),
+                    planImage: mealPlanImage, // And in subscription
+                    mealPlan: {
+                      image: mealPlanImage,
+                      coverImage: mealPlanImage,
+                      planImageUrl: mealPlanImage,
+                    },
+                  },
+                  instructions: `Delivery ${dayNumber} of ${
+                    order.dailyTimeline.length
+                  } - ${new Date(dayEntry.date).toLocaleDateString()}`,
+                });
+              });
+            } else {
+              // Regular order or subscription without dailyTimeline
+              regularOrders.push(order);
+            }
+          });
+
+          allOrders = [...regularOrders, ...subscriptionOrders];
         } else {
           allOrders = [];
         }
@@ -318,64 +391,90 @@ const OrdersScreen = ({ navigation }) => {
           assignedOrdersResult.orders ||
           [];
         if (Array.isArray(assignedOrders)) {
-          // Add assigned orders to the list
+          // Process assigned orders similarly - create virtual orders if they have dailyTimeline
+          const processedAssignedOrders = [];
+
+          assignedOrders.forEach((order) => {
+            const isSubscription =
+              order.isSubscriptionOrder ||
+              order.subscription ||
+              order.orderNumber?.startsWith("SUB");
+
+            if (
+              isSubscription &&
+              order.dailyTimeline &&
+              Array.isArray(order.dailyTimeline) &&
+              order.dailyTimeline.length > 0
+            ) {
+              // Create virtual orders from dailyTimeline
+              order.dailyTimeline.forEach((dayEntry, index) => {
+                const dayNumber = index + 1;
+                const planName =
+                  order.orderItems?.planName ||
+                  order.mealPlan?.name ||
+                  order.subscription?.mealPlanId?.planName ||
+                  "Meal Plan";
+
+                // Get image from subscription's mealPlanId
+                const mealPlanImage =
+                  order.subscription?.mealPlanId?.coverImage ||
+                  order.subscription?.mealPlanId?.planImageUrl ||
+                  order.subscription?.mealPlanId?.image ||
+                  order.orderItems?.image ||
+                  order.mealPlan?.image ||
+                  order.image;
+
+                processedAssignedOrders.push({
+                  ...order,
+                  _id: dayEntry.subDayId || `${order._id}_day${dayNumber}`,
+                  subDayId: dayEntry.subDayId,
+                  timelineId: dayEntry.timelineId,
+                  deliveryDate: dayEntry.date,
+                  estimatedDelivery: dayEntry.date,
+                  status: dayEntry.status || "pending",
+                  delegationStatus: dayEntry.status || order.delegationStatus,
+                  image: mealPlanImage, // Add image to order level
+                  orderItems: {
+                    ...(order.orderItems || {}),
+                    planName: `${planName} - Day ${dayNumber}`,
+                    image: mealPlanImage, // Add image here too
+                  },
+                  mealPlan: {
+                    ...(order.mealPlan || {}),
+                    name: `${planName} - Day ${dayNumber}`,
+                    image: mealPlanImage, // And here
+                    coverImage: mealPlanImage,
+                    planImageUrl: mealPlanImage,
+                  },
+                  subscription: {
+                    ...(order.subscription || {}),
+                    planImage: mealPlanImage, // And in subscription
+                    mealPlan: {
+                      image: mealPlanImage,
+                      coverImage: mealPlanImage,
+                      planImageUrl: mealPlanImage,
+                    },
+                  },
+                  instructions: `Delivery ${dayNumber} of ${
+                    order.dailyTimeline.length
+                  } - ${new Date(dayEntry.date).toLocaleDateString()}`,
+                });
+              });
+            } else {
+              // Regular order
+              processedAssignedOrders.push(order);
+            }
+          });
+
           allOrders = [
             ...(Array.isArray(allOrders) ? allOrders : []),
-            ...assignedOrders,
+            ...processedAssignedOrders,
           ];
         }
       }
 
-      // Process subscription-based orders (create virtual order from subscription)
-      if (subscriptionsResult.success) {
-        const subscriptions =
-          subscriptionsResult.data?.data ||
-          subscriptionsResult.data ||
-          subscriptionsResult.subscriptions ||
-          [];
-        const activeSubscriptions = Array.isArray(subscriptions)
-          ? subscriptions.filter((sub) => {
-              const status = sub.status?.toLowerCase();
-              return (
-                status === "active" ||
-                status === "paid" ||
-                sub.paymentStatus === "Paid"
-              );
-            })
-          : [];
-
-        // Convert active subscriptions to virtual orders for tracking
-        const subscriptionOrders = activeSubscriptions.map((subscription) => ({
-          _id: `sub_${subscription._id}`,
-          orderNumber:
-            subscription.subscriptionId || `SUB${subscription._id?.slice(-8)}`,
-          status: "preparing", // Default status for active subscriptions
-          orderStatus: "Preparing", // For display
-          mealPlan: subscription.mealPlanId || {
-            name: "Subscription Meal Plan",
-          },
-          orderItems: {
-            planName:
-              subscription.mealPlanId?.planName || "Subscription Meal Plan",
-          },
-          totalAmount: subscription.totalPrice || subscription.price,
-          createdAt: subscription.startDate || subscription.createdAt,
-          estimatedDelivery: subscription.nextDelivery,
-          deliveryAddress:
-            subscription.deliveryAddress || "Your delivery address",
-          paymentMethod: subscription.paymentMethod || "Subscription payment",
-          paymentStatus: subscription.paymentStatus || "Paid",
-          instructions: "Subscription delivery",
-          quantity: 1,
-          isSubscriptionOrder: true,
-        }));
-
-        // Ensure both arrays are valid before spreading
-        allOrders = [
-          ...(Array.isArray(allOrders) ? allOrders : []),
-          ...(Array.isArray(subscriptionOrders) ? subscriptionOrders : []),
-        ];
-      }
+      // Remove subscriptions fetching - we get all data from orders endpoint now
+      // No longer needed since orders endpoint includes dailyTimeline
 
       // Deduplicate orders by _id to prevent duplicate cards with same keys
       // Keep the order with the most recent status (prioritize delegationStatus over regular status)
@@ -1058,7 +1157,7 @@ const styles = (colors) =>
     tabTextActive: {
       color: colors.primary,
       fontSize: 14,
-      fontWeight: "bold",  
+      fontWeight: "bold",
     },
     tabBadge: {
       marginLeft: 8,

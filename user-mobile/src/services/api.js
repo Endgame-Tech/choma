@@ -1917,7 +1917,7 @@ class ApiService {
 
     // Ensure we have the correct data structure that matches backend expectations
     const sanitizedData = {
-      fullName: profileData.fullName,
+      ...(profileData.fullName && { fullName: profileData.fullName }),
       address: profileData.address || "",
       city: profileData.city || "",
       dietaryPreferences: profileData.dietaryPreferences || [],
@@ -1930,12 +1930,14 @@ class ApiService {
       ...(profileData.customerId && { customerId: profileData.customerId }),
     };
 
-    // Only include phone if it's a valid phone number (not empty string)
-    if (profileData.phone && profileData.phone.trim().length > 0) {
+    // Handle phone number - support both phone and phoneNumber fields
+    const phoneValue = profileData.phoneNumber || profileData.phone;
+    if (phoneValue && phoneValue.trim().length > 0) {
       // Basic phone validation - must contain digits and be at least 10 characters
-      const phoneDigits = profileData.phone.replace(/\D/g, "");
+      const phoneDigits = phoneValue.replace(/\D/g, "");
       if (phoneDigits.length >= 10) {
-        sanitizedData.phone = profileData.phone;
+        sanitizedData.phoneNumber = phoneValue; // Backend expects phoneNumber
+        sanitizedData.phone = phoneValue; // Also send phone for compatibility
       }
     }
 

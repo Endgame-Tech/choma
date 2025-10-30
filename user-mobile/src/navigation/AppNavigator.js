@@ -33,6 +33,7 @@ import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import EmailInputScreen from "../screens/auth/EmailInputScreen";
 import EmailVerificationScreen from "../screens/auth/EmailVerificationScreen";
 import CompleteSignupScreen from "../screens/auth/CompleteSignupScreen";
+import AddPhoneNumberScreen from "../screens/auth/AddPhoneNumberScreen";
 import OnboardingScreen from "../screens/onboarding/OnboardingScreen";
 
 // Meal Plans screens
@@ -106,6 +107,7 @@ const AuthStack = () => {
       />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="CompleteSignup" component={CompleteSignupScreen} />
+      <Stack.Screen name="AddPhoneNumber" component={AddPhoneNumberScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />

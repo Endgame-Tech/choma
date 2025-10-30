@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import { createStylesWithDMSans } from "../../utils/fontUtils";
+import CustomIcon from "../ui/CustomIcon";
 
 const { width } = Dimensions.get("window");
 
@@ -126,7 +127,7 @@ const CompactOrderCard = ({
     );
   };
 
-  // Order status steps - same as original
+  // Order status steps - Simplified 5-step journey aligned with OrderDelegation
   const orderSteps = [
     {
       key: "pending",
@@ -134,44 +135,28 @@ const CompactOrderCard = ({
       subtitle: "We received your order",
       icon: "checkmark-circle",
       color: "#4CAF50",
-      estimatedTime: "2-5 min",
+      estimatedTime: "Processing",
     },
     {
-      key: "confirmed",
-      title: "Order Confirmed",
-      subtitle: "Chef has been assigned to your order",
+      key: "assigned",
+      title: "Chef Assigned",
+      subtitle: "A chef is preparing your meals",
       icon: "restaurant",
       color: "#FF9800",
-      estimatedTime: "5-10 min",
-    },
-    {
-      key: "preparing",
-      title: "Preparing Food",
-      subtitle: "Chef has accepted and started cooking",
-      icon: "flame",
-      color: "#F44336",
-      estimatedTime: "20-30 min",
+      estimatedTime: "Preparing",
     },
     {
       key: "ready",
-      title: "Food Ready",
-      subtitle: "Your meals are ready for pickup",
-      icon: "restaurant-outline",
-      color: "#FF5722",
-      estimatedTime: "2-5 min",
-    },
-    {
-      key: "quality_check",
-      title: "Quality Check",
-      subtitle: "Final quality inspection in progress",
-      icon: "shield-checkmark",
+      title: "Meals Ready",
+      subtitle: "Your meals are ready for delivery",
+      icon: "checkmark-circle-outline",
       color: "#9C27B0",
-      estimatedTime: "3-5 min",
+      estimatedTime: "Awaiting driver",
     },
     {
       key: "out_for_delivery",
       title: "Out for Delivery",
-      subtitle: "Driver has been assigned and is on the way",
+      subtitle: "Driver is on the way to you",
       icon: "car",
       color: "#2196F3",
       estimatedTime: "15-25 min",
@@ -179,55 +164,56 @@ const CompactOrderCard = ({
     {
       key: "delivered",
       title: "Delivered",
-      subtitle: "Order successfully delivered",
+      subtitle: "Enjoy your meal!",
       icon: "gift",
       color: "#4CAF50",
       estimatedTime: "Completed",
     },
   ];
 
-  // Determine current step based on the correct order status flow
+  // Determine current step based on the simplified 5-step order status flow
   useEffect(() => {
     const statusMap = {
-      // 1. Order Placed
+      // Step 0: Order Placed
       pending: 0,
       "not assigned": 0,
       "pending assignment": 0,
+      Pending: 0,
 
-      // 2. Order Confirmed (Admin assigns chef + Chef accepts)
-      confirmed: 1,
+      // Step 1: Chef Assigned (any chef activity - preparing, cooking, etc.)
       assigned: 1,
-      accepted: 1,
       Assigned: 1,
+      accepted: 1,
       Accepted: 1,
+      confirmed: 1,
+      Confirmed: 1,
+      chef_assigned: 1,
+      preparing: 1,
+      "preparing food": 1,
+      Preparing: 1,
+      prepared: 1,
+      "in progress": 1,
+      inprogress: 1,
+      "In Progress": 1,
 
-      // 3. Preparing Food (Chef updates status)
-      preparing: 2,
-      "preparing food": 2,
-      "in progress": 2,
-      inprogress: 2,
-      "In Progress": 2,
+      // Step 2: Meals Ready (chef marked ready or completed)
+      ready: 2,
+      Ready: 2,
+      "food ready": 2,
+      completed: 2,
+      Completed: 2,
+      "quality check": 2,
+      "Quality Check": 2,
 
-      // 4. Food Ready (Chef updates status)
-      ready: 3,
-      "food ready": 3,
-      Ready: 3,
+      // Step 3: Out for Delivery (driver assigned and delivering)
+      "out for delivery": 3,
+      "Out for Delivery": 3,
+      out_for_delivery: 3,
+      outfordelivery: 3,
 
-      // 5. Quality Check (Chef marks "Completed" + Admin assigns driver + Driver accepts)
-      completed: 4,
-      Completed: 4,
-      "quality check": 4,
-      "Quality Check": 4,
-
-      // 6. Out for Delivery (Driver picks up from chef)
-      "out for delivery": 5,
-      "Out for Delivery": 5,
-      out_for_delivery: 5,
-      outfordelivery: 5,
-
-      // 7. Delivered (Driver delivers food)
-      delivered: 6,
-      Delivered: 6,
+      // Step 4: Delivered (final state)
+      delivered: 4,
+      Delivered: 4,
     };
 
     const orderStatus = order?.orderStatus || order?.status;
@@ -361,8 +347,8 @@ const CompactOrderCard = ({
   };
 
   const isDelivered = currentStep === orderSteps.length - 1;
-  const canCancel = currentStep < 2;
-  const canTrackDriver = currentStep === 5;
+  const canCancel = currentStep < 2; // Can cancel before "Meals Ready" step
+  const canTrackDriver = currentStep === 3; // Step 3 is "Out for Delivery" in 5-step journey
 
   const getEstimatedDelivery = () => {
     if (!order?.estimatedDelivery) {
@@ -378,43 +364,48 @@ const CompactOrderCard = ({
     const isFirst = isFirstDelivery();
 
     if (isDelivered) {
-      if (isSubscription && isFirst) {
-        return `First delivery completed for ${getMealPlanName()}`;
-      }
-      return "Delivered!";
+      return "Delivered";
     }
 
-    // For subscription first delivery that's not yet delivered, show appropriate message
-    if (isSubscription && isFirst) {
+    // For status badge - show simple status or time
+    if (currentStep === 0) {
+      // Order Placed - show time since order
+      const now = new Date();
+      const orderTime = new Date(order?.createdAt || Date.now());
+      const hoursSince = Math.floor(
+        (now.getTime() - orderTime.getTime()) / 3600000
+      );
+
+      if (hoursSince < 1) return "Just now";
+      if (hoursSince === 1) return "1 hour ago";
+      if (hoursSince < 24) return `${hoursSince} hours ago`;
+      return "Pending";
+    }
+
+    if (currentStep === 1) {
+      return "In-Progress";
+    }
+
+    if (currentStep === 2) {
+      return "Ready";
+    }
+
+    if (currentStep === 3) {
+      // Out for delivery - show ETA
       const now = new Date();
       const estimatedDelivery = getEstimatedDelivery();
       const timeDiff = estimatedDelivery.getTime() - now.getTime();
 
-      if (timeDiff <= 0)
-        return `Your first delivery arriving now for ${getMealPlanName()}`;
+      if (timeDiff <= 0) return "Arriving now";
 
       const minutes = Math.floor(timeDiff / 60000);
-      if (minutes < 60)
-        return `First delivery in ${minutes} min for ${getMealPlanName()}`;
+      if (minutes < 60) return `${minutes} min`;
 
       const hours = Math.floor(minutes / 60);
-      const remainingMinutes = minutes % 60;
-      return `First delivery in ${hours}h ${remainingMinutes}m for ${getMealPlanName()}`;
+      return `${hours}h ${minutes % 60}m`;
     }
 
-    // Regular order timing for non-subscription or non-first delivery
-    const now = new Date();
-    const estimatedDelivery = getEstimatedDelivery();
-    const timeDiff = estimatedDelivery.getTime() - now.getTime();
-
-    if (timeDiff <= 0) return "Any moment now";
-
-    const minutes = Math.floor(timeDiff / 60000);
-    if (minutes < 60) return `${minutes} min`;
-
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return `${hours}h ${remainingMinutes}m`;
+    return "Processing";
   };
 
   const status = getStatusInfo();
@@ -482,7 +473,7 @@ const CompactOrderCard = ({
 
   return (
     <View style={[styles(colors).container, style]}>
-      {/* Compact Header */}
+      {/* Header with Image, Info, and Status Badge */}
       <View style={styles(colors).header}>
         <Image
           source={getMealPlanImage()}
@@ -491,119 +482,85 @@ const CompactOrderCard = ({
         />
 
         <View style={styles(colors).mealInfo}>
+          {/* Plan Name - Large Title */}
           <Text style={styles(colors).mealTitle} numberOfLines={1}>
-            {order?.orderItems?.planName ||
-              order?.mealPlan?.name ||
-              "Delicious Meal"}
+            {order?.dayNumber
+              ? `Day ${order.dayNumber} of ${
+                  order?.subscription?.planName ||
+                  order?.mealPlan?.name ||
+                  order?.orderItems?.planName ||
+                  "Meal Plan"
+                }`
+              : order?.orderItems?.planName ||
+                order?.mealPlan?.name ||
+                "Delicious Meal"}
           </Text>
-          <Text style={styles(colors).orderNumber}>
-            #{order?.orderNumber || order?.id?.slice(-6) || "CHM001"}
-          </Text>
-        </View>
 
-        <View style={styles(colors).priceContainer}>
-          <Text style={styles(colors).price}>
-            ₦{(order?.totalAmount || 25000).toLocaleString()}
+          {/* SubDayId */}
+          <Text style={styles(colors).subDayIdText}>
+            #{order?.subDayId || order?.id?.slice(-6) || "CHM001"}
           </Text>
+
+          {/* Subscription ID - Smaller gray text */}
+          {order?.orderNumber && (
+            <Text style={styles(colors).subscriptionIdText}>
+              {order.orderNumber}
+            </Text>
+          )}
         </View>
       </View>
 
-      {/* Status Section */}
+      {/* Status Section with Icon, Text, and See Progress Link */}
       <View style={styles(colors).statusSection}>
-        <View style={styles(colors).statusInfo}>
+        <View style={styles(colors).statusLeft}>
           <View
             style={[
-              styles(colors).statusIcon,
-              { backgroundColor: status.color },
+              styles(colors).statusIconLarge,
+              { backgroundColor: status.color + "15" },
             ]}
           >
-            <Ionicons name={status.icon} size={16} color="white" />
+            <Ionicons name={status.icon} size={20} color={status.color} />
           </View>
-          <View style={styles(colors).statusTextContainer}>
-            <Text style={[styles(colors).statusText, { color: status.color }]}>
-              {status.title}
-            </Text>
-            <Text style={styles(colors).etaText}>
-              {isDelivered ? "Completed" : getTimeRemaining()}
-            </Text>
-          </View>
+          <Text style={styles(colors).statusTitle}>{status.title}</Text>
         </View>
-
-        <View style={styles(colors).statusButtons}>
-          {/* Confirmation Code Button */}
-          {isOutForDelivery() && !isDelivered && (
-            <TouchableOpacity
-              style={styles(colors).codeButton}
-              onPress={async () => {
-                await fetchConfirmationCode();
-                setConfirmationModalVisible(true);
-              }}
-            >
-              <Ionicons name="key" size={14} color={colors.white} />
-              <Text style={styles(colors).codeButtonText}>Code</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={styles(colors).detailsButton}
-            onPress={() => setDetailsModalVisible(true)}
-          >
-            <Ionicons
-              name="information-circle-outline"
-              size={16}
-              color={colors.primary}
-            />
-            {/* <Text style={styles(colors).detailsButtonText}>Details</Text> */}
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={styles(colors).actions}>
         <TouchableOpacity
-          style={styles(colors).actionButton}
-          onPress={onContactSupport}
+          style={styles(colors).progressButton}
+          onPress={() => setDetailsModalVisible(true)}
         >
-          <Ionicons name="headset-outline" size={16} color={colors.primary} />
-          <Text style={styles(colors).actionButtonText}>Support</Text>
+          <Text style={styles(colors).progressButtonText}>See Progress</Text>
         </TouchableOpacity>
-
-        {canTrackDriver && (
-          <TouchableOpacity
-            style={styles(colors).actionButton}
-            onPress={() =>
-              onTrackDriver?.(
-                order.driverAssignment?.driver || order.driver,
-                order
-              )
-            }
-          >
-            <Ionicons
-              name="location-outline"
-              size={16}
-              color={colors.primary}
-            />
-            <Text style={styles(colors).actionButtonText}>Track</Text>
-          </TouchableOpacity>
-        )}
-
-        {isDelivered && (
-          <TouchableOpacity
-            style={styles(colors).actionButton}
-            onPress={() => onReorder?.(order)}
-          >
-            <Ionicons name="repeat-outline" size={16} color={colors.success} />
-            <Text
-              style={[
-                styles(colors).actionButtonText,
-                { color: colors.success },
-              ]}
-            >
-              Reorder
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
+
+      {/* Track Button - Always visible, disabled until driver assigned */}
+      <TouchableOpacity
+        style={[
+          styles(colors).trackButton,
+          !canTrackDriver && styles(colors).trackButtonDisabled,
+        ]}
+        onPress={() => {
+          if (canTrackDriver) {
+            onTrackDriver?.(
+              order.driverAssignment?.driver || order.driver,
+              order
+            );
+          }
+        }}
+        disabled={!canTrackDriver}
+      >
+        <CustomIcon
+          name="location"
+          size={20}
+          color={canTrackDriver ? colors.text : colors.textMuted}
+        />
+        <Text
+          style={[
+            styles(colors).trackButtonText,
+            !canTrackDriver && styles(colors).trackButtonTextDisabled,
+          ]}
+        >
+          Track
+        </Text>
+      </TouchableOpacity>
 
       {/* Details Modal */}
       <Modal
@@ -729,7 +686,7 @@ const CompactOrderCard = ({
               {/* Order Details */}
               <View style={styles(colors).orderDetailsSection}>
                 <Text style={styles(colors).sectionTitle}>
-                  📋 Order Information
+                  Order Information
                 </Text>
 
                 <View style={styles(colors).detailsGrid}>
@@ -940,133 +897,118 @@ const styles = (colors) =>
   createStylesWithDMSans({
     container: {
       backgroundColor: colors.cardBackground,
-      borderRadius: 16,
-      marginVertical: 8,
+      borderRadius: 35,
+      padding: 10,
+      // marginVertical: 8,
+      marginHorizontal: 16,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
-      // elevation: 3,
-      // shadowColor: colors.shadow,
-      // shadowOffset: { width: 0, height: 2 },
-      // shadowOpacity: 0.15,
-      // shadowRadius: 8,
+      elevation: 2,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
     },
 
-    // Compact Header
+    // Header with Image and Info
     header: {
       flexDirection: "row",
-      alignItems: "center",
-      padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      alignItems: "flex-start",
+      position: "relative",
+      marginBottom: 5,
     },
     mealImage: {
-      width: 60,
-      height: 60,
-      borderRadius: 12,
+      width: 100,
+      height: 80,
+      borderRadius: 16,
       marginRight: 16,
       backgroundColor: colors.background,
     },
     mealInfo: {
       flex: 1,
+      paddingTop: 4,
     },
+
+    // Title and IDs
     mealTitle: {
       fontSize: 16,
       fontWeight: "700",
       color: colors.text,
-      marginBottom: 4,
+      marginVertical: 4,
     },
-    orderNumber: {
-      fontSize: 12,
-      color: colors.textMuted,
-      fontWeight: "500",
-    },
-    priceContainer: {
-      backgroundColor: colors.primary + "15",
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 12,
-    },
-    price: {
-      fontSize: 14,
-      fontWeight: "700",
-      color: colors.primary,
-    },
-
-    // Status Section
-    statusSection: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    statusInfo: {
-      flexDirection: "row",
-      alignItems: "center",
-      flex: 1,
-    },
-    statusIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      justifyContent: "center",
-      alignItems: "center",
-      marginRight: 12,
-    },
-    statusTextContainer: {
-      flex: 1,
-    },
-    statusText: {
-      fontSize: 16,
+    subDayIdText: {
+      fontSize: 13,
+      color: colors.text,
       fontWeight: "600",
       marginBottom: 2,
     },
-    etaText: {
-      fontSize: 12,
-      color: colors.textMuted,
-      fontWeight: "500",
-    },
-    detailsButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.primary + "15",
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.primary + "30",
-    },
-    detailsButtonText: {
-      fontSize: 12,
+    subscriptionIdText: {
+      fontSize: 10,
+      color: colors.textSecondary,
       fontWeight: "600",
-      color: colors.primary,
-      marginLeft: 4,
     },
 
-    // Actions
-    actions: {
+    // Status Section (Icon + Text on left, See Progress on right)
+    statusSection: {
       flexDirection: "row",
-      padding: 16,
-      gap: 12,
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingBottom: 10,
+      // paddingHorizontal: 20,
     },
-    actionButton: {
+    statusLeft: {
+      flexDirection: "row",
+      alignItems: "center",
       flex: 1,
+    },
+    statusIconLarge: {
+      width: 28,
+      height: 28,
+      borderRadius: 24,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 6,
+    },
+    statusTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.text,
+      flex: 1,
+    },
+    progressButton: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    progressButtonText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: "500",
+      textDecorationLine: "underline",
+    },
+
+    // Track Button
+    trackButton: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.primary + "15",
-      paddingVertical: 12,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.primary + "30",
+      backgroundColor: colors.primary2,
+      paddingVertical: 16,
+      borderRadius: 42,
     },
-    actionButtonText: {
-      color: colors.primary,
-      fontSize: 14,
-      fontWeight: "600",
-      marginLeft: 6,
+    trackButtonDisabled: {
+      backgroundColor: colors.primary2 + "60",
+      opacity: 0.5,
+    },
+    trackButtonText: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: colors.text,
+      marginLeft: 8,
+    },
+    trackButtonTextDisabled: {
+      color: colors.textMuted,
+      fontWeight: "bold",
     },
 
     // Modal Styles
@@ -1093,7 +1035,7 @@ const styles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 20,
+      paddingHorizontal: 10,
       paddingTop: 20,
       paddingBottom: 16,
       borderBottomWidth: 1,
@@ -1108,7 +1050,7 @@ const styles = (colors) =>
       padding: 4,
     },
     modalContent: {
-      padding: 20,
+      padding: 10,
     },
 
     // Subscription Banner Styles
@@ -1153,7 +1095,7 @@ const styles = (colors) =>
       fontSize: 16,
       fontWeight: "700",
       color: colors.text,
-      marginBottom: 4,
+      marginBottom: 10,
     },
     sectionSubtitle: {
       fontSize: 14,
@@ -1328,12 +1270,12 @@ const styles = (colors) =>
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: 12,
-      borderRadius: 12,
-      borderWidth: 1,
+      borderRadius: 42,
+      // borderWidth: 1,
     },
     cancelButton: {
       backgroundColor: colors.error + "15",
-      borderColor: colors.error + "30",
+      // borderColor: colors.error + "30",
     },
     rateButton: {
       backgroundColor: colors.warning + "15",
