@@ -476,7 +476,7 @@ const MapTrackingScreen = ({ route, navigation }) => {
                 identifier="driver"
               >
                 <View style={styles.driverMarker}>
-                  <Ionicons name="car" size={20} color="#FFFFFF" />
+                  <Ionicons name="car" size={20} color="#F8FFFC" />
                 </View>
               </Marker>
             )}
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   retryButtonText: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 16,
     fontWeight: "600",
   },
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#007AFF",
     borderWidth: 3,
-    borderColor: "#FFFFFF",
+    borderColor: "#F8FFFC",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
   },
   driverMarker: {
     width: 40,
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 3,
-    borderColor: "#FFFFFF",
+    borderColor: "#F8FFFC",
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

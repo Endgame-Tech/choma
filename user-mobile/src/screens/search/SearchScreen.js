@@ -1687,7 +1687,7 @@ const styles = (colors) =>
       borderRadius: 12,
     },
     testButtonText: {
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       fontSize: 12,
       fontWeight: "600",
     },
@@ -1995,7 +1995,7 @@ const WrappedSearchScreen = (props) => (
           }}
           onPress={onRetry}
         >
-          <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>
+          <Text style={{ color: "#F8FFFC", fontSize: 16, fontWeight: "600" }}>
             Retry
           </Text>
         </TouchableOpacity>

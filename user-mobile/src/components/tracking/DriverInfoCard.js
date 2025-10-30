@@ -77,7 +77,7 @@ const DriverInfoCard = ({
             style={[styles.actionButton, { backgroundColor: colors.primary }]}
             onPress={onCall}
           >
-            <Ionicons name="call" size={20} color="#FFFFFF" />
+            <Ionicons name="call" size={20} color="#F8FFFC" />
             <Text style={styles.actionButtonText}>Call</Text>
           </TouchableOpacity>
 
@@ -231,7 +231,7 @@ const styles = createStylesWithDMSans({
   actionButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "#F8FFFC",
   },
   expandedContent: {
     marginTop: 16,

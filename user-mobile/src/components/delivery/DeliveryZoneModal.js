@@ -123,11 +123,7 @@ const DeliveryZoneModal = ({
 
   const renderEmptyState = () => (
     <View style={styles(colors).emptyState}>
-      <CustomIcon
-        name="location-outline"
-        size={48}
-        color={colors.textSecondary}
-      />
+      <CustomIcon name="location-outline" size={48} color={colors.textMuted} />
       <Text style={styles(colors).emptyTitle}>No Delivery Zones Available</Text>
       <Text style={styles(colors).emptyMessage}>
         We don't have delivery zones set up yet. Please contact support for
@@ -170,7 +166,11 @@ const DeliveryZoneModal = ({
           {/* User Address Display */}
           {userAddress ? (
             <View style={styles(colors).addressContainer}>
-              <CustomIcon name="location-filled" size={16} color={colors.textSecondary} />
+              <CustomIcon
+                name="location-filled"
+                size={16}
+                color={colors.text}
+              />
               <Text style={styles(colors).addressText}>
                 Your address: {userAddress}
               </Text>
@@ -321,7 +321,7 @@ const styles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      backgroundColor: colors.background,
+      // backgroundColor: colors.background,
       marginHorizontal: 16,
       paddingVertical: 12,
       borderRadius: THEME.borderRadius.medium,
@@ -384,7 +384,7 @@ const styles = (colors) =>
       paddingHorizontal: 20,
     },
     zoneItem: {
-      backgroundColor: colors.background,
+      // backgroundColor: colors.textMuted,
       borderRadius: THEME.borderRadius.medium,
       padding: 16,
       marginBottom: 6,
@@ -393,7 +393,7 @@ const styles = (colors) =>
       alignItems: "center",
     },
     selectedZoneItem: {
-      backgroundColor: `${colors.primary2}10`,
+      backgroundColor: `${colors.primary2}20`,
     },
     zoneInfo: {
       flex: 1,
@@ -477,7 +477,8 @@ const styles = (colors) =>
       borderTopColor: colors.border,
     },
     cancelButton: {
-      padding: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
       borderRadius: THEME.borderRadius.xxl,
       borderWidth: 1,
       borderColor: colors.border,
@@ -489,7 +490,8 @@ const styles = (colors) =>
       color: colors.textSecondary,
     },
     confirmButton: {
-      padding: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
       borderRadius: THEME.borderRadius.xxl,
       backgroundColor: colors.primary2,
       alignItems: "center",

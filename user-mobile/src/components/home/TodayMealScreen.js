@@ -780,14 +780,15 @@ const styles = (colors) =>
     },
     modalHeader: {
       alignItems: "center",
-      marginBottom: 20,
+      marginBottom: 10,
     },
     modalTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: colors.text,
+      color: "#1b1b1b",
       textAlign: "center",
-      marginTop: 8,
+      marginTop: 4,
+      width: "70%",
     },
     modalScrollContent: {
       maxHeight: 300,
@@ -798,12 +799,12 @@ const styles = (colors) =>
     modalSubtitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: colors.text,
+      color: "#1b1b1b",
       marginBottom: 16,
       textAlign: "center",
     },
     statusSteps: {
-      marginBottom: 24,
+      marginBottom: 20,
     },
     statusStep: {
       flexDirection: "row",
@@ -843,7 +844,7 @@ const styles = (colors) =>
       paddingVertical: 16,
       borderRadius: 32,
       alignItems: "center",
-      marginTop: 8,
+      // marginTop: 8,
     },
     modalButtonText: {
       fontSize: 16,

@@ -1,10 +1,5 @@
 import React, { useMemo } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StatusBar,
-} from "react-native";
+import { View, Text, TouchableOpacity, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import MealProgressionTimeline from "../../components/subscription/MealProgressionTimeline";
@@ -42,7 +37,9 @@ const MealTimelineScreen = ({ navigation, route }) => {
             >
               <CustomIcon name="chevron-back" size={24} color={colors.white} />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.white }]}>Meal Timeline</Text>
+            <Text style={[styles.headerTitle, { color: colors.white }]}>
+              Meal Timeline
+            </Text>
             <View style={styles.headerSpacer} />
           </View>
 
@@ -117,7 +114,7 @@ const createStyles = (colors) =>
     emptyTitle: {
       fontSize: 18,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       marginBottom: 12,
     },
     emptySubtitle: {

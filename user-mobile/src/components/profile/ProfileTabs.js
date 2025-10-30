@@ -27,7 +27,7 @@ const ProfileTabs = ({ selectedTab, onTabChange }) => {
             <CustomIcon
               name={tab.icon}
               size={18}
-              color={selectedTab === tab.id ? colors.primary2 : colors.textMuted}
+              color={selectedTab === tab.id ? colors.primary : colors.textMuted}
             />
             <Text
               style={[
@@ -51,16 +51,17 @@ const styles = (colors) =>
       paddingHorizontal: 20,
       // paddingTop: 20,
       paddingBottom: 14,
-      alignItems: "center",
+      alignItems: "flex-start",
     },
     tabContainer: {
       flexDirection: "row",
       borderRadius: 30,
       borderWidth: 1,
-      borderColor: `${colors.primary2}40`,
-      padding: 8,
-      justifyContent: "space-between",
-      width: "100%",
+      borderColor: `${colors.primary}40`,
+      paddingVertical: 8,
+      paddingHorizontal: 8,
+      justifyContent: "center",
+      // width: "100%",
       maxWidth: 350,
     },
     tab: {
@@ -68,14 +69,14 @@ const styles = (colors) =>
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: 12,
-      // paddingHorizontal: 12, // Reduced padding
+      paddingHorizontal: 12, 
       borderRadius: 25,
-      flex: 1,
-      // marginHorizontal: 1, // Reduced margin
+      // flex: 1,
       minWidth: 0, // Allow flex shrinking
     },
     activeTab: {
-      backgroundColor: colors.cardBackground,
+      paddingHorizontal: 8,
+      backgroundColor: colors.primary2,
     },
     tabText: {
       fontSize: 14,
@@ -86,7 +87,7 @@ const styles = (colors) =>
       textAlign: "center",
     },
     activeTabText: {
-      color: colors.primary2,
+      color: colors.primary,
       fontWeight: "600",
     },
   });

@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-} from "react-native";
+import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import CustomIcon from "../ui/CustomIcon";
 import { useTheme } from "../../styles/theme";
@@ -22,7 +16,8 @@ const PopularPlanCard = ({
   const { colors } = useTheme();
 
   // Check multiple possible image field names
-  const planImage = plan.image || plan.coverImage || plan.planImageUrl || plan.imageUrl;
+  const planImage =
+    plan.image || plan.coverImage || plan.planImageUrl || plan.imageUrl;
 
   const imageSource = planImage
     ? typeof planImage === "string"
@@ -218,7 +213,7 @@ const styles = (colors) =>
     popularCardTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       marginBottom: 8,
       textShadowColor: "rgba(0, 0, 0, 0.3)",
       textShadowOffset: { width: 0, height: 1 },
@@ -262,7 +257,7 @@ const styles = (colors) =>
     popularCardPrice: {
       fontSize: 24,
       fontWeight: "800",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       textShadowColor: "rgba(0, 0, 0, 0.3)",
       textShadowOffset: { width: 0, height: 1 },
       textShadowRadius: 2,

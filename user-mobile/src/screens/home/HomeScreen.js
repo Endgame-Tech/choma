@@ -1054,7 +1054,7 @@ const HomeScreen = ({ navigation, route }) => {
       <SafeAreaView style={styles(colors).container} edges={["top"]}>
         <StatusBar
           barStyle={
-            colors.background === "#FFFFFF" ? "dark-content" : "light-content"
+            colors.background === "#F8FFFC" ? "dark-content" : "light-content"
           }
           backgroundColor={colors.primary2}
         />
@@ -1070,7 +1070,7 @@ const HomeScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles(colors).container} edges={["top"]}>
       <StatusBar
         barStyle={
-          colors.background === "#FFFFFF" ? "dark-content" : "light-content"
+          colors.background === "#F8FFFC" ? "dark-content" : "light-content"
         }
         backgroundColor={colors.primary2}
       />

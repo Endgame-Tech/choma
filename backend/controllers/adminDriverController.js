@@ -1,7 +1,8 @@
-const Driver = require('../models/Driver');
-const DriverAssignment = require('../models/DriverAssignment');
-const Order = require('../models/Order');
-const deliveryAssignmentService = require('../services/deliveryAssignmentService');
+const Driver = require("../models/Driver");
+const DriverAssignment = require("../models/DriverAssignment");
+const Order = require("../models/Order");
+const OrderDelegation = require("../models/OrderDelegation");
+const deliveryAssignmentService = require("../services/deliveryAssignmentService");
 
 // @desc    Get all drivers with filtering and pagination
 // @route   GET /api/admin/drivers
@@ -13,8 +14,8 @@ const getDrivers = async (req, res) => {
       limit = 20,
       status,
       search,
-      sortBy = 'createdAt',
-      sortOrder = 'desc'
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = req.query;
 
     const skip = (page - 1) * limit;
@@ -28,20 +29,20 @@ const getDrivers = async (req, res) => {
     // Search functionality
     if (search) {
       query.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { driverId: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } }
+        { fullName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { driverId: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
       ];
     }
 
     // Sort options
     const sortOptions = {};
-    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
 
     // Get drivers with pagination
     const drivers = await Driver.find(query)
-      .select('-password')
+      .select("-password")
       .sort(sortOptions)
       .skip(parseInt(skip))
       .limit(parseInt(limit))
@@ -56,18 +57,21 @@ const getDrivers = async (req, res) => {
         // Get current active assignment
         const activeAssignment = await DriverAssignment.findOne({
           driverId: driver._id,
-          status: { $in: ['assigned', 'picked_up'] }
-        }).select('status orderId estimatedDeliveryTime');
+          status: { $in: ["assigned", "picked_up"] },
+        }).select("status orderId estimatedDeliveryTime");
 
         // Calculate completion rate
         const totalAssignments = driver.stats?.totalDeliveries || 0;
         const completedAssignments = driver.stats?.completedDeliveries || 0;
-        const completionRate = totalAssignments > 0 ? (completedAssignments / totalAssignments) * 100 : 0;
+        const completionRate =
+          totalAssignments > 0
+            ? (completedAssignments / totalAssignments) * 100
+            : 0;
 
         return {
           ...driver,
           activeAssignment,
-          completionRate: Math.round(completionRate)
+          completionRate: Math.round(completionRate),
         };
       })
     );
@@ -75,17 +79,17 @@ const getDrivers = async (req, res) => {
     // Calculate summary statistics
     const summary = {
       total: totalDrivers,
-      pending: await Driver.countDocuments({ accountStatus: 'pending' }),
-      approved: await Driver.countDocuments({ accountStatus: 'approved' }),
-      suspended: await Driver.countDocuments({ accountStatus: 'suspended' }),
-      online: await Driver.countDocuments({ 
-        accountStatus: 'approved', 
-        status: 'online' 
+      pending: await Driver.countDocuments({ accountStatus: "pending" }),
+      approved: await Driver.countDocuments({ accountStatus: "approved" }),
+      suspended: await Driver.countDocuments({ accountStatus: "suspended" }),
+      online: await Driver.countDocuments({
+        accountStatus: "approved",
+        status: "online",
       }),
-      busy: await Driver.countDocuments({ 
-        accountStatus: 'approved', 
-        status: 'busy' 
-      })
+      busy: await Driver.countDocuments({
+        accountStatus: "approved",
+        status: "busy",
+      }),
     };
 
     res.json({
@@ -95,17 +99,16 @@ const getDrivers = async (req, res) => {
         currentPage: parseInt(page),
         totalPages: Math.ceil(totalDrivers / limit),
         totalItems: totalDrivers,
-        itemsPerPage: parseInt(limit)
+        itemsPerPage: parseInt(limit),
       },
-      summary
+      summary,
     });
-
   } catch (error) {
-    console.error('Get drivers error:', error);
+    console.error("Get drivers error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch drivers',
-      error: error.message
+      message: "Failed to fetch drivers",
+      error: error.message,
     });
   }
 };
@@ -117,38 +120,36 @@ const getDriver = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const driver = await Driver.findById(id)
-      .select('-password')
-      .lean();
+    const driver = await Driver.findById(id).select("-password").lean();
 
     if (!driver) {
       return res.status(404).json({
         success: false,
-        message: 'Driver not found'
+        message: "Driver not found",
       });
     }
 
     // Get driver's assignment history
     const assignments = await DriverAssignment.find({ driverId: id })
-      .populate('orderId', 'orderNumber totalAmount')
+      .populate("orderId", "orderNumber totalAmount")
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
 
     // Calculate detailed stats
     const totalEarnings = assignments
-      .filter(a => a.status === 'delivered')
+      .filter((a) => a.status === "delivered")
       .reduce((sum, a) => sum + (a.totalEarning || 0), 0);
 
     const avgRating = assignments
-      .filter(a => a.rating)
+      .filter((a) => a.rating)
       .reduce((sum, a, _, arr) => sum + a.rating / arr.length, 0);
 
     // Get current active assignment
     const activeAssignment = await DriverAssignment.findOne({
       driverId: id,
-      status: { $in: ['assigned', 'picked_up'] }
-    }).populate('orderId', 'orderNumber totalAmount');
+      status: { $in: ["assigned", "picked_up"] },
+    }).populate("orderId", "orderNumber totalAmount");
 
     res.json({
       success: true,
@@ -160,17 +161,18 @@ const getDriver = async (req, res) => {
           totalEarnings,
           averageRating: Math.round(avgRating * 10) / 10,
           totalAssignments: assignments.length,
-          completedAssignments: assignments.filter(a => a.status === 'delivered').length
-        }
-      }
+          completedAssignments: assignments.filter(
+            (a) => a.status === "delivered"
+          ).length,
+        },
+      },
     });
-
   } catch (error) {
-    console.error('Get driver error:', error);
+    console.error("Get driver error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch driver details',
-      error: error.message
+      message: "Failed to fetch driver details",
+      error: error.message,
     });
   }
 };
@@ -187,7 +189,7 @@ const updateDriverStatus = async (req, res) => {
     if (!driver) {
       return res.status(404).json({
         success: false,
-        message: 'Driver not found'
+        message: "Driver not found",
       });
     }
 
@@ -200,22 +202,22 @@ const updateDriverStatus = async (req, res) => {
       status: accountStatus,
       changedAt: new Date(),
       changedBy: req.admin.id, // Admin who made the change
-      reason: reason || 'Status updated by admin'
+      reason: reason || "Status updated by admin",
     });
 
     await driver.save();
 
     // If driver is suspended, cancel any active assignments
-    if (accountStatus === 'suspended') {
+    if (accountStatus === "suspended") {
       await DriverAssignment.updateMany(
         {
           driverId: id,
-          status: { $in: ['assigned', 'picked_up'] }
+          status: { $in: ["assigned", "picked_up"] },
         },
         {
-          status: 'cancelled',
+          status: "cancelled",
           cancelledAt: new Date(),
-          cancelReason: 'Driver account suspended'
+          cancelReason: "Driver account suspended",
         }
       );
     }
@@ -226,16 +228,15 @@ const updateDriverStatus = async (req, res) => {
       data: {
         driverId: driver._id,
         accountStatus: driver.accountStatus,
-        previousStatus
-      }
+        previousStatus,
+      },
     });
-
   } catch (error) {
-    console.error('Update driver status error:', error);
+    console.error("Update driver status error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update driver status',
-      error: error.message
+      message: "Failed to update driver status",
+      error: error.message,
     });
   }
 };
@@ -246,13 +247,7 @@ const updateDriverStatus = async (req, res) => {
 const getDriverAssignments = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      page = 1,
-      limit = 20,
-      status,
-      startDate,
-      endDate
-    } = req.query;
+    const { page = 1, limit = 20, status, startDate, endDate } = req.query;
 
     const skip = (page - 1) * limit;
     const query = { driverId: id };
@@ -274,7 +269,7 @@ const getDriverAssignments = async (req, res) => {
     }
 
     const assignments = await DriverAssignment.find(query)
-      .populate('orderId', 'orderNumber totalAmount userId')
+      .populate("orderId", "orderNumber totalAmount userId")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
@@ -289,16 +284,15 @@ const getDriverAssignments = async (req, res) => {
         currentPage: parseInt(page),
         totalPages: Math.ceil(totalAssignments / limit),
         totalItems: totalAssignments,
-        itemsPerPage: parseInt(limit)
-      }
+        itemsPerPage: parseInt(limit),
+      },
     });
-
   } catch (error) {
-    console.error('Get driver assignments error:', error);
+    console.error("Get driver assignments error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch driver assignments',
-      error: error.message
+      message: "Failed to fetch driver assignments",
+      error: error.message,
     });
   }
 };
@@ -311,18 +305,18 @@ const createDriverAssignment = async (req, res) => {
     const {
       orderId,
       driverId,
-      priority = 'normal',
+      priority = "normal",
       specialInstructions,
       estimatedPickupTime,
-      isFirstDelivery = false
+      isFirstDelivery = false,
     } = req.body;
 
     // Validate order exists
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate("subscription");
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: "Order not found",
       });
     }
 
@@ -331,71 +325,95 @@ const createDriverAssignment = async (req, res) => {
     if (existingAssignment) {
       return res.status(400).json({
         success: false,
-        message: 'Assignment already exists for this order'
+        message: "Assignment already exists for this order",
       });
     }
 
+    // For subscription orders, also update OrderDelegation with driver info
+    const isSubscriptionOrder = order.subscription?._id || order.subscription;
+    let orderDelegation = null;
+
+    if (isSubscriptionOrder && driverId) {
+      const subId = order.subscription._id || order.subscription;
+      orderDelegation = await OrderDelegation.findOne({
+        subscriptionId: subId,
+      });
+
+      if (orderDelegation) {
+        orderDelegation.driverId = driverId;
+        await orderDelegation.save();
+        console.log(
+          `✅ Updated OrderDelegation with driverId for subscription ${subId}`
+        );
+      }
+    }
+
     // Create assignment using the service
-    const result = await deliveryAssignmentService.createAssignmentFromOrder(orderId, {
-      priority,
-      isFirstDelivery,
-      autoAssign: !!driverId,
-      driverId: driverId // Pass driverId to service
-    });
+    const result = await deliveryAssignmentService.createAssignmentFromOrder(
+      orderId,
+      {
+        priority,
+        isFirstDelivery,
+        autoAssign: !!driverId,
+        driverId: driverId, // Pass driverId to service
+      }
+    );
 
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        message: result.error
+        message: result.error,
       });
     }
 
     // If specific driver is assigned, validate and update status
     if (driverId) {
       const driver = await Driver.findById(driverId);
-      if (!driver || driver.accountStatus !== 'approved') {
+      if (!driver || driver.accountStatus !== "approved") {
         return res.status(400).json({
           success: false,
-          message: 'Driver not found or not approved'
+          message: "Driver not found or not approved",
         });
       }
 
       const assignment = result.assignment;
-      assignment.status = 'assigned';
+      assignment.status = "assigned";
       assignment.acceptedAt = new Date();
       await assignment.save();
 
       // Update order status to reflect driver assignment for mobile app tracking
       await Order.findByIdAndUpdate(orderId, {
-        orderStatus: 'Out for Delivery',
-        updatedAt: new Date()
+        orderStatus: "Out for Delivery",
+        updatedAt: new Date(),
       });
 
       // Invalidate mobile app caches for immediate status update
       try {
         const { cacheService } = require("../config/redis");
         const customerId = order.customer;
-        
+
         if (customerId && cacheService) {
           const cacheKeys = [
             `user:${customerId}:/api/orders/assigned:{}`,
             `user-orders:${customerId}:1:20:`,
             `user:${customerId}:/api/orders:{}`,
           ];
-          
+
           for (const key of cacheKeys) {
             await cacheService.del(key);
           }
-          
         }
       } catch (cacheError) {
-        console.warn("⚠️ Failed to invalidate cache after driver assignment:", cacheError.message);
+        console.warn(
+          "⚠️ Failed to invalidate cache after driver assignment:",
+          cacheError.message
+        );
       }
 
       // Send notification to customer about driver assignment
       try {
         const NotificationService = require("../services/notificationService");
-        
+
         await NotificationService.createNotification({
           userId: order.customer,
           title: "Driver Assigned",
@@ -405,12 +423,15 @@ const createDriverAssignment = async (req, res) => {
             orderId,
             driverId,
             driverName: driver.fullName,
-            vehicleInfo: driver.vehicleInfo
+            vehicleInfo: driver.vehicleInfo,
           },
           priority: "high",
         });
       } catch (notificationError) {
-        console.warn("⚠️ Failed to send driver assignment notification:", notificationError.message);
+        console.warn(
+          "⚠️ Failed to send driver assignment notification:",
+          notificationError.message
+        );
       }
 
       await driver.startDelivery();
@@ -418,16 +439,15 @@ const createDriverAssignment = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Delivery assignment created successfully',
-      data: result.assignment
+      message: "Delivery assignment created successfully",
+      data: result.assignment,
     });
-
   } catch (error) {
-    console.error('Create driver assignment error:', error);
+    console.error("Create driver assignment error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create delivery assignment',
-      error: error.message
+      message: "Failed to create delivery assignment",
+      error: error.message,
     });
   }
 };
@@ -437,11 +457,7 @@ const createDriverAssignment = async (req, res) => {
 // @access  Private (Admin)
 const getDeliveryStats = async (req, res) => {
   try {
-    const {
-      startDate,
-      endDate,
-      driverId
-    } = req.query;
+    const { startDate, endDate, driverId } = req.query;
 
     // Build date filter
     const dateFilter = {};
@@ -456,7 +472,7 @@ const getDeliveryStats = async (req, res) => {
     } else {
       // Default to last 30 days
       dateFilter.createdAt = {
-        $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       };
     }
 
@@ -471,84 +487,93 @@ const getDeliveryStats = async (req, res) => {
       cancelledDeliveries,
       avgDeliveryTime,
       totalEarnings,
-      topDrivers
+      topDrivers,
     ] = await Promise.all([
       // Total assignments
       DriverAssignment.countDocuments(query),
-      
+
       // Completed deliveries
-      DriverAssignment.countDocuments({ ...query, status: 'delivered' }),
-      
+      DriverAssignment.countDocuments({ ...query, status: "delivered" }),
+
       // Cancelled deliveries
-      DriverAssignment.countDocuments({ ...query, status: 'cancelled' }),
-      
+      DriverAssignment.countDocuments({ ...query, status: "cancelled" }),
+
       // Average delivery time
       DriverAssignment.aggregate([
-        { $match: { ...query, status: 'delivered', pickedUpAt: { $exists: true }, deliveredAt: { $exists: true } } },
+        {
+          $match: {
+            ...query,
+            status: "delivered",
+            pickedUpAt: { $exists: true },
+            deliveredAt: { $exists: true },
+          },
+        },
         {
           $group: {
             _id: null,
             avgTime: {
               $avg: {
                 $divide: [
-                  { $subtract: ['$deliveredAt', '$pickedUpAt'] },
-                  1000 * 60 // Convert to minutes
-                ]
-              }
-            }
-          }
-        }
+                  { $subtract: ["$deliveredAt", "$pickedUpAt"] },
+                  1000 * 60, // Convert to minutes
+                ],
+              },
+            },
+          },
+        },
       ]),
-      
+
       // Total earnings
       DriverAssignment.aggregate([
-        { $match: { ...query, status: 'delivered' } },
-        { $group: { _id: null, total: { $sum: '$totalEarning' } } }
+        { $match: { ...query, status: "delivered" } },
+        { $group: { _id: null, total: { $sum: "$totalEarning" } } },
       ]),
-      
+
       // Top performing drivers
       DriverAssignment.aggregate([
-        { $match: { ...query, status: 'delivered' } },
+        { $match: { ...query, status: "delivered" } },
         {
           $group: {
-            _id: '$driverId',
+            _id: "$driverId",
             completedDeliveries: { $sum: 1 },
-            totalEarnings: { $sum: '$totalEarning' },
-            avgRating: { $avg: '$rating' }
-          }
+            totalEarnings: { $sum: "$totalEarning" },
+            avgRating: { $avg: "$rating" },
+          },
         },
         { $sort: { completedDeliveries: -1 } },
         { $limit: 5 },
         {
           $lookup: {
-            from: 'drivers',
-            localField: '_id',
-            foreignField: '_id',
-            as: 'driver'
-          }
+            from: "drivers",
+            localField: "_id",
+            foreignField: "_id",
+            as: "driver",
+          },
         },
-        { $unwind: '$driver' },
+        { $unwind: "$driver" },
         {
           $project: {
-            driverId: '$driver.driverId',
-            fullName: '$driver.fullName',
+            driverId: "$driver.driverId",
+            fullName: "$driver.fullName",
             completedDeliveries: 1,
             totalEarnings: 1,
-            avgRating: { $round: ['$avgRating', 1] }
-          }
-        }
-      ])
+            avgRating: { $round: ["$avgRating", 1] },
+          },
+        },
+      ]),
     ]);
 
     // Calculate completion rate
-    const completionRate = totalAssignments > 0 
-      ? Math.round((completedDeliveries / totalAssignments) * 100) 
-      : 0;
+    const completionRate =
+      totalAssignments > 0
+        ? Math.round((completedDeliveries / totalAssignments) * 100)
+        : 0;
 
     // Calculate cancellation rate
-    const cancellationRate = totalAssignments > 0
-      ? Math.round((cancelledDeliveries / totalAssignments) * 100)
-      : 0;
+    const cancellationRate =
+      totalAssignments > 0
+        ? Math.round((cancelledDeliveries / totalAssignments) * 100)
+        : 0;
 
     const stats = {
       overview: {
@@ -558,26 +583,27 @@ const getDeliveryStats = async (req, res) => {
         completionRate,
         cancellationRate,
         avgDeliveryTime: avgDeliveryTime[0]?.avgTime || 0,
-        totalEarnings: totalEarnings[0]?.total || 0
+        totalEarnings: totalEarnings[0]?.total || 0,
       },
       topDrivers: topDrivers || [],
       dateRange: {
-        startDate: startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        endDate: endDate || new Date().toISOString()
-      }
+        startDate:
+          startDate ||
+          new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: endDate || new Date().toISOString(),
+      },
     };
 
     res.json({
       success: true,
-      data: stats
+      data: stats,
     });
-
   } catch (error) {
-    console.error('Get delivery stats error:', error);
+    console.error("Get delivery stats error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch delivery statistics',
-      error: error.message
+      message: "Failed to fetch delivery statistics",
+      error: error.message,
     });
   }
 };
@@ -593,20 +619,21 @@ const deleteDriver = async (req, res) => {
     if (!driver) {
       return res.status(404).json({
         success: false,
-        message: 'Driver not found'
+        message: "Driver not found",
       });
     }
 
     // Check if driver has active assignments
     const activeAssignment = await DriverAssignment.findOne({
       driverId: id,
-      status: { $in: ['assigned', 'picked_up'] }
+      status: { $in: ["assigned", "picked_up"] },
     });
 
     if (activeAssignment) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot delete driver with active assignments. Please cancel or reassign first.'
+        message:
+          "Cannot delete driver with active assignments. Please cancel or reassign first.",
       });
     }
 
@@ -614,12 +641,12 @@ const deleteDriver = async (req, res) => {
     await DriverAssignment.updateMany(
       {
         driverId: id,
-        status: 'pending'
+        status: "pending",
       },
       {
-        status: 'cancelled',
+        status: "cancelled",
         cancelledAt: new Date(),
-        cancelReason: 'Driver account deleted'
+        cancelReason: "Driver account deleted",
       }
     );
 
@@ -628,15 +655,14 @@ const deleteDriver = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Driver deleted successfully'
+      message: "Driver deleted successfully",
     });
-
   } catch (error) {
-    console.error('Delete driver error:', error);
+    console.error("Delete driver error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete driver',
-      error: error.message
+      message: "Failed to delete driver",
+      error: error.message,
     });
   }
 };
@@ -648,5 +674,5 @@ module.exports = {
   getDriverAssignments,
   createDriverAssignment,
   getDeliveryStats,
-  deleteDriver
+  deleteDriver,
 };

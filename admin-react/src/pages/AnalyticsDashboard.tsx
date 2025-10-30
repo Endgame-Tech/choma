@@ -128,10 +128,10 @@ const AnalyticsDashboard: React.FC = () => {
   }, [])
 
   // Cached KPI data with fallback to dashboard stats
-  const { 
-    data: kpiData, 
+  const {
+    data: kpiData,
     loading: kpiLoading,
-    refetch: refetchKpiData 
+    refetch: refetchKpiData
   } = useCachedApi<KPIData>(
     async () => {
       const timeRange = getTimeRange(selectedPeriod)
@@ -238,7 +238,7 @@ const AnalyticsDashboard: React.FC = () => {
   const refreshAnalyticsData = useCallback(async () => {
     setRefreshing(true)
     setError(null)
-    
+
     try {
       // Force refresh all cached data
       await Promise.all([
@@ -611,7 +611,7 @@ const AnalyticsDashboard: React.FC = () => {
                     data: chartData.ordersByStatus.data || [],
                     backgroundColor: chartData.ordersByStatus.colors || [],
                     borderWidth: 2,
-                    borderColor: '#ffffff'
+                    borderColor: '#F8FFFC'
                   }]
                 }}
                 options={{

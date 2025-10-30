@@ -230,9 +230,9 @@ const LocationSelector = ({ onLocationSelect, initialLocation, style }) => {
                   disabled={loading}
                 >
                   {loading ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color="#F8FFFC" />
                   ) : (
-                    <Ionicons name="search" size={20} color="#FFFFFF" />
+                    <Ionicons name="search" size={20} color="#F8FFFC" />
                   )}
                 </TouchableOpacity>
               </View>
@@ -246,7 +246,7 @@ const LocationSelector = ({ onLocationSelect, initialLocation, style }) => {
 
 const styles = createStylesWithDMSans({
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 12,
     padding: 16,
     marginVertical: 8,
@@ -323,7 +323,7 @@ const styles = createStylesWithDMSans({
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: "80%",

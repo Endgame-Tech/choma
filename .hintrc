@@ -3,6 +3,8 @@
     "development"
   ],
   "hints": {
-    "html-checker": "off"
+    "html-checker": "off",
+    "axe/aria": "off",
+    "no-inline-styles": "off"
   }
 }

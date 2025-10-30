@@ -210,7 +210,7 @@ const FilterModal = ({
                       size={24}
                       color={
                         selectedAudiences.includes(audience.name)
-                          ? "#FFFFFF"
+                          ? "#F8FFFC"
                           : colors.textSecondary
                       }
                     />
@@ -262,7 +262,7 @@ const FilterModal = ({
                   height: 20,
                   width: 20,
                   borderWidth: 2,
-                  borderColor: "#FFFFFF",
+                  borderColor: "#F8FFFC",
                 }}
               />
             </View>
@@ -469,7 +469,7 @@ const styles = (colors) =>
       textAlign: "center",
     },
     audienceNameSelected: {
-      color: "#FFFFFF",
+      color: "#F8FFFC",
     },
     audienceDescription: {
       fontSize: 12,
@@ -479,7 +479,7 @@ const styles = (colors) =>
       lineHeight: 16,
     },
     audienceDescriptionSelected: {
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       opacity: 0.9,
     },
     sliderContainer: {
@@ -584,7 +584,7 @@ const styles = (colors) =>
     applyButtonText: {
       fontSize: 16,
       fontWeight: "600",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
     },
   });
 

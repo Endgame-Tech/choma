@@ -73,7 +73,7 @@ const CustomNavigationIcon = ({ route, focused, color, size = 24, colors }) => {
           StyleSheet.absoluteFillObject,
           styles.background,
           {
-            backgroundColor: colors?.white || "#ffffff",
+            backgroundColor: colors?.white || "#F8FFFC",
             opacity: backgroundOpacity,
           },
         ]}

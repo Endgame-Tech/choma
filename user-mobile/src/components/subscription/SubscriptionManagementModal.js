@@ -743,11 +743,11 @@ const SubscriptionManagementModal = ({
                     {loading && (
                       <ActivityIndicator
                         size="small"
-                        color="#FFFFFF"
+                        color="#F8FFFC"
                         style={styles(colors).buttonLoader}
                       />
                     )}
-                    <Ionicons name="pause" size={20} color="#FFFFFF" />
+                    <Ionicons name="pause" size={20} color="#F8FFFC" />
                     <Text style={styles(colors).actionButtonText}>
                       {loading ? "Pausing..." : "Pause Subscription"}
                     </Text>
@@ -830,18 +830,20 @@ const SubscriptionManagementModal = ({
                 >
                   <LinearGradient
                     colors={
-                      loading ? ["#CCCCCC", "#AAAAAA"] : [colors.primary, colors.accent]
+                      loading
+                        ? ["#CCCCCC", "#AAAAAA"]
+                        : [colors.primary, colors.accent]
                     }
                     style={styles(colors).buttonGradient}
                   >
                     {loading && (
                       <ActivityIndicator
                         size="small"
-                        color="#FFFFFF"
+                        color="#F8FFFC"
                         style={styles(colors).buttonLoader}
                       />
                     )}
-                    <Ionicons name="play-forward" size={20} color="#FFFFFF" />
+                    <Ionicons name="play-forward" size={20} color="#F8FFFC" />
                     <Text style={styles(colors).actionButtonText}>
                       {loading ? "Skipping..." : "Skip Meal"}
                     </Text>
@@ -856,7 +858,11 @@ const SubscriptionManagementModal = ({
         return (
           <View style={styles(colors).tabContent}>
             <View style={styles(colors).tabHeader}>
-              <Ionicons name="create-outline" size={24} color={colors.primary} />
+              <Ionicons
+                name="create-outline"
+                size={24}
+                color={colors.primary}
+              />
               <Text style={styles(colors).tabTitle}>Modify Delivery</Text>
             </View>
             <Text style={styles(colors).tabDescription}>
@@ -996,18 +1002,20 @@ const SubscriptionManagementModal = ({
                 >
                   <LinearGradient
                     colors={
-                      loading ? ["#CCCCCC", "#AAAAAA"] : [colors.primary, colors.accent]
+                      loading
+                        ? ["#CCCCCC", "#AAAAAA"]
+                        : [colors.primary, colors.accent]
                     }
                     style={styles(colors).buttonGradient}
                   >
                     {loading && (
                       <ActivityIndicator
                         size="small"
-                        color="#FFFFFF"
+                        color="#F8FFFC"
                         style={styles(colors).buttonLoader}
                       />
                     )}
-                    <Ionicons name="save" size={20} color="#FFFFFF" />
+                    <Ionicons name="save" size={20} color="#F8FFFC" />
                     <Text style={styles(colors).actionButtonText}>
                       {loading ? "Updating..." : "Update Preferences"}
                     </Text>
@@ -1022,7 +1030,11 @@ const SubscriptionManagementModal = ({
         return (
           <View style={styles(colors).tabContent}>
             <View style={styles(colors).tabHeader}>
-              <Ionicons name="person-outline" size={24} color={colors.primary} />
+              <Ionicons
+                name="person-outline"
+                size={24}
+                color={colors.primary}
+              />
               <Text style={styles(colors).tabTitle}>Chef Management</Text>
             </View>
             <Text style={styles(colors).tabDescription}>
@@ -1079,21 +1091,23 @@ const SubscriptionManagementModal = ({
                 >
                   <LinearGradient
                     colors={
-                      loading ? ["#CCCCCC", "#AAAAAA"] : [colors.primary, colors.accent]
+                      loading
+                        ? ["#CCCCCC", "#AAAAAA"]
+                        : [colors.primary, colors.accent]
                     }
                     style={styles(colors).buttonGradient}
                   >
                     {loading && (
                       <ActivityIndicator
                         size="small"
-                        color="#FFFFFF"
+                        color="#F8FFFC"
                         style={styles(colors).buttonLoader}
                       />
                     )}
                     <Ionicons
                       name="swap-horizontal"
                       size={20}
-                      color="#FFFFFF"
+                      color="#F8FFFC"
                     />
                     <Text style={styles(colors).actionButtonText}>
                       {loading ? "Submitting..." : "Request Chef Change"}
@@ -1181,7 +1195,7 @@ const SubscriptionManagementModal = ({
                   <Ionicons
                     name={option.icon}
                     size={20}
-                    color={activeTab === option.id ? "#FFFFFF" : "#002119"}
+                    color={activeTab === option.id ? "#F8FFFC" : "#002119"}
                   />
                 </View>
                 <Text
@@ -1557,7 +1571,7 @@ const styles = (colors) =>
       marginRight: 8,
     },
     actionButtonText: {
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       fontSize: 16,
       fontWeight: "600",
       marginLeft: 8,

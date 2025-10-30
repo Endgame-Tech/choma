@@ -98,7 +98,7 @@ export const COLORS = {
   primary: "#4ECDC4",
   secondary: "#45B7AF",
   accent: "#96CEB4",
-  background: "#FFFFFF",
+  background: "#F8FFFC",
   surface: "#F8F9FA",
   text: "#333333",
   textSecondary: "#666666",
@@ -111,7 +111,7 @@ export const COLORS = {
 // Driver-specific constants
 export const DRIVER_STATUSES = {
   ONLINE: "online",
-  OFFLINE: "offline", 
+  OFFLINE: "offline",
   BUSY: "busy",
   ON_BREAK: "on_break",
   DELIVERING: "delivering",
@@ -119,7 +119,7 @@ export const DRIVER_STATUSES = {
 
 export const DELIVERY_STATUSES = {
   ASSIGNED: "assigned",
-  ACCEPTED: "accepted", 
+  ACCEPTED: "accepted",
   PICKED_UP: "picked_up",
   IN_TRANSIT: "in_transit",
   DELIVERED: "delivered",
@@ -129,7 +129,7 @@ export const DELIVERY_STATUSES = {
 
 export const VEHICLE_TYPES = {
   MOTORCYCLE: "motorcycle",
-  BICYCLE: "bicycle", 
+  BICYCLE: "bicycle",
   CAR: "car",
   VAN: "van",
 };

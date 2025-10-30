@@ -295,7 +295,7 @@ const styles = createStylesWithDMSans({
     alignItems: "center",
   },
   addButtonText: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 18,
     fontWeight: "600",
   },

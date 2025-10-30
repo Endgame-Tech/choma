@@ -33,7 +33,7 @@ const OfflineStatusBanner = () => {
       return {
         text: "Syncing data...",
         backgroundColor: "#FF9800",
-        textColor: "#FFFFFF",
+        textColor: "#F8FFFC",
       };
     }
 
@@ -41,7 +41,7 @@ const OfflineStatusBanner = () => {
       return {
         text: `Processing ${queuedRequests.length} pending requests...`,
         backgroundColor: "#2196F3",
-        textColor: "#FFFFFF",
+        textColor: "#F8FFFC",
       };
     }
 
@@ -49,14 +49,14 @@ const OfflineStatusBanner = () => {
       return {
         text: "You are offline. Some features may be limited.",
         backgroundColor: "#757575",
-        textColor: "#FFFFFF",
+        textColor: "#F8FFFC",
       };
     }
 
     return {
       text: "Connected",
       backgroundColor: "#4CAF50",
-      textColor: "#FFFFFF",
+      textColor: "#F8FFFC",
     };
   };
 

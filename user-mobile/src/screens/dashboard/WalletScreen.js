@@ -108,7 +108,7 @@ const WalletScreen = ({ navigation }) => {
           style={[styles.addMoneyButton, { backgroundColor: colors.primary }]}
           onPress={handleAddMoney}
         >
-          <Ionicons name="add" size={20} color="#FFFFFF" />
+          <Ionicons name="add" size={20} color="#F8FFFC" />
           <Text style={styles.addMoneyText}>Add Money</Text>
         </TouchableOpacity>
       </View>
@@ -128,7 +128,7 @@ const WalletScreen = ({ navigation }) => {
             <View style={styles.balanceHeader}>
               <Text style={styles.balanceLabel}>Available Balance</Text>
               <TouchableOpacity style={styles.balanceArrow}>
-                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                <Ionicons name="arrow-forward" size={20} color="#F8FFFC" />
               </TouchableOpacity>
             </View>
             <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
@@ -154,7 +154,7 @@ const WalletScreen = ({ navigation }) => {
                 style={styles.copyButton}
                 onPress={handleCopyAccountNumber}
               >
-                <Ionicons name="copy-outline" size={16} color="#FFFFFF" />
+                <Ionicons name="copy-outline" size={16} color="#F8FFFC" />
                 <Text style={styles.copyText}>Copy</Text>
               </TouchableOpacity>
             </View>
@@ -240,7 +240,7 @@ const styles = createStylesWithDMSans({
     borderRadius: 20,
   },
   addMoneyText: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 14,
     fontWeight: "600",
     marginLeft: 4,
@@ -265,7 +265,7 @@ const styles = createStylesWithDMSans({
     marginBottom: 16,
   },
   balanceLabel: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 16,
     fontWeight: "500",
   },
@@ -273,7 +273,7 @@ const styles = createStylesWithDMSans({
     padding: 4,
   },
   balanceAmount: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 32,
     fontWeight: "700",
   },
@@ -289,7 +289,7 @@ const styles = createStylesWithDMSans({
     marginBottom: 12,
   },
   newBadgeText: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 12,
     fontWeight: "600",
   },
@@ -305,7 +305,7 @@ const styles = createStylesWithDMSans({
     ...THEME.shadows.light,
   },
   bankName: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 12,
@@ -316,7 +316,7 @@ const styles = createStylesWithDMSans({
     alignItems: "center",
   },
   accountNumber: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 20,
     fontWeight: "700",
     letterSpacing: 1,
@@ -330,7 +330,7 @@ const styles = createStylesWithDMSans({
     borderRadius: 20,
   },
   copyText: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 14,
     fontWeight: "500",
     marginLeft: 4,

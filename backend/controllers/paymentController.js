@@ -273,39 +273,69 @@ class PaymentController {
           { new: true }
         );
 
-        // Create order from subscription
-        const fullSubscription = await Subscription.findById(subscriptionId)
-          .populate("mealPlanId")
-          .populate("userId");
+        // Check if order already exists for this subscription
+        // (it should have been created by generateOrderForSubscription)
+        let order = await Order.findOne({
+          $or: [
+            { subscription: subscriptionId },
+            { "recurringOrder.parentSubscription": subscriptionId },
+          ],
+        });
 
-        if (fullSubscription) {
-          // Generate unique order number
-          const orderNumber = `ORD-${Date.now()}-${Math.random()
-            .toString(36)
-            .substr(2, 9)
-            .toUpperCase()}`;
+        if (order) {
+          console.log(
+            "✓ Order already exists for subscription:",
+            order.orderNumber
+          );
 
-          const order = await Order.create({
-            orderNumber,
-            customer: customerId,
-            subscription: subscriptionId,
-            orderItems: {
-              mealPlan: fullSubscription.mealPlanId._id,
-              planName: fullSubscription.mealPlanId.planName,
-              frequency: fullSubscription.frequency,
-              duration: fullSubscription.duration,
-            },
-            totalAmount: paymentData.amount / 100,
-            paymentMethod: "Card",
-            paymentReference: paymentData.reference,
-            paymentStatus: "Paid", // Customer has successfully paid
-            orderStatus: "Confirmed",
-            deliveryAddress: fullSubscription.deliveryAddress,
-            deliveryDate: fullSubscription.nextDelivery,
-          });
+          // Update payment status if needed
+          if (order.paymentStatus !== "Paid") {
+            order.paymentStatus = "Paid";
+            order.paymentReference = paymentData.reference;
+            await order.save();
+            console.log("✓ Updated payment status for existing order");
+          }
+        } else {
+          // Fallback: Create order if it doesn't exist (shouldn't happen in normal flow)
+          console.log(
+            "⚠️ No order found for subscription, creating fallback order"
+          );
 
-          console.log("Order created from subscription:", order._id);
+          const fullSubscription = await Subscription.findById(subscriptionId)
+            .populate("mealPlanId")
+            .populate("userId");
 
+          if (fullSubscription) {
+            // Generate unique order number
+            const orderNumber = `ORD-${Date.now()}-${Math.random()
+              .toString(36)
+              .substr(2, 9)
+              .toUpperCase()}`;
+
+            order = await Order.create({
+              orderNumber,
+              customer: customerId,
+              subscription: subscriptionId,
+              orderItems: {
+                mealPlan: fullSubscription.mealPlanId._id,
+                planName: fullSubscription.mealPlanId.planName,
+                frequency: fullSubscription.frequency,
+                duration: fullSubscription.duration,
+              },
+              totalAmount: paymentData.amount / 100,
+              paymentMethod: "Card",
+              paymentReference: paymentData.reference,
+              paymentStatus: "Paid", // Customer has successfully paid
+              orderStatus: "Confirmed",
+              deliveryAddress: fullSubscription.deliveryAddress,
+              deliveryDate: fullSubscription.nextDelivery,
+            });
+
+            console.log("⚠️ Fallback order created:", order._id);
+          }
+        }
+
+        if (order) {
           // Invalidate user orders cache
           const { cacheService } = require("../config/redis");
           if (cacheService && typeof cacheService.del === "function") {
@@ -326,32 +356,28 @@ class PaymentController {
 
           // Send order confirmation notification
           try {
-            await NotificationService.notifyOrderConfirmed(customerId, {
-              orderNumber: order.orderNumber,
-              planName: fullSubscription.mealPlanId.planName,
-              deliveryDate: fullSubscription.nextDelivery,
-              totalAmount: order.totalAmount,
-            });
-          } catch (notificationError) {
-            console.error(
-              "Order confirmation notification failed:",
-              notificationError
-            );
-          }
+            const subscription = await Subscription.findById(
+              subscriptionId
+            ).populate("mealPlanId");
 
-          // Send subscription created notification
-          try {
-            await NotificationService.notifySubscriptionCreated(customerId, {
-              planName: fullSubscription.mealPlanId.planName,
-              startDate: fullSubscription.nextDelivery,
-              frequency: fullSubscription.frequency,
-              duration: fullSubscription.duration,
-            });
+            if (subscription) {
+              await NotificationService.notifyOrderConfirmed(customerId, {
+                orderNumber: order.orderNumber,
+                planName: subscription.mealPlanId?.planName || "Meal Plan",
+                deliveryDate: subscription.nextDelivery,
+                totalAmount: order.totalAmount,
+              });
+
+              // Send subscription created notification
+              await NotificationService.notifySubscriptionCreated(customerId, {
+                planName: subscription.mealPlanId?.planName || "Meal Plan",
+                startDate: subscription.nextDelivery,
+                frequency: subscription.frequency,
+                duration: subscription.duration,
+              });
+            }
           } catch (notificationError) {
-            console.error(
-              "Subscription created notification failed:",
-              notificationError
-            );
+            console.error("Notification failed:", notificationError);
           }
         }
       }

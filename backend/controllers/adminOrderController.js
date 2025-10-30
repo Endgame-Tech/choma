@@ -123,15 +123,78 @@ exports.getAllOrders = async (req, res) => {
 
     // Get chef assignments for each order
     const orderIds = orders.map((o) => o._id);
-    const delegations = await OrderDelegation.find({ order: { $in: orderIds } })
-      .populate("chef", "fullName email")
-      .lean();
+    const subscriptionIds = orders
+      .filter((o) => o.subscription)
+      .map((o) => o.subscription._id || o.subscription);
+
+    // Fetch delegations for both regular orders (old schema) and subscription orders (new schema)
+    const [regularDelegations, subscriptionDelegations] = await Promise.all([
+      OrderDelegation.find({ order: { $in: orderIds } })
+        .populate("chef", "fullName email")
+        .lean(),
+      OrderDelegation.find({ subscriptionId: { $in: subscriptionIds } })
+        .populate("chefId", "fullName email")
+        .lean(),
+    ]);
+
+    // Create a map for quick lookup of subscription delegations
+    const subDelegationMap = new Map();
+    subscriptionDelegations.forEach((delegation) => {
+      subDelegationMap.set(delegation.subscriptionId.toString(), delegation);
+    });
 
     // Add chef info and meal statuses to orders
     const ordersWithChefs = orders.map((order) => {
-      const delegation = delegations.find(
-        (d) => d.order.toString() === order._id.toString()
-      );
+      let assignedChef = null;
+      let chefStatus = null;
+
+      // Check if this is a subscription order
+      const isSubscriptionOrder = order.subscription?._id || order.subscription;
+
+      if (isSubscriptionOrder) {
+        // Use NEW schema: get chef from OrderDelegation by subscriptionId
+        const subId = (order.subscription._id || order.subscription).toString();
+        const subDelegation = subDelegationMap.get(subId);
+
+        if (subDelegation) {
+          assignedChef = subDelegation.chefId || null;
+
+          // If chef is assigned, set status to "Assigned"
+          if (assignedChef) {
+            chefStatus = "Assigned";
+          }
+
+          // Get more specific chef status from dailyTimeline if order has a specific delivery date
+          if (order.deliveryDate && subDelegation.dailyTimeline) {
+            const orderDate = new Date(order.deliveryDate);
+            orderDate.setHours(0, 0, 0, 0);
+
+            const dayEntry = subDelegation.dailyTimeline.find((entry) => {
+              const entryDate = new Date(entry.date);
+              entryDate.setHours(0, 0, 0, 0);
+              return entryDate.getTime() === orderDate.getTime();
+            });
+
+            if (dayEntry) {
+              // Map daily timeline status to delegation status
+              if (dayEntry.status === "ready") {
+                chefStatus = "Ready";
+              } else if (dayEntry.status === "delivered") {
+                chefStatus = "Completed";
+              } else if (dayEntry.status === "pending") {
+                chefStatus = "In Progress";
+              }
+            }
+          }
+        }
+      } else {
+        // Use OLD schema: get chef from OrderDelegation by order ID
+        const delegation = regularDelegations.find(
+          (d) => d.order.toString() === order._id.toString()
+        );
+        assignedChef = delegation?.chef || null;
+        chefStatus = delegation?.status || null;
+      }
 
       // Extract meal statuses from subscription if available
       let mealStatuses = [];
@@ -141,32 +204,40 @@ exports.getAllOrders = async (req, res) => {
         // Get meals for this order's delivery date
         const orderDate = new Date(order.deliveryDate);
         orderDate.setHours(0, 0, 0, 0);
-        const orderDateStr = orderDate.toISOString().split('T')[0];
+        const orderDateStr = orderDate.toISOString().split("T")[0];
 
-        const relevantMeals = order.subscription.mealPlanSnapshot.mealSchedule.filter(slot => {
-          if (!slot.scheduledDeliveryDate) return false;
-          const slotDate = new Date(slot.scheduledDeliveryDate);
-          slotDate.setHours(0, 0, 0, 0);
-          const slotDateStr = slotDate.toISOString().split('T')[0];
-          return slotDateStr === orderDateStr;
-        });
+        const relevantMeals =
+          order.subscription.mealPlanSnapshot.mealSchedule.filter((slot) => {
+            if (!slot.scheduledDeliveryDate) return false;
+            const slotDate = new Date(slot.scheduledDeliveryDate);
+            slotDate.setHours(0, 0, 0, 0);
+            const slotDateStr = slotDate.toISOString().split("T")[0];
+            return slotDateStr === orderDateStr;
+          });
 
-        mealStatuses = relevantMeals.map(slot => ({
+        mealStatuses = relevantMeals.map((slot) => ({
           mealType: slot.mealTime,
-          status: slot.deliveryStatus || 'pending',
-          isReady: slot.deliveryStatus === 'ready'
+          status: slot.deliveryStatus || "pending",
+          isReady: slot.deliveryStatus === "ready",
         }));
 
-        allMealsReady = mealStatuses.length > 0 && mealStatuses.every(m => m.isReady);
+        allMealsReady =
+          mealStatuses.length > 0 && mealStatuses.every((m) => m.isReady);
       }
+
+      // For subscription orders with assigned chefs, override any existing delegationStatus
+      const finalDelegationStatus =
+        isSubscriptionOrder && assignedChef
+          ? chefStatus || "Assigned" // Use calculated status or default to "Assigned"
+          : chefStatus || order.delegationStatus || null; // For regular orders, use original logic
 
       return {
         ...order,
-        assignedChef: delegation?.chef || null,
-        delegationStatus: delegation?.status || null,
+        assignedChef: assignedChef,
+        delegationStatus: finalDelegationStatus,
         mealStatuses,
         allMealsReady,
-        readyForDriver: order.orderStatus === 'Ready' || allMealsReady,
+        readyForDriver: order.orderStatus === "Ready" || allMealsReady,
       };
     });
 
@@ -239,9 +310,8 @@ exports.getDeliveryReadyOrders = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Build query for delivery-ready orders
+    // Removed status restrictions - admin can assign driver anytime
     let query = {
-      orderStatus: "Ready", // Chef completed, ready for driver assignment
-      delegationStatus: "Ready",
       "recurringOrder.orderType": "subscription-recurring", // Only subscription deliveries
     };
 
@@ -274,6 +344,46 @@ exports.getDeliveryReadyOrders = async (req, res) => {
 
     const total = await Order.countDocuments(query);
 
+    // Enrich orders with chef and driver info from OrderDelegation for subscription orders
+    const subscriptionIds = orders
+      .filter((o) => o.subscription)
+      .map((o) => o.subscription._id || o.subscription);
+
+    const subscriptionDelegations = await OrderDelegation.find({
+      subscriptionId: { $in: subscriptionIds },
+    })
+      .populate("chefId", "fullName email")
+      .populate("driverId", "fullName email phone vehicleInfo")
+      .lean();
+
+    const subDelegationMap = new Map();
+    subscriptionDelegations.forEach((delegation) => {
+      subDelegationMap.set(delegation.subscriptionId.toString(), delegation);
+    });
+
+    // Add chef and driver info to orders
+    const enrichedOrders = orders.map((order) => {
+      const isSubscriptionOrder = order.subscription?._id || order.subscription;
+
+      if (isSubscriptionOrder) {
+        const subId = (order.subscription._id || order.subscription).toString();
+        const subDelegation = subDelegationMap.get(subId);
+
+        if (subDelegation) {
+          return {
+            ...order,
+            assignedChef: subDelegation.chefId || order.assignedChef,
+            assignedDriver: subDelegation.driverId || null,
+            delegationStatus: subDelegation.chefId
+              ? "Assigned"
+              : "Not Assigned",
+          };
+        }
+      }
+
+      return order;
+    });
+
     // Calculate stats
     const totalReady = await Order.countDocuments({
       orderStatus: "Ready",
@@ -298,19 +408,19 @@ exports.getDeliveryReadyOrders = async (req, res) => {
     res.json({
       success: true,
       data: {
-        orders,
+        orders: enrichedOrders,
         pagination: {
           currentPage: page,
           totalPages: Math.ceil(total / limit),
           totalOrders: total,
-          hasMore: skip + orders.length < total,
+          hasMore: skip + enrichedOrders.length < total,
         },
         stats: {
           totalReadyOrders: totalReady,
           totalValue: totalAmount[0]?.total || 0,
         },
       },
-      message: `Found ${orders.length} delivery-ready orders`,
+      message: `Found ${enrichedOrders.length} delivery-ready orders`,
     });
   } catch (error) {
     console.error("❌ Get delivery-ready orders error:", error);

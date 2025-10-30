@@ -1075,7 +1075,7 @@ const styles = (colors) =>
     emptyTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       marginTop: 24,
       marginBottom: 12,
     },
@@ -1146,7 +1146,7 @@ const styles = (colors) =>
     heroMealName: {
       fontSize: 24,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       marginBottom: 6,
       letterSpacing: 0.5,
     },
@@ -1214,7 +1214,7 @@ const styles = (colors) =>
     mealDetailTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       letterSpacing: 0.3,
     },
     mealDetailDescription: {
@@ -1239,7 +1239,7 @@ const styles = (colors) =>
     mealKcalText: {
       fontSize: 13,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       letterSpacing: 0.2,
     },
     // Meals Slider Styles
@@ -1330,7 +1330,7 @@ const styles = (colors) =>
     statusNumber: {
       fontSize: 30,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       letterSpacing: 0.4,
       lineHeight: 34,
     },
@@ -1381,7 +1381,7 @@ const styles = (colors) =>
     detailValue: {
       fontSize: 15,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       maxWidth: "60%",
     },
     timelineCard: {

@@ -89,7 +89,7 @@ const ReferralCard = ({ style }) => {
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.header}>
-          <Ionicons name="gift" size={24} color="#FFFFFF" />
+          <Ionicons name="gift" size={24} color="#F8FFFC" />
           <Text style={styles.title}>Refer & Earn</Text>
         </View>
 
@@ -160,12 +160,12 @@ const styles = createStylesWithDMSans({
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     marginLeft: 8,
   },
   description: {
     fontSize: 14,
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     opacity: 0.9,
     marginBottom: 20,
     lineHeight: 20,
@@ -175,14 +175,14 @@ const styles = createStylesWithDMSans({
   },
   codeLabel: {
     fontSize: 12,
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     opacity: 0.8,
     marginBottom: 8,
   },
   codeButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 8,
     padding: 12,
     justifyContent: "center",
@@ -197,7 +197,7 @@ const styles = createStylesWithDMSans({
   shareButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 8,
     padding: 12,
     justifyContent: "center",
@@ -209,7 +209,7 @@ const styles = createStylesWithDMSans({
     marginLeft: 8,
   },
   statsContainer: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000",

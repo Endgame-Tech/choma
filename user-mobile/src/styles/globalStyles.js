@@ -39,18 +39,18 @@ export const globalTextStyles = StyleSheet.create({
 export const globalContainerStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff", // Will be overridden by theme colors
+    backgroundColor: "#F8FFFC", // Will be overridden by theme colors
   },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#ffffff", // Will be overridden by theme colors
+    backgroundColor: "#F8FFFC", // Will be overridden by theme colors
   },
   paddedContainer: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#ffffff", // Will be overridden by theme colors
+    backgroundColor: "#F8FFFC", // Will be overridden by theme colors
   },
 });
 
@@ -64,7 +64,7 @@ export const globalInputStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E5E5",
     borderRadius: 8,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F8FFFC",
   },
   textInputFocused: {
     borderColor: "#007AFF",
@@ -96,7 +96,7 @@ export const globalButtonStyles = StyleSheet.create({
   },
   buttonText: {
     ...Typography.button,
-    color: "#ffffff",
+    color: "#F8FFFC",
   },
   buttonTextSecondary: {
     ...Typography.button,
@@ -108,7 +108,7 @@ export const globalButtonStyles = StyleSheet.create({
   },
   buttonLargeText: {
     ...Typography.buttonLarge,
-    color: "#ffffff",
+    color: "#F8FFFC",
   },
 });
 
@@ -121,7 +121,7 @@ export const getTextStyle = (styleKey, colors) => ({
 // Helper function to get container style with theme colors
 export const getContainerStyle = (styleKey, colors) => ({
   ...globalContainerStyles[styleKey],
-  backgroundColor: colors?.background || "#ffffff",
+  backgroundColor: colors?.background || "#F8FFFC",
 });
 
 // Helper function to get input style with theme colors
@@ -132,7 +132,7 @@ export const getInputStyle = (styleKey, colors, isFocused = false) => {
   return {
     ...baseStyle,
     ...focusedStyle,
-    backgroundColor: colors?.surface || "#ffffff",
+    backgroundColor: colors?.surface || "#F8FFFC",
     borderColor: isFocused
       ? colors?.primary || "#007AFF"
       : colors?.border || "#E5E5E5",

@@ -146,7 +146,7 @@ const CustomAlert = ({
                       <CustomIcon
                         name="remove"
                         size={18}
-                        color="#FFFFFF"
+                        color="#F8FFFC"
                         style={styles(colors).buttonIcon}
                       />
                     )}
@@ -181,7 +181,7 @@ const styles = (colors) =>
       paddingHorizontal: 20,
     },
     container: {
-      backgroundColor: colors.cardBackground || "#FFFFFF",
+      backgroundColor: colors.cardBackground || "#F8FFFC",
       borderRadius: 20,
       maxWidth: screenWidth - 40,
       width: "100%",
@@ -277,10 +277,10 @@ const styles = (colors) =>
       fontFamily: "DMSans-Medium",
     },
     primaryButtonText: {
-      color: "#FFFFFF",
+      color: "#F8FFFC",
     },
     destructiveButtonText: {
-      color: "#FFFFFF",
+      color: "#F8FFFC",
     },
     cancelButtonText: {
       color: colors.textSecondary || "#6B7280",

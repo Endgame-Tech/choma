@@ -567,8 +567,41 @@ const ProfileScreen = ({ navigation, route }) => {
             new Date(a.updatedAt || a.createdAt)
         );
 
+        // Deduplicate orders by subscription ID to prevent duplicate activities
+        // Keep only the most recent order for each subscription
+        const seenSubscriptions = new Map();
+        const deduplicatedOrders = [];
+
+        orders.forEach((order) => {
+          const subscriptionId = order.subscription?._id || order.subscription;
+
+          if (subscriptionId) {
+            // This is a subscription order
+            if (!seenSubscriptions.has(subscriptionId)) {
+              seenSubscriptions.set(subscriptionId, order);
+              deduplicatedOrders.push(order);
+              console.log(
+                `✓ Added subscription order: ${order.orderNumber} for subscription ${subscriptionId}`
+              );
+            } else {
+              console.log(
+                `⊘ Skipping duplicate subscription order: ${order.orderNumber} (already have order for subscription ${subscriptionId})`
+              );
+            }
+          } else {
+            // This is a regular order, not a subscription
+            deduplicatedOrders.push(order);
+            console.log(`✓ Added regular order: ${order.orderNumber}`);
+          }
+        });
+
+        console.log(
+          `📊 Order deduplication: ${orders.length} total → ${deduplicatedOrders.length} unique orders`
+        );
+
+        const activatedSubscriptions = new Set();
         // Generate activity items from recent orders (last 10)
-        orders.slice(0, 10).forEach((order, index) => {
+        deduplicatedOrders.slice(0, 10).forEach((order, index) => {
           const orderDate = new Date(order.updatedAt || order.createdAt);
           const isToday =
             orderDate.toDateString() === new Date().toDateString();
@@ -718,7 +751,11 @@ const ProfileScreen = ({ navigation, route }) => {
           }
 
           // Add subscription activation activity
-          if (order.subscriptionDetails && order.status === "delivered") {
+          if (
+            order.subscriptionDetails &&
+            order.status === "delivered" &&
+            !activatedSubscriptions.has(order.subscriptionDetails._id)
+          ) {
             activities.push({
               id: `subscription_${order.subscriptionDetails._id}`,
               title: `Subscription activated - ${order.subscriptionDetails.planName}`,
@@ -727,6 +764,7 @@ const ProfileScreen = ({ navigation, route }) => {
               icon: "play-circle",
               color: colors.secondary || "#FF6B6B",
             });
+            activatedSubscriptions.add(order.subscriptionDetails._id);
           }
         });
 
@@ -1918,7 +1956,7 @@ Your meal plan has been updated with fresh options.`;
           style={styles(colors).actionButton}
           onPress={handleEditProfile}
         >
-          <CustomIcon name="edit" size={20} color={colors.primary} />
+          {/* <CustomIcon name="edit" size={20} color={colors.primary} /> */}
           <Text style={styles(colors).actionButtonText}>Edit Profile</Text>
           <CustomIcon
             name="chevron-forward"
@@ -1936,7 +1974,7 @@ Your meal plan has been updated with fresh options.`;
             })
           }
         >
-          <CustomIcon name="share" size={20} color={colors.primary} />
+          {/* <CustomIcon name="share" size={20} color={colors.primary} /> */}
           <Text style={styles(colors).actionButtonText}>Share App</Text>
           <CustomIcon
             name="chevron-forward"
@@ -1949,7 +1987,7 @@ Your meal plan has been updated with fresh options.`;
           style={styles(colors).actionButton}
           onPress={() => navigation.navigate("HelpCenter")}
         >
-          <CustomIcon name="help-circle" size={20} color={colors.primary} />
+          {/* <CustomIcon name="help-circle" size={20} color={colors.primary} /> */}
           <Text style={styles(colors).actionButtonText}>Help & Support</Text>
           <CustomIcon
             name="chevron-forward"
@@ -2051,10 +2089,7 @@ Your meal plan has been updated with fresh options.`;
         {/* Sticky Header Content */}
         <View style={styles(colors).headerContent}>
           {/* Blend Wave Transition */}
-          <View
-            style={styles(colors).blendTransition}
-            pointerEvents="none"
-          >
+          <View style={styles(colors).blendTransition} pointerEvents="none">
             <BlendSvg
               width="100%"
               height={60}
@@ -2602,15 +2637,15 @@ const styles = (colors) =>
     actionButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.cardBackground,
-      padding: 15,
+      // backgroundColor: colors.cardBackground,
+      padding: 10,
     },
     actionButtonText: {
       flex: 1,
       fontSize: 16,
       color: colors.text,
       fontWeight: "500",
-      marginLeft: 15,
+      // marginLeft: 15,
     },
     logoutButton: {
       borderColor: colors.error,
@@ -2652,7 +2687,7 @@ const styles = (colors) =>
       elevation: 5,
     },
     startSubscriptionButtonText: {
-      color: colors.black,
+      color: colors.primary2,
       fontSize: 14,
       fontWeight: "600",
     },

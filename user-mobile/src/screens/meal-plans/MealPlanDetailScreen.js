@@ -371,9 +371,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         : mealPlanDetails.durationWeeks * 7;
       const protein = mealPlanDetails?.nutritionInfo?.totalProtein
         ? formatApproximateNutritionValue(
-            Math.round(
-              mealPlanDetails.nutritionInfo.totalProtein / totalDays
-            ),
+            Math.round(mealPlanDetails.nutritionInfo.totalProtein / totalDays),
             "g"
           )
         : "N/A";
@@ -1560,7 +1558,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               disabled={quantity <= 1}
               accessible={true}
             >
-              <CustomIcon name="remove" size={20} color={"#FFFFFF"} />
+              <CustomIcon name="remove" size={20} color={"#F8FFFC"} />
             </TouchableOpacity>
             <Text
               style={styles(colors).quantityText}
@@ -1578,7 +1576,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               accessibilityRole="button"
               accessible={true}
             >
-              <CustomIcon name="add" size={20} color={"#FFFFFF"} />
+              <CustomIcon name="add" size={20} color={"#F8FFFC"} />
             </TouchableOpacity>
           </View> */}
 

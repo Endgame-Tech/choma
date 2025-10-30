@@ -913,7 +913,7 @@ const styles = (colors) =>
     totalValue: {
       fontSize: 20,
       fontWeight: "bold",
-      color: colors.primary2,
+      color: colors.text3,
     },
     paymentMethodCard: {
       backgroundColor: colors.cardBackground,
@@ -970,7 +970,7 @@ const styles = (colors) =>
     totalSummaryValue: {
       fontSize: 20,
       fontWeight: "bold",
-      color: colors.primary2,
+      color: colors.text3,
     },
     payButton: {
       borderRadius: THEME.borderRadius.large,

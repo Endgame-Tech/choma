@@ -24,7 +24,7 @@ import cacheService from "../../services/cacheService";
 import { APP_CONFIG } from "../../utils/constants";
 import { THEME } from "../../utils/colors";
 import { useTheme } from "../../styles/theme";
-import {createStylesWithDMSans} from "../../utils/fontUtils";
+import { createStylesWithDMSans } from "../../utils/fontUtils";
 
 // Constants
 
@@ -1813,7 +1813,7 @@ const styles = (colors) =>
       width: 44,
       height: 44,
       borderRadius: 22,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#F8FFFC",
       opacity: 0.9,
       justifyContent: "center",
       alignItems: "center",

@@ -27,7 +27,7 @@ const CustomTabBar = () => {
   // Fixed dark mode colors for tab bar (from original TabNavigator)
   const darkTabColors = {
     background: "#002E22",
-    white: "#ffffff",
+    white: "#F8FFFC",
     primary: "#4ECDC4",
     textMuted: "#f3f1f1ff",
   };

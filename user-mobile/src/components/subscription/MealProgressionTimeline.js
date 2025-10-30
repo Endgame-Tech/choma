@@ -1394,7 +1394,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   emptyButtonText: {
-    color: "#ffffff",
+    color: "#F8FFFC",
     fontSize: 16,
     fontWeight: "600",
   },

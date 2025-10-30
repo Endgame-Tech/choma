@@ -2,6 +2,7 @@ const Order = require("../models/Order");
 const Customer = require("../models/Customer");
 const MealPlan = require("../models/MealPlan");
 const DriverAssignment = require("../models/DriverAssignment");
+const OrderDelegation = require("../models/OrderDelegation");
 const NotificationService = require("../services/notificationService");
 const ratingPromptService = require("../services/ratingPromptService");
 
@@ -24,18 +25,89 @@ exports.getUserOrders = async (req, res) => {
 
     console.log(`📋 Found ${orders.length} orders for user ${req.user.id}`);
 
+    // Get OrderDelegation data for subscription orders
+    const subscriptionIds = orders
+      .filter((o) => o.subscription)
+      .map((o) => o.subscription._id || o.subscription);
+
+    let subscriptionDelegations = [];
+    if (subscriptionIds.length > 0) {
+      subscriptionDelegations = await OrderDelegation.find({
+        subscriptionId: { $in: subscriptionIds },
+      })
+        .populate("chefId", "fullName email")
+        .populate("driverId", "fullName phone")
+        .lean();
+
+      console.log(
+        `📊 Found ${subscriptionDelegations.length} OrderDelegations for subscription orders`
+      );
+    }
+
+    // Create a map for quick lookup
+    const delegationMap = new Map();
+    subscriptionDelegations.forEach((delegation) => {
+      delegationMap.set(delegation.subscriptionId.toString(), delegation);
+    });
+
     // Enhance orders with driver assignment data (including confirmation codes)
     const enhancedOrders = await Promise.all(
       orders.map(async (order) => {
         try {
+          const orderObj = order.toObject();
+
+          // Check if this is a subscription order
+          const isSubscriptionOrder = orderObj.subscription?._id || orderObj.subscription;
+
+          if (isSubscriptionOrder) {
+            // Enrich with OrderDelegation data for subscription orders
+            const subId = (orderObj.subscription._id || orderObj.subscription).toString();
+            const delegation = delegationMap.get(subId);
+
+            if (delegation) {
+              // Override chef assignment from OrderDelegation
+              orderObj.assignedChef = delegation.chefId || null;
+
+              // Set delegationStatus based on chef assignment
+              if (delegation.chefId) {
+                // Chef is assigned - check daily timeline for more specific status
+                if (delegation.dailyTimeline && delegation.dailyTimeline.length > 0) {
+                  // Get the most recent/relevant timeline entry
+                  const latestTimeline = delegation.dailyTimeline[delegation.dailyTimeline.length - 1];
+                  
+                  if (latestTimeline.status === "delivered") {
+                    orderObj.delegationStatus = "Delivered";
+                  } else if (latestTimeline.status === "ready") {
+                    orderObj.delegationStatus = "Ready";
+                  } else {
+                    orderObj.delegationStatus = "In Progress";
+                  }
+                } else {
+                  orderObj.delegationStatus = "Assigned";
+                }
+              } else {
+                orderObj.delegationStatus = "Not Assigned";
+              }
+
+              // Add driver info if assigned
+              if (delegation.driverId) {
+                orderObj.assignedDriver = delegation.driverId;
+              }
+
+              console.log(
+                `✓ Enriched subscription order ${orderObj.orderNumber}: chef=${
+                  delegation.chefId ? "assigned" : "not assigned"
+                }, status=${orderObj.delegationStatus}`
+              );
+            }
+          }
+
           // Find driver assignment for this order
           const driverAssignment = await DriverAssignment.findOne({
             orderId: order._id,
           })
             .populate("driverId", "fullName phone")
             .lean();
-
-          const orderObj = order.toObject();
 
           if (driverAssignment) {
             // Add driver assignment data to order
@@ -97,18 +169,87 @@ exports.getUserAssignedOrders = async (req, res) => {
       `🍳 Found ${orders.length} assigned orders for user ${req.user.id}`
     );
 
+    // Get OrderDelegation data for subscription orders
+    const subscriptionIds = orders
+      .filter((o) => o.subscription)
+      .map((o) => o.subscription._id || o.subscription);
+
+    let subscriptionDelegations = [];
+    if (subscriptionIds.length > 0) {
+      subscriptionDelegations = await OrderDelegation.find({
+        subscriptionId: { $in: subscriptionIds },
+      })
+        .populate("chefId", "fullName email")
+        .populate("driverId", "fullName phone")
+        .lean();
+
+      console.log(
+        `📊 Found ${subscriptionDelegations.length} OrderDelegations for assigned subscription orders`
+      );
+    }
+
+    // Create a map for quick lookup
+    const delegationMap = new Map();
+    subscriptionDelegations.forEach((delegation) => {
+      delegationMap.set(delegation.subscriptionId.toString(), delegation);
+    });
+
     // Enhance orders with driver assignment data (including confirmation codes)
     const enhancedOrders = await Promise.all(
       orders.map(async (order) => {
         try {
+          const orderObj = order.toObject();
+
+          // Check if this is a subscription order
+          const isSubscriptionOrder = orderObj.subscription?._id || orderObj.subscription;
+
+          if (isSubscriptionOrder) {
+            // Enrich with OrderDelegation data for subscription orders
+            const subId = (orderObj.subscription._id || orderObj.subscription).toString();
+            const delegation = delegationMap.get(subId);
+
+            if (delegation) {
+              // Override chef assignment from OrderDelegation
+              orderObj.assignedChef = delegation.chefId || null;
+
+              // Set delegationStatus based on chef assignment
+              if (delegation.chefId) {
+                // Chef is assigned - check daily timeline for more specific status
+                if (delegation.dailyTimeline && delegation.dailyTimeline.length > 0) {
+                  // Get the most recent/relevant timeline entry
+                  const latestTimeline = delegation.dailyTimeline[delegation.dailyTimeline.length - 1];
+                  
+                  if (latestTimeline.status === "delivered") {
+                    orderObj.delegationStatus = "Delivered";
+                  } else if (latestTimeline.status === "ready") {
+                    orderObj.delegationStatus = "Ready";
+                  } else {
+                    orderObj.delegationStatus = "In Progress";
+                  }
+                } else {
+                  orderObj.delegationStatus = "Assigned";
+                }
+              } else {
+                orderObj.delegationStatus = "Not Assigned";
+              }
+
+              // Add driver info if assigned
+              if (delegation.driverId) {
+                orderObj.assignedDriver = delegation.driverId;
+              }
+
+              console.log(
+                `✓ Enriched assigned subscription order ${orderObj.orderNumber}: status=${orderObj.delegationStatus}`
+              );
+            }
+          }
+
           // Find driver assignment for this order
           const driverAssignment = await DriverAssignment.findOne({
             orderId: order._id,
           })
             .populate("driverId", "fullName phone")
             .lean();
-
-          const orderObj = order.toObject();
 
           if (driverAssignment) {
             // Add driver assignment data to order

@@ -108,7 +108,7 @@ const LoyaltyDashboard = ({ style }) => {
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.levelHeader}>
-          <Ionicons name="trophy" size={32} color="#FFFFFF" />
+          <Ionicons name="trophy" size={32} color="#F8FFFC" />
           <View style={styles.levelInfo}>
             <Text style={styles.levelTitle}>
               {loyaltyStats.currentLevel} Member
@@ -167,7 +167,7 @@ const LoyaltyDashboard = ({ style }) => {
                 disabled={redeeming === reward.id}
               >
                 {redeeming === reward.id ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#F8FFFC" />
                 ) : (
                   <Text style={styles.redeemButtonText}>Redeem</Text>
                 )}
@@ -290,11 +290,11 @@ const styles = createStylesWithDMSans({
   levelTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#F8FFFC",
   },
   pointsText: {
     fontSize: 16,
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     opacity: 0.9,
   },
   progressContainer: {
@@ -309,12 +309,12 @@ const styles = createStylesWithDMSans({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 4,
   },
   progressText: {
     fontSize: 14,
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     opacity: 0.9,
   },
   multiplierContainer: {
@@ -324,7 +324,7 @@ const styles = createStylesWithDMSans({
   },
   multiplierText: {
     fontSize: 14,
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     textAlign: "center",
   },
   section: {
@@ -340,7 +340,7 @@ const styles = createStylesWithDMSans({
   rewardCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -390,7 +390,7 @@ const styles = createStylesWithDMSans({
     alignItems: "center",
   },
   redeemButtonText: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -404,7 +404,7 @@ const styles = createStylesWithDMSans({
   historyItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,

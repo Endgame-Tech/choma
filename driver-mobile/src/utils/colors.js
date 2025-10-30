@@ -9,14 +9,14 @@ export const lightColors = {
   primaryLight: "#FF9A3F",
 
   // Background Colors
-  background: "#FFFFFF",
-  surface: "#FFFFFF", // Added for tab navigation
-  cardBackground: "#FFFFFF",
-  modalBackground: "#FFFFFF",
+  background: "#F8FFFC",
+  surface: "#F8FFFC", // Added for tab navigation
+  cardBackground: "#F8FFFC",
+  modalBackground: "#F8FFFC",
 
   // Text Colors
   text: "#1A1A1A",
-  text2: "#FFFFFF",
+  text2: "#F8FFFC",
   textSecondary: "#666666",
   textMuted: "#999999",
 
@@ -37,7 +37,7 @@ export const lightColors = {
   accent: "#FF6B35",
 
   // Common
-  white: "#FFFFFF",
+  white: "#F8FFFC",
   black: "#1b1b1b",
 };
 
@@ -56,8 +56,8 @@ export const darkColors = {
   modalBackground: "#333333",
 
   // Text Colors
-  text: "#FFFFFF",
-  text2: "#FFFFFF",
+  text: "#F8FFFC",
+  text2: "#F8FFFC",
   textSecondary: "#B0B0B0", // Secondary gray text
   textMuted: "#808080", // Muted text
 
@@ -78,7 +78,7 @@ export const darkColors = {
   accent: "#FF6B35",
 
   // Common
-  white: "#FFFFFF",
+  white: "#F8FFFC",
   black: "#000000",
 };
 

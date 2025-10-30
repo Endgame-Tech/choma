@@ -165,7 +165,7 @@ const styles = (colors) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.cardBackground || "#ffffff40",
+      backgroundColor: colors.cardBackground || "#F8FFFC40",
       paddingVertical: 20,
       paddingHorizontal: 25,
       borderRadius: 80,
@@ -174,7 +174,7 @@ const styles = (colors) =>
       opacity: 0.7,
     },
     buttonText: {
-      color: colors.primaryLight || "#FFFFFF",
+      color: colors.primaryLight || "#F8FFFC",
       fontSize: 16,
       fontWeight: "600",
       marginLeft: 8,

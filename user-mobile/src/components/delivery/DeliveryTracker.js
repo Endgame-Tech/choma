@@ -168,7 +168,7 @@ const DeliveryTracker = ({ orderId, onLocationUpdate, style }) => {
           <Ionicons
             name={tracking ? "pause" : "play"}
             size={16}
-            color="#FFFFFF"
+            color="#F8FFFC"
           />
           <Text style={styles.trackingButtonText}>
             {tracking ? "Stop" : "Track"}
@@ -232,7 +232,7 @@ const DeliveryTracker = ({ orderId, onLocationUpdate, style }) => {
 
 const styles = createStylesWithDMSans({
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 12,
     padding: 16,
     marginVertical: 8,
@@ -270,7 +270,7 @@ const styles = createStylesWithDMSans({
     backgroundColor: "#F44336",
   },
   trackingButtonText: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 14,
     fontWeight: "600",
     marginLeft: 4,

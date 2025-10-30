@@ -142,7 +142,7 @@ const AddCardScreen = ({ navigation }) => {
         {/* Card Preview */}
         <View style={[styles.cardPreview, { backgroundColor: colors.primary }]}>
           <View style={styles.cardHeader}>
-            <Ionicons name={getCardIcon()} size={32} color="#FFFFFF" />
+            <Ionicons name={getCardIcon()} size={32} color="#F8FFFC" />
             <Text style={styles.cardType}>
               {getCardType(cardNumber).toUpperCase()}
             </Text>
@@ -351,12 +351,12 @@ const styles = createStylesWithDMSans({
     alignItems: "center",
   },
   cardType: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 14,
     fontWeight: "600",
   },
   cardNumberPreview: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 20,
     fontWeight: "600",
     letterSpacing: 2,
@@ -368,12 +368,12 @@ const styles = createStylesWithDMSans({
     alignItems: "center",
   },
   cardName: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 14,
     fontWeight: "500",
   },
   cardExpiry: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 14,
     fontWeight: "500",
   },
@@ -426,7 +426,7 @@ const styles = createStylesWithDMSans({
     alignItems: "center",
   },
   addButtonText: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 18,
     fontWeight: "600",
   },

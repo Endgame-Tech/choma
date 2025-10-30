@@ -9,14 +9,14 @@ export const lightColors = {
   primaryLight: "#FF9A3F",
 
   // Background Colors
-  background: "#FFFFFF",
-  cardBackground: "#FFFFFF",
+  background: "#F8FFFC",
+  cardBackground: "#F8FFFC",
   cardBackground2: "#F2F2F2",
-  modalBackground: "#FFFFFF",
+  modalBackground: "#F8FFFC",
 
   // Text Colors
   text: "#1A1A1A",
-  text2: "#FFFFFF",
+  text2: "#F8FFFC",
   text3: "#004432",
   textSecondary: "#666666",
   textMuted: "#999999",
@@ -38,7 +38,7 @@ export const lightColors = {
   accent: "#FF6B35",
 
   // Common
-  white: "#FFFFFF",
+  white: "#F8FFFC",
   black: "#1b1b1b",
 };
 
@@ -57,8 +57,8 @@ export const darkColors = {
   modalBackground: "#333333",
 
   // Text Colors
-  text: "#FFFFFF",
-  text2: "#FFFFFF",
+  text: "#F8FFFC",
+  text2: "#F8FFFC",
   text3: "#E9FFF9",
   textSecondary: "#B0B0B0", // Secondary gray text
   textMuted: "#808080", // Muted text
@@ -77,11 +77,11 @@ export const darkColors = {
 
   // Rating/Accent
   rating: "#FFD700",
-  accent: "#FF6B35", 
+  accent: "#FF6B35",
 
   // Common
-  white: "#FFFFFF",
-  black: "#FFFFFF",
+  white: "#F8FFFC",
+  black: "#F8FFFC",
 };
 
 // Default COLORS export (using lightColors for backward compatibility)

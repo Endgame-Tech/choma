@@ -1301,7 +1301,7 @@ const styles = (colors) =>
       borderRadius: THEME.borderRadius.xxl,
     },
     rateButtonText: {
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       fontSize: 12,
       fontWeight: "bold",
     },

@@ -445,7 +445,7 @@ const DurationSelectionScreen = ({ navigation, route }) => {
       <SafeAreaView style={styles(colors).container}>
         <StatusBar
           barStyle={
-            colors.background === "#FFFFFF" ? "dark-content" : "light-content"
+            colors.background === "#F8FFFC" ? "dark-content" : "light-content"
           }
           backgroundColor={colors.primary2}
         />
@@ -592,7 +592,7 @@ const DurationSelectionScreen = ({ navigation, route }) => {
       <SafeAreaView style={styles(colors).container}>
         <StatusBar
           barStyle={
-            colors.background === "#FFFFFF" ? "dark-content" : "light-content"
+            colors.background === "#F8FFFC" ? "dark-content" : "light-content"
           }
           backgroundColor={colors.primary2}
         />
@@ -618,7 +618,7 @@ const DurationSelectionScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles(colors).container}>
       <StatusBar
         barStyle={
-          colors.background === "#FFFFFF" ? "dark-content" : "light-content"
+          colors.background === "#F8FFFC" ? "dark-content" : "light-content"
         }
         backgroundColor={colors.primary2}
       />
@@ -968,7 +968,6 @@ const styles = (colors) =>
       textAlign: "center",
       lineHeight: moderateScale(24),
       fontWeight: "500",
-      
     },
     loadingContainer: {
       flex: 1,

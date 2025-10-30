@@ -846,7 +846,7 @@ const OrdersScreen = ({ navigation }) => {
           style={styles(colors).backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={20} color={colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles(colors).headerContent}>
@@ -856,12 +856,6 @@ const OrdersScreen = ({ navigation }) => {
           </Text>
         </View>
 
-        {/* <TouchableOpacity style={styles(colors).notificationButton}>
-          <Ionicons name="notifications" size={24} color={colors.text} />
-          <View style={styles(colors).notificationBadge}>
-            <Text style={styles(colors).notificationBadgeText}>2</Text>
-          </View>
-        </TouchableOpacity> */}
         <View style={styles(colors).notificationContainer}>
           <NotificationIcon navigation={navigation} />
         </View>
@@ -1046,22 +1040,25 @@ const styles = (colors) =>
       alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 10,
-      borderRadius: THEME.borderRadius.large,
+      borderRadius: THEME.borderRadius.xxl,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.border,
     },
     tabButtonActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: colors.primary2,
+      borderWidth: 0,
+      // borderColor: colors.primary,
     },
     tabText: {
       fontSize: 14,
-      fontWeight: "500",
+      fontWeight: "600",
       color: colors.textSecondary,
     },
     tabTextActive: {
-      color: colors.black,
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: "bold",  
     },
     tabBadge: {
       marginLeft: 8,
@@ -1079,7 +1076,8 @@ const styles = (colors) =>
       color: colors.background,
     },
     tabBadgeTextActive: {
-      color: colors.white,
+      color: colors.primary,
+      fontWeight: "bold",
     },
     scrollView: {
       flex: 1,
@@ -1116,10 +1114,10 @@ const styles = (colors) =>
       backgroundColor: colors.primary,
       paddingHorizontal: 30,
       paddingVertical: 12,
-      borderRadius: THEME.borderRadius.large,
+      borderRadius: THEME.borderRadius.xxl,
     },
     emptyStateButtonText: {
-      color: colors.black,
+      color: "#00553E",
       fontSize: 16,
       fontWeight: "600",
     },

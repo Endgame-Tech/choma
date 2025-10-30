@@ -71,8 +71,8 @@ const RatingPrompt = ({
           rating >= 4
             ? "Quick positive rating"
             : rating <= 2
-              ? "Quick negative rating"
-              : "Quick neutral rating",
+            ? "Quick negative rating"
+            : "Quick neutral rating",
       };
 
       const response = await ratingApi.createRating(ratingData);
@@ -274,7 +274,7 @@ const styles = createStylesWithDMSans({
     marginTop: -100,
   },
   promptCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 16,
     padding: 20,
     shadowColor: "#000",
@@ -339,7 +339,7 @@ const styles = createStylesWithDMSans({
     alignItems: "center",
   },
   detailedButtonText: {
-    color: "#FFFFFF",
+    color: "#F8FFFC",
     fontSize: 14,
     fontWeight: "500",
   },

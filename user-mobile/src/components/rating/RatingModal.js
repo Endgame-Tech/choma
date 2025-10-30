@@ -35,7 +35,11 @@ const ENTITY_DISPLAY_NAMES = {
 
 // Helper function to get display name for entity type
 const getEntityDisplayName = (entityType) => {
-  return ENTITY_DISPLAY_NAMES[entityType] || entityType?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || "Item";
+  return (
+    ENTITY_DISPLAY_NAMES[entityType] ||
+    entityType?.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) ||
+    "Item"
+  );
 };
 
 const ASPECT_CONFIGS = {
@@ -268,12 +272,12 @@ const RatingModal = ({
       transparent={true}
       onRequestClose={onClose}
     >
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles(colors).backdrop}
         activeOpacity={1}
         onPress={onClose}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles(colors).container}
           activeOpacity={1}
           onPress={(e) => e.stopPropagation()}
@@ -283,164 +287,176 @@ const RatingModal = ({
             behavior={Platform.OS === "ios" ? "padding" : undefined}
             keyboardVerticalOffset={0}
           >
-        {/* Header */}
-        <View style={styles(colors).header}>
-          <TouchableOpacity
-            onPress={onClose}
-            style={styles(colors).closeButton}
-          >
-            <CustomIcon name="close" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          style={styles(colors).content}
-          contentContainerStyle={styles(colors).scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Main Title */}
-          <View style={styles(colors).titleSection}>
-            <Text style={styles(colors).title}>How would you rate</Text>
-            <Text style={styles(colors).entityName}>
-              {entityName || getEntityDisplayName(entityType)}
-            </Text>
-          </View>
-
-          {/* Overall Rating */}
-          <View style={styles(colors).section}>
-            <View style={styles(colors).ratingContainer}>
-              <StarRating
-                value={overallRating}
-                onChange={setOverallRating}
-                size={40}
-                style={styles(colors).overallRating}
-              />
+            {/* Header */}
+            <View style={styles(colors).header}>
+              <TouchableOpacity
+                onPress={onClose}
+                style={styles(colors).closeButton}
+              >
+                <CustomIcon
+                  name="close"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
             </View>
-          </View>
 
-  {/* Comment Section - Always visible */}
-          <View style={styles(colors).section}>
-            <Text style={styles(colors).sectionTitle}>Comments (Optional)</Text>
-            <TextInput
-              value={comment}
-              onChangeText={setComment}
-              multiline
-              numberOfLines ={4}
-              maxLength={1000}
-              placeholder={`Share your feedback about this ${getEntityDisplayName(entityType).toLowerCase()} with other customers.`}
-              placeholderTextColor={colors.textMuted || colors.textSecondary || "#9CA3AF"}
-              style={styles(colors).textInput}
-              textAlignVertical="top"
-            />
-            <Text style={styles(colors).characterCount}>
-              {comment.length}/1000 characters
-            </Text>
-          </View>
-
-          {/* Detailed Ratings Toggle */}
-          {aspectConfig.length > 0 && (
-            <TouchableOpacity
-              style={styles(colors).detailedToggle}
-              onPress={toggleDetailedRatings}
-              activeOpacity={0.7}
+            <ScrollView
+              style={styles(colors).content}
+              contentContainerStyle={styles(colors).scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
-              <Text style={styles(colors).detailedToggleText}>
-                {showDetailedRatings
-                  ? "Hide detailed ratings"
-                  : "Show detailed ratings"}
-              </Text>
-              <Ionicons
-                name={showDetailedRatings ? "chevron-up" : "chevron-down"}
-                size={16}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-          )}
-
-          {/* Collapsible Detailed Ratings */}
-          {aspectConfig.length > 0 && (
-            <Animated.View
-              style={[
-                styles(colors).detailedSection,
-                {
-                  maxHeight: expandAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 600], // Adjust based on content
-                  }),
-                  opacity: expandAnimation,
-                  overflow: "hidden",
-                },
-              ]}
-            >
-              <View style={styles(colors).aspectsList}>
-                {aspectConfig.map((aspect) => (
-                  <View key={aspect.key} style={styles(colors).aspectItem}>
-                    <View style={styles(colors).aspectInfo}>
-                      <Text style={styles(colors).aspectLabel}>
-                        {aspect.label}
-                      </Text>
-                      {aspect.description && (
-                        <Text style={styles(colors).aspectDescription}>
-                          {aspect.description}
-                        </Text>
-                      )}
-                    </View>
-                    <StarRating
-                      value={aspectRatings[aspect.key] || 0}
-                      onChange={(rating) =>
-                        handleAspectRatingChange(aspect.key, rating)
-                      }
-                      size={24}
-                    />
-                  </View>
-                ))}
+              {/* Main Title */}
+              <View style={styles(colors).titleSection}>
+                <Text style={styles(colors).title}>How would you rate</Text>
+                <Text style={styles(colors).entityName}>
+                  {entityName || getEntityDisplayName(entityType)}
+                </Text>
               </View>
-            </Animated.View>
-          )}
 
-          {/* Consent Message */}
-          <View style={styles(colors).consentSection}>
-            <Text style={styles(colors).consentText}>
-              By submitting this review, you consent to sharing your feedback publicly to help other customers make informed decisions. Your review may be displayed on our platform.
-            </Text>
-          </View>
-        </ScrollView>
+              {/* Overall Rating */}
+              <View style={styles(colors).section}>
+                <View style={styles(colors).ratingContainer}>
+                  <StarRating
+                    value={overallRating}
+                    onChange={setOverallRating}
+                    size={40}
+                    style={styles(colors).overallRating}
+                  />
+                </View>
+              </View>
 
-        {/* Footer */}
-        <View style={styles(colors).footer}>
-          <TouchableOpacity
-            onPress={onClose}
-            disabled={isSubmitting}
-            style={[styles(colors).button, styles(colors).cancelButton]}
-          >
-            <Text style={styles(colors).cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleSubmit}
-            disabled={isSubmitting || overallRating === 0}
-            style={[
-              styles(colors).button,
-              styles(colors).submitButton,
-              (isSubmitting || overallRating === 0) &&
-                styles(colors).disabledButton,
-            ]}
-          >
-            <Text
-              style={[
-                styles(colors).submitButtonText,
-                (isSubmitting || overallRating === 0) &&
-                  styles(colors).disabledText,
-              ]}
-            >
-              {isSubmitting
-                ? "Submitting..."
-                : existingRating
-                ? "Update review"
-                : "Leave review"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+              {/* Comment Section - Always visible */}
+              <View style={styles(colors).section}>
+                <Text style={styles(colors).sectionTitle}>
+                  Comments (Optional)
+                </Text>
+                <TextInput
+                  value={comment}
+                  onChangeText={setComment}
+                  multiline
+                  numberOfLines={4}
+                  maxLength={1000}
+                  placeholder={`Share your feedback about this ${getEntityDisplayName(
+                    entityType
+                  ).toLowerCase()} with other customers.`}
+                  placeholderTextColor={
+                    colors.textMuted || colors.textSecondary || "#9CA3AF"
+                  }
+                  style={styles(colors).textInput}
+                  textAlignVertical="top"
+                />
+                <Text style={styles(colors).characterCount}>
+                  {comment.length}/1000 characters
+                </Text>
+              </View>
+
+              {/* Detailed Ratings Toggle */}
+              {aspectConfig.length > 0 && (
+                <TouchableOpacity
+                  style={styles(colors).detailedToggle}
+                  onPress={toggleDetailedRatings}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles(colors).detailedToggleText}>
+                    {showDetailedRatings
+                      ? "Hide detailed ratings"
+                      : "Show detailed ratings"}
+                  </Text>
+                  <Ionicons
+                    name={showDetailedRatings ? "chevron-up" : "chevron-down"}
+                    size={16}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
+              )}
+
+              {/* Collapsible Detailed Ratings */}
+              {aspectConfig.length > 0 && (
+                <Animated.View
+                  style={[
+                    styles(colors).detailedSection,
+                    {
+                      maxHeight: expandAnimation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 600], // Adjust based on content
+                      }),
+                      opacity: expandAnimation,
+                      overflow: "hidden",
+                    },
+                  ]}
+                >
+                  <View style={styles(colors).aspectsList}>
+                    {aspectConfig.map((aspect) => (
+                      <View key={aspect.key} style={styles(colors).aspectItem}>
+                        <View style={styles(colors).aspectInfo}>
+                          <Text style={styles(colors).aspectLabel}>
+                            {aspect.label}
+                          </Text>
+                          {aspect.description && (
+                            <Text style={styles(colors).aspectDescription}>
+                              {aspect.description}
+                            </Text>
+                          )}
+                        </View>
+                        <StarRating
+                          value={aspectRatings[aspect.key] || 0}
+                          onChange={(rating) =>
+                            handleAspectRatingChange(aspect.key, rating)
+                          }
+                          size={24}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                </Animated.View>
+              )}
+
+              {/* Consent Message */}
+              <View style={styles(colors).consentSection}>
+                <Text style={styles(colors).consentText}>
+                  By submitting this review, you consent to sharing your
+                  feedback publicly to help other customers make informed
+                  decisions. Your review may be displayed on our platform.
+                </Text>
+              </View>
+            </ScrollView>
+
+            {/* Footer */}
+            <View style={styles(colors).footer}>
+              <TouchableOpacity
+                onPress={onClose}
+                disabled={isSubmitting}
+                style={[styles(colors).button, styles(colors).cancelButton]}
+              >
+                <Text style={styles(colors).cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSubmit}
+                disabled={isSubmitting || overallRating === 0}
+                style={[
+                  styles(colors).button,
+                  styles(colors).submitButton,
+                  (isSubmitting || overallRating === 0) &&
+                    styles(colors).disabledButton,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles(colors).submitButtonText,
+                    (isSubmitting || overallRating === 0) &&
+                      styles(colors).disabledText,
+                  ]}
+                >
+                  {isSubmitting
+                    ? "Submitting..."
+                    : existingRating
+                    ? "Update review"
+                    : "Leave review"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </KeyboardAvoidingView>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -448,7 +464,7 @@ const RatingModal = ({
   );
 };
 
-const { height: screenHeight } = Dimensions.get('window');
+const { height: screenHeight } = Dimensions.get("window");
 
 const styles = (colors) =>
   createStylesWithDMSans({
@@ -459,7 +475,7 @@ const styles = (colors) =>
     },
     container: {
       height: screenHeight * 0.78,
-      backgroundColor: colors.background || "#FFFFFF",
+      backgroundColor: colors.background || "#F8FFFC",
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       overflow: "hidden",
@@ -588,7 +604,7 @@ const styles = (colors) =>
       padding: 12,
       fontSize: 14,
       color: colors.text || "#111827",
-      backgroundColor: colors.background || "#FFFFFF",
+      backgroundColor: colors.background || "#F8FFFC",
       minHeight: 100,
     },
     characterCount: {
@@ -634,13 +650,13 @@ const styles = (colors) =>
     cancelButton: {
       backgroundColor: colors.background,
       borderWidth: 1.5,
-      borderColor: colors.border ,
+      borderColor: colors.border,
       marginRight: 8,
     },
     cancelButtonText: {
       fontSize: 14,
       fontWeight: "500",
-      color: colors.textSecondary ,
+      color: colors.textSecondary,
     },
     submitButton: {
       backgroundColor: colors.black,

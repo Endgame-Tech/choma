@@ -209,8 +209,13 @@ const Orders: React.FC = () => {
   }
 
   // Check if order is ready for driver assignment
+  // Admin can now assign driver anytime (no longer requiring chef to complete)
   const canAssignDriver = (delegationStatus: string | undefined) => {
-    return delegationStatus === 'Completed'
+    // Allow driver assignment as long as there's a chef assigned (not "Not Assigned")
+    return delegationStatus !== undefined &&
+      delegationStatus !== 'Not Assigned' &&
+      delegationStatus !== null &&
+      delegationStatus !== ''
   }
 
   // Handle order status change
@@ -713,9 +718,9 @@ const Orders: React.FC = () => {
                         </button>
                       ) : (
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {order.delegationStatus === 'Completed' ?
-                            'Ready for driver assignment' :
-                            `Waiting for chef (${order.delegationStatus || 'Not assigned'})`
+                          {order.delegationStatus && order.delegationStatus !== 'Not Assigned' ?
+                            `Chef: ${order.delegationStatus}` :
+                            'Waiting for chef assignment'
                           }
                         </div>
                       )}

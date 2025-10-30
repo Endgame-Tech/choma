@@ -62,7 +62,7 @@ const styles = (colors) =>
     },
     badgeText: {
       fontSize: 12,
-      color: "#FFFFFF",
+      color: "#F8FFFC",
       fontWeight: "bold",
     },
   });

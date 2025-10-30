@@ -370,23 +370,19 @@ const styles = (colors) =>
       color: colors.error,
     },
     settingsGroup: {
-      backgroundColor: `${colors.cardBackground}20`,
-      borderRadius: THEME.borderRadius.medium,
-      borderWidth: 1,
-      borderColor: colors.border,
       overflow: "hidden",
     },
     settingItem: {
       flexDirection: "row",
       alignItems: "center",
       paddingVertical: 15,
-      paddingHorizontal: 15,
+      // paddingHorizontal: 15,
     },
     actionItem: {
       flexDirection: "row",
       alignItems: "center",
       paddingVertical: 15,
-      paddingHorizontal: 15,
+      // paddingHorizontal: 15,
     },
     settingIcon: {
       width: 40,

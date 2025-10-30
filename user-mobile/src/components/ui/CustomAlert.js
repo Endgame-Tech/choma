@@ -91,12 +91,12 @@ const CustomAlert = ({
       <View style={styles(colors).overlay}>
         <View style={styles(colors).container}>
           {/* Close button */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles(colors).closeButton}
             onPress={onDismiss}
           >
             <CustomIcon name="close" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <View style={styles(colors).content}>
             {/* Icon */}
@@ -146,7 +146,7 @@ const CustomAlert = ({
                       <CustomIcon
                         name="remove"
                         size={18}
-                        color="#FFFFFF"
+                        color="#F8FFFC"
                         style={styles(colors).buttonIcon}
                       />
                     )}
@@ -178,11 +178,11 @@ const styles = (colors) =>
       backgroundColor: "rgba(0, 0, 0, 0.5)",
       justifyContent: "center",
       alignItems: "center",
-      paddingHorizontal: 20,
+      paddingHorizontal: 25,
     },
     container: {
-      backgroundColor: colors.cardBackground || "#FFFFFF",
-      borderRadius: 20,
+      backgroundColor: "#F8FFFC",
+      borderRadius: 30,
       maxWidth: screenWidth - 40,
       width: "100%",
       position: "relative",
@@ -198,10 +198,10 @@ const styles = (colors) =>
       borderRadius: 16,
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: colors.inputBackground || "#F3F4F6",
+      // backgroundColor: colors.inputBackground || "#F3F4F6",
     },
     content: {
-      padding: 32,
+      padding: 22,
       alignItems: "center",
     },
     iconContainer: {
@@ -210,22 +210,22 @@ const styles = (colors) =>
       borderRadius: 32,
       justifyContent: "center",
       alignItems: "center",
-      marginBottom: 20,
+      marginBottom: 10,
     },
     title: {
-      fontSize: 22,
+      fontSize: 16,
       fontWeight: "700",
-      color: colors.text || "#1F2937",
+      color: "#1F2937",
       textAlign: "center",
-      marginBottom: 12,
+      marginBottom: 5,
       fontFamily: "DMSans-Bold",
     },
     message: {
-      fontSize: 16,
-      color: colors.textSecondary || "#6B7280",
+      fontSize: 15,
+      color: "#6B7280",
       textAlign: "center",
-      lineHeight: 24,
-      marginBottom: 32,
+      // lineHeight: 12,
+      marginBottom: 20,
       fontFamily: "DMSans-Regular",
     },
     buttonContainer: {
@@ -239,15 +239,16 @@ const styles = (colors) =>
       gap: 12,
     },
     button: {
-      borderRadius: 12,
+      borderRadius: 42,
       overflow: "hidden",
-      minHeight: 48,
+      // minHeight: 48,
+      paddingVertical: 12,
       justifyContent: "center",
       alignItems: "center",
       flexDirection: "row",
     },
     singleButton: {
-      minWidth: 200,
+      width: "100%",
       flex: 0,
     },
     verticalButton: {
@@ -255,7 +256,7 @@ const styles = (colors) =>
       width: "100%",
     },
     primaryButton: {
-      backgroundColor: "#000000",
+      backgroundColor: "#00553E",
       flex: 1,
     },
     destructiveButton: {
@@ -265,7 +266,7 @@ const styles = (colors) =>
     cancelButton: {
       backgroundColor: "transparent",
       borderWidth: 1,
-      borderColor: colors.border || "#E5E7EB",
+      borderColor: "#E5E7EB",
       flex: 1,
     },
     buttonIcon: {
@@ -273,17 +274,17 @@ const styles = (colors) =>
     },
     buttonText: {
       fontSize: 16,
-      fontWeight: "600",
+      fontWeight: "700",
       fontFamily: "DMSans-Medium",
     },
     primaryButtonText: {
-      color: "#FFFFFF",
+      color: "#F8FFFC",
     },
     destructiveButtonText: {
-      color: "#FFFFFF",
+      color: "#F8FFFC",
     },
     cancelButtonText: {
-      color: colors.textSecondary || "#6B7280",
+      color: "#6B7280",
     },
   });
 

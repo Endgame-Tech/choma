@@ -183,7 +183,7 @@ const BiometricToggle = ({ style }) => {
           value={isEnabled}
           onValueChange={handleToggle}
           trackColor={{ false: "#767577", true: "#4CAF50" }}
-          thumbColor={isEnabled ? "#FFFFFF" : "#f4f3f4"}
+          thumbColor={isEnabled ? "#F8FFFC" : "#f4f3f4"}
         />
       </View>
     </View>
@@ -196,7 +196,7 @@ const styles = createStylesWithDMSans({
     alignItems: "center",
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FFFC",
     borderRadius: 12,
     marginVertical: 8,
     shadowColor: "#000",

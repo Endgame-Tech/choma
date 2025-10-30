@@ -668,7 +668,7 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
         flex: 1,
       },
       title: {
-        color: "#FFFFFF",
+        color: "#F8FFFC",
         fontSize: 20,
         fontWeight: "700",
         marginBottom: 4,
@@ -700,7 +700,7 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
         flex: 1,
       },
       mealTitle: {
-        color: "#FFFFFF",
+        color: "#F8FFFC",
         fontSize: 16,
         fontWeight: "600",
         marginBottom: 2,
@@ -752,7 +752,7 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
         marginRight: 8,
       },
       statusText: {
-        color: "#FFFFFF",
+        color: "#F8FFFC",
         fontSize: 14,
         fontWeight: "500",
         flex: 1,
@@ -775,7 +775,7 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
         marginLeft: 6,
       },
       deliveryTime: {
-        color: "#FFFFFF",
+        color: "#F8FFFC",
         fontSize: 14,
         fontWeight: "500",
       },
@@ -795,7 +795,7 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
       },
       progressFill: {
         height: "100%",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#F8FFFC",
         borderRadius: 1.5,
       },
     },
@@ -835,7 +835,7 @@ const SubscriptionCard = ({ subscription, onPress, onMenuPress }) => {
             style={styles.menuButton}
             onPress={() => onMenuPress && onMenuPress(subscription)}
           >
-            <Ionicons name="ellipsis-vertical" size={20} color="#FFFFFF" />
+            <Ionicons name="ellipsis-vertical" size={20} color="#F8FFFC" />
           </TouchableOpacity>
         </View>
 
