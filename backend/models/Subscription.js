@@ -332,6 +332,7 @@ const SubscriptionSchema = new mongoose.Schema(
       targetAudience: String,
       coverImage: String,
       tier: String,
+      isFiveWorkingDays: { type: Boolean, default: false },
 
       // Subscription period
       startDate: Date,
@@ -423,6 +424,8 @@ const SubscriptionSchema = new mongoose.Schema(
 
           // Delivery tracking for this specific meal slot
           scheduledDeliveryDate: Date,
+          timelineId: String, // Links to OrderDelegation.dailyTimeline[].timelineId
+          subDayId: String, // Unique day identifier (e.g., "1AG17CD01")
           deliveryStatus: {
             type: String,
             enum: [

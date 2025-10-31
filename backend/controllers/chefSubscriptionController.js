@@ -1247,7 +1247,7 @@ class ChefSubscriptionController {
 
       // Update the daily timeline status for this date
       const dateStr = new Date(date).toISOString().split("T")[0];
-      const updated = delegation.updateDailyStatus(
+      const updated = await delegation.updateDailyStatus(
         date,
         allMealsReady ? "ready" : "pending",
         allMealsReady ? "chef" : null

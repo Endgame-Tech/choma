@@ -18,7 +18,13 @@ exports.getUserOrders = async (req, res) => {
         { delegationStatus: { $in: ["Completed", "Cancelled"] } },
       ],
     })
-      .populate("subscription")
+      .populate({
+        path: "subscription",
+        populate: {
+          path: "mealPlanId",
+          select: "planName price description coverImage planImageUrl image",
+        },
+      })
       .populate("customer", "fullName email phone")
       .populate("assignedChef", "fullName email chefId")
       .sort({ createdDate: -1 });
@@ -57,11 +63,14 @@ exports.getUserOrders = async (req, res) => {
           const orderObj = order.toObject();
 
           // Check if this is a subscription order
-          const isSubscriptionOrder = orderObj.subscription?._id || orderObj.subscription;
+          const isSubscriptionOrder =
+            orderObj.subscription?._id || orderObj.subscription;
 
           if (isSubscriptionOrder) {
             // Enrich with OrderDelegation data for subscription orders
-            const subId = (orderObj.subscription._id || orderObj.subscription).toString();
+            const subId = (
+              orderObj.subscription._id || orderObj.subscription
+            ).toString();
             const delegation = delegationMap.get(subId);
 
             if (delegation) {
@@ -71,10 +80,16 @@ exports.getUserOrders = async (req, res) => {
               // Set delegationStatus based on chef assignment
               if (delegation.chefId) {
                 // Chef is assigned - check daily timeline for more specific status
-                if (delegation.dailyTimeline && delegation.dailyTimeline.length > 0) {
+                if (
+                  delegation.dailyTimeline &&
+                  delegation.dailyTimeline.length > 0
+                ) {
                   // Get the most recent/relevant timeline entry
-                  const latestTimeline = delegation.dailyTimeline[delegation.dailyTimeline.length - 1];
-                  
+                  const latestTimeline =
+                    delegation.dailyTimeline[
+                      delegation.dailyTimeline.length - 1
+                    ];
+
                   if (latestTimeline.status === "delivered") {
                     orderObj.delegationStatus = "Delivered";
                   } else if (latestTimeline.status === "ready") {
@@ -94,36 +109,82 @@ exports.getUserOrders = async (req, res) => {
                 orderObj.assignedDriver = delegation.driverId;
               }
 
+              // Include dailyTimeline for frontend virtual order creation
+              if (delegation.dailyTimeline) {
+                orderObj.dailyTimeline = delegation.dailyTimeline;
+              }
+
               console.log(
                 `✓ Enriched subscription order ${orderObj.orderNumber}: chef=${
                   delegation.chefId ? "assigned" : "not assigned"
-                }, status=${orderObj.delegationStatus}`
+                }, status=${orderObj.delegationStatus}, days=${
+                  delegation.dailyTimeline?.length || 0
+                }`
               );
             }
           }
 
-          // Find driver assignment for this order
-          const driverAssignment = await DriverAssignment.findOne({
-            orderId: order._id,
-          })
-            .populate("driverId", "fullName phone")
-            .lean();
+          // Find driver assignment(s) for this order
+          if (isSubscriptionOrder && orderObj.dailyTimeline) {
+            // For subscription orders, fetch all driver assignments and map them by subDayId
+            const allAssignments = await DriverAssignment.find({
+              orderId: order._id,
+            })
+              .populate("driverId", "fullName phone")
+              .lean();
 
-          if (driverAssignment) {
-            // Add driver assignment data to order
-            orderObj.driverAssignment = {
-              _id: driverAssignment._id,
-              confirmationCode: driverAssignment.confirmationCode,
-              status: driverAssignment.status,
-              driver: driverAssignment.driverId,
-              pickupLocation: driverAssignment.pickupLocation,
-              deliveryLocation: driverAssignment.deliveryLocation,
-              estimatedPickupTime: driverAssignment.estimatedPickupTime,
-              estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime,
-            };
+            // Create a map of subDayId -> assignment
+            const assignmentMap = new Map();
+            allAssignments.forEach((assignment) => {
+              if (assignment.subscriptionInfo?.subDayId) {
+                assignmentMap.set(assignment.subscriptionInfo.subDayId, {
+                  _id: assignment._id,
+                  confirmationCode: assignment.confirmationCode,
+                  status: assignment.status,
+                  driver: assignment.driverId,
+                  pickupLocation: assignment.pickupLocation,
+                  deliveryLocation: assignment.deliveryLocation,
+                  estimatedPickupTime: assignment.estimatedPickupTime,
+                  estimatedDeliveryTime: assignment.estimatedDeliveryTime,
+                });
+              }
+            });
 
-            // Also add confirmation code directly to order for easier access
-            orderObj.confirmationCode = driverAssignment.confirmationCode;
+            // Add assignments to each day in dailyTimeline
+            orderObj.dailyTimeline = orderObj.dailyTimeline.map((day) => ({
+              ...day,
+              driverAssignment: assignmentMap.get(day.subDayId) || null,
+              confirmationCode:
+                assignmentMap.get(day.subDayId)?.confirmationCode || null,
+            }));
+
+            console.log(
+              `✓ Mapped ${allAssignments.length} driver assignments to subscription order ${orderObj.orderNumber}`
+            );
+          } else {
+            // For regular orders, fetch single driver assignment
+            const driverAssignment = await DriverAssignment.findOne({
+              orderId: order._id,
+            })
+              .populate("driverId", "fullName phone")
+              .lean();
+
+            if (driverAssignment) {
+              // Add driver assignment data to order
+              orderObj.driverAssignment = {
+                _id: driverAssignment._id,
+                confirmationCode: driverAssignment.confirmationCode,
+                status: driverAssignment.status,
+                driver: driverAssignment.driverId,
+                pickupLocation: driverAssignment.pickupLocation,
+                deliveryLocation: driverAssignment.deliveryLocation,
+                estimatedPickupTime: driverAssignment.estimatedPickupTime,
+                estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime,
+              };
+
+              // Also add confirmation code directly to order for easier access
+              orderObj.confirmationCode = driverAssignment.confirmationCode;
+            }
           }
 
           return orderObj;
@@ -160,7 +221,13 @@ exports.getUserAssignedOrders = async (req, res) => {
         $in: ["Assigned", "Accepted", "In Progress", "Ready"],
       },
     })
-      .populate("subscription")
+      .populate({
+        path: "subscription",
+        populate: {
+          path: "mealPlanId",
+          select: "planName price description coverImage planImageUrl image",
+        },
+      })
       .populate("customer", "fullName email phone")
       .populate("assignedChef", "fullName email chefId")
       .sort({ createdDate: -1 });
@@ -201,11 +268,14 @@ exports.getUserAssignedOrders = async (req, res) => {
           const orderObj = order.toObject();
 
           // Check if this is a subscription order
-          const isSubscriptionOrder = orderObj.subscription?._id || orderObj.subscription;
+          const isSubscriptionOrder =
+            orderObj.subscription?._id || orderObj.subscription;
 
           if (isSubscriptionOrder) {
             // Enrich with OrderDelegation data for subscription orders
-            const subId = (orderObj.subscription._id || orderObj.subscription).toString();
+            const subId = (
+              orderObj.subscription._id || orderObj.subscription
+            ).toString();
             const delegation = delegationMap.get(subId);
 
             if (delegation) {
@@ -215,10 +285,16 @@ exports.getUserAssignedOrders = async (req, res) => {
               // Set delegationStatus based on chef assignment
               if (delegation.chefId) {
                 // Chef is assigned - check daily timeline for more specific status
-                if (delegation.dailyTimeline && delegation.dailyTimeline.length > 0) {
+                if (
+                  delegation.dailyTimeline &&
+                  delegation.dailyTimeline.length > 0
+                ) {
                   // Get the most recent/relevant timeline entry
-                  const latestTimeline = delegation.dailyTimeline[delegation.dailyTimeline.length - 1];
-                  
+                  const latestTimeline =
+                    delegation.dailyTimeline[
+                      delegation.dailyTimeline.length - 1
+                    ];
+
                   if (latestTimeline.status === "delivered") {
                     orderObj.delegationStatus = "Delivered";
                   } else if (latestTimeline.status === "ready") {
@@ -238,34 +314,82 @@ exports.getUserAssignedOrders = async (req, res) => {
                 orderObj.assignedDriver = delegation.driverId;
               }
 
+              // Include dailyTimeline for frontend virtual order creation
+              if (delegation.dailyTimeline) {
+                orderObj.dailyTimeline = delegation.dailyTimeline;
+              }
+
               console.log(
-                `✓ Enriched assigned subscription order ${orderObj.orderNumber}: status=${orderObj.delegationStatus}`
+                `✓ Enriched assigned subscription order ${
+                  orderObj.orderNumber
+                }: status=${orderObj.delegationStatus}, days=${
+                  delegation.dailyTimeline?.length || 0
+                }`
               );
             }
           }
 
-          // Find driver assignment for this order
-          const driverAssignment = await DriverAssignment.findOne({
-            orderId: order._id,
-          })
-            .populate("driverId", "fullName phone")
-            .lean();
+          // Find driver assignment(s) for this order
+          if (isSubscriptionOrder && orderObj.dailyTimeline) {
+            // For subscription orders, fetch all driver assignments and map them by subDayId
+            const allAssignments = await DriverAssignment.find({
+              orderId: order._id,
+            })
+              .populate("driverId", "fullName phone")
+              .lean();
 
-          if (driverAssignment) {
-            // Add driver assignment data to order
-            orderObj.driverAssignment = {
-              _id: driverAssignment._id,
-              confirmationCode: driverAssignment.confirmationCode,
-              status: driverAssignment.status,
-              driver: driverAssignment.driverId,
-              pickupLocation: driverAssignment.pickupLocation,
-              deliveryLocation: driverAssignment.deliveryLocation,
-              estimatedPickupTime: driverAssignment.estimatedPickupTime,
-              estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime,
-            };
+            // Create a map of subDayId -> assignment
+            const assignmentMap = new Map();
+            allAssignments.forEach((assignment) => {
+              if (assignment.subscriptionInfo?.subDayId) {
+                assignmentMap.set(assignment.subscriptionInfo.subDayId, {
+                  _id: assignment._id,
+                  confirmationCode: assignment.confirmationCode,
+                  status: assignment.status,
+                  driver: assignment.driverId,
+                  pickupLocation: assignment.pickupLocation,
+                  deliveryLocation: assignment.deliveryLocation,
+                  estimatedPickupTime: assignment.estimatedPickupTime,
+                  estimatedDeliveryTime: assignment.estimatedDeliveryTime,
+                });
+              }
+            });
 
-            // Also add confirmation code directly to order for easier access
-            orderObj.confirmationCode = driverAssignment.confirmationCode;
+            // Add assignments to each day in dailyTimeline
+            orderObj.dailyTimeline = orderObj.dailyTimeline.map((day) => ({
+              ...day,
+              driverAssignment: assignmentMap.get(day.subDayId) || null,
+              confirmationCode:
+                assignmentMap.get(day.subDayId)?.confirmationCode || null,
+            }));
+
+            console.log(
+              `✓ Mapped ${allAssignments.length} driver assignments to assigned subscription order ${orderObj.orderNumber}`
+            );
+          } else {
+            // For regular orders, fetch single driver assignment
+            const driverAssignment = await DriverAssignment.findOne({
+              orderId: order._id,
+            })
+              .populate("driverId", "fullName phone")
+              .lean();
+
+            if (driverAssignment) {
+              // Add driver assignment data to order
+              orderObj.driverAssignment = {
+                _id: driverAssignment._id,
+                confirmationCode: driverAssignment.confirmationCode,
+                status: driverAssignment.status,
+                driver: driverAssignment.driverId,
+                pickupLocation: driverAssignment.pickupLocation,
+                deliveryLocation: driverAssignment.deliveryLocation,
+                estimatedPickupTime: driverAssignment.estimatedPickupTime,
+                estimatedDeliveryTime: driverAssignment.estimatedDeliveryTime,
+              };
+
+              // Also add confirmation code directly to order for easier access
+              orderObj.confirmationCode = driverAssignment.confirmationCode;
+            }
           }
 
           return orderObj;

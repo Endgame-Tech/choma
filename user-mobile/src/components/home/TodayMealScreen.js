@@ -477,7 +477,7 @@ const TodayMealScreen = ({ navigation, route }) => {
 
             {/* Logo */}
             <View style={styles(colors).logoContainer}>
-              <ChomaLogo width={140} height={78} />
+              <ChomaLogo width={100} height={78} />
             </View>
 
             {/* Title */}
@@ -608,7 +608,7 @@ const styles = (colors) =>
     },
     backButton: {
       position: "absolute",
-      top: 10,
+      top: 30,
       left: 20,
       width: 40,
       height: 40,

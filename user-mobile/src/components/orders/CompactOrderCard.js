@@ -216,12 +216,45 @@ const CompactOrderCard = ({
       Delivered: 4,
     };
 
-    const orderStatus = order?.orderStatus || order?.status;
-    const delegationStatus = order?.delegationStatus;
+    // For subscription orders, prioritize day-specific status if available
     let rawFinalStatus;
 
-    // Priority order: use orderStatus for final statuses, otherwise use delegationStatus
-    if (
+    // Check for day-specific status (for virtual orders created from dailyTimeline)
+    const daySpecificStatus = order?.dayStatus || order?.dailyStatus;
+    // For subscription orders with subDayId, prioritize order.status (set from dayEntry.status)
+    // over orderStatus (which might be from the parent order)
+    const orderStatus = order?.subDayId
+      ? order?.status || order?.orderStatus // For virtual orders: use status first
+      : order?.orderStatus || order?.status; // For regular orders: use orderStatus first
+    const delegationStatus = order?.delegationStatus;
+
+    // Log for debugging subscription orders
+    if (order?.subDayId) {
+      console.log(
+        `🔄 CompactOrderCard - Day ${order?.dayNumber || "N/A"} (${
+          order?.subDayId
+        }):`,
+        {
+          daySpecificStatus,
+          orderStatus,
+          delegationStatus,
+          rawStatus: order?.status,
+          rawOrderStatus: order?.orderStatus,
+          fullOrder: order,
+        }
+      );
+    }
+
+    // Priority 1: Day-specific status (for subscription virtual orders)
+    if (daySpecificStatus) {
+      rawFinalStatus = daySpecificStatus;
+    }
+    // Priority 2: For subscription orders, use the status field directly (already set from dayEntry.status)
+    else if (order?.subDayId && orderStatus) {
+      rawFinalStatus = orderStatus;
+    }
+    // Priority 3: Final statuses from orderStatus
+    else if (
       orderStatus === "Delivered" ||
       orderStatus === "delivered" ||
       orderStatus === "Cancelled" ||
@@ -230,16 +263,29 @@ const CompactOrderCard = ({
       orderStatus === "out for delivery"
     ) {
       rawFinalStatus = orderStatus;
-    } else {
-      // Use delegationStatus for chef-related statuses, orderStatus for others
-      rawFinalStatus = delegationStatus || orderStatus || "pending";
     }
-
-    // Normalize and find step
+    // Priority 4: Use delegationStatus for chef-related statuses
+    else {
+      rawFinalStatus = delegationStatus || orderStatus || "pending";
+    } // Normalize and find step
     const normalizedStatus = rawFinalStatus.toLowerCase().trim();
     let step = statusMap[normalizedStatus] || statusMap[rawFinalStatus] || 0;
 
-    // console.log(`🔄 Order ${order?.orderNumber}: ${rawFinalStatus} → Step ${step}`);
+    // Enhanced logging for subscription orders
+    if (order?.subDayId) {
+      console.log(
+        `📍 Status mapping for Day ${order?.dayNumber || "N/A"} (${
+          order?.subDayId
+        }):`,
+        {
+          rawFinalStatus,
+          normalizedStatus,
+          mappedStep: step,
+          expectedStep:
+            statusMap[normalizedStatus] || statusMap[rawFinalStatus],
+        }
+      );
+    }
 
     setCurrentStep(step);
 
@@ -249,7 +295,15 @@ const CompactOrderCard = ({
       duration: 1000,
       useNativeDriver: false,
     }).start();
-  }, [order?.status, order?.orderStatus, order?.delegationStatus, order?._id]);
+  }, [
+    order?.status,
+    order?.orderStatus,
+    order?.delegationStatus,
+    order?.dayStatus,
+    order?.dailyStatus,
+    order?.dayNumber,
+    order?._id,
+  ]);
 
   const getMealPlanImage = () => {
     console.log("🖼️ Getting meal plan image for order:", {
@@ -348,7 +402,17 @@ const CompactOrderCard = ({
 
   const isDelivered = currentStep === orderSteps.length - 1;
   const canCancel = currentStep < 2; // Can cancel before "Meals Ready" step
-  const canTrackDriver = currentStep === 3; // Step 3 is "Out for Delivery" in 5-step journey
+
+  // Track Driver should only be enabled when driver has picked up the order (out for delivery)
+  // Check if driver is assigned AND order is out for delivery
+  const canTrackDriver =
+    currentStep === 3 && // Step 3 is "Out for Delivery"
+    (order?.driverAssignment?.driver || order?.driver) && // Driver is assigned
+    (order?.driverAssignment?.status === "assigned" ||
+      order?.driverAssignment?.status === "picked_up" ||
+      order?.status === "out for delivery" ||
+      order?.status === "out_for_delivery" ||
+      order?.orderStatus === "Out for Delivery");
 
   const getEstimatedDelivery = () => {
     if (!order?.estimatedDelivery) {
@@ -531,36 +595,52 @@ const CompactOrderCard = ({
         </TouchableOpacity>
       </View>
 
-      {/* Track Button - Always visible, disabled until driver assigned */}
-      <TouchableOpacity
-        style={[
-          styles(colors).trackButton,
-          !canTrackDriver && styles(colors).trackButtonDisabled,
-        ]}
-        onPress={() => {
-          if (canTrackDriver) {
-            onTrackDriver?.(
-              order.driverAssignment?.driver || order.driver,
-              order
-            );
-          }
-        }}
-        disabled={!canTrackDriver}
-      >
-        <CustomIcon
-          name="location"
-          size={20}
-          color={canTrackDriver ? colors.text : colors.textMuted}
-        />
-        <Text
+      {/* Action Buttons Row - Track and Code buttons in one row */}
+      <View style={styles(colors).actionButtonsRow}>
+        {/* Track Button - Always visible, disabled until driver assigned */}
+        <TouchableOpacity
           style={[
-            styles(colors).trackButtonText,
-            !canTrackDriver && styles(colors).trackButtonTextDisabled,
+            styles(colors).trackButton,
+            !canTrackDriver && styles(colors).trackButtonDisabled,
+            (currentStep === 3 || currentStep === 4) &&
+              styles(colors).trackButtonHalf,
           ]}
+          onPress={() => {
+            if (canTrackDriver) {
+              onTrackDriver?.(
+                order.driverAssignment?.driver || order.driver,
+                order
+              );
+            }
+          }}
+          disabled={!canTrackDriver}
         >
-          Track
-        </Text>
-      </TouchableOpacity>
+          <CustomIcon
+            name="location"
+            size={18}
+            color={canTrackDriver ? "#F8FFFC" : colors.textMuted}
+          />
+          <Text
+            style={[
+              styles(colors).trackButtonText,
+              !canTrackDriver && styles(colors).trackButtonTextDisabled,
+            ]}
+          >
+            Track
+          </Text>
+        </TouchableOpacity>
+
+        {/* Code Button - Show when out for delivery or delivered */}
+        {(currentStep === 3 || currentStep === 4) && (
+          <TouchableOpacity
+            style={styles(colors).codeButton}
+            onPress={() => setConfirmationModalVisible(true)}
+          >
+            <Ionicons name="key-outline" size={18} color={colors.primary2} />
+            <Text style={styles(colors).codeButtonText}>Code</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Details Modal */}
       <Modal
@@ -861,7 +941,7 @@ const CompactOrderCard = ({
                   <Ionicons
                     name="information-circle"
                     size={16}
-                    color={colors.primary}
+                    color="#1B1B1B"
                   />
                   <Text style={styles(colors).instructionText}>
                     Your driver will ask for this code when delivering your meal
@@ -871,7 +951,7 @@ const CompactOrderCard = ({
                   <Ionicons
                     name="shield-checkmark"
                     size={16}
-                    color={colors.success}
+                    color="#1B1B1B"
                   />
                   <Text style={styles(colors).instructionText}>
                     This ensures secure delivery to the right person
@@ -987,14 +1067,25 @@ const styles = (colors) =>
       textDecorationLine: "underline",
     },
 
+    // Action Buttons Row
+    actionButtonsRow: {
+      flexDirection: "row",
+      gap: 8,
+      alignItems: "center",
+    },
+
     // Track Button
     trackButton: {
+      flex: 1,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.primary2,
       paddingVertical: 16,
       borderRadius: 42,
+    },
+    trackButtonHalf: {
+      flex: 1,
     },
     trackButtonDisabled: {
       backgroundColor: colors.primary2 + "60",
@@ -1003,7 +1094,7 @@ const styles = (colors) =>
     trackButtonText: {
       fontSize: 16,
       fontWeight: "bold",
-      color: colors.text,
+      color: "#F8FFFC",
       marginLeft: 8,
     },
     trackButtonTextDisabled: {
@@ -1015,11 +1106,12 @@ const styles = (colors) =>
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
-      justifyContent: "flex-end",
-      alignItems: "flex-end",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 30,
     },
     modalContainer: {
-      backgroundColor: colors.cardBackground,
+      backgroundColor: "#F8FFFC",
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       maxHeight: "90%",
@@ -1028,29 +1120,25 @@ const styles = (colors) =>
       shadowOffset: { width: 0, height: -5 },
       shadowOpacity: 0.3,
       shadowRadius: 20,
-      // elevation: 10,
-      bottom: 0,
+      elevation: 10,
+      // bottom: 0,
     },
     modalHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 10,
-      paddingTop: 20,
-      paddingBottom: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      // paddingHorizontal: 10,
     },
     modalTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: colors.text,
+      color: "#1B1B1B",
     },
     modalCloseButton: {
       padding: 4,
     },
     modalContent: {
-      padding: 10,
+      padding: 0,
     },
 
     // Subscription Banner Styles
@@ -1294,30 +1382,28 @@ const styles = (colors) =>
       gap: 8,
     },
     codeButton: {
+      flex: 1,
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.primary,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 12,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 3,
+      justifyContent: "center",
+      backgroundColor: colors.background,
+      paddingVertical: 16,
+      borderRadius: 42,
+      borderWidth: 1,
+      borderColor: colors.primary2,
     },
     codeButtonText: {
-      fontSize: 12,
-      fontWeight: "600",
-      color: colors.white,
-      marginLeft: 4,
+      fontSize: 16,
+      fontWeight: "bold",
+      color: colors.primary2,
+      marginLeft: 6,
     },
 
     // Confirmation Code Modal Styles
     codeModalContainer: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: 20,
-      padding: 0,
+      backgroundColor: "#F8FFFC",
+      borderRadius: 40,
+      padding: 20,
       width: "100%",
       maxWidth: 350,
       shadowColor: colors.shadow,
@@ -1327,20 +1413,19 @@ const styles = (colors) =>
       elevation: 10,
     },
     codeDisplay: {
-      alignItems: "center",
+      // alignItems: "center",
       marginBottom: 24,
     },
     codeLabel: {
       fontSize: 14,
       color: colors.textSecondary,
       marginBottom: 12,
-      textAlign: "center",
     },
     codeContainer: {
-      backgroundColor: colors.primary + "15",
+      // backgroundColor: colors.primary + "15",
       borderWidth: 2,
-      borderColor: colors.primary + "30",
-      borderRadius: 16,
+      borderColor: colors.primary2 + "30",
+      borderRadius: 26,
       paddingHorizontal: 24,
       paddingVertical: 16,
       borderStyle: "dashed",
@@ -1348,7 +1433,7 @@ const styles = (colors) =>
     confirmationCodeText: {
       fontSize: 28,
       fontWeight: "800",
-      color: colors.primary,
+      color: colors.primary2,
       letterSpacing: 8,
       textAlign: "center",
       fontFamily: "monospace",
@@ -1369,15 +1454,15 @@ const styles = (colors) =>
       flex: 1,
     },
     modalOkButton: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.primary2,
       paddingVertical: 14,
-      borderRadius: 12,
+      borderRadius: 42,
       alignItems: "center",
     },
     modalOkButtonText: {
       fontSize: 16,
       fontWeight: "600",
-      color: colors.white,
+      color: "#F8FFFC",
     },
   });
 

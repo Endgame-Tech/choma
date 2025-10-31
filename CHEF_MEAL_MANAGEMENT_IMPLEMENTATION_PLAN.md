@@ -25,9 +25,11 @@
 ## 1. EXECUTIVE SUMMARY
 
 ### 🎯 Objective
+
 Enable chefs to manage subscription meal preparation with granular control over individual meal types (breakfast, lunch, dinner) while supporting batch updates for efficiency.
 
 ### 🔑 Key Features
+
 - **Individual Meal Type Updates**: Update breakfast, lunch, dinner independently
 - **Batch Day Updates**: Update all meal types for a day at once
 - **Status Progression Validation**: Enforce workflow (scheduled → preparing → prepared → ready)
@@ -35,6 +37,7 @@ Enable chefs to manage subscription meal preparation with granular control over 
 - **Day-Based Grouping**: Group meals by day for better chef workflow
 
 ### 📊 Success Metrics
+
 - Chef can update individual meal status in < 3 clicks
 - Status progression errors prevented 100%
 - All meals for a day can be updated in 1 click
@@ -47,6 +50,7 @@ Enable chefs to manage subscription meal preparation with granular control over 
 ### ✅ What Exists
 
 #### **Backend (Node.js/Express)**
+
 | Component | Location | Status | Notes |
 |-----------|----------|--------|-------|
 | Daily Meals Update API | `backend/routes/chefSubscriptions.js` Line 88-114 | ✅ Working | Updates ALL meals for a date |
@@ -55,6 +59,7 @@ Enable chefs to manage subscription meal preparation with granular control over 
 | Chef Authentication | `backend/middleware/chefAuth.js` | ✅ Working | JWT-based auth |
 
 #### **Frontend (React/TypeScript - Chef App)**
+
 | Component | Location | Status | Notes |
 |-----------|----------|--------|-------|
 | Timeline View | `chef-react/src/components/SubscriptionTimelineView.tsx` | ✅ Partial | Shows linear timeline |
@@ -62,6 +67,7 @@ Enable chefs to manage subscription meal preparation with granular control over 
 | API Service | `chef-react/src/services/api.ts` | ✅ Working | API client |
 
 #### **User App Reference**
+
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | Meal Grouping Logic | `user-mobile/src/screens/subscription/MyPlanScreen.js` Line 87-221 | ✅ **Reference Implementation** |
@@ -81,13 +87,15 @@ Enable chefs to manage subscription meal preparation with granular control over 
 ## 3. REQUIREMENTS & USER STORIES
 
 ### 👨‍🍳 User Story 1: Individual Meal Updates
-```
+
+```Tab
 AS A chef
 I WANT TO update the status of breakfast independently from lunch and dinner
 SO THAT I can reflect the actual preparation progress of each meal type
 ```
 
 **Acceptance Criteria:**
+
 - ✅ Chef can click "Edit" on breakfast and update only breakfast status
 - ✅ Updating breakfast does NOT change lunch or dinner status
 - ✅ Each meal type shows its own current status badge
@@ -95,13 +103,15 @@ SO THAT I can reflect the actual preparation progress of each meal type
 ---
 
 ### 👨‍🍳 User Story 2: Batch Day Updates
-```
+
+```Tab
 AS A chef
 I WANT TO update all meal types for a day at once
 SO THAT I can quickly mark a complete day as ready when all meals are prepared
 ```
 
 **Acceptance Criteria:**
+
 - ✅ "Update All" button visible for each day
 - ✅ Clicking "Update All" updates breakfast, lunch, AND dinner to same status
 - ✅ Confirmation modal shows before batch update
@@ -109,13 +119,15 @@ SO THAT I can quickly mark a complete day as ready when all meals are prepared
 ---
 
 ### 👨‍🍳 User Story 3: Day-Based Grouping
-```
+
+```Tab
 AS A chef
 I WANT TO see meals grouped by day (Monday: breakfast, lunch, dinner)
 SO THAT I can understand my daily workload at a glance
 ```
 
 **Acceptance Criteria:**
+
 - ✅ Timeline shows "Day 1 - Monday" header
 - ✅ All meals for Monday appear under that header
 - ✅ Days are sorted chronologically (Week 1 Day 1, Week 1 Day 2, etc.)
@@ -124,32 +136,37 @@ SO THAT I can understand my daily workload at a glance
 ---
 
 ### 👨‍🍳 User Story 4: Status Progression Rules
-```
+
+```Tab
 AS A chef
 I CANNOT skip preparation steps in the workflow
 SO THAT the system enforces proper meal preparation process
 ```
 
 **Acceptance Criteria:**
+
 - ✅ Cannot update from "scheduled" to "ready" (must go through "preparing")
 - ✅ Error message shown if invalid transition attempted
 - ✅ Valid next statuses highlighted in dropdown
 
 **Status Flow:**
-```
+
+```Tab
 scheduled → preparing → prepared → ready → [driver: out_for_delivery → delivered]
 ```
 
 ---
 
 ### 👨‍🍳 User Story 5: Delivery Readiness
-```
+
+```Tab
 AS THE SYSTEM
 I WANT TO detect when all meal types for a day are marked "ready"
 SO THAT delivery can be triggered (future: notify driver)
 ```
 
 **Acceptance Criteria:**
+
 - ✅ System checks if ALL meal types (breakfast, lunch, dinner) = "ready"
 - ✅ Console log / flag set when all ready
 - ✅ (Future) Delivery driver notification triggered
@@ -160,7 +177,7 @@ SO THAT delivery can be triggered (future: notify driver)
 
 ### 🏗️ System Architecture
 
-```
+```Tab
 ┌─────────────────────────────────────────────────────────────┐
 │                     CHEF REACT APP                          │
 │  ┌────────────────────────────────────────────────────┐    │
@@ -229,6 +246,7 @@ SO THAT delivery can be triggered (future: notify driver)
 ### 🚀 Phase 1: Backend API Development (Day 1)
 
 #### **Task 1.1: Create Individual Meal Type Update Endpoint**
+
 - **File:** `backend/routes/chefSubscriptions.js`
 - **Action:** Add new route
 - **Estimated Time:** 30 minutes
@@ -271,6 +289,7 @@ router.put(
 ---
 
 #### **Task 1.2: Implement Controller Method**
+
 - **File:** `backend/controllers/chefSubscriptionController.js`
 - **Action:** Add `updateMealTypeStatus()` method
 - **Estimated Time:** 1 hour
@@ -466,6 +485,7 @@ getValidNextStatuses(currentStatus) {
 ---
 
 #### **Task 1.3: Update Existing Daily Meals Update**
+
 - **File:** `backend/controllers/chefSubscriptionController.js`
 - **Action:** Add status validation to existing `updateDailyMealsStatus()` method
 - **Estimated Time:** 30 minutes
@@ -491,6 +511,7 @@ meal.deliveryStatus = status;
 ### 🎨 Phase 2: Frontend UI Development (Day 2)
 
 #### **Task 2.1: Create Day Grouping Logic**
+
 - **File:** `chef-react/src/components/SubscriptionTimelineView.tsx`
 - **Action:** Add grouping function
 - **Estimated Time:** 45 minutes
@@ -549,6 +570,7 @@ const groupTimelineByDay = (timeline: TimelineStep[]): DayGroup[] => {
 ---
 
 #### **Task 2.2: Update Timeline Rendering**
+
 - **File:** `chef-react/src/components/SubscriptionTimelineView.tsx`
 - **Action:** Replace linear timeline with grouped day cards
 - **Estimated Time:** 1.5 hours
@@ -578,6 +600,7 @@ const renderTimeline = () => {
 ---
 
 #### **Task 2.3: Create DayCard Component**
+
 - **File:** `chef-react/src/components/SubscriptionTimelineView.tsx`
 - **Action:** Add new component
 - **Estimated Time:** 1 hour
@@ -694,6 +717,7 @@ const DayCard: React.FC<DayCardProps> = ({ day, onEditMeal, onUpdateAll }) => {
 ---
 
 #### **Task 2.4: Update Individual Meal Status Handler**
+
 - **File:** `chef-react/src/components/SubscriptionTimelineView.tsx`
 - **Action:** Update `handleUpdateMealStatus()` to call new API
 - **Estimated Time:** 30 minutes
@@ -749,6 +773,7 @@ const handleUpdateMealStatus = async () => {
 ---
 
 #### **Task 2.5: Add "Update All" Handler**
+
 - **File:** `chef-react/src/components/SubscriptionTimelineView.tsx`
 - **Action:** Add new handler for batch updates
 - **Estimated Time:** 30 minutes
@@ -802,6 +827,7 @@ const confirmUpdateAll = async () => {
 ---
 
 #### **Task 2.6: Update API Service**
+
 - **File:** `chef-react/src/services/api.ts`
 - **Action:** Add new API method
 - **Estimated Time:** 15 minutes
@@ -872,6 +898,7 @@ export const chefSubscriptionsApi = {
 ### 🧪 Phase 3: Testing & Validation (Day 3)
 
 #### **Task 3.1: Backend API Testing**
+
 - **Tool:** Postman / Thunder Client
 - **Estimated Time:** 1 hour
 
@@ -917,6 +944,7 @@ PUT /api/chef/subscriptions/:subscriptionId/meal-type/update
 ---
 
 #### **Task 3.2: Frontend UI Testing**
+
 - **Browser:** Chrome DevTools
 - **Estimated Time:** 1 hour
 
@@ -936,6 +964,7 @@ PUT /api/chef/subscriptions/:subscriptionId/meal-type/update
 ### 🚀 Phase 4: Deployment (Day 3)
 
 #### **Task 4.1: Backend Deployment**
+
 1. Merge feature branch to `main`
 2. Run database migration (if needed)
 3. Deploy to staging environment
@@ -943,6 +972,7 @@ PUT /api/chef/subscriptions/:subscriptionId/meal-type/update
 5. Deploy to production
 
 #### **Task 4.2: Frontend Deployment**
+
 1. Build production bundle
 2. Deploy to hosting (Vercel/Netlify)
 3. Clear CDN cache
@@ -956,17 +986,19 @@ PUT /api/chef/subscriptions/:subscriptionId/meal-type/update
 
 #### **Update Individual Meal Type Status**
 
-```
+```Tab
 PUT /api/chef/subscriptions/:subscriptionId/meal-type/update
 ```
 
 **Headers:**
-```
+
+```Tab
 Authorization: Bearer <chef_jwt_token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "date": "2025-10-28",
@@ -977,6 +1009,7 @@ Content-Type: application/json
 ```
 
 **Response (Success - 200):**
+
 ```json
 {
   "success": true,
@@ -996,6 +1029,7 @@ Content-Type: application/json
 ```
 
 **Response (Error - 400):**
+
 ```json
 {
   "success": false,
@@ -1005,6 +1039,7 @@ Content-Type: application/json
 ```
 
 **Response (Error - 404):**
+
 ```json
 {
   "success": false,
@@ -1013,6 +1048,7 @@ Content-Type: application/json
 ```
 
 **Response (Error - 403):**
+
 ```json
 {
   "success": false,
@@ -1026,17 +1062,19 @@ Content-Type: application/json
 
 #### **Update All Meals for a Day**
 
-```
+```Tab
 PUT /api/chef/subscriptions/:subscriptionId/daily-meals/update
 ```
 
 **Headers:**
-```
+
+```Tab
 Authorization: Bearer <chef_jwt_token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "date": "2025-10-28",
@@ -1046,6 +1084,7 @@ Content-Type: application/json
 ```
 
 **Response (Success - 200):**
+
 ```json
 {
   "success": true,
@@ -1152,7 +1191,7 @@ Content-Type: application/json
 
 ### 🎨 Component Hierarchy
 
-```
+```Tab
 SubscriptionTimelineView
 ├── LoadingSpinner (if loading)
 ├── ErrorMessage (if error)
@@ -1254,6 +1293,7 @@ describe('SubscriptionTimelineView', () => {
 ### 🚀 Deployment Checklist
 
 #### **Pre-Deployment**
+
 - [ ] All unit tests passing
 - [ ] Integration tests passing
 - [ ] Code review completed
@@ -1261,6 +1301,7 @@ describe('SubscriptionTimelineView', () => {
 - [ ] API documentation generated (Swagger/Postman)
 
 #### **Staging Deployment**
+
 - [ ] Deploy backend to staging
 - [ ] Deploy frontend to staging
 - [ ] Run smoke tests
@@ -1268,6 +1309,7 @@ describe('SubscriptionTimelineView', () => {
 - [ ] Get stakeholder approval
 
 #### **Production Deployment**
+
 - [ ] Create backup of production database
 - [ ] Deploy backend (with zero downtime)
 - [ ] Deploy frontend
@@ -1275,6 +1317,7 @@ describe('SubscriptionTimelineView', () => {
 - [ ] Notify chefs of new feature
 
 #### **Post-Deployment**
+
 - [ ] Monitor API response times
 - [ ] Check for any error spikes
 - [ ] Gather chef feedback
@@ -1284,7 +1327,7 @@ describe('SubscriptionTimelineView', () => {
 
 ## 📊 APPENDIX A: Status Progression Flow
 
-```
+```Tab
 ┌──────────────┐
 │  scheduled   │  ← Initial state (system creates)
 └──────┬───────┘
@@ -1324,11 +1367,13 @@ describe('SubscriptionTimelineView', () => {
 ```
 
 **Chef Can Update:**
+
 - scheduled → preparing
 - preparing → prepared
 - prepared → ready
 
 **Chef CANNOT Update:**
+
 - ready → out_for_delivery (driver only)
 - out_for_delivery → delivered (driver only)
 
@@ -1337,6 +1382,7 @@ describe('SubscriptionTimelineView', () => {
 ## 📊 APPENDIX B: Example Grouping Logic
 
 **Input (mealSchedule array):**
+
 ```javascript
 [
   { weekNumber: 1, dayOfWeek: 1, mealTime: "breakfast", status: "preparing" },
@@ -1348,6 +1394,7 @@ describe('SubscriptionTimelineView', () => {
 ```
 
 **Output (grouped by day):**
+
 ```javascript
 [
   {
@@ -1389,7 +1436,7 @@ describe('SubscriptionTimelineView', () => {
 
 ## 🎯 SUCCESS CRITERIA
 
-### ✅ Feature is Complete When:
+### ✅ Feature is Complete When:/
 
 1. ✅ Chef can update breakfast status without affecting lunch/dinner
 2. ✅ Chef can update all meals for a day in one click
@@ -1419,4 +1466,4 @@ describe('SubscriptionTimelineView', () => {
 
 ---
 
-# 🚀 LET'S BUILD THIS!
+# 🚀 LET'S BUILD THIS!/

@@ -340,10 +340,15 @@ const OrdersScreen = ({ navigation }) => {
                   _id: dayEntry.subDayId || `${order._id}_day${dayNumber}`,
                   subDayId: dayEntry.subDayId,
                   timelineId: dayEntry.timelineId,
+                  dayNumber: dayNumber, // Add day number
+                  deliveryDay: dayNumber, // Also add as deliveryDay for compatibility
                   deliveryDate: dayEntry.date,
                   estimatedDelivery: dayEntry.date,
                   status: dayEntry.status || "pending",
                   delegationStatus: dayEntry.status || order.delegationStatus,
+                  // Use day-specific driver assignment and confirmation code
+                  driverAssignment: dayEntry.driverAssignment || null,
+                  confirmationCode: dayEntry.confirmationCode || null,
                   image: mealPlanImage, // Add image to order level
                   orderItems: {
                     ...(order.orderItems || {}),
@@ -429,10 +434,15 @@ const OrdersScreen = ({ navigation }) => {
                   _id: dayEntry.subDayId || `${order._id}_day${dayNumber}`,
                   subDayId: dayEntry.subDayId,
                   timelineId: dayEntry.timelineId,
+                  dayNumber: dayNumber, // Add day number
+                  deliveryDay: dayNumber, // Also add as deliveryDay for compatibility
                   deliveryDate: dayEntry.date,
                   estimatedDelivery: dayEntry.date,
                   status: dayEntry.status || "pending",
                   delegationStatus: dayEntry.status || order.delegationStatus,
+                  // Use day-specific driver assignment and confirmation code
+                  driverAssignment: dayEntry.driverAssignment || null,
+                  confirmationCode: dayEntry.confirmationCode || null,
                   image: mealPlanImage, // Add image to order level
                   orderItems: {
                     ...(order.orderItems || {}),

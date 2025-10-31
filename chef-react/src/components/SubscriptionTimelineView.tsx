@@ -417,7 +417,7 @@ const SubscriptionTimelineView: React.FC<SubscriptionTimelineViewProps> = ({
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-300">
                 Duration: {timelineData.mealPlan.isFiveWorkingDays
-                  ? `${timelineData.mealPlan.durationWeeks * 5} Days Plan • 5/week`
+                  ? `${timelineData.mealPlan.durationWeeks * 5} Days Plan`
                   : `${timelineData.mealPlan.durationWeeks} week(s)`}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-300">

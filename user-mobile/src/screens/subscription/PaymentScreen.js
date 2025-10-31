@@ -418,7 +418,7 @@ function PaymentScreen({ route, navigation }) {
           <View style={styles(colors).deliveryCard}>
             <View style={styles(colors).deliveryRow}>
               <View style={styles(colors).deliveryIconContainer}>
-                <Ionicons name="person" size={20} color={colors.primary} />
+                <Ionicons name="person" size={20} color={colors.text} />
               </View>
               <View style={styles(colors).deliveryContent}>
                 <Text style={styles(colors).deliveryLabel}>Customer</Text>
@@ -428,7 +428,7 @@ function PaymentScreen({ route, navigation }) {
 
             <View style={styles(colors).deliveryRow}>
               <View style={styles(colors).deliveryIconContainer}>
-                <Ionicons name="call" size={20} color={colors.primary} />
+                <Ionicons name="call" size={20} color={colors.text} />
               </View>
               <View style={styles(colors).deliveryContent}>
                 <Text style={styles(colors).deliveryLabel}>Phone</Text>
@@ -438,7 +438,7 @@ function PaymentScreen({ route, navigation }) {
 
             <View style={styles(colors).deliveryRow}>
               <View style={styles(colors).deliveryIconContainer}>
-                <Ionicons name="location" size={20} color={colors.primary} />
+                <Ionicons name="location" size={20} color={colors.text} />
               </View>
               <View style={styles(colors).deliveryContent}>
                 <Text style={styles(colors).deliveryLabel}>Address</Text>
@@ -639,7 +639,7 @@ function PaymentScreen({ route, navigation }) {
             colors={
               isLoading
                 ? [colors.textMuted, colors.textMuted]
-                : [colors.primary, colors.primaryDark]
+                : [colors.primary, colors.primary]
             }
             style={styles(colors).payButtonGradient}
           >
@@ -709,7 +709,7 @@ const styles = (colors) =>
     },
     orderCard: {
       position: "relative",
-      borderRadius: THEME.borderRadius.large,
+      borderRadius: THEME.borderRadius.xxl,
       overflow: "hidden",
       height: 360,
     },
@@ -751,11 +751,11 @@ const styles = (colors) =>
       color: "rgba(255,255,255,0.8)",
     },
     deliveryCard: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.large,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
+      // backgroundColor: colors.cardBackground,
+      // borderRadius: THEME.borderRadius.large,
+      // padding: 20,
+      // borderWidth: 1,
+      // borderColor: colors.border,
     },
     deliveryRow: {
       flexDirection: "row",
@@ -765,11 +765,9 @@ const styles = (colors) =>
     deliveryIconContainer: {
       width: 40,
       height: 40,
-      borderRadius: 20,
-      backgroundColor: `${colors.primary}20`,
       justifyContent: "center",
       alignItems: "center",
-      marginRight: 15,
+      marginRight: 10,
     },
     deliveryContent: {
       flex: 1,
@@ -916,11 +914,11 @@ const styles = (colors) =>
       color: colors.text3,
     },
     paymentMethodCard: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: THEME.borderRadius.large,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
+      // backgroundColor: colors.cardBackground,
+      // borderRadius: THEME.borderRadius.large,
+      // padding: 20,
+      // borderWidth: 1,
+      // borderColor: colors.border,
     },
     paymentMethodRow: {
       flexDirection: "row",
@@ -973,7 +971,7 @@ const styles = (colors) =>
       color: colors.text3,
     },
     payButton: {
-      borderRadius: THEME.borderRadius.large,
+      borderRadius: THEME.borderRadius.xxl,
       overflow: "hidden",
     },
     payButtonDisabled: {

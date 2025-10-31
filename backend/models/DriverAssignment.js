@@ -410,7 +410,6 @@ driverAssignmentSchema.methods.generateRandom4DigitCode = function () {
   }
   return code;
 };
-
 // Generate 6-digit code for one-time orders
 driverAssignmentSchema.methods.generateRandomCode = function () {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -469,6 +468,7 @@ driverAssignmentSchema.methods.confirmPickup = async function (
   // Update the main Order status to "Out for Delivery" when driver confirms pickup
   const Order = require("./Order");
   const Notification = require("./Notification");
+  const OrderDelegation = require("./OrderDelegation");
   const { cacheService } = require("../config/redis");
 
   try {
@@ -484,6 +484,47 @@ driverAssignmentSchema.methods.confirmPickup = async function (
       await order.save();
 
       console.log(`✅ Order ${this.orderId} updated to "Out for Delivery"`);
+
+      // If this is a subscription order, update the OrderDelegation dailyTimeline
+      if (order.subscription) {
+        try {
+          const orderDelegation = await OrderDelegation.findOne({
+            orderId: this.orderId,
+          });
+
+          if (orderDelegation && orderDelegation.dailyTimeline) {
+            // Update ALL timeline entries that are "ready" (chef completed) to "out_for_delivery"
+            // Driver picks up all ready meals at once
+            let updatedCount = 0;
+            orderDelegation.dailyTimeline.forEach((entry) => {
+              if (entry.status === "ready") {
+                entry.status = "out_for_delivery";
+                updatedCount++;
+                console.log(
+                  `✅ Updated ${entry.subDayId} from "ready" to "out_for_delivery"`
+                );
+              }
+            });
+
+            if (updatedCount > 0) {
+              await orderDelegation.save();
+              console.log(
+                `✅ Updated ${updatedCount} OrderDelegation timeline entries to "out_for_delivery"`
+              );
+            } else {
+              console.log(
+                `ℹ️ No timeline entries with status "ready" found to update`
+              );
+            }
+          }
+        } catch (delegationError) {
+          console.error(
+            `⚠️ Error updating OrderDelegation timeline:`,
+            delegationError
+          );
+          // Don't throw - pickup confirmation should still succeed
+        }
+      }
 
       // Clear any cached order data to force refresh in mobile app
       if (cacheService && typeof cacheService.del === "function") {
@@ -547,6 +588,7 @@ driverAssignmentSchema.methods.confirmDelivery = async function (
   const Order = require("./Order");
   const Notification = require("./Notification");
   const Subscription = require("./Subscription");
+  const OrderDelegation = require("./OrderDelegation");
   const { cacheService } = require("../config/redis");
 
   try {
@@ -556,6 +598,44 @@ driverAssignmentSchema.methods.confirmDelivery = async function (
       order.orderStatus = "Delivered";
       order.actualDelivery = new Date();
       await order.save();
+
+      // CRITICAL: Update OrderDelegation dailyTimeline if this is a subscription order
+      if (order.subscription) {
+        try {
+          const orderDelegation = await OrderDelegation.findOne({
+            orderId: this.orderId,
+          });
+
+          if (orderDelegation && orderDelegation.dailyTimeline) {
+            // Update the specific day that was delivered to "delivered" status
+            // Find the day that matches this delivery (could be based on subDayId or current delivery date)
+            let updatedCount = 0;
+            orderDelegation.dailyTimeline.forEach((entry) => {
+              if (entry.status === "out_for_delivery") {
+                entry.status = "delivered";
+                entry.deliveredAt = new Date();
+                updatedCount++;
+                console.log(
+                  `✅ Updated ${entry.subDayId} from "out_for_delivery" to "delivered"`
+                );
+              }
+            });
+
+            if (updatedCount > 0) {
+              await orderDelegation.save();
+              console.log(
+                `✅ Updated ${updatedCount} OrderDelegation timeline entries to "delivered"`
+              );
+            }
+          }
+        } catch (delegationError) {
+          console.error(
+            `⚠️ Error updating OrderDelegation timeline on delivery:`,
+            delegationError
+          );
+          // Don't throw - delivery confirmation should still succeed
+        }
+      }
 
       // CRITICAL: Handle first delivery completion and subscription activation
       if (order.subscription) {

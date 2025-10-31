@@ -137,13 +137,13 @@ const Orders: React.FC = () => {
     setIsDetailModalOpen(false)
   }
 
-  const openStatusModal = (order: Order) => {
-    setStatusModal({
-      isOpen: true,
-      orderId: order._id,
-      currentStatus: order.delegationStatus || 'Assigned'
-    })
-  }
+  // const openStatusModal = (order: Order) => {
+  //   setStatusModal({
+  //     isOpen: true,
+  //     orderId: order._id,
+  //     currentStatus: order.delegationStatus || 'Assigned'
+  //   })
+  // }
 
   const closeStatusModal = () => {
     setStatusModal({ isOpen: false, orderId: '', currentStatus: '' })

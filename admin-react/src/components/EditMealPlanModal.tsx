@@ -175,7 +175,6 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
         description: formData.description,
         coverImage: formData.coverImage,
         durationWeeks: parseInt(formData.durationWeeks),
-        isFiveWorkingDays: formData.isFiveWorkingDays,
         tier: formData.tier,
         targetAudience: formData.targetAudience,
         mealTypes: formData.mealTypes,
@@ -208,7 +207,8 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
               onClick={onClose}
               className="text-gray-400 dark:text-neutral-400 hover:text-gray-600 dark:hover:text-neutral-200"
               disabled={submitting}
-              title="Close"
+              title="Close modal"
+              aria-label="Close modal"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
@@ -351,7 +351,7 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                   </select>
                   <div className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
                     Total days: {formData.isFiveWorkingDays
-                      ? `${parseInt(formData.durationWeeks) * 5} days (${parseInt(formData.durationWeeks) * 5} Days Plan • 5/week)`
+                      ? `${parseInt(formData.durationWeeks) * 5} days (${parseInt(formData.durationWeeks) * 5} Days Plan)`
                       : `${parseInt(formData.durationWeeks) * 7} days`}
                     {parseInt(formData.durationWeeks) !== mealPlan.durationWeeks && (
                       <span className="text-orange-600 dark:text-orange-400 ml-1 block">
@@ -369,16 +369,15 @@ const EditMealPlanModal: React.FC<EditMealPlanModalProps> = ({ isOpen, onClose, 
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, isFiveWorkingDays: !prev.isFiveWorkingDays }))}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                        formData.isFiveWorkingDays ? 'bg-blue-600' : 'bg-gray-200 dark:bg-neutral-600'
-                      }`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${formData.isFiveWorkingDays ? 'bg-blue-600' : 'bg-gray-200 dark:bg-neutral-600'
+                        }`}
                       role="switch"
                       aria-checked={formData.isFiveWorkingDays}
+                      title="Toggle 5 working days plan"
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          formData.isFiveWorkingDays ? 'translate-x-6' : 'translate-x-1'
-                        }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isFiveWorkingDays ? 'translate-x-6' : 'translate-x-1'
+                          }`}
                       />
                     </button>
                     <span className="text-sm text-gray-700 dark:text-neutral-200">

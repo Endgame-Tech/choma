@@ -12,6 +12,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Platform,
+  Alert,
 } from "react-native";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -621,13 +622,17 @@ const CheckoutScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (selectedDuration) {
-      const newDeliveryCount = selectedDuration * 7;
+      // Check if this is a 5 Working Days Plan
+      const daysPerWeek = mealPlan?.isFiveWorkingDays ? 5 : 7;
+      const newDeliveryCount = selectedDuration * daysPerWeek;
       console.log(
-        `🚀 Duration Changed: ${selectedDuration} weeks → ${newDeliveryCount} deliveries`
+        `🚀 Duration Changed: ${selectedDuration} weeks × ${daysPerWeek} days/week = ${newDeliveryCount} deliveries${
+          mealPlan?.isFiveWorkingDays ? " (5 Working Days Plan)" : ""
+        }`
       );
       setDeliveryCount(newDeliveryCount);
     }
-  }, [selectedDuration]);
+  }, [selectedDuration, mealPlan?.isFiveWorkingDays]);
 
   useEffect(() => {
     if (selectedZone) {
@@ -827,9 +832,24 @@ const CheckoutScreen = ({ route, navigation }) => {
     // Check for phone number - support both 'phone' and 'phoneNumber' fields
     const userPhone = user?.phone || user?.phoneNumber;
     if (!userPhone?.trim()) {
-      showError(
-        "Required Field",
-        "Please add your phone number to your profile before proceeding with checkout"
+      Alert.alert(
+        "Phone Number Required",
+        "A phone number is required for delivery notifications and order updates. Would you like to add one now?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Add Phone Number",
+            onPress: () => {
+              navigation.navigate("AddPhoneNumber", {
+                userData: user,
+                skipable: false,
+              });
+            },
+          },
+        ]
       );
       return;
     }
@@ -1528,7 +1548,6 @@ const CheckoutScreen = ({ route, navigation }) => {
 
       {/* Proceed Button */}
       <View style={styles(colors).footer}>
-
         <TouchableOpacity
           style={styles(colors).proceedButton}
           onPress={handleProceedToPayment}

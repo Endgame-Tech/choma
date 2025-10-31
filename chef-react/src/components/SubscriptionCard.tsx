@@ -146,7 +146,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
             {assignment.mealPlanId.planName} • {assignment.mealPlanId.isFiveWorkingDays
-              ? `${assignment.mealPlanId.durationWeeks * 5} Days Plan • 5/week`
+              ? `${assignment.mealPlanId.durationWeeks * 5} Days Plan`
               : `${assignment.mealPlanId.durationWeeks} week(s)`}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">

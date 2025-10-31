@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import type { Driver } from '../types/drivers'
 
+// Type guard to check if driver status is one of the available statuses
+const isDriverAvailableStatus = (status: string | undefined): boolean => {
+  return status === 'online' || status === 'busy' || status === 'on delivery'
+}
+
 interface DriverAssignmentModalProps {
   isOpen: boolean
   onClose: () => void
@@ -24,10 +29,9 @@ const DriverCard = ({ driver, isSelected, onSelect, disabled = false }: { driver
     switch (status?.toLowerCase()) {
       case 'online':
       case 'available':
-        return 'bg-green-100 text-green-800'
       case 'busy':
       case 'on delivery':
-        return 'bg-orange-100 text-orange-800'
+        return 'bg-green-100 text-green-800'
       case 'offline':
       case 'unavailable':
         return 'bg-red-100 text-red-800'
@@ -50,14 +54,15 @@ const DriverCard = ({ driver, isSelected, onSelect, disabled = false }: { driver
     }
   }
 
-  const isDriverAvailable = driver.accountStatus === 'approved' && driver.isAvailable !== false && driver.status === 'online';
+  const isDriverAvailable = driver.accountStatus === 'approved' && driver.isAvailable !== false &&
+    isDriverAvailableStatus(driver.status)
 
   return (
     <div
       key={driver._id}
       className={`border rounded-lg p-4 transition-all ${disabled
-          ? 'opacity-60 cursor-not-allowed bg-gray-50'
-          : `cursor-pointer hover:shadow-md ${isSelected ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-200 hover:border-gray-300'}`
+        ? 'opacity-60 cursor-not-allowed bg-gray-50'
+        : `cursor-pointer hover:shadow-md ${isSelected ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-200 hover:border-gray-300'}`
         }`}
       onClick={() => !disabled && onSelect(driver._id)}
     >
@@ -180,7 +185,6 @@ const DriverAssignmentModal: React.FC<DriverAssignmentModalProps> = ({
         }
       })
 
-
       // Handle 304 Not Modified - use cached data if available
       if (response.status === 304) {
         // If we have cached data, don't treat this as an error
@@ -204,7 +208,7 @@ const DriverAssignmentModal: React.FC<DriverAssignmentModalProps> = ({
         const available = allDrivers.filter((driver: Driver) => {
           return driver.accountStatus === 'approved' &&
             driver.isAvailable !== false &&
-            driver.status === 'online'
+            isDriverAvailableStatus(driver.status)
         })
 
         const unavailable = allDrivers.filter((driver: Driver) =>
@@ -213,7 +217,6 @@ const DriverAssignmentModal: React.FC<DriverAssignmentModalProps> = ({
 
         setAvailableDrivers(available)
         setUnavailableDrivers(unavailable)
-
       } else {
         console.error('🚛 API returned error:', result.message)
         setError(result.message || 'Failed to load drivers')
@@ -340,6 +343,7 @@ const DriverAssignmentModal: React.FC<DriverAssignmentModalProps> = ({
                 value={assignmentDetails.priority}
                 onChange={(e) => setAssignmentDetails(prev => ({ ...prev, priority: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                aria-label="Priority"
               >
                 <option value="normal">Normal</option>
                 <option value="high">High</option>
@@ -353,6 +357,7 @@ const DriverAssignmentModal: React.FC<DriverAssignmentModalProps> = ({
                 value={assignmentDetails.estimatedPickupTime}
                 onChange={(e) => setAssignmentDetails(prev => ({ ...prev, estimatedPickupTime: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                title="Estimated pickup time for the delivery"
               />
             </div>
             <div className="md:col-span-2">

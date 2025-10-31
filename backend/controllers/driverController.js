@@ -200,12 +200,12 @@ const updateDriverLocation = async (req, res) => {
 
     // TODO: Implement WebSocket broadcasting for real-time tracking
     // Currently disabled until driverTrackingWebSocketService is implemented
-    console.log('📍 Location updated successfully for driver:', driver._id);
+    console.log("📍 Location updated successfully for driver:", driver._id);
 
     res.json({
       success: true,
       message: "Location updated successfully",
-      activeDeliveries: 0 // TODO: Count active deliveries when WebSocket service is implemented
+      activeDeliveries: 0, // TODO: Count active deliveries when WebSocket service is implemented
     });
   } catch (error) {
     console.error("Update location error:", error);
@@ -257,35 +257,24 @@ const getAvailableAssignments = async (req, res) => {
       });
     }
 
-    // Get available assignments near driver
+    // Get available assignments for driver
     let availableAssignments = [];
 
     try {
-      if (
-        driver.currentLocation &&
-        driver.currentLocation.coordinates &&
-        driver.currentLocation.coordinates.length === 2 &&
-        driver.currentLocation.coordinates.every(
-          (coord) => typeof coord === "number" && !isNaN(coord)
-        )
-      ) {
-        console.log(
-          "Finding assignments near driver location:",
-          driver.currentLocation.coordinates
-        );
-        availableAssignments = await DriverAssignment.findAvailableAssignments(
-          driver.currentLocation.coordinates,
-          10 // 10km radius
-        );
-      } else {
-        console.log(
-          "Driver has no location, getting all available assignments"
-        );
-        // If no location, get all available assignments
-        availableAssignments = await DriverAssignment.find({
-          status: "available",
-        }).sort({ priority: -1, assignedAt: 1 });
-      }
+      console.log(
+        "Getting all assignments for driver (including subscription orders)"
+      );
+
+      // For subscription orders, driver should see all their "assigned" orders
+      // Don't use geospatial queries as driver is pre-assigned to subscription orders
+      availableAssignments = await DriverAssignment.find({
+        $or: [
+          { driverId: driver._id, status: "assigned" }, // Subscription orders assigned to this driver
+          { status: "available" }, // One-time orders available for pickup
+        ],
+      })
+        .populate("orderId")
+        .sort({ priority: -1, assignedAt: 1 });
 
       console.log("Available assignments found:", availableAssignments.length);
     } catch (assignmentError) {
@@ -879,16 +868,16 @@ const getDriverLocationForOrder = async (req, res) => {
     const { orderId } = req.params;
 
     // Find the driver assignment for this order
-    const DriverAssignment = require('../models/DriverAssignment');
-    const assignment = await DriverAssignment.findOne({ 
+    const DriverAssignment = require("../models/DriverAssignment");
+    const assignment = await DriverAssignment.findOne({
       orderId: orderId,
-      status: { $in: ['assigned', 'picked_up', 'in_transit'] }
-    }).populate('driverId', 'fullName currentLocation rating');
+      status: { $in: ["assigned", "picked_up", "in_transit"] },
+    }).populate("driverId", "fullName currentLocation rating");
 
     if (!assignment || !assignment.driverId) {
       return res.status(404).json({
         success: false,
-        message: "No active driver found for this order"
+        message: "No active driver found for this order",
       });
     }
 
@@ -905,7 +894,7 @@ const getDriverLocationForOrder = async (req, res) => {
       console.log(`❌ Location unavailable - missing coordinates`);
       return res.status(404).json({
         success: false,
-        message: "Driver location not available"
+        message: "Driver location not available",
       });
     }
 
@@ -918,16 +907,16 @@ const getDriverLocationForOrder = async (req, res) => {
         location: {
           latitude: currentLocation.coordinates[1], // GeoJSON format is [lng, lat]
           longitude: currentLocation.coordinates[0],
-          lastUpdated: currentLocation.lastUpdated
+          lastUpdated: currentLocation.lastUpdated,
         },
-        assignmentStatus: assignment.status
-      }
+        assignmentStatus: assignment.status,
+      },
     });
   } catch (error) {
     console.error("Get driver location error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error"
+      message: "Server error",
     });
   }
 };

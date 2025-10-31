@@ -123,10 +123,24 @@ async function generateOrderForSubscription(subscription) {
 
     console.log(`✅ Created order ${order.orderNumber}`);
 
+    // Generate subDayId helper function
+    const generateSubDayId = (subscriptionId, dayIndex) => {
+      // Extract first 6 characters after "SUB-" prefix
+      // subscriptionId format: "SUB-1761786749327-5161"
+      const idPart = subscriptionId
+        .replace("SUB-", "")
+        .substring(0, 6)
+        .toUpperCase();
+      // Create subDayId: first6chars + "D" + dayNumber (zero-padded to 2 digits)
+      const dayNumber = String(dayIndex + 1).padStart(2, "0");
+      return `${idPart}D${dayNumber}`;
+    };
+
     // Create OrderDelegation with daily timeline
     const dailyTimeline = uniqueDates.map((dateKey, index) => ({
       date: new Date(dateKey),
       timelineId: `TL-${subscription.subscriptionId}-${index + 1}`,
+      subDayId: generateSubDayId(subscription.subscriptionId, index),
       status: "pending",
     }));
 
@@ -142,11 +156,14 @@ async function generateOrderForSubscription(subscription) {
       `✅ Created OrderDelegation with ${dailyTimeline.length} daily entries`
     );
 
-    // Update meal schedule slots with timelineId
-    const timelineIdsByDate = {};
+    // Update meal schedule slots with timelineId and subDayId
+    const timelineDataByDate = {};
     dailyTimeline.forEach((entry) => {
       const dateKey = new Date(entry.date).toISOString().split("T")[0];
-      timelineIdsByDate[dateKey] = entry.timelineId;
+      timelineDataByDate[dateKey] = {
+        timelineId: entry.timelineId,
+        subDayId: entry.subDayId,
+      };
     });
 
     subscription.mealPlanSnapshot.mealSchedule.forEach((slot) => {
@@ -154,12 +171,16 @@ async function generateOrderForSubscription(subscription) {
         const slotDate = new Date(slot.scheduledDeliveryDate);
         slotDate.setHours(0, 0, 0, 0);
         const dateKey = slotDate.toISOString().split("T")[0];
-        slot.timelineId = timelineIdsByDate[dateKey];
+        const timelineData = timelineDataByDate[dateKey];
+        if (timelineData) {
+          slot.timelineId = timelineData.timelineId;
+          slot.subDayId = timelineData.subDayId;
+        }
       }
     });
 
     await subscription.save();
-    console.log(`✅ Updated meal schedule with timelineIds`);
+    console.log(`✅ Updated meal schedule with timelineIds and subDayIds`);
 
     return { order, orderDelegation };
   } catch (error) {
@@ -401,10 +422,18 @@ exports.createSubscription = async (req, res) => {
       note: "End date will be recalculated after first delivery",
     });
 
+    // Generate subscriptionId with alphanumeric characters
+    const generateSubscriptionId = () => {
+      const timestamp = Date.now();
+      const randomAlphanumeric = Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase(); // 6 characters: letters + numbers
+      return `SUB-${timestamp}-${randomAlphanumeric}`;
+    };
+
     const subscriptionData = {
-      subscriptionId:
-        subscriptionId ||
-        `SUB-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      subscriptionId: subscriptionId || generateSubscriptionId(),
       userId: req.user.id,
       mealPlanId: mealPlan,
       selectedMealTypes: selectedMealTypes ||
@@ -426,7 +455,10 @@ exports.createSubscription = async (req, res) => {
       paymentReference,
       transactionId:
         transactionId ||
-        `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        `TXN-${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 8)
+          .toUpperCase()}`,
 
       // Initialize recurring delivery settings - subscription NOT activated yet
       recurringDelivery: {

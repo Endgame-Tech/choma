@@ -59,7 +59,11 @@ async function compileMealPlanSnapshot(
     );
 
     console.log(
-      `✅ Filtered to ${filteredAssignments.length} assignments based on selected meal types: ${selectedMealTypes.join(", ")}`
+      `✅ Filtered to ${
+        filteredAssignments.length
+      } assignments based on selected meal types: ${selectedMealTypes.join(
+        ", "
+      )}`
     );
 
     // 4. Build the meal schedule array with complete details
@@ -189,12 +193,14 @@ async function compileMealPlanSnapshot(
           totalChomaEarnings += mealData.pricing.chomaEarnings;
 
           // Track dietary distribution
-          if (mealData.dietaryTags.includes("vegan")) dietaryDistribution.vegan++;
+          if (mealData.dietaryTags.includes("vegan"))
+            dietaryDistribution.vegan++;
           if (mealData.dietaryTags.includes("vegetarian"))
             dietaryDistribution.vegetarian++;
           if (mealData.dietaryTags.includes("pescatarian"))
             dietaryDistribution.pescatarian++;
-          if (mealData.dietaryTags.includes("halal")) dietaryDistribution.halal++;
+          if (mealData.dietaryTags.includes("halal"))
+            dietaryDistribution.halal++;
           if (mealData.dietaryTags.includes("gluten-free"))
             dietaryDistribution.glutenFree++;
           if (mealData.dietaryTags.includes("dairy-free"))
@@ -213,7 +219,9 @@ async function compileMealPlanSnapshot(
       const scheduledDeliveryDate = new Date(startDate);
       const daysToAdd =
         (assignment.weekNumber - 1) * 7 + (assignment.dayOfWeek - 1);
-      scheduledDeliveryDate.setDate(scheduledDeliveryDate.getDate() + daysToAdd);
+      scheduledDeliveryDate.setDate(
+        scheduledDeliveryDate.getDate() + daysToAdd
+      );
 
       // Add to meal schedule
       mealSchedule.push({
@@ -250,9 +258,12 @@ async function compileMealPlanSnapshot(
       totalNutrition,
 
       avgNutritionPerMeal: {
-        calories: totalMeals > 0 ? Math.round(totalNutrition.calories / totalMeals) : 0,
-        protein: totalMeals > 0 ? Math.round(totalNutrition.protein / totalMeals) : 0,
-        carbs: totalMeals > 0 ? Math.round(totalNutrition.carbs / totalMeals) : 0,
+        calories:
+          totalMeals > 0 ? Math.round(totalNutrition.calories / totalMeals) : 0,
+        protein:
+          totalMeals > 0 ? Math.round(totalNutrition.protein / totalMeals) : 0,
+        carbs:
+          totalMeals > 0 ? Math.round(totalNutrition.carbs / totalMeals) : 0,
         fat: totalMeals > 0 ? Math.round(totalNutrition.fat / totalMeals) : 0,
       },
 
@@ -281,7 +292,8 @@ async function compileMealPlanSnapshot(
     };
 
     // 6. Calculate pricing
-    const basePlanPrice = pricingOverrides.basePlanPrice || mealPlan.totalPrice || 0;
+    const basePlanPrice =
+      pricingOverrides.basePlanPrice || mealPlan.totalPrice || 0;
     const frequencyMultiplier = pricingOverrides.frequencyMultiplier || 1;
     const durationMultiplier = pricingOverrides.durationMultiplier || 1;
     const subtotal = basePlanPrice * frequencyMultiplier * durationMultiplier;
@@ -291,7 +303,9 @@ async function compileMealPlanSnapshot(
 
     // Apply discount if provided
     if (discountInfo && discountInfo.discountPercent > 0) {
-      discountAmount = Math.round((subtotal * discountInfo.discountPercent) / 100);
+      discountAmount = Math.round(
+        (subtotal * discountInfo.discountPercent) / 100
+      );
       finalPrice = subtotal - discountAmount;
     }
 
@@ -329,6 +343,7 @@ async function compileMealPlanSnapshot(
       targetAudience: mealPlan.targetAudience || "",
       coverImage: mealPlan.coverImage || mealPlan.planImageUrl || "",
       tier: mealPlan.tier || "Silver",
+      isFiveWorkingDays: mealPlan.isFiveWorkingDays || false,
 
       // Subscription period
       startDate,

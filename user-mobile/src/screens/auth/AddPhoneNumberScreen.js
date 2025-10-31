@@ -145,6 +145,9 @@ const AddPhoneNumberScreen = ({ navigation, route }) => {
   // Get user data from route params (passed from Google Sign-In)
   const { userData, skipable = false } = route?.params || {};
 
+  // Check if user already has phone (updating) or not (adding)
+  const isUpdating = userData?.phone || userData?.phoneNumber;
+
   // Detect user's country and set as default
   const detectUserCountry = () => {
     try {
@@ -210,17 +213,28 @@ const AddPhoneNumberScreen = ({ navigation, route }) => {
           phone: fullPhoneNumber,
         };
 
-        console.log("✅ Phone number updated, setting auth state");
+        console.log("✅ Phone number updated");
 
-        // Now set the auth state to complete sign-in
+        // Update auth state with new phone number
         setUser(updatedUserData);
-        setIsAuthenticated(true);
 
-        // Navigate to main app
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "MainTabs" }],
-        });
+        // Check if user is already authenticated (coming from Checkout/Profile)
+        // or needs to complete sign-in (coming from Google Sign-In)
+        const isUpdatingExisting = navigation.canGoBack();
+
+        if (isUpdatingExisting) {
+          // User is already logged in, just go back to previous screen
+          console.log("📱 Going back to previous screen");
+          navigation.goBack();
+        } else {
+          // New user from Google Sign-In, complete authentication
+          console.log("📱 Setting auth state and navigating to MainTabs");
+          setIsAuthenticated(true);
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "MainTabs" }],
+          });
+        }
       } else {
         throw new Error(response.message || "Failed to update phone number");
       }
@@ -298,9 +312,13 @@ const AddPhoneNumberScreen = ({ navigation, route }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Add phone number</Text>
+          <Text style={styles.title}>
+            {isUpdating ? "Update phone number" : "Add phone number"}
+          </Text>
           <Text style={styles.subtitle}>
-            Input a phone number you'd like to add to your account
+            {isUpdating
+              ? "Update the phone number for your account"
+              : "Input a phone number you'd like to add to your account"}
           </Text>
 
           {/* Phone Input Section */}

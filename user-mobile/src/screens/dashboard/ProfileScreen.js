@@ -2165,7 +2165,12 @@ Your meal plan has been updated with fresh options.`;
           </View>
 
           {/* Profile Tabs */}
-          <ProfileTabs selectedTab={selectedTab} onTabChange={setSelectedTab} />
+          <View style={{ zIndex: 1001 }} pointerEvents="box-none">
+            <ProfileTabs
+              selectedTab={selectedTab}
+              onTabChange={setSelectedTab}
+            />
+          </View>
         </View>
 
         {/* Profile Content Section */}

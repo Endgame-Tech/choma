@@ -355,7 +355,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       const planName = mealPlanDetails?.planName || bundle?.name || "Meal Plan";
       const duration = mealPlanDetails?.durationWeeks
         ? mealPlanDetails.isFiveWorkingDays
-          ? `${mealPlanDetails.durationWeeks * 5} Days Plan • 5/week`
+          ? `${mealPlanDetails.durationWeeks * 5} Days Plan`
           : `${mealPlanDetails.durationWeeks} week${
               mealPlanDetails.durationWeeks !== 1 ? "s" : ""
             }`
@@ -1615,7 +1615,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.durationWeeks
                   ? mealPlanDetails.isFiveWorkingDays
-                    ? `${mealPlanDetails.durationWeeks * 5} Days Plan • 5/week`
+                    ? `${mealPlanDetails.durationWeeks * 5} Days Plan`
                     : `~${mealPlanDetails.durationWeeks} week${
                         mealPlanDetails.durationWeeks !== 1 ? "s" : ""
                       }`
@@ -1628,7 +1628,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
               <CustomIcon name="food" size={16} color={colors.text} />
               <Text style={styles(colors).metaText}>
                 {mealPlanDetails?.mealTypes
-                  ? `${mealPlanDetails.mealTypes.length * 7} meals/week`
+                  ? mealPlanDetails.isFiveWorkingDays
+                    ? `${mealPlanDetails.mealTypes.length * 5} meals/week`
+                    : `${mealPlanDetails.mealTypes.length * 7} meals/week`
                   : mealPlanDetails?.mealsPerWeek ||
                     bundle?.mealsPerWeek ||
                     21}{" "}
@@ -1657,6 +1659,16 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
                   </Text>
                 </View>
               )}
+
+            {/* Display delivery schedule */}
+            {mealPlanDetails?.isFiveWorkingDays && (
+              <View style={styles(colors).metaItem}>
+                <CustomIcon name="calendar" size={16} color={colors.text} />
+                <Text style={styles(colors).metaText}>
+                  Mon-Fri delivery only
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles(colors).priceContainer}>
@@ -2784,12 +2796,8 @@ const styles = (colors) =>
     },
     mealPreviewSingle: {
       width: "100%",
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      backgroundColor: colors.cardBackground,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
+      // paddingTop: 8,
+      // paddingHorizontal: 12,
     },
     mealIcon: {
       fontSize: 12,

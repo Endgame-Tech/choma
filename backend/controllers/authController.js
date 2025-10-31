@@ -318,6 +318,7 @@ exports.updateProfile = async (req, res) => {
       lastName,
       dateOfBirth,
       phone,
+      phoneNumber, // Support both phone and phoneNumber
       address,
       deliveryAddress,
       city,
@@ -326,13 +327,15 @@ exports.updateProfile = async (req, res) => {
       profileImage,
     } = req.body;
 
-    // Validation
-    if (!fullName) {
+    // Validation - only require fullName if it's being updated
+    // Allow phone-only updates for Google Sign-In flow
+    if (fullName !== undefined && !fullName) {
       return res.status(400).json({
         success: false,
-        message: "Full name is required",
+        message: "Full name cannot be empty",
       });
     }
+
     // Find and update the customer
     const customer = await Customer.findById(req.user.id);
 
@@ -351,18 +354,24 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    // Update fields
-    customer.fullName = fullName;
+    // Update fields only if provided
+    if (fullName !== undefined) customer.fullName = fullName;
     if (firstName !== undefined) customer.firstName = firstName;
     if (lastName !== undefined) customer.lastName = lastName;
     if (dateOfBirth !== undefined)
       customer.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
-    customer.phone = phone;
+    // Support both phone and phoneNumber fields
+    if (phone !== undefined || phoneNumber !== undefined) {
+      customer.phone = phoneNumber || phone;
+    }
     // Use deliveryAddress if provided, otherwise fall back to address
-    customer.address = deliveryAddress || address;
-    customer.city = city;
-    customer.dietaryPreferences = dietaryPreferences;
-    customer.allergies = allergies;
+    if (deliveryAddress !== undefined || address !== undefined) {
+      customer.address = deliveryAddress || address;
+    }
+    if (city !== undefined) customer.city = city;
+    if (dietaryPreferences !== undefined)
+      customer.dietaryPreferences = dietaryPreferences;
+    if (allergies !== undefined) customer.allergies = allergies;
 
     // Update profile image if provided
     if (profileImage !== undefined) {
@@ -383,6 +392,7 @@ exports.updateProfile = async (req, res) => {
         dateOfBirth: customer.dateOfBirth,
         email: customer.email,
         phone: customer.phone,
+        phoneNumber: customer.phone, // Return both for compatibility
         address: customer.address,
         city: customer.city,
         dietaryPreferences: customer.dietaryPreferences,

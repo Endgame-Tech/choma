@@ -107,7 +107,9 @@ const MealPlanCard = ({
   const hasDiscount = planDiscount && planDiscount.discountPercent > 0;
 
   // Debug: Log plan data to check isPopular field
-  console.log(`🔍 MealPlan "${plan.name}" - isPopular: ${plan.isPopular}, isNew: ${plan.isNew}`);
+  console.log(
+    `🔍 MealPlan "${plan.name}" - isPopular: ${plan.isPopular}, isNew: ${plan.isNew}`
+  );
 
   return (
     <TouchableOpacity
@@ -129,9 +131,12 @@ const MealPlanCard = ({
           <View style={styles(colors).ratingBadge}>
             <CustomIcon name="star-filled" size={14} color={colors.primary} />
             <Text style={styles(colors).ratingBadgeText}>
-              {(plan.rating || plan.averageRating || plan.avgRating || 4.5).toFixed(
-                1
-              )}
+              {(
+                plan.rating ||
+                plan.averageRating ||
+                plan.avgRating ||
+                4.5
+              ).toFixed(1)}
             </Text>
           </View>
 
@@ -215,7 +220,7 @@ const MealPlanCard = ({
               <Text style={styles(colors).mealplanMetaText}>
                 {plan.duration ||
                   (plan.durationWeeks && plan.isFiveWorkingDays
-                    ? `${plan.durationWeeks * 5} Days Plan • 5/week`
+                    ? `${plan.durationWeeks * 5} Days Plan`
                     : plan.durationWeeks
                     ? `${plan.durationWeeks} week(s)`
                     : plan.durationDays

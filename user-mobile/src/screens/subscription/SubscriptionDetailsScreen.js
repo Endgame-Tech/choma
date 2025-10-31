@@ -270,10 +270,7 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
               Subscription ID:
             </Text>
             <Text style={styles(colors).subscriptionIdValue}>
-              {subscription.subscriptionId ||
-                subscription._id ||
-                subscription.id ||
-                "Auto-generated"}
+              {subscription.subscriptionId || "N/A"}
             </Text>
           </View>
         </View>
@@ -354,8 +351,11 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
               <Text style={styles(colors).detailLabel}>Duration</Text>
               <Text style={styles(colors).detailValue}>
                 {subscription.durationWeeks
-                  ? subscription.isFiveWorkingDays
-                    ? `${subscription.durationWeeks * 5} Days Plan • 5/week`
+                  ? subscription.mealPlanSnapshot?.isFiveWorkingDays ||
+                    subscription.isFiveWorkingDays
+                    ? `${
+                        subscription.durationWeeks * 5
+                      } Days (5 Working Days Plan)`
                     : `${subscription.durationWeeks} ${
                         subscription.durationWeeks === 1 ? "week" : "weeks"
                       }`
@@ -403,24 +403,24 @@ const SubscriptionDetailsScreen = ({ route, navigation }) => {
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Subscription ID</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.subscriptionId ||
-                  subscription._id ||
-                  subscription.id ||
-                  "Auto-generated"}
+                {subscription.subscriptionId || "N/A"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Transaction ID</Text>
               <Text style={styles(colors).detailValue}>
-                {subscription.transactionId ||
-                  subscription.paymentReference ||
-                  "N/A"}
+                {subscription.transactionId || "N/A"}
               </Text>
             </View>
             <View style={styles(colors).detailRow}>
               <Text style={styles(colors).detailLabel}>Amount Paid</Text>
               <Text style={styles(colors).detailValue}>
-                ₦{(subscription.totalPrice || 0).toLocaleString()}
+                ₦
+                {(
+                  subscription.totalPrice ||
+                  subscription.price ||
+                  0
+                ).toLocaleString()}
               </Text>
             </View>
           </View>
@@ -658,7 +658,7 @@ const styles = (colors) =>
     button: {
       backgroundColor: colors.primary,
       paddingVertical: 15,
-      borderRadius: THEME.borderRadius.large,
+      borderRadius: THEME.borderRadius.xxl,
       alignItems: "center",
       marginBottom: 10,
     },
