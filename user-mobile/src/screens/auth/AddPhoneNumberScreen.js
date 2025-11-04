@@ -218,22 +218,26 @@ const AddPhoneNumberScreen = ({ navigation, route }) => {
         // Update auth state with new phone number
         setUser(updatedUserData);
 
-        // Check if user is already authenticated (coming from Checkout/Profile)
-        // or needs to complete sign-in (coming from Google Sign-In)
-        const isUpdatingExisting = navigation.canGoBack();
+        // Check if this is a new Google signup or updating existing user
+        // For new signups from Google, userData will exist and we need to complete auth
+        // For existing users from Checkout/Profile, we just go back
+        const isNewGoogleSignup =
+          userData && !userData.phoneNumber && !userData.phone;
 
-        if (isUpdatingExisting) {
-          // User is already logged in, just go back to previous screen
-          console.log("📱 Going back to previous screen");
-          navigation.goBack();
-        } else {
+        if (isNewGoogleSignup) {
           // New user from Google Sign-In, complete authentication
-          console.log("📱 Setting auth state and navigating to MainTabs");
+          console.log(
+            "📱 New Google signup - Setting auth state and navigating to MainTabs"
+          );
           setIsAuthenticated(true);
           navigation.reset({
             index: 0,
             routes: [{ name: "MainTabs" }],
           });
+        } else {
+          // User is already logged in, just go back to previous screen
+          console.log("📱 Existing user - Going back to previous screen");
+          navigation.goBack();
         }
       } else {
         throw new Error(response.message || "Failed to update phone number");
@@ -591,7 +595,7 @@ const createStyles = (colors) =>
     continueButton: {
       backgroundColor: colors.text,
       paddingVertical: 16,
-      borderRadius: 12,
+      borderRadius: 52,
       alignItems: "center",
       shadowColor: colors.shadow,
       shadowOffset: { width: 0, height: 2 },

@@ -9,7 +9,7 @@
 
 ## 📋 TABLE OF CONTENTS
 
-1. [Executive Summary](#executive-summary)
+1. [Executive Summary](#executive-summary)]
 2. [Current State Analysis](#current-state-analysis)
 3. [Requirements & User Stories](#requirements--user-stories)
 4. [Technical Architecture](#technical-architecture)

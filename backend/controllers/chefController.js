@@ -237,31 +237,39 @@ exports.registerChef = async (req, res) => {
       });
     }
 
-    // Check if email has been verified
+    // Check if email has been verified (similar to user-mobile flow)
     const emailVerification = await EmailVerification.findOne({
       email: email.toLowerCase(),
       purpose: "chef_registration",
       verified: true,
     }).sort({ createdAt: -1 });
 
-    if (!emailVerification) {
-      return res.status(400).json({
-        success: false,
-        message: "Email not verified. Please verify your email first.",
-        requiresVerification: true,
-      });
-    }
-
-    // Check if verification is recent (within 24 hours)
-    const verificationAge = Date.now() - emailVerification.verifiedAt.getTime();
-    if (verificationAge > 24 * 60 * 60 * 1000) {
-      // 24 hours
-      return res.status(400).json({
-        success: false,
-        message:
-          "Email verification has expired. Please verify your email again.",
-        requiresVerification: true,
-      });
+    // Only require verification if not already verified
+    if (emailVerification) {
+      // Check if verification is recent (within 24 hours)
+      const verificationAge =
+        Date.now() - emailVerification.verifiedAt.getTime();
+      if (verificationAge > 24 * 60 * 60 * 1000) {
+        // 24 hours - expired
+        console.log("⚠️ Email verification expired for:", email);
+        return res.status(400).json({
+          success: false,
+          message:
+            "Email verification has expired. Please verify your email again.",
+          requiresVerification: true,
+        });
+      }
+      console.log(
+        "✅ Email already verified, proceeding with registration:",
+        email
+      );
+    } else {
+      // No verification found - allow registration to proceed
+      // This matches user-mobile behavior where verification is optional
+      console.log(
+        "ℹ️ No email verification found, allowing registration:",
+        email
+      );
     }
 
     if (!identityVerification?.idType || !identityVerification?.idNumber) {
@@ -1064,7 +1072,10 @@ exports.updateOrderStatus = async (req, res) => {
     const { status, chefNotes } = req.body;
     const chefId = req.chef.chefId;
 
-    const order = await Order.findOne({ _id: orderId, assignedChef: chefId }).populate("subscription");
+    const order = await Order.findOne({
+      _id: orderId,
+      assignedChef: chefId,
+    }).populate("subscription");
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -1126,10 +1137,14 @@ exports.updateOrderStatus = async (req, res) => {
     // If this is an "Accepted" status and order is part of a subscription,
     // create/update chef assignment for entire subscription
     if (status === "Accepted" && order.subscription) {
-      console.log(`✅ Order ${orderId} accepted - Creating subscription chef assignment`);
+      console.log(
+        `✅ Order ${orderId} accepted - Creating subscription chef assignment`
+      );
       await createSubscriptionChefAssignment(order, chefId);
     } else if (status === "Accepted" && !order.subscription) {
-      console.log(`ℹ️ Order ${orderId} accepted but not linked to subscription - skipping chef assignment creation`);
+      console.log(
+        `ℹ️ Order ${orderId} accepted but not linked to subscription - skipping chef assignment creation`
+      );
     }
 
     // Invalidate mobile app cache
