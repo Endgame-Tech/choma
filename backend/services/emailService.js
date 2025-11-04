@@ -2,66 +2,50 @@ const nodemailer = require("nodemailer");
 
 class EmailService {
   constructor() {
-    // Use SendGrid as the primary and only email provider
-    this.isSendGrid = true;
+    // Use Mailjet as the primary email provider
+    this.isMailjet = true;
+    this.isSendGrid = false;
 
-    // Initialize SendGrid (API key must be provided in SENDGRID_API_KEY env var)
+    // Initialize Mailjet (API key and secret must be provided in env vars)
+    try {
+      const Mailjet = require("node-mailjet");
+      if (!process.env.MAILJET_API || !process.env.MAILJET_SCRECT_KEY) {
+        console.error(
+          "❌ MAILJET_API or MAILJET_SCRECT_KEY is not set. Both are required to use Mailjet."
+        );
+        throw new Error("Mailjet API credentials are required");
+      } else {
+        this.mailjet = Mailjet.apiConnect(
+          process.env.MAILJET_API,
+          process.env.MAILJET_SCRECT_KEY
+        );
+        console.log("📧 Mailjet mail client initialized successfully");
+      }
+    } catch (err) {
+      console.error("❌ Failed to initialize Mailjet client:", err.message);
+      throw new Error(`Mailjet initialization failed: ${err.message}`);
+    }
+
+    // Initialize SendGrid as fallback (API key must be provided in SENDGRID_API_KEY env var)
     try {
       const sgMail = require("@sendgrid/mail");
       if (!process.env.SENDGRID_API_KEY) {
-        console.error(
-          "❌ SENDGRID_API_KEY is not set. Set process.env.SENDGRID_API_KEY to use SendGrid."
+        console.warn(
+          "⚠️ SENDGRID_API_KEY is not set. SendGrid fallback disabled."
         );
-        throw new Error("SendGrid API key is required");
+        this.sgMail = null;
       } else {
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
         this.sgMail = sgMail;
-        console.log("📧 SendGrid mail client initialized successfully");
+        console.log("📧 SendGrid fallback initialized successfully");
       }
     } catch (err) {
-      console.error("❌ Failed to initialize SendGrid client:", err.message);
-      throw new Error(`SendGrid initialization failed: ${err.message}`);
+      console.warn("⚠️ SendGrid fallback not available:", err.message);
+      this.sgMail = null;
     }
 
-    // Gmail SMTP is now disabled - SendGrid only
-    if (false) {
-      // Initialize Nodemailer with Gmail SMTP and production-ready settings
-      this.transporter = nodemailer.createTransport({
-        service: "gmail",
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false, // true for port 465, false for other ports
-        auth: {
-          user: process.env.SENDGRID_FROM || process.env.GMAIL_USER,
-          pass: process.env.GMAIL_APP_PASSWORD,
-        },
-        // Production timeout and connection settings
-        connectionTimeout: 30000, // 30 seconds
-        greetingTimeout: 10000, // 10 seconds
-        socketTimeout: 60000, // 60 seconds
-        // Connection pooling for better performance
-        pool: true,
-        maxConnections: 5,
-        maxMessages: 100,
-        // Retry configuration
-        rateDelta: 20000, // 20 second rate delta
-        rateLimit: 5, // max 5 emails per rateDelta
-        // TLS settings for better compatibility
-        tls: {
-          // ciphers: "SSLv3", // Removed for improved security and compatibility
-          rejectUnauthorized: false, // Consider setting to true in production
-        },
-        // Debug mode in development
-        debug: process.env.NODE_ENV === "development",
-        logger: process.env.NODE_ENV === "development",
-      });
-
-      // Verify connection configuration on startup
-      this.verifyConnection();
-    } else {
-      // Gmail SMTP disabled - SendGrid is the only email provider
-      console.log("� Using SendGrid as the only email provider");
-    }
+    // Gmail SMTP is now disabled - Mailjet primary, SendGrid fallback
+    console.log("📧 Using Mailjet as primary, SendGrid as fallback");
 
     // Logo URL - can be updated to use Cloudinary or other CDN
     this.logoUrl =
@@ -133,45 +117,78 @@ class EmailService {
   }
 
   /**
-   * Send email using SendGrid only
+   * Send email using Mailjet (primary) with SendGrid fallback
    * @param {Object} mailOptions - Mail options
    * @param {number} attempt - Current attempt number
    * @returns {Promise<boolean>} - Success status
    */
   async sendEmailWithRetry(mailOptions, attempt = 1) {
     try {
-      // Use SendGrid as the only email provider
-      if (!this.sgMail) {
-        throw new Error("SendGrid client not initialized");
+      // Try Mailjet first
+      if (this.isMailjet && this.mailjet) {
+        const request = this.mailjet.post("send", { version: "v3.1" }).request({
+          Messages: [
+            {
+              From: {
+                Email:
+                  mailOptions.from?.address ||
+                  process.env.SENDGRID_FROM ||
+                  "getchoma@gmail.com",
+                Name: mailOptions.from?.name || "Choma",
+              },
+              To: [
+                {
+                  Email: mailOptions.to,
+                },
+              ],
+              Subject: mailOptions.subject,
+              TextPart: mailOptions.text,
+              HTMLPart: mailOptions.html,
+            },
+          ],
+        });
+
+        await request;
+        console.log(
+          `✅ Email sent successfully to ${mailOptions.to} via Mailjet (attempt ${attempt})`
+        );
+        return true;
       }
-
-      const msg = {
-        to: mailOptions.to,
-        from:
-          mailOptions.from?.address ||
-          process.env.SENDGRID_FROM ||
-          process.env.SENDGRID_FROM ||
-          process.env.GMAIL_USER,
-        subject: mailOptions.subject,
-        text: mailOptions.text,
-        html: mailOptions.html,
-      };
-
-      await this.sgMail.send(msg);
-      console.log(
-        `✅ Email sent successfully to ${mailOptions.to} via SendGrid (attempt ${attempt})`
-      );
-      return true;
     } catch (error) {
       console.error(
-        `❌ SendGrid email send attempt ${attempt} failed:`,
+        `❌ Mailjet email send attempt ${attempt} failed:`,
         error.message
       );
 
-      // Check if we should retry
+      // Try SendGrid fallback
+      if (this.sgMail) {
+        try {
+          console.log("🔄 Attempting SendGrid fallback...");
+          const msg = {
+            to: mailOptions.to,
+            from:
+              mailOptions.from?.address ||
+              process.env.SENDGRID_FROM ||
+              "getchoma@gmail.com",
+            subject: mailOptions.subject,
+            text: mailOptions.text,
+            html: mailOptions.html,
+          };
+
+          await this.sgMail.send(msg);
+          console.log(
+            `✅ Email sent successfully to ${mailOptions.to} via SendGrid fallback`
+          );
+          return true;
+        } catch (sgError) {
+          console.error(`❌ SendGrid fallback also failed:`, sgError.message);
+        }
+      }
+
+      // Check if we should retry Mailjet
       if (attempt < this.maxRetryAttempts && this.shouldRetry(error)) {
         console.log(
-          `🔄 Retrying SendGrid email send in ${this.retryDelay}ms... (${attempt}/${this.maxRetryAttempts})`
+          `🔄 Retrying Mailjet email send in ${this.retryDelay}ms... (${attempt}/${this.maxRetryAttempts})`
         );
 
         // Wait before retry
@@ -183,10 +200,7 @@ class EmailService {
         return await this.sendEmailWithRetry(mailOptions, attempt + 1);
       }
 
-      console.error(
-        `💥 SendGrid email send failed after ${attempt} attempts:`,
-        error
-      );
+      console.error(`💥 Email send failed after ${attempt} attempts:`, error);
       return false;
     }
   }
