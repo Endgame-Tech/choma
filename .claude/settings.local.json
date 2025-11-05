@@ -23,7 +23,8 @@
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
       "Bash(netstat:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }
