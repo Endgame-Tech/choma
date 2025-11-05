@@ -235,8 +235,8 @@ exports.getMealPlanDetails = async (req, res) => {
 
     // Get subscriptions for this plan
     const subscriptions = await Subscription.find({ mealPlanId: id })
-      .populate('customer', 'fullName email')
-      .sort({ subscriptionDate: -1 })
+      .populate('userId', 'fullName email')
+      .sort({ createdDate: -1 })
       .limit(10)
       .lean();
 
@@ -510,6 +510,9 @@ exports.updateMealPlan = async (req, res) => {
     await updatedPlan.updateCalculatedFields();
     console.log("🔄 Final meal plan recalculation completed");
 
+    // Reload the document to get the fresh state after updateCalculatedFields
+    const finalPlan = await MealPlan.findById(id).lean();
+
     // Clear cache to ensure fresh data on next request
     const { cacheService } = require('../config/redis');
     try {
@@ -524,7 +527,7 @@ exports.updateMealPlan = async (req, res) => {
     res.json({
       success: true,
       message: 'Meal plan updated successfully',
-      data: updatedPlan
+      data: finalPlan
     });
   } catch (err) {
     console.error('Update meal plan error:', err);
