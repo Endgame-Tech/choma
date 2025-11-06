@@ -221,18 +221,19 @@ const AddPhoneNumberScreen = ({ navigation, route }) => {
         // Check if this is a new Google signup or updating existing user
         // For new signups from Google, userData will exist and we need to complete auth
         // For existing users from Checkout/Profile, we just go back
+        // We can tell if it's a new signup by checking if skipable is true (means they're in onboarding flow)
         const isNewGoogleSignup =
-          userData && !userData.phoneNumber && !userData.phone;
+          userData && !userData.phoneNumber && !userData.phone && skipable;
 
         if (isNewGoogleSignup) {
           // New user from Google Sign-In, complete authentication
           console.log(
-            "📱 New Google signup - Setting auth state and navigating to MainTabs"
+            "📱 New Google signup - Setting auth state and navigating to Home"
           );
           setIsAuthenticated(true);
           navigation.reset({
             index: 0,
-            routes: [{ name: "MainTabs" }],
+            routes: [{ name: "Home" }],
           });
         } else {
           // User is already logged in, just go back to previous screen
@@ -258,7 +259,7 @@ const AddPhoneNumberScreen = ({ navigation, route }) => {
       // Navigate to main app without phone number
       navigation.reset({
         index: 0,
-        routes: [{ name: "MainTabs" }],
+        routes: [{ name: "Home" }],
       });
     }
   };

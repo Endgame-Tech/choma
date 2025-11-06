@@ -39,9 +39,7 @@ interface SecurityAlertResponse {
 
 // Create axios instance for notification API
 const api = axios.create({
-  baseURL: import.meta.env.PROD
-    ? `${import.meta.env.VITE_API_BASE_URL}/api/admin/notifications`
-    : '/api/admin/notifications',
+  baseURL: `${import.meta.env.VITE_API_URL}/api/admin/notifications`,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -69,14 +67,12 @@ api.interceptors.response.use(
   (error) => {
     console.error(`❌ Notification API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.message);
     
-    // Handle authentication errors
-    if (error.response?.status === 401) {
+    // Handle authentication errors - but DON'T clear credentials during login flow
+    if (error.response?.status === 401 && window.location.pathname !== '/login') {
       console.warn('🔒 Notification API authentication failed - clearing stored credentials');
       localStorage.removeItem('choma-admin-token');
       localStorage.removeItem('choma-admin-data');
-      if (window.location.pathname !== '/login') {
-        window.location.reload();
-      }
+      window.location.reload();
     }
     
     return Promise.reject(error);

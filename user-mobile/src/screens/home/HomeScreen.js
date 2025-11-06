@@ -46,6 +46,8 @@ import * as Location from "expo-location";
 import * as Haptics from "expo-haptics";
 import { Svg, Path } from "react-native-svg";
 import MaskedView from "@react-native-masked-view/masked-view";
+import { useOffline } from "../../context/OfflineContext";
+import HomeScreenSkeleton from "../../components/skeletons/HomeScreenSkeleton";
 
 const { width, height } = Dimensions.get("window");
 
@@ -173,6 +175,7 @@ const HomeScreen = ({ navigation, route }) => {
   const { colors, isDark } = useTheme();
   const { user, logout } = useAuth();
   const { mealPlans } = useMealPlans();
+  const { isOffline } = useOffline();
 
   // Check if we should skip subscription check (prevents redirect loop)
   const skipSubscriptionCheck = route?.params?.skipSubscriptionCheck || false;
@@ -1055,6 +1058,21 @@ const HomeScreen = ({ navigation, route }) => {
         style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
       >
         <Text>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Show skeleton screen when offline and no cached data
+  if (isOffline && !hasRealTags) {
+    return (
+      <SafeAreaView style={styles(colors).container} edges={["top"]}>
+        <StatusBar
+          barStyle={
+            colors.background === "#F8FFFC" ? "dark-content" : "light-content"
+          }
+          backgroundColor={colors.primary2}
+        />
+        <HomeScreenSkeleton />
       </SafeAreaView>
     );
   }

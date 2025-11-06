@@ -375,6 +375,14 @@ const AppNavigator = ({ isFirstLaunch, onOnboardingComplete }) => {
             }}
           />
           <Stack.Screen
+            name="AddPhoneNumber"
+            component={AddPhoneNumberScreen}
+            options={{
+              headerShown: false,
+              presentation: 'modal',
+            }}
+          />
+          <Stack.Screen
             name="Payment"
             component={PaymentScreen}
             options={{

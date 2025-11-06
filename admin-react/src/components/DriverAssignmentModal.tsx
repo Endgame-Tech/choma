@@ -179,7 +179,8 @@ const DriverAssignmentModal: React.FC<DriverAssignmentModalProps> = ({
       setDriversLoading(true)
       setError(null)
 
-      const response = await fetch('/api/admin/drivers?status=approved&limit=50', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+      const response = await fetch(`${apiUrl}/api/admin/drivers?status=approved&limit=50`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('choma-admin-token')}`
         }

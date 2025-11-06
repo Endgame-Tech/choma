@@ -119,9 +119,7 @@ interface AvailableChef {
 
 // Create axios instance for subscription management
 const api = axios.create({
-  baseURL: import.meta.env.PROD 
-    ? `${import.meta.env.VITE_API_BASE_URL}/api/admin/subscription-management`
-    : '/api/admin/subscription-management',
+  baseURL: `${import.meta.env.VITE_API_URL}/api/admin/subscription-management`,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

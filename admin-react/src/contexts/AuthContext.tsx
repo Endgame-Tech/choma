@@ -29,38 +29,80 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [admin, setAdmin] = useState<Admin | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [justLoggedIn, setJustLoggedIn] = useState(false)
 
   // Check if user is already authenticated on app start
   useEffect(() => {
     const checkAuth = async () => {
+      // Skip verification if we just logged in (state is fresh)
+      if (justLoggedIn) {
+        console.log('⏭️ Skipping auth check - just logged in')
+        setLoading(false)
+        setJustLoggedIn(false)
+        return
+      }
+
       try {
         const storedToken = localStorage.getItem('choma-admin-token')
         const storedAdmin = localStorage.getItem('choma-admin-data')
 
         if (storedToken && storedAdmin) {
           // Verify token is still valid by making a request to get profile
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/auth/profile`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${storedToken}`,
-              'Content-Type': 'application/json'
-            }
-          })
+          try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/auth/profile`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${storedToken}`,
+                'Content-Type': 'application/json'
+              }
+            })
 
-          if (response.ok) {
-            const data = await response.json()
-            setToken(storedToken)
-            setAdmin(data.data)
-            setIsAuthenticated(true)
-          } else {
-            // Token is invalid, clear stored data
-            localStorage.removeItem('choma-admin-token')
-            localStorage.removeItem('choma-admin-data')
+            if (response.ok) {
+              // Token is valid, update with fresh data from server
+              const data = await response.json()
+              setToken(storedToken)
+              setAdmin(data.data)
+              setIsAuthenticated(true)
+            } else if (response.status === 401 || response.status === 403) {
+              // Token is invalid or expired - clear authentication
+              console.warn('Token is invalid or expired, logging out')
+              localStorage.removeItem('choma-admin-token')
+              localStorage.removeItem('choma-admin-data')
+              setToken(null)
+              setAdmin(null)
+              setIsAuthenticated(false)
+            } else {
+              // Server error (500, 502, etc.) - keep user logged in with cached data
+              console.warn(`Server error (${response.status}), using cached authentication`)
+              try {
+                const cachedAdmin = JSON.parse(storedAdmin)
+                setToken(storedToken)
+                setAdmin(cachedAdmin)
+                setIsAuthenticated(true)
+              } catch (parseError) {
+                console.error('Failed to parse cached admin data:', parseError)
+                localStorage.removeItem('choma-admin-token')
+                localStorage.removeItem('choma-admin-data')
+              }
+            }
+          } catch (fetchError) {
+            // Network error (offline, timeout, etc.) - keep user logged in with cached data
+            console.warn('Network error during token verification, using cached authentication:', fetchError)
+            try {
+              const cachedAdmin = JSON.parse(storedAdmin)
+              setToken(storedToken)
+              setAdmin(cachedAdmin)
+              setIsAuthenticated(true)
+            } catch (parseError) {
+              console.error('Failed to parse cached admin data:', parseError)
+              localStorage.removeItem('choma-admin-token')
+              localStorage.removeItem('choma-admin-data')
+            }
           }
         }
       } catch (error) {
-        console.error('Auth check error:', error)
-        // Clear stored data on error
+        console.error('Unexpected auth check error:', error)
+        // Only clear auth if we can't recover
         localStorage.removeItem('choma-admin-token')
         localStorage.removeItem('choma-admin-data')
       } finally {
@@ -69,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     checkAuth()
-  }, [])
+  }, [justLoggedIn])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -92,11 +134,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.setItem('choma-admin-token', authToken)
         localStorage.setItem('choma-admin-data', JSON.stringify(adminData))
 
-        // Update state
+        // Update state synchronously
         setToken(authToken)
         setAdmin(adminData)
         setIsAuthenticated(true)
+        setJustLoggedIn(true)
 
+        // Wait for React to process state updates before returning
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        console.log('✅ Login successful, auth state updated')
         return true
       } else {
         console.error('Login failed:', data.error || 'Unknown error')

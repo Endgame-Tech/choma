@@ -25,9 +25,7 @@ interface AuditSummaryData {
 
 // Create axios instance for 2FA API
 const api = axios.create({
-  baseURL: import.meta.env.PROD
-    ? `${import.meta.env.VITE_API_BASE_URL}/api/admin/2fa`
-    : '/api/admin/2fa',
+  baseURL: `${import.meta.env.VITE_API_URL}/api/admin/2fa`,
   timeout: 60000, // Increased to 60 seconds to handle slow database operations
   headers: {
     'Content-Type': 'application/json',
@@ -56,14 +54,12 @@ api.interceptors.response.use(
   (error) => {
     console.error(`❌ 2FA API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.message);
     
-    // Handle authentication errors
-    if (error.response?.status === 401) {
+    // Handle authentication errors - but DON'T clear credentials during login flow
+    if (error.response?.status === 401 && window.location.pathname !== '/login') {
       console.warn('🔒 2FA API authentication failed - clearing stored credentials');
       localStorage.removeItem('choma-admin-token');
       localStorage.removeItem('choma-admin-data');
-      if (window.location.pathname !== '/login') {
-        window.location.reload();
-      }
+      window.location.reload();
     }
     
     return Promise.reject(error);

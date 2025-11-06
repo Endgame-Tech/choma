@@ -45,7 +45,7 @@ const Login: React.FC = () => {
         try {
           const twoFactorStatus = await twoFactorApi.getTwoFactorStatus()
           const settings = await twoFactorApi.getSettings()
-          
+
           if (twoFactorStatus.isEnabled && settings.requireForLogin) {
             // 2FA is enabled and required for login - show 2FA modal
             setShow2FAModal(true)
@@ -56,7 +56,7 @@ const Login: React.FC = () => {
           console.warn('Could not check 2FA status:', twoFactorError)
           // Continue with login if 2FA check fails
         }
-        
+
         // Login successful without 2FA or 2FA not required
         navigate('/')
       } else {

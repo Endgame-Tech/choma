@@ -216,7 +216,7 @@ const styles = (colors) =>
     },
     nextButtonText: {
       fontSize: 16,
-      color: colors.text,
+      color: "#1b1b1b",
       fontWeight: "600",
     },
   });

@@ -674,8 +674,9 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       "Sunday",
     ];
 
-    // Initialize weeks
-    [1, 2, 3, 4].forEach((week) => {
+    // Initialize weeks dynamically based on durationWeeks
+    const totalWeeks = mealPlanDetails.durationWeeks || 4;
+    Array.from({ length: totalWeeks }, (_, i) => i + 1).forEach((week) => {
       weeklyMealPlan[week] = [];
     });
 
@@ -683,7 +684,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
       const weekNumber = parseInt(weekKey.replace("week", ""));
       const weekData = mealPlanDetails.weeklyMeals[weekKey];
 
-      if (weekNumber >= 1 && weekNumber <= 4) {
+      if (weekNumber >= 1 && weekNumber <= totalWeeks) {
         daysOfWeek.forEach((fullDay, index) => {
           // Backend stores with full day names ('Monday', 'Tuesday', etc.)
           // Try both full day name and short day name for compatibility
@@ -1308,21 +1309,12 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
   );
 
   const renderWeekTabs = useCallback(() => {
-    const availableWeeks = Object.keys(weeklyMealPlan)
-      .map((weekNum) => parseInt(weekNum))
-      .filter(
-        (weekNum) =>
-          weeklyMealPlan[weekNum] &&
-          weeklyMealPlan[weekNum].some(
-            (day) =>
-              day.breakfast !== "Breakfast not specified" ||
-              day.lunch !== "Lunch not specified" ||
-              day.dinner !== "Dinner not specified"
-          )
-      );
+    // Show all weeks based on durationWeeks, not just weeks with meals assigned
+    const totalWeeks = mealPlanDetails?.durationWeeks || 4;
+    const availableWeeks = Array.from({ length: totalWeeks }, (_, i) => i + 1);
 
     if (availableWeeks.length === 0) {
-      return null; // Don't render tabs if no weeks have meals
+      return null; // Don't render tabs if no weeks
     }
 
     return (
@@ -1356,7 +1348,7 @@ const MealPlanDetailScreen = ({ route, navigation }) => {
         ))}
       </View>
     );
-  }, [weeklyMealPlan, selectedWeek, setSelectedWeek, setExpandedDays, colors]);
+  }, [mealPlanDetails?.durationWeeks, selectedWeek, setSelectedWeek, setExpandedDays, colors]);
 
   const renderFeature = useCallback(
     (feature) => (

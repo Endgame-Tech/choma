@@ -23,9 +23,7 @@ interface UploadResponse {
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.PROD 
-    ? `${import.meta.env.VITE_API_BASE_URL}/api/admin`
-    : '/api/admin',
+  baseURL: `${import.meta.env.VITE_API_URL}/api/admin`,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -59,15 +57,13 @@ api.interceptors.response.use(
   (error) => {
     console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.message)
     
-    // Handle authentication errors
-    if (error.response?.status === 401) {
+    // Handle authentication errors - but DON'T clear credentials during login flow
+    if (error.response?.status === 401 && window.location.pathname !== '/login') {
       console.warn('🔒 Authentication failed - clearing stored credentials')
       localStorage.removeItem('choma-admin-token')
       localStorage.removeItem('choma-admin-data')
-      // You might want to redirect to login page here
-      if (window.location.pathname !== '/login') {
-        window.location.reload() // This will trigger the auth check and redirect to login
-      }
+      // Redirect to login page
+      window.location.reload() // This will trigger the auth check and redirect to login
     }
     
     return Promise.reject(error)
