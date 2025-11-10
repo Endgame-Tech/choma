@@ -120,9 +120,7 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
 // Upload function for file uploads (uses different base URL)
 export const uploadFile = async (endpoint: string, formData: FormData): Promise<UploadResponse> => {
   try {
-    const baseURL = import.meta.env.PROD 
-      ? `${import.meta.env.VITE_API_BASE_URL}/api`
-      : '/api'
+    const baseURL = `${import.meta.env.VITE_API_URL}/api`
     
     const token = localStorage.getItem('choma-admin-token')
     

@@ -3,6 +3,7 @@ import { Meal, MealPlan, MealPlanAssignment } from '../services/mealApi'
 import { mealPlansApi, mealsApi } from '../services/mealApi'
 import { requestDeduplicationService } from '../services/requestDeduplicationService'
 import { XMarkIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import ImageUpload from './ImageUpload'
 
 interface MealPlanSchedulerProps {
   isOpen: boolean
@@ -581,9 +582,18 @@ const MealPlanScheduler: React.FC<MealPlanSchedulerProps> = ({ isOpen, onClose, 
                             type="url"
                             value={currentAssignment.imageUrl}
                             onChange={(e) => setCurrentAssignment(prev => ({ ...prev, imageUrl: e.target.value }))}
-                            placeholder="https://craftsnippets.com/articles_images/placeholder/placeholder.jpg"
+                            placeholder="https://example.com/image.jpg"
                             className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
+                          <div className="mt-2">
+                            <ImageUpload
+                              currentImageUrl={currentAssignment.imageUrl}
+                              onImageUpload={(imageUrl) => setCurrentAssignment(prev => ({ ...prev, imageUrl }))}
+                              label="Upload Image"
+                              uploadEndpoint="/upload/meal-image"
+                              enableCropping={false}
+                            />
+                          </div>
                         </div>
 
                         <div>
