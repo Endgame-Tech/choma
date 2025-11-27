@@ -174,7 +174,8 @@ const Orders: React.FC = () => {
   }) => {
     try {
       // Call the admin driver assignment API
-      const response = await fetch('/api/admin/assignments', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+      const response = await fetch(`${apiUrl}/api/admin/assignments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
